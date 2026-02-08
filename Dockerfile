@@ -7,16 +7,19 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for building)
+RUN npm ci
 
-# Copy built files
-COPY dist ./dist
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
 
 # Install a simple HTTP server
 RUN npm install -g serve
 
-# Expose port
+# Expose port (Cloud Run uses PORT environment variable)
 EXPOSE 8080
 
 # Start the server
