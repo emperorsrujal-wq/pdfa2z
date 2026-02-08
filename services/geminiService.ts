@@ -13,10 +13,10 @@ const getApiKey = (): string => {
   if (envKey && envKey.trim() !== "") {
     return envKey.trim();
   }
-  
+
   // For Veo, the key might be injected after selection, so we don't throw immediately if context suggests we might be waiting for one,
   // but generally, we expect it to be there.
-  return ""; 
+  return "";
 };
 
 /**
@@ -30,8 +30,8 @@ const getFreshAi = () => {
 };
 
 export const generateImage = async (
-  prompt: string, 
-  aspectRatio: AspectRatio, 
+  prompt: string,
+  aspectRatio: AspectRatio,
   highQuality: boolean
 ): Promise<string> => {
   // Use gemini-2.5-flash-image for standard, gemini-3-pro-image-preview for high quality
@@ -49,7 +49,7 @@ export const generateImage = async (
           aspectRatio: aspectRatio,
           ...(highQuality ? { imageSize: '2K' } : {}),
         }
-      }
+      } as any
     });
 
     if (response.candidates?.[0]?.content?.parts) {
@@ -100,7 +100,7 @@ export const editImage = async (
   } catch (err: any) {
     throw new Error(err.message || "Failed to edit image.");
   }
-  
+
   throw new Error("No edited image data returned.");
 };
 
@@ -130,7 +130,7 @@ export const upscaleImage = async (
         imageConfig: {
           imageSize: targetSize,
         }
-      }
+      } as any
     });
 
     if (response.candidates?.[0]?.content?.parts) {
@@ -150,14 +150,14 @@ export const upscaleImage = async (
 export const generateText = async (prompt: string, systemInstruction?: string): Promise<string> => {
   const ai = getFreshAi();
   const model = 'gemini-3-flash-preview';
-  
+
   try {
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
-      config: { 
+      config: {
         systemInstruction: systemInstruction,
-        temperature: 0.7 
+        temperature: 0.7
       }
     });
 
@@ -189,11 +189,11 @@ export const generateVideo = async (
     // Poll for completion
     while (!operation.done) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Poll every 5s
-      operation = await ai.operations.getVideosOperation({ operation });
+      operation = await ai.operations.getVideosOperation({ name: (operation as any).name } as any);
     }
 
-    if (operation.error) {
-      throw new Error(operation.error.message);
+    if ((operation as any).error) {
+      throw new Error((operation as any).error.message);
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -202,10 +202,10 @@ export const generateVideo = async (
     // Fetch the video bytes
     const response = await fetch(`${downloadLink}&key=${getApiKey()}`);
     if (!response.ok) throw new Error("Failed to download generated video.");
-    
+
     const blob = await response.blob();
     return URL.createObjectURL(blob);
-    
+
   } catch (err: any) {
     throw new Error(err.message || "Failed to generate video.");
   }

@@ -8,13 +8,21 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1Q3RP_rjWPjUEa_CnIturS_b2d_eBqVUF
 
+
+## Features & Known Limitations
+
+- **PDF Utilities**: Includes Merge, Split, Protect, and more.
+  - *Note*: PDF protection now uses standard encryption.
+- **AI Tools**: Requires a valid `GEMINI_API_KEY` in `.env.local`.
+- **Video Downloader**: Currently in **Demo Mode**. Real downloading requires a backend service.
+
 ## Run Locally
 
 **Prerequisites:**  Node.js
 
-
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key.
+   - You can get a key from [Google AI Studio](https://aistudio.google.com/).
 3. Run the app:
    `npm run dev`

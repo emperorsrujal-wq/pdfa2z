@@ -36,4 +36,8 @@ declare global {
   }
 }
 
-export {};
+export { };
+
+declare module 'pdfjs-dist/legacy/build/pdf' {
+  export * from 'pdfjs-dist';
+}

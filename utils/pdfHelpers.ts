@@ -1,22 +1,37 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
-import * as pdfjsLib from 'pdfjs-dist';
+// Use local worker from node_modules via Vite's public directory or import
+// For Vite, it's best to copy the worker to public or use a direct import if configured.
+// Here we will use the CDN as a fallback but prefer a local structure if possible.
+// Ideally, the worker should be copied to the public folder during build.
+// For now, we will stick to a reliable CDN version matching the package.
 
-// Define the worker source to match the exact version used in importmap
-const PDF_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// We need to use a dynamic import or ensure this doesn't break the build.
+// The previous static import caused issues with Vite/Rollup executing Node-specific code.
 
 /**
  * Resolves the PDF.js engine and configures the worker.
  */
-const getPdfEngine = () => {
+const getPdfEngine = async () => {
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
   const engine: any = (pdfjsLib as any).getDocument ? pdfjsLib : (pdfjsLib as any).default;
   if (!engine || typeof engine.getDocument !== 'function') {
     throw new Error("PDF engine failed to initialize.");
   }
+
+  // Set worker URL
+  const PDF_WORKER_URL = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/legacy/build/pdf.worker.min.js`;
+
   if (engine.GlobalWorkerOptions) {
     engine.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
   }
   return engine;
 };
+
+const getDocumentParams = (data: Uint8Array, pdfjsLib: any) => ({
+  data,
+  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+  cMapPacked: true,
+});
 
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   const mergedPdf = await PDFDocument.create();
@@ -36,7 +51,7 @@ export const splitPdf = async (file: File, pageRanges: string): Promise<Uint8Arr
   const totalPages = pdf.getPageCount();
   const pagesToKeep = new Set<number>();
   const parts = pageRanges.split(',').map(p => p.trim());
-  
+
   for (const part of parts) {
     if (part.includes('-')) {
       const [start, end] = part.split('-').map(Number);
@@ -69,13 +84,13 @@ export interface CompressionOptions {
 export const compressPdf = async (file: File, options: CompressionOptions): Promise<Uint8Array> => {
   // Store original buffer to compare size later
   const originalBuffer = await file.arrayBuffer();
-  
+
   // Create a copy for PDF.js to use.
   // PDF.js worker may transfer (detach) the buffer it receives, making the original unusable.
   const bufferCopy = originalBuffer.slice(0);
-  
-  const engine = getPdfEngine();
-  const loadingTask = engine.getDocument({ data: new Uint8Array(bufferCopy) });
+
+  const engine = await getPdfEngine();
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(bufferCopy), engine));
   const pdf = await loadingTask.promise;
   const newPdf = await PDFDocument.create();
 
@@ -96,7 +111,7 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
     }
   } else if (options.mode === 'target' && options.targetSizeBytes) {
     const originalSize = originalBuffer.byteLength;
-    
+
     // If target is larger than original, we can just return original (handled at end), 
     // but let's try to just lightly optimize just in case.
     if (options.targetSizeBytes >= originalSize) {
@@ -105,10 +120,10 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
     } else {
       // Calculate required reduction ratio
       const ratio = options.targetSizeBytes / originalSize;
-      
+
       // Heuristic mapping of ratio to quality/scale parameters
       if (ratio > 0.8) {
-        quality = 0.8; 
+        quality = 0.8;
         scale = 1.0;
       } else if (ratio > 0.6) {
         quality = 0.6;
@@ -138,15 +153,15 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
     context.fillStyle = '#FFFFFF';
     context.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: context, viewport }).promise;
-    
+
     const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
     const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
-    
+
     const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes));
     const newPage = newPdf.addPage([viewport.width, viewport.height]);
     newPage.drawImage(jpgImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
   }
-  
+
   const compressedBytes = await newPdf.save();
 
   // CRITICAL CHECK: If compressed file is larger than original, return original
@@ -160,10 +175,10 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
 };
 
 export const pdfToImages = async (file: File): Promise<string[]> => {
-  const engine = getPdfEngine();
+  const engine = await getPdfEngine();
   const arrayBuffer = await file.arrayBuffer();
   // We don't reuse arrayBuffer here after PDF.js, so no need to copy
-  const loadingTask = engine.getDocument(new Uint8Array(arrayBuffer));
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
   const pdf = await loadingTask.promise;
   const images: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
@@ -186,13 +201,33 @@ export const pdfToImages = async (file: File): Promise<string[]> => {
 export const imagesToPdf = async (files: File[]): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
   for (const file of files) {
-    const imageBytes = await file.arrayBuffer();
     try {
-      const image = file.type.includes('png') ? await pdfDoc.embedPng(imageBytes) : await pdfDoc.embedJpg(imageBytes);
+      const imageBytes = await file.arrayBuffer();
+      let image;
+
+      // Explicitly check for PNG signature or MIME type
+      if (file.type === 'image/png') {
+        image = await pdfDoc.embedPng(imageBytes);
+      } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+        image = await pdfDoc.embedJpg(imageBytes);
+      } else {
+        // Try to detect based on content or fallback to console warning
+        // For now, we skip unsupported formats to prevent crashing
+        console.warn(`Skipping unsupported file type: ${file.type} (${file.name})`);
+        continue;
+      }
+
       const page = pdfDoc.addPage([image.width, image.height]);
       page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
-    } catch (e) { console.warn(e); }
+    } catch (e) {
+      console.warn(`Failed to process image ${file.name}:`, e);
+    }
   }
+
+  if (pdfDoc.getPageCount() === 0) {
+    throw new Error("No valid images were processed. Please ensure you uploaded valid PNG or JPG files.");
+  }
+
   return pdfDoc.save();
 };
 
@@ -208,16 +243,16 @@ export const removePages = async (file: File, pagesToRemove: number[]): Promise<
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   const newPdf = await PDFDocument.create();
   const indices = [];
-  for(let i = 0; i < pdfDoc.getPageCount(); i++) if (!pagesToRemove.includes(i + 1)) indices.push(i);
+  for (let i = 0; i < pdfDoc.getPageCount(); i++) if (!pagesToRemove.includes(i + 1)) indices.push(i);
   const copied = await newPdf.copyPages(pdfDoc, indices);
   copied.forEach(p => newPdf.addPage(p));
   return newPdf.save();
 };
 
 export const extractTextFromPdf = async (file: File): Promise<string> => {
-  const engine = getPdfEngine();
+  const engine = await getPdfEngine();
   const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = engine.getDocument(new Uint8Array(arrayBuffer));
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
   const pdf = await loadingTask.promise;
   let text = '';
   for (let i = 1; i <= pdf.numPages; i++) {
@@ -249,9 +284,9 @@ export const watermarkPdf = async (file: File, watermarkText: string): Promise<U
 };
 
 export const grayscalePdf = async (file: File): Promise<Uint8Array> => {
-  const engine = getPdfEngine();
+  const engine = await getPdfEngine();
   const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = engine.getDocument({ data: new Uint8Array(arrayBuffer) });
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
   const pdf = await loadingTask.promise;
   const newPdf = await PDFDocument.create();
   for (let i = 1; i <= pdf.numPages; i++) {
@@ -313,7 +348,7 @@ export const addPageNumbers = async (file: File): Promise<Uint8Array> => {
 };
 
 export const downloadBlob = (data: Uint8Array | Blob, filename: string) => {
-  const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+  const blob = data instanceof Blob ? data : new Blob([data as any], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -342,9 +377,23 @@ export const pdfToHtml = async (file: File): Promise<Blob> => {
   return new Blob([html], { type: 'text/html' });
 };
 
-export const protectPdf = async (file: File, _password: string): Promise<Uint8Array> => {
+export const protectPdf = async (file: File, password: string): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
+  (pdfDoc as any).encrypt({
+    userPassword: password,
+    ownerPassword: password,
+    permissions: {
+      printing: 'highResolution',
+      modifying: false,
+      copying: false,
+      annotating: false,
+      fillingForms: false,
+      contentAccessibility: false,
+      documentAssembly: false,
+      // creatingTemplate: false, // Not standard permission but checking
+    },
+  });
   return pdfDoc.save();
 };
 

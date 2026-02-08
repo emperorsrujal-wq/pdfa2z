@@ -23,7 +23,7 @@ export const VideoDownloader: React.FC = () => {
 
   const handleAnalyze = async () => {
     if (!url.trim()) return;
-    
+
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
@@ -83,6 +83,10 @@ export const VideoDownloader: React.FC = () => {
           Universal Video Downloader
         </h2>
         <p className="text-slate-500">Download videos from YouTube, Facebook, Instagram, TikTok & more.</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center justify-center gap-2">
+          <AlertCircle size={16} />
+          <span><strong>Demo Mode:</strong> This tool is a simulation. Real video downloading requires a backend server.</span>
+        </div>
       </div>
 
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
@@ -101,8 +105,8 @@ export const VideoDownloader: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
             />
             <div className="absolute right-2 top-2 bottom-2">
-              <Button 
-                onClick={handleAnalyze} 
+              <Button
+                onClick={handleAnalyze}
                 isLoading={isAnalyzing}
                 disabled={!url.trim()}
                 className="h-full bg-rose-600 hover:bg-rose-700 shadow-md"
@@ -111,98 +115,98 @@ export const VideoDownloader: React.FC = () => {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-4 text-slate-400 text-sm font-medium">
-             <span className="flex items-center gap-1"><Youtube size={16} /> YouTube</span>
-             <span className="flex items-center gap-1"><Facebook size={16} /> Facebook</span>
-             <span className="flex items-center gap-1"><Instagram size={16} /> Instagram</span>
-             <span className="flex items-center gap-1"><Twitter size={16} /> Twitter</span>
-             <span className="flex items-center gap-1">TikTok</span>
+            <span className="flex items-center gap-1"><Youtube size={16} /> YouTube</span>
+            <span className="flex items-center gap-1"><Facebook size={16} /> Facebook</span>
+            <span className="flex items-center gap-1"><Instagram size={16} /> Instagram</span>
+            <span className="flex items-center gap-1"><Twitter size={16} /> Twitter</span>
+            <span className="flex items-center gap-1">TikTok</span>
           </div>
         </div>
 
         {/* Results Section */}
         {error && (
-            <div className="p-4 bg-red-50 text-red-700 rounded-xl flex items-center gap-2 border border-red-200">
-                <AlertCircle size={20} /> {error}
-            </div>
+          <div className="p-4 bg-red-50 text-red-700 rounded-xl flex items-center gap-2 border border-red-200">
+            <AlertCircle size={20} /> {error}
+          </div>
         )}
 
         {result && (
-            <div className="animate-fade-in bg-slate-50 rounded-2xl p-6 border border-slate-200">
-                <div className="flex flex-col md:flex-row gap-6 mb-8">
-                    <div className="w-full md:w-64 aspect-video bg-black rounded-xl overflow-hidden shadow-lg flex-shrink-0 relative">
-                        <img src={result.thumbnail} alt="Thumbnail" className="w-full h-full object-cover opacity-80" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                <Video className="w-6 h-6 text-white" />
-                            </div>
-                        </div>
-                        <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 text-white text-xs rounded font-bold">
-                            {result.duration}
-                        </div>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold text-slate-900 line-clamp-2">{result.title}</h3>
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <span className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold uppercase tracking-wider">{result.source}</span>
-                            <span>•</span>
-                            <span>Ready to download</span>
-                        </div>
-                        <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg border border-blue-100 flex items-start gap-2">
-                            <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" />
-                            Note: This is a demo. Clicking download will fetch a sample video file as backend processing is required for real platform downloads.
-                        </div>
-                    </div>
+          <div className="animate-fade-in bg-slate-50 rounded-2xl p-6 border border-slate-200">
+            <div className="flex flex-col md:flex-row gap-6 mb-8">
+              <div className="w-full md:w-64 aspect-video bg-black rounded-xl overflow-hidden shadow-lg flex-shrink-0 relative">
+                <img src={result.thumbnail} alt="Thumbnail" className="w-full h-full object-cover opacity-80" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <Video className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {result.qualities.map((q, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between hover:border-rose-300 hover:shadow-md transition-all group">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${q.format === 'MP3' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
-                                    {q.format === 'MP3' ? <FileAudio size={20} /> : <Video size={20} />}
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">{q.quality}</p>
-                                    <p className="text-xs text-slate-500">{q.format} • {q.size}</p>
-                                </div>
-                            </div>
-                            <button 
-                                onClick={() => handleDownload(q)}
-                                className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-rose-600 transition-colors flex items-center gap-2"
-                            >
-                                <Download size={14} /> Download
-                            </button>
-                        </div>
-                    ))}
+                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 text-white text-xs rounded font-bold">
+                  {result.duration}
                 </div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <h3 className="text-xl font-bold text-slate-900 line-clamp-2">{result.title}</h3>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <span className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold uppercase tracking-wider">{result.source}</span>
+                  <span>•</span>
+                  <span>Ready to download</span>
+                </div>
+                <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg border border-blue-100 flex items-start gap-2">
+                  <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" />
+                  Note: This is a demo. Clicking download will fetch a sample video file as backend processing is required for real platform downloads.
+                </div>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {result.qualities.map((q, idx) => (
+                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between hover:border-rose-300 hover:shadow-md transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${q.format === 'MP3' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {q.format === 'MP3' ? <FileAudio size={20} /> : <Video size={20} />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">{q.quality}</p>
+                      <p className="text-xs text-slate-500">{q.format} • {q.size}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDownload(q)}
+                    className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-rose-600 transition-colors flex items-center gap-2"
+                  >
+                    <Download size={14} /> Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-          <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search size={24} />
-              </div>
-              <h4 className="font-bold text-slate-900 mb-2">Paste Link</h4>
-              <p className="text-sm text-slate-500">Copy the URL from the browser or app share button.</p>
+        <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={24} />
           </div>
-          <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video size={24} />
-              </div>
-              <h4 className="font-bold text-slate-900 mb-2">Select Quality</h4>
-              <p className="text-sm text-slate-500">Choose from 4K, 1080p, 720p or MP3 audio.</p>
+          <h4 className="font-bold text-slate-900 mb-2">Paste Link</h4>
+          <p className="text-sm text-slate-500">Copy the URL from the browser or app share button.</p>
+        </div>
+        <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Video size={24} />
           </div>
-          <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Download size={24} />
-              </div>
-              <h4 className="font-bold text-slate-900 mb-2">Fast Download</h4>
-              <p className="text-sm text-slate-500">Save the video directly to your device securely.</p>
+          <h4 className="font-bold text-slate-900 mb-2">Select Quality</h4>
+          <p className="text-sm text-slate-500">Choose from 4K, 1080p, 720p or MP3 audio.</p>
+        </div>
+        <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Download size={24} />
           </div>
+          <h4 className="font-bold text-slate-900 mb-2">Fast Download</h4>
+          <p className="text-sm text-slate-500">Save the video directly to your device securely.</p>
+        </div>
       </div>
     </div>
   );

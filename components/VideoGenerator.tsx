@@ -16,15 +16,23 @@ export const VideoGenerator: React.FC = () => {
   }, []);
 
   const checkApiKey = async () => {
+    if (!window.aistudio) {
+      console.warn("AI Studio integration not available");
+      return;
+    }
     try {
       const hasKey = await window.aistudio.hasSelectedApiKey();
       setHasApiKey(hasKey);
     } catch (e) {
-      console.warn("AI Studio integration not available", e);
+      console.warn("AI Studio integration error", e);
     }
   };
 
   const handleSelectKey = async () => {
+    if (!window.aistudio) {
+      setError("AI Studio integration not available in this environment.");
+      return;
+    }
     try {
       await window.aistudio.openSelectKey();
       // Assume success after dialog interaction to mitigate race condition
@@ -36,7 +44,7 @@ export const VideoGenerator: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    
+
     setIsGenerating(true);
     setError(null);
     setGeneratedVideoUrl(null);
@@ -45,12 +53,12 @@ export const VideoGenerator: React.FC = () => {
       const url = await generateVideo(prompt, aspectRatio);
       setGeneratedVideoUrl(url);
     } catch (err: any) {
-        if (err.message && err.message.includes("Requested entity was not found")) {
-            setHasApiKey(false); // Reset key state if invalid
-            setError("Your API key may be invalid or expired. Please select a valid key.");
-        } else {
-            setError(err.message || "Failed to generate video");
-        }
+      if (err.message && err.message.includes("Requested entity was not found")) {
+        setHasApiKey(false); // Reset key state if invalid
+        setError("Your API key may be invalid or expired. Please select a valid key.");
+      } else {
+        setError(err.message || "Failed to generate video");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -102,31 +110,31 @@ export const VideoGenerator: React.FC = () => {
           <div className="space-y-3">
             <label className="block text-sm font-medium text-slate-700">Aspect Ratio</label>
             <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={() => setAspectRatio('16:9')}
-                  className={`p-3 rounded-xl border font-bold text-sm transition-all ${aspectRatio === '16:9' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                >
-                    16:9 Landscape
-                </button>
-                <button 
-                  onClick={() => setAspectRatio('9:16')}
-                  className={`p-3 rounded-xl border font-bold text-sm transition-all ${aspectRatio === '9:16' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                >
-                    9:16 Portrait
-                </button>
+              <button
+                onClick={() => setAspectRatio('16:9')}
+                className={`p-3 rounded-xl border font-bold text-sm transition-all ${aspectRatio === '16:9' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                16:9 Landscape
+              </button>
+              <button
+                onClick={() => setAspectRatio('9:16')}
+                className={`p-3 rounded-xl border font-bold text-sm transition-all ${aspectRatio === '9:16' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                9:16 Portrait
+              </button>
             </div>
           </div>
 
-          <Button 
-            onClick={handleGenerate} 
-            isLoading={isGenerating} 
+          <Button
+            onClick={handleGenerate}
+            isLoading={isGenerating}
             disabled={!prompt.trim()}
             className="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 shadow-lg shadow-rose-200"
             icon={<Film className="w-4 h-4" />}
           >
             {isGenerating ? 'Generating Video...' : 'Generate Video'}
           </Button>
-          
+
           <p className="text-xs text-slate-400 text-center">
             Generation typically takes 1-2 minutes.
           </p>
@@ -136,33 +144,33 @@ export const VideoGenerator: React.FC = () => {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 flex items-center justify-center min-h-[400px] relative overflow-hidden group shadow-sm bg-slate-950">
           {generatedVideoUrl ? (
             <div className="w-full h-full flex flex-col items-center justify-center">
-                <video 
-                    controls 
-                    autoPlay 
-                    loop 
-                    className="max-w-full max-h-[500px] rounded-lg shadow-2xl"
-                    src={generatedVideoUrl}
-                />
-                <a 
-                  href={generatedVideoUrl} 
-                  download={`veo-gen-${Date.now()}.mp4`}
-                  className="absolute top-4 right-4 p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white/20 transition-colors shadow-lg"
-                  title="Download Video"
-                >
-                  <Download className="w-6 h-6" />
-                </a>
+              <video
+                controls
+                autoPlay
+                loop
+                className="max-w-full max-h-[500px] rounded-lg shadow-2xl"
+                src={generatedVideoUrl}
+              />
+              <a
+                href={generatedVideoUrl}
+                download={`veo-gen-${Date.now()}.mp4`}
+                className="absolute top-4 right-4 p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white/20 transition-colors shadow-lg"
+                title="Download Video"
+              >
+                <Download className="w-6 h-6" />
+              </a>
             </div>
           ) : (
             <div className="text-center text-slate-500 p-8">
               {isGenerating ? (
                 <div className="flex flex-col items-center gap-6">
                   <div className="relative w-20 h-20">
-                     <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
-                     <div className="absolute inset-0 border-4 border-t-rose-500 border-r-rose-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-t-rose-500 border-r-rose-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                   </div>
                   <div className="space-y-2">
-                      <p className="text-rose-400 font-bold text-lg animate-pulse">Dreaming up your scene...</p>
-                      <p className="text-sm text-slate-600">This usually takes about 60 seconds.</p>
+                    <p className="text-rose-400 font-bold text-lg animate-pulse">Dreaming up your scene...</p>
+                    <p className="text-sm text-slate-600">This usually takes about 60 seconds.</p>
                   </div>
                 </div>
               ) : (
@@ -174,9 +182,9 @@ export const VideoGenerator: React.FC = () => {
             </div>
           )}
           {error && (
-             <div className="absolute bottom-4 left-4 right-4 p-4 bg-red-900/90 border border-red-700 rounded-xl text-white text-sm text-center shadow-lg flex items-center justify-center gap-2">
-               <AlertCircle size={16} /> {error}
-             </div>
+            <div className="absolute bottom-4 left-4 right-4 p-4 bg-red-900/90 border border-red-700 rounded-xl text-white text-sm text-center shadow-lg flex items-center justify-center gap-2">
+              <AlertCircle size={16} /> {error}
+            </div>
           )}
         </div>
       </div>
