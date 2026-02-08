@@ -1,13 +1,12 @@
-# Use Node.js base image
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including devDependencies for building)
+# Install dependencies
 RUN npm ci
 
 # Copy source code
@@ -16,11 +15,17 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Install a simple HTTP server
-RUN npm install -g serve
+# Production stage
+FROM nginx:alpine
 
-# Expose port (Cloud Run uses PORT environment variable)
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 8080 (Cloud Run requirement)
 EXPOSE 8080
 
-# Start the server
-CMD ["serve", "-s", "dist", "-l", "8080"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
