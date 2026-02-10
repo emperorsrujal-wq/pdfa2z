@@ -102,6 +102,7 @@ export const Home: React.FC = () => {
                     </div>
                 </section>
 
+
                 {/* PDF Tools */}
                 <section>
                     <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
@@ -109,9 +110,18 @@ export const Home: React.FC = () => {
                         <h2 className="text-2xl font-bold text-slate-900">PDF Tools</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title="Split PDF" description="Extract pages." icon={<Scissors />} colorClass="bg-blue-50 text-blue-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'SPLIT')} />
-                        <ToolCard title="PDF to Word" description="Convert to DOC." icon={<FileText />} colorClass="bg-blue-50 text-blue-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'TO_WORD')} />
-                        <ToolCard title="Chat with PDF" description="AI Analysis." icon={<Sparkles />} colorClass="bg-blue-50 text-blue-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'CHAT')} />
+                        <ToolCard title="Merge PDF" description="Combine PDFs." icon={<Layers />} colorClass="bg-indigo-600 text-indigo-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'MERGE')} />
+                        <ToolCard title="Split PDF" description="Extract pages." icon={<Scissors />} colorClass="bg-orange-600 text-orange-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'SPLIT')} />
+                        <ToolCard title="Compress PDF" description="Reduce size." icon={<Zap />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'COMPRESS')} />
+                        <ToolCard title="PDF to Word" description="Convert to DOC." icon={<FileText />} colorClass="bg-blue-600 text-blue-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'TO_WORD')} />
+                        <ToolCard title="PDF to Excel" description="Convert to XLS." icon={<FileText />} colorClass="bg-green-700 text-green-700" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'TO_EXCEL')} />
+                        <ToolCard title="Use AI Chat" description="Chat with PDF." icon={<Sparkles />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'CHAT')} />
+                        <ToolCard title="Protect PDF" description="Add Password." icon={<FileText />} colorClass="bg-slate-800 text-slate-800" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PROTECT')} />
+                        <ToolCard title="Unlock PDF" description="Remove Password." icon={<FileText />} colorClass="bg-sky-500 text-sky-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'UNLOCK')} />
+                        <ToolCard title="Rotate PDF" description="Fix orientation." icon={<Layers />} colorClass="bg-amber-600 text-amber-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'ROTATE')} />
+                        <ToolCard title="Delete Pages" description="Remove pages." icon={<FileText />} colorClass="bg-red-500 text-red-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'DELETE_PAGES')} />
+                        <ToolCard title="Add Page Numbers" description="Number pages." icon={<FileText />} colorClass="bg-cyan-600 text-cyan-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PAGE_NUMBERS')} />
+                        <ToolCard title="Watermark" description="Stamp text." icon={<FileText />} colorClass="bg-blue-500 text-blue-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'WATERMARK')} />
                     </div>
                 </section>
 
@@ -122,19 +132,29 @@ export const Home: React.FC = () => {
                         <h2 className="text-2xl font-bold text-slate-900">Image Tools</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title="Resize Image" description="Change dimensions." icon={<Image />} colorClass="bg-purple-50 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'RESIZE')} />
-                        <ToolCard title="Convert Image" description="Format switch." icon={<Zap />} colorClass="bg-purple-50 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CONVERT')} />
+                        <ToolCard title="Remove BG" description="Transparent BG." icon={<Edit3 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'REMOVE_BG')} />
+                        <ToolCard title="Resize Image" description="Change size." icon={<Image />} colorClass="bg-amber-600 text-amber-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'RESIZE')} />
+                        <ToolCard title="Compress Image" description="Reduce KB/MB." icon={<Zap />} colorClass="bg-pink-600 text-pink-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'COMPRESS')} />
+                        <ToolCard title="Convert Image" description="JPG to PNG..." icon={<Zap />} colorClass="bg-orange-600 text-orange-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CONVERT')} />
+                        <ToolCard title="Crop Image" description="Trim edges." icon={<Image />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CROP')} />
+                        <ToolCard title="Upscale" description="AI Enhance." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'UPSCALE')} />
+                        <ToolCard title="Blur Faces" description="Hide faces." icon={<Image />} colorClass="bg-gray-700 text-gray-700" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'FACE_BLUR')} />
+                        <ToolCard title="Passport Photo" description="ID Photo Maker." icon={<Image />} colorClass="bg-blue-600 text-blue-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'PASSPORT')} />
+                        <ToolCard title="Collage Maker" description="Grid photos." icon={<Image />} colorClass="bg-fuchsia-600 text-fuchsia-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'COLLAGE')} />
+                        <ToolCard title="Meme Maker" description="Funny captions." icon={<Edit3 />} colorClass="bg-yellow-500 text-yellow-500" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'MEME')} />
                     </div>
                 </section>
 
-                {/* AI Tools */}
+                {/* AI & Video Tools */}
                 <section>
                     <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                         <Wand2 size={24} className="text-pink-600" />
-                        <h2 className="text-2xl font-bold text-slate-900">AI Tools</h2>
+                        <h2 className="text-2xl font-bold text-slate-900">AI & Video Tools</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                         <ToolCard title="AI Writer" description="Write content." icon={<PenTool />} colorClass="bg-pink-50 text-pink-600" onClick={() => navigateToTool(ToolType.AI_WRITER)} />
+                        <ToolCard title="AI Image Gen" description="Text to Art." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_GENERATOR)} />
+                        <ToolCard title="Video Downloader" description="Get videos." icon={<Download />} colorClass="bg-rose-600 text-rose-600" onClick={() => navigateToTool(ToolType.VIDEO_SUITE, 'DOWNLOAD')} />
                     </div>
                 </section>
 
