@@ -157,7 +157,10 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
         let mime = files[0].type;
         let q = 0.9;
         if (mode === 'CONVERT') mime = convertFormat;
-        if (mode === 'COMPRESS') q = 0.5;
+        if (mode === 'COMPRESS') {
+          mime = 'image/jpeg';
+          q = 0.5;
+        }
 
         resolve(canvas.toDataURL(mime, q));
       };

@@ -6,8 +6,8 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-// const pdfjsDistPath = path.dirname(require.resolve('pdfjs-dist/package.json'));
-// const cMapsDir = path.join(pdfjsDistPath, 'cmaps');
+const pdfjsDistPath = path.dirname(require.resolve('pdfjs-dist/package.json'));
+const cMapsDir = path.join(pdfjsDistPath, 'cmaps');
 
 export default defineConfig({
   plugins: [
@@ -37,14 +37,14 @@ export default defineConfig({
     }),
     viteStaticCopy({
       targets: [
-        // {
-        //   src: cMapsDir,
-        //   dest: ''
-        // },
-        // {
-        //   src: path.join(pdfjsDistPath, 'legacy', 'build', 'pdf.worker.min.js'),
-        //   dest: ''
-        // }
+        {
+          src: cMapsDir,
+          dest: ''
+        },
+        {
+          src: path.join(pdfjsDistPath, 'legacy', 'build', 'pdf.worker.min.js'),
+          dest: ''
+        }
       ]
     })
   ],

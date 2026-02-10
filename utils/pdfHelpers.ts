@@ -18,8 +18,8 @@ const getPdfEngine = async () => {
     throw new Error("PDF engine failed to initialize.");
   }
 
-  // Set worker URL
-  const PDF_WORKER_URL = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/legacy/build/pdf.worker.min.js`;
+  // Set worker URL to local file copied by vite-plugin-static-copy
+  const PDF_WORKER_URL = `/pdf.worker.min.js`;
 
   if (engine.GlobalWorkerOptions) {
     engine.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
