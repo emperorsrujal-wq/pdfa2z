@@ -8,14 +8,18 @@ import { AspectRatio } from "../types.ts";
  * Per guidelines: The API key must be obtained exclusively from process.env.API_KEY.
  */
 const getApiKey = (): string => {
-  // Always fetch from process.env.API_KEY as it is injected by the environment.
+  // 1. Try process.env.API_KEY (injected by build)
   const envKey = process.env.API_KEY;
   if (envKey && envKey.trim() !== "") {
     return envKey.trim();
   }
 
-  // For Veo, the key might be injected after selection, so we don't throw immediately if context suggests we might be waiting for one,
-  // but generally, we expect it to be there.
+  // 2. Try LocalStorage (user manually entered)
+  const localKey = localStorage.getItem('gemini_api_key');
+  if (localKey && localKey.trim() !== "") {
+    return localKey.trim();
+  }
+
   return "";
 };
 
