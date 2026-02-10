@@ -360,9 +360,32 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
   return (
     <div className="max-w-5xl mx-auto p-6 animate-fade-in">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-        <h3 className="text-2xl font-black uppercase tracking-tighter">{mode.replace('_', ' ')}</h3>
+      <div className="flex items-center gap-4 mb-8 justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
+          <h3 className="text-2xl font-black uppercase tracking-tighter">{mode.replace('_', ' ')}</h3>
+        </div>
+        <button
+          onClick={() => {
+            const current = localStorage.getItem('gemini_api_key') || '';
+            const key = prompt("Enter your Google Gemini API Key:", current);
+            if (key !== null) {
+              if (key.trim()) {
+                localStorage.setItem('gemini_api_key', key.trim());
+                alert("API Key saved!");
+              } else {
+                localStorage.removeItem('gemini_api_key');
+                alert("API Key removed.");
+              }
+            }
+          }}
+          className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors"
+          title="Set API Key"
+        >
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <Sliders size={18} /> API Key
+          </div>
+        </button>
       </div>
       <div className="bg-white rounded-[2rem] border p-8 flex flex-col md:flex-row gap-8 shadow-sm">
         <div className="flex-1 space-y-6">
