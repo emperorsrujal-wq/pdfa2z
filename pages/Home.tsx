@@ -118,6 +118,7 @@ export const Home: React.FC = () => {
                         <ToolCard title="Use AI Chat" description="Chat with PDF." icon={<Sparkles />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'CHAT')} />
                         <ToolCard title="Protect PDF" description="Add Password." icon={<FileText />} colorClass="bg-slate-800 text-slate-800" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PROTECT')} />
                         <ToolCard title="Unlock PDF" description="Remove Password." icon={<FileText />} colorClass="bg-sky-500 text-sky-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'UNLOCK')} />
+                        <ToolCard title="Sign PDF" description="E-Sign document." icon={<PenTool />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'SIGN')} />
                         <ToolCard title="Rotate PDF" description="Fix orientation." icon={<Layers />} colorClass="bg-amber-600 text-amber-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'ROTATE')} />
                         <ToolCard title="Delete Pages" description="Remove pages." icon={<FileText />} colorClass="bg-red-500 text-red-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'DELETE_PAGES')} />
                         <ToolCard title="Add Page Numbers" description="Number pages." icon={<FileText />} colorClass="bg-cyan-600 text-cyan-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PAGE_NUMBERS')} />
@@ -139,6 +140,7 @@ export const Home: React.FC = () => {
                         <ToolCard title="Crop Image" description="Trim edges." icon={<Image />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CROP')} />
                         <ToolCard title="Upscale" description="AI Enhance." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'UPSCALE')} />
                         <ToolCard title="Blur Faces" description="Hide faces." icon={<Image />} colorClass="bg-gray-700 text-gray-700" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'FACE_BLUR')} />
+                        <ToolCard title="Round Image" description="Circle crop." icon={<Scissors />} colorClass="bg-pink-500 text-pink-500" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'ROUND')} />
                         <ToolCard title="Passport Photo" description="ID Photo Maker." icon={<Image />} colorClass="bg-blue-600 text-blue-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'PASSPORT')} />
                         <ToolCard title="Collage Maker" description="Grid photos." icon={<Image />} colorClass="bg-fuchsia-600 text-fuchsia-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'COLLAGE')} />
                         <ToolCard title="Meme Maker" description="Funny captions." icon={<Edit3 />} colorClass="bg-yellow-500 text-yellow-500" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'MEME')} />

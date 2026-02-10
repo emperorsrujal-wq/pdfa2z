@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target } from 'lucide-react';
+import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions } from '../utils/pdfHelpers.ts';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
+import { SignaturePad } from './SignaturePad.tsx';
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -16,6 +17,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
 
   const [resultImages, setResultImages] = useState<string[]>([]);
   const [resultText, setResultText] = useState<string>('');
+
+  const [signingPage, setSigningPage] = useState<{ index: number, image: string } | null>(null);
 
   const [inputValue, setInputValue] = useState('');
   // Compression Settings
@@ -43,6 +46,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
+      // SIGN mode also needs multiple files logic if we want to support it, but essentially it takes one PDF.
+      // MERGE, IMG_TO_PDF, COMPRESS support multiple.
       if (mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS') {
         setFiles(prev => [...prev, ...newFiles]);
       } else {
@@ -66,6 +71,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setSuccessMsg(null);
     setTargetSizeMB('1.0');
     setCompressionMode('preset');
+    setSigningPage(null);
   };
 
   const removeFile = (index: number) => {
@@ -89,6 +95,30 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `split-${files[0].name}`);
         setSuccessMsg("Split successfully!");
       }
+      else if (mode === 'SIGN') {
+        // If files are selected, first convert to images if not already done
+        if (resultImages.length === 0 && files.length > 0) {
+          const imgs = await pdfToImages(files[0]);
+          setResultImages(imgs);
+          setIsProcessing(false); // Stop here to show UI
+          return;
+        }
+
+        // If we have signed results (modified images), save back to PDF
+        if (resultImages.length > 0) {
+          // imagesToPdf expects File[], but we have base64 strings
+          // We need to convert base64 to File objects
+          const imageFiles = await Promise.all(resultImages.map(async (dataUrl, i) => {
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            return new File([blob], `page-${i + 1}.png`, { type: 'image/png' });
+          }));
+
+          const res = await imagesToPdf(imageFiles);
+          downloadBlob(res, `signed-${files[0].name}`);
+          setSuccessMsg("Signed PDF ready!");
+        }
+      }
       else if (mode === 'WATERMARK') {
         const res = await watermarkPdf(files[0], inputValue || 'PDFA2Z');
         downloadBlob(res, `watermarked-${files[0].name}`);
@@ -106,14 +136,11 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       }
       else if (mode === 'COMPRESS') {
         const targetBytes = parseFloat(targetSizeMB) * 1024 * 1024;
-
         const options: CompressionOptions = {
           mode: compressionMode,
           presetLevel: compressionLevel,
           targetSizeBytes: isNaN(targetBytes) ? undefined : targetBytes
         };
-
-        // Process all files individually
         for (const file of files) {
           const res = await compressPdf(file, options);
           downloadBlob(res, `optimized-${file.name}`);
@@ -171,7 +198,6 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         setSuccessMsg("Metadata updated!");
       }
       else if (mode === 'DELETE_PAGES') {
-        // Expect "1, 2, 5" format in input
         const pages = inputValue.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
         if (pages.length === 0) throw new Error("Enter valid page numbers");
         const res = await removePages(files[0], pages);
@@ -185,6 +211,15 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     }
   };
 
+  const handleSaveSignature = (signedImage: string) => {
+    if (signingPage) {
+      const newImages = [...resultImages];
+      newImages[signingPage.index] = signedImage;
+      setResultImages(newImages);
+      setSigningPage(null);
+    }
+  };
+
   if (mode === 'MENU') {
     return (
       <div className="h-full flex flex-col animate-fade-in p-6 overflow-y-auto custom-scrollbar">
@@ -194,6 +229,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <ToolCard title="Merge PDF" description="Combine multiple PDF files into one single document securely." icon={<Layers />} onClick={() => setMode('MERGE')} colorClass="bg-indigo-600 text-indigo-600" />
           <ToolCard title="Split PDF" description="Extract specific pages or split a file into multiple PDFs." icon={<Scissors />} onClick={() => setMode('SPLIT')} colorClass="bg-orange-600 text-orange-600" />
+          <ToolCard title="Sign PDF" description="E-Sign document." icon={<PenTool />} onClick={() => setMode('SIGN')} colorClass="bg-green-600 text-green-600" />
           <ToolCard title="Watermark" description="Add custom text or image stamps to protect your documents." icon={<Stamp />} onClick={() => setMode('WATERMARK')} colorClass="bg-blue-600 text-blue-600" />
           <ToolCard title="Grayscale" description="Convert colorful PDFs to professional black and white." icon={<EyeOff />} onClick={() => setMode('GRAYSCALE')} colorClass="bg-slate-600 text-slate-600" />
           <ToolCard title="Flatten PDF" description="Merge layers and lock fillable forms to prevent editing." icon={<LayoutTemplate />} onClick={() => setMode('FLATTEN')} colorClass="bg-teal-600 text-teal-600" />
@@ -220,6 +256,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     switch (mode) {
       case 'MERGE': return { icon: <Layers />, title: 'Merge PDF' };
       case 'SPLIT': return { icon: <Scissors />, title: 'Split PDF' };
+      case 'SIGN': return { icon: <PenTool />, title: 'Sign PDF' };
       case 'WATERMARK': return { icon: <Stamp />, title: 'Add Watermark' };
       case 'GRAYSCALE': return { icon: <EyeOff />, title: 'Grayscale PDF' };
       case 'FLATTEN': return { icon: <LayoutTemplate />, title: 'Flatten PDF' };
@@ -303,8 +340,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                           key={opt.id}
                           onClick={() => setCompressionLevel(opt.id as any)}
                           className={`cursor-pointer p-4 rounded-xl border-2 transition-all select-none ${compressionLevel === opt.id
-                              ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200'
-                              : 'border-slate-200 bg-white hover:border-indigo-300'
+                            ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                            : 'border-slate-200 bg-white hover:border-indigo-300'
                             }`}
                         >
                           <p className={`font-bold text-sm ${compressionLevel === opt.id ? 'text-white' : 'text-slate-700'}`}>{opt.label}</p>
@@ -349,6 +386,48 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   </button>
                   <button onClick={reset} className="w-full sm:w-auto px-6 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Clear All</button>
                 </div>
+              </div>
+            ) : mode === 'SIGN' ? (
+              <div className="space-y-6 animate-fade-in w-full">
+                {resultImages.length === 0 ? (
+                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
+                    Load PDF to Sign
+                  </Button>
+                ) : (
+                  <div className="space-y-6 w-full">
+                    <div className="p-4 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl font-bold flex items-center gap-2 justify-center">
+                      <PenTool size={20} /> Click a page below to sign it
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {resultImages.map((img, i) => (
+                        <div key={i} className="relative group cursor-pointer" onClick={() => setSigningPage({ index: i, image: img })}>
+                          <div className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-slate-200 hover:border-indigo-500 transition-all shadow-lg bg-slate-100">
+                            <img src={img} className="w-full h-full object-contain" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
+                              <div className="bg-white p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all">
+                                <PenTool className="text-indigo-600" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center mt-2 font-bold text-slate-500 text-sm">Page {i + 1}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4 bg-green-600 hover:bg-green-700 text-white shadow-lg sticky bottom-4">
+                      <Download size={20} className="mr-2" /> Download Signed PDF
+                    </Button>
+                  </div>
+                )}
+
+                {signingPage && (
+                  <SignaturePad
+                    image={signingPage.image}
+                    onSave={handleSaveSignature}
+                    onCancel={() => setSigningPage(null)}
+                  />
+                )}
               </div>
             ) : (
               <>

@@ -115,6 +115,16 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           canvas.height = size;
           ctx.drawImage(img, (w - size) / 2, (h - size) / 2, size, size, 0, 0, size, size);
         }
+        else if (mode === 'ROUND') {
+          const size = Math.min(w, h);
+          canvas.width = size;
+          canvas.height = size;
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, (w - size) / 2, (h - size) / 2, size, size, 0, 0, size, size);
+        }
         else if (mode === 'FILTER') {
           canvas.width = w;
           canvas.height = h;
@@ -161,7 +171,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setIsProcessing(true);
     setError(null);
     try {
-      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER'].includes(mode)) {
+      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND'].includes(mode)) {
         const res = await processClientSide();
         setProcessedUrl(res);
       } else {
@@ -521,7 +531,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           )}
 
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
-            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
+            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
         </div>

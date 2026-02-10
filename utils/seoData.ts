@@ -363,6 +363,28 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'UPSCALE'
   },
+  'round-image': {
+    slug: 'round-image',
+    title: 'Round Image Cropper - Circle Crop Online',
+    description: 'Crop your photos into a perfect circle shape instantly.',
+    h1: 'Round Image Cropper',
+    intro: 'Create circular profile pictures or icons easily.',
+    steps: ['Upload Photo', 'Adjust Circle', 'Download PNG'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'ROUND'
+  },
+  'sign-pdf': {
+    slug: 'sign-pdf',
+    title: 'Sign PDF - Add Signature Online',
+    description: 'Draw and add your signature to PDF documents for free.',
+    h1: 'Sign PDF Online',
+    intro: 'Create and add electronic signatures to your PDF.',
+    steps: ['Upload PDF', 'Draw Signature', 'Download Signed PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'SIGN'
+  },
   'compress-image': {
     slug: 'compress-image',
     title: 'Compress Image - Reduce Size',
