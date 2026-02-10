@@ -11,7 +11,7 @@ export enum ToolType {
 
 export type PdfToolMode = 'MENU' | 'MERGE' | 'SPLIT' | 'TO_IMAGE' | 'COMPRESS' | 'IMG_TO_PDF' | 'ROTATE' | 'DELETE_PAGES' | 'EXTRACT_TEXT' | 'PAGE_NUMBERS' | 'PROTECT' | 'TO_WORD' | 'TO_EXCEL' | 'TO_HTML' | 'UNLOCK' | 'WATERMARK' | 'GRAYSCALE' | 'FLATTEN' | 'REPAIR' | 'METADATA' | 'CHAT';
 
-export type ImageToolMode = 'MENU' | 'RESIZE' | 'CONVERT' | 'ROTATE' | 'COMPRESS' | 'MEME' | 'FILTER' | 'CROP' | 'UPSCALE' | 'PASSPORT' | 'REMOVE_BG' | 'OCR' | 'COLORIZE';
+export type ImageToolMode = 'MENU' | 'RESIZE' | 'CONVERT' | 'ROTATE' | 'COMPRESS' | 'MEME' | 'FILTER' | 'CROP' | 'UPSCALE' | 'PASSPORT' | 'REMOVE_BG' | 'OCR' | 'COLORIZE' | 'WATERMARK' | 'BATCH_RESIZE' | 'COLLAGE' | 'COMPARE' | 'FACE_BLUR';
 
 export type VideoToolMode = 'MENU' | 'GENERATE' | 'CHAT' | 'DOWNLOAD';
 

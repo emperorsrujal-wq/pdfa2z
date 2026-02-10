@@ -167,3 +167,152 @@ export const generatePassportSheet = async (
         img.src = photoBase64;
     });
 };
+// Watermark helper function
+export async function addWatermark(
+    imageBase64: string,
+    text: string,
+    position: string,
+    opacity: number,
+    fontSize: number
+): Promise<string> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d')!;
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Draw original image
+            ctx.drawImage(img, 0, 0);
+
+            // Configure watermark
+            ctx.globalAlpha = opacity / 100;
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+
+            const metrics = ctx.measureText(text);
+            const textWidth = metrics.width;
+            const textHeight = fontSize;
+            const padding = 20;
+
+            // Calculate position
+            let x = padding, y = padding + textHeight;
+
+            switch (position) {
+                case 'TL': // Top Left
+                    x = padding;
+                    y = padding + textHeight;
+                    break;
+                case 'TC': // Top Center
+                    x = (canvas.width - textWidth) / 2;
+                    y = padding + textHeight;
+                    break;
+                case 'TR': // Top Right
+                    x = canvas.width - textWidth - padding;
+                    y = padding + textHeight;
+                    break;
+                case 'ML': // Middle Left
+                    x = padding;
+                    y = canvas.height / 2;
+                    break;
+                case 'MC': // Middle Center
+                    x = (canvas.width - textWidth) / 2;
+                    y = canvas.height / 2;
+                    break;
+                case 'MR': // Middle Right
+                    x = canvas.width - textWidth - padding;
+                    y = canvas.height / 2;
+                    break;
+                case 'BL': // Bottom Left
+                    x = padding;
+                    y = canvas.height - padding;
+                    break;
+                case 'BC': // Bottom Center
+                    x = (canvas.width - textWidth) / 2;
+                    y = canvas.height - padding;
+                    break;
+                case 'BR': // Bottom Right (default)
+                default:
+                    x = canvas.width - textWidth - padding;
+                    y = canvas.height - padding;
+                    break;
+            }
+
+            // Draw watermark with stroke for visibility
+            ctx.strokeText(text, x, y);
+            ctx.fillText(text, x, y);
+
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.src = imageBase64;
+    });
+}
+
+// Collage layouts
+export const COLLAGE_LAYOUTS = {
+    'grid-2x2': { rows: 2, cols: 2, label: '2×2 Grid' },
+    'grid-3x3': { rows: 3, cols: 3, label: '3×3 Grid' },
+    'horizontal-2': { rows: 1, cols: 2, label: '2 Horizontal' },
+    'vertical-2': { rows: 2, cols: 1, label: '2 Vertical' },
+    'horizontal-3': { rows: 1, cols: 3, label: '3 Horizontal' },
+    'vertical-3': { rows: 3, cols: 1, label: '3 Vertical' },
+    'grid-2x3': { rows: 2, cols: 3, label: '2×3 Grid' },
+    'grid-3x2': { rows: 3, cols: 2, label: '3×2 Grid' },
+    'square-4': { rows: 2, cols: 2, label: 'Square 4' },
+};
+
+export async function generateCollage(
+    imageBase64Array: string[],
+    layout: string,
+    spacing: number
+): Promise<string> {
+    return new Promise((resolve) => {
+        const layoutConfig = COLLAGE_LAYOUTS[layout as keyof typeof COLLAGE_LAYOUTS] || COLLAGE_LAYOUTS['grid-2x2'];
+        const { rows, cols } = layoutConfig;
+
+        const cellWidth = 400;
+        const cellHeight = 400;
+        const canvasWidth = cols * cellWidth + (cols + 1) * spacing;
+        const canvasHeight = rows * cellHeight + (rows + 1) * spacing;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        // White background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        let loadedCount = 0;
+        const images: HTMLImageElement[] = [];
+
+        imageBase64Array.slice(0, rows * cols).forEach((base64, index) => {
+            const img = new Image();
+            img.onload = () => {
+                images[index] = img;
+                loadedCount++;
+
+                if (loadedCount === Math.min(imageBase64Array.length, rows * cols)) {
+                    // Draw all images
+                    images.forEach((img, i) => {
+                        const row = Math.floor(i / cols);
+                        const col = i % cols;
+                        const x = col * cellWidth + (col + 1) * spacing;
+                        const y = row * cellHeight + (row + 1) * spacing;
+
+                        // Draw image to fit cell
+                        ctx.drawImage(img, x, y, cellWidth, cellHeight);
+                    });
+
+                    resolve(canvas.toDataURL('image/png'));
+                }
+            };
+            img.src = base64;
+        });
+    });
+}
