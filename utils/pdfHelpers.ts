@@ -202,17 +202,40 @@ export const imagesToPdf = async (files: File[]): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
   for (const file of files) {
     try {
-      const imageBytes = await file.arrayBuffer();
+      let imageBytes = await file.arrayBuffer();
       let image;
+      let fileType = file.type;
+
+      // Consolidate JPG types
+      if (fileType === 'image/jpg') fileType = 'image/jpeg';
+
+      // If not PNG or JPG, try to convert to JPG
+      if (fileType !== 'image/png' && fileType !== 'image/jpeg') {
+        try {
+          // Convert unsupported format (e.g. webp) to JPEG using Canvas
+          const imgBitmap = await createImageBitmap(file);
+          const canvas = document.createElement('canvas');
+          canvas.width = imgBitmap.width;
+          canvas.height = imgBitmap.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(imgBitmap, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            imageBytes = await fetch(dataUrl).then(r => r.arrayBuffer());
+            fileType = 'image/jpeg';
+          }
+        } catch (conversionErr) {
+          console.warn("Failed to convert image:", conversionErr);
+          // If conversion fails, we'll fall through and likely error below or skip
+        }
+      }
 
       // Explicitly check for PNG signature or MIME type
-      if (file.type === 'image/png') {
+      if (fileType === 'image/png') {
         image = await pdfDoc.embedPng(imageBytes);
-      } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+      } else if (fileType === 'image/jpeg') {
         image = await pdfDoc.embedJpg(imageBytes);
       } else {
-        // Try to detect based on content or fallback to console warning
-        // For now, we skip unsupported formats to prevent crashing
         console.warn(`Skipping unsupported file type: ${file.type} (${file.name})`);
         continue;
       }
@@ -225,7 +248,7 @@ export const imagesToPdf = async (files: File[]): Promise<Uint8Array> => {
   }
 
   if (pdfDoc.getPageCount() === 0) {
-    throw new Error("No valid images were processed. Please ensure you uploaded valid PNG or JPG files.");
+    throw new Error("No valid images were processed. Please ensure you uploaded valid image files.");
   }
 
   return pdfDoc.save();

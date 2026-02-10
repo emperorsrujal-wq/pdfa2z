@@ -480,7 +480,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           </div>
         )}
       </div>
-      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept="application/pdf" multiple={mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS'} />
+      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept={mode === 'IMG_TO_PDF' ? "image/*" : "application/pdf"} multiple={mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS'} />
     </div>
   );
 };
