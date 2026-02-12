@@ -425,3 +425,28 @@ export const unlockPdf = async (file: File, _password: string): Promise<Uint8Arr
   const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
   return pdfDoc.save();
 };
+
+export interface PageOrder {
+  index: number; // 0-based index from original
+  rotation: number; // degrees to add (0, 90, 180, 270)
+}
+
+export const reorderPdf = async (file: File, order: PageOrder[]): Promise<Uint8Array> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const newPdf = await PDFDocument.create();
+
+  // copyPages takes 0-based indices
+  const indices = order.map(p => p.index);
+  const copiedPages = await newPdf.copyPages(pdfDoc, indices);
+
+  copiedPages.forEach((page, i) => {
+    const rotation = order[i].rotation;
+    if (rotation !== 0) {
+      page.setRotation(degrees(page.getRotation().angle + rotation));
+    }
+    newPdf.addPage(page);
+  });
+
+  return newPdf.save();
+};

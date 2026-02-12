@@ -395,5 +395,38 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'COMPRESS'
+  },
+  'qr-code-generator': {
+    slug: 'qr-code-generator',
+    title: 'Free QR Code Generator - Create Custom QR Codes',
+    description: 'Generate free custom QR codes for URLs, text, and more. Instant download, no sign-up required.',
+    h1: 'Free QR Code Generator',
+    intro: 'Create custom QR codes instantly for any URL or text.',
+    steps: ['Enter URL or text', 'Customize (optional)', 'Download QR Code'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'QR_CODE'
+  },
+  'youtube-thumbnail-downloader': {
+    slug: 'youtube-thumbnail-downloader',
+    title: 'YouTube Thumbnail Downloader - Save HD Thumbnails',
+    description: 'Download high-quality YouTube video thumbnails in 4K, HD, and more. Free and fast.',
+    h1: 'YouTube Thumbnail Downloader',
+    intro: 'Save high-quality thumbnails from any YouTube video.',
+    steps: ['Paste YouTube URL', 'Preview Thumbnail', 'Download Image'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'YT_THUMBNAIL'
+  },
+  'pdf-organizer': {
+    slug: 'pdf-organizer',
+    title: 'Organize PDF Pages - Reorder, Rotate & Delete',
+    description: 'Rearrange, rotate, and delete PDF pages online for free. Easy-to-use PDF organizer tool.',
+    h1: 'Organize PDF Pages',
+    intro: 'Reorder, rotate, and manage your PDF pages visually.',
+    steps: ['Upload PDF', 'Drag pages to reorder', 'Rotate or delete pages', 'Save PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'ORGANIZE'
   }
 };

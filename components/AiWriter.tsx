@@ -24,7 +24,7 @@ export const AiWriter: React.FC = () => {
   const handleProcess = async () => {
     if (!inputText.trim()) return;
     setIsProcessing(true);
-    
+
     try {
       const fullPrompt = `${activeTool.prompt}\n\n"${inputText}"`;
       const result = await generateText(fullPrompt, "You are a professional writing assistant.");
@@ -44,7 +44,17 @@ export const AiWriter: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col animate-fade-in">
-      <div className="mb-8 text-center">
+      <div className="mb-8 text-center relative">
+        <button
+          onClick={() => {
+            const current = localStorage.getItem('gemini_api_key') || '';
+            const key = prompt("Enter your Google Gemini API Key:", current);
+            if (key !== null) localStorage.setItem('gemini_api_key', key.trim());
+          }}
+          className="absolute right-0 top-0 p-2 text-xs font-bold text-slate-400 hover:text-teal-600 border border-transparent hover:border-slate-200 rounded-lg transition-all"
+        >
+          API Key
+        </button>
         <h2 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3 mb-2">
           <PenTool className="w-8 h-8 text-teal-600" />
           AI Writer
@@ -57,11 +67,10 @@ export const AiWriter: React.FC = () => {
           <button
             key={tool.id}
             onClick={() => { setMode(tool.id as WriterMode); setOutputText(''); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium border ${
-              mode === tool.id
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium border ${mode === tool.id
                 ? 'bg-teal-600 text-white shadow-md border-teal-600'
                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-            }`}
+              }`}
           >
             {React.cloneElement(tool.icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
             {tool.label}
@@ -83,40 +92,40 @@ export const AiWriter: React.FC = () => {
             className="flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 outline-none resize-none transition-all"
           />
           <div className="mt-4">
-             <Button 
-               onClick={handleProcess} 
-               isLoading={isProcessing} 
-               disabled={!inputText.trim()}
-               className="w-full bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-200"
-               icon={<Wand2 className="w-4 h-4" />}
-             >
-               {mode === 'EMAIL' ? 'Write Email' : activeTool.label}
-             </Button>
+            <Button
+              onClick={handleProcess}
+              isLoading={isProcessing}
+              disabled={!inputText.trim()}
+              className="w-full bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-200"
+              icon={<Wand2 className="w-4 h-4" />}
+            >
+              {mode === 'EMAIL' ? 'Write Email' : activeTool.label}
+            </Button>
           </div>
         </div>
 
         {/* Output */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col relative shadow-sm">
-           <label className="text-sm font-medium text-slate-500 mb-2 flex items-center justify-between">
-             <span>Result</span>
-             {outputText && (
-               <button 
-                 onClick={handleCopy}
-                 className="flex items-center gap-1 text-teal-600 hover:text-teal-700 text-xs transition-colors font-semibold"
-               >
-                 {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                 {copied ? 'Copied' : 'Copy'}
-               </button>
-             )}
-           </label>
-           <div className={`flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 overflow-y-auto whitespace-pre-wrap ${!outputText ? 'flex items-center justify-center' : ''}`}>
-             {outputText ? outputText : (
-               <div className="text-center text-slate-400">
-                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                  <p>AI output will appear here</p>
-               </div>
-             )}
-           </div>
+          <label className="text-sm font-medium text-slate-500 mb-2 flex items-center justify-between">
+            <span>Result</span>
+            {outputText && (
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-teal-600 hover:text-teal-700 text-xs transition-colors font-semibold"
+              >
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            )}
+          </label>
+          <div className={`flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 overflow-y-auto whitespace-pre-wrap ${!outputText ? 'flex items-center justify-center' : ''}`}>
+            {outputText ? outputText : (
+              <div className="text-center text-slate-400">
+                <FileText className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p>AI output will appear here</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

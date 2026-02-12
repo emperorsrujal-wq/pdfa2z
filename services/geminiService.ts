@@ -3,18 +3,29 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
 
+const HARDCODED_API_KEY = ""; // Put your key here if you want to hardcode it
+
 /**
- * Retrieves the Gemini API key exclusively from the environment variable.
- * Per guidelines: The API key must be obtained exclusively from process.env.API_KEY.
+ * Retrieves the Gemini API key from various sources.
  */
 const getApiKey = (): string => {
-  // 1. Try process.env.API_KEY (injected by build)
+  // 0. Hardcoded key (highest priority if set)
+  if (HARDCODED_API_KEY && HARDCODED_API_KEY.trim() !== "") {
+    return HARDCODED_API_KEY.trim();
+  }
+
+  // 1. Try Vite env var (standard way)
+  if (import.meta.env.VITE_GEMINI_API_KEY) {
+    return import.meta.env.VITE_GEMINI_API_KEY;
+  }
+
+  // 2. Try process.env.API_KEY (legacy/build injection)
   const envKey = process.env.API_KEY;
   if (envKey && envKey.trim() !== "") {
     return envKey.trim();
   }
 
-  // 2. Try LocalStorage (user manually entered)
+  // 3. Try LocalStorage (user manually entered)
   const localKey = localStorage.getItem('gemini_api_key');
   if (localKey && localKey.trim() !== "") {
     return localKey.trim();

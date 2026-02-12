@@ -12,33 +12,26 @@ export const VideoGenerator: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
 
   useEffect(() => {
-    checkApiKey();
+    const key = localStorage.getItem('gemini_api_key');
+    // Also check if hardcoded/env key exists (we can't check explicitly from here easily without exposing it, 
+    // but we can assume if the user has entered it or if we add a check method to service.
+    // For now, checks local storage. 
+    // Ideally we should import getApiKey but it returns string.
+    // Let's rely on local storage for the UI state for now, or just default to true if we assume hardcoded.
+    // A better way: try to generate a dummy request? No.
+    // Simple fix: If getApiKey() returns something, we are good.
+    // Since we can't import getApiKey easily without exporting it or duplicating logic:
+    if (key || import.meta.env.VITE_GEMINI_API_KEY) {
+      setHasApiKey(true);
+    }
   }, []);
 
-  const checkApiKey = async () => {
-    if (!window.aistudio) {
-      console.warn("AI Studio integration not available");
-      return;
-    }
-    try {
-      const hasKey = await window.aistudio.hasSelectedApiKey();
-      setHasApiKey(hasKey);
-    } catch (e) {
-      console.warn("AI Studio integration error", e);
-    }
-  };
-
-  const handleSelectKey = async () => {
-    if (!window.aistudio) {
-      setError("AI Studio integration not available in this environment.");
-      return;
-    }
-    try {
-      await window.aistudio.openSelectKey();
-      // Assume success after dialog interaction to mitigate race condition
+  const handleSaveKey = () => {
+    const key = prompt("Enter your Google Gemini API Key:", localStorage.getItem('gemini_api_key') || "");
+    if (key) {
+      localStorage.setItem('gemini_api_key', key.trim());
       setHasApiKey(true);
-    } catch (e) {
-      setError("Failed to open key selection dialog.");
+      setError(null);
     }
   };
 
@@ -53,9 +46,11 @@ export const VideoGenerator: React.FC = () => {
       const url = await generateVideo(prompt, aspectRatio);
       setGeneratedVideoUrl(url);
     } catch (err: any) {
-      if (err.message && err.message.includes("Requested entity was not found")) {
-        setHasApiKey(false); // Reset key state if invalid
-        setError("Your API key may be invalid or expired. Please select a valid key.");
+      // If we get an auth error, we might want to prompt user again, but hardcoded key might be wrong too.
+      // For now just show error.
+      if (err.message && err.message.includes("key")) {
+        setError(err.message + " Please check your API key.");
+        setHasApiKey(false);
       } else {
         setError(err.message || "Failed to generate video");
       }
@@ -64,21 +59,20 @@ export const VideoGenerator: React.FC = () => {
     }
   };
 
+
   if (!hasApiKey) {
     return (
       <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200 shadow-sm text-center animate-fade-in">
         <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Enable Veo Video Generation</h2>
         <p className="text-slate-500 mb-8 max-w-md">
-          To generate AI videos with the premium Veo model, you need to select a paid API key from your Google Cloud project.
+          To generate AI videos, you need a Google Gemini API key.
         </p>
-        <Button onClick={handleSelectKey} className="bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200">
-          Connect API Key
+        <Button onClick={handleSaveKey} className="bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200">
+          Enter API Key
         </Button>
         <p className="mt-4 text-xs text-slate-400">
-          <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="underline hover:text-indigo-600">
-            Learn more about billing
-          </a>
+          The key will be saved locally in your browser.
         </p>
       </div>
     );

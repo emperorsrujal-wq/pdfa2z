@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool } from 'lucide-react';
+import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from './Button.tsx';
-import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions } from '../utils/pdfHelpers.ts';
+import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, PageOrder } from '../utils/pdfHelpers.ts';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
@@ -29,6 +29,10 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const [rotationAngle, setRotationAngle] = useState<number>(90);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Organize State
+  const [organizedPages, setOrganizedPages] = useState<{ index: number, rotation: number, isDeleted: boolean, originalIndex: number }[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -72,6 +76,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setTargetSizeMB('1.0');
     setCompressionMode('preset');
     setSigningPage(null);
+    setOrganizedPages([]);
   };
 
   const removeFile = (index: number) => {
@@ -204,6 +209,17 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `pages-deleted-${files[0].name}`);
         setSuccessMsg("Pages removed!");
       }
+      else if (mode === 'ORGANIZE') {
+        const order: PageOrder[] = organizedPages
+          .filter(p => !p.isDeleted)
+          .map(p => ({ index: p.originalIndex, rotation: p.rotation }));
+
+        if (order.length === 0) throw new Error("Resulting PDF must have at least one page.");
+
+        const res = await reorderPdf(files[0], order);
+        downloadBlob(res, `organized-${files[0].name}`);
+        setSuccessMsg("Organized PDF created!");
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred.");
     } finally {
@@ -218,6 +234,49 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       setResultImages(newImages);
       setSigningPage(null);
     }
+  };
+
+  const handleOrganizeLoad = async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    try {
+      // 1. Convert to images for preview
+      const imgs = await pdfToImages(files[0]);
+      setResultImages(imgs);
+      // 2. Init state
+      setOrganizedPages(imgs.map((_, i) => ({
+        index: i,
+        originalIndex: i,
+        rotation: 0,
+        isDeleted: false
+      })));
+    } catch (e: any) {
+      setError("Failed to load PDF pages: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const movePage = (currIndex: number, direction: 'left' | 'right') => {
+    const newPages = [...organizedPages];
+    const targetIndex = direction === 'left' ? currIndex - 1 : currIndex + 1;
+    if (targetIndex < 0 || targetIndex >= newPages.length) return;
+
+    // Swap
+    [newPages[currIndex], newPages[targetIndex]] = [newPages[targetIndex], newPages[currIndex]];
+    setOrganizedPages(newPages);
+  };
+
+  const rotatePage = (index: number) => {
+    const newPages = [...organizedPages];
+    newPages[index].rotation = (newPages[index].rotation + 90) % 360;
+    setOrganizedPages(newPages);
+  };
+
+  const toggleDeletePage = (index: number) => {
+    const newPages = [...organizedPages];
+    newPages[index].isDeleted = !newPages[index].isDeleted;
+    setOrganizedPages(newPages);
   };
 
   if (mode === 'MENU') {
@@ -247,6 +306,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="Word Export" description="Convert PDF documents to editable Microsoft Word files." icon={<FileType />} onClick={() => setMode('TO_WORD')} colorClass="bg-blue-700 text-blue-700" />
           <ToolCard title="Excel Export" description="Extract data tables from PDF to Excel spreadsheets." icon={<FileSpreadsheet />} onClick={() => setMode('TO_EXCEL')} colorClass="bg-green-700 text-green-700" />
           <ToolCard title="HTML Export" description="Convert PDF documents to web-ready HTML code." icon={<FileCode />} onClick={() => setMode('TO_HTML')} colorClass="bg-orange-700 text-orange-700" />
+          <ToolCard title="PDF Organizer" description="Reorder, rotate, and delete pages visually." icon={<LayoutTemplate />} onClick={() => setMode('ORGANIZE')} colorClass="bg-indigo-900 text-indigo-900" />
         </div>
       </div>
     );
@@ -270,6 +330,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'EXTRACT_TEXT': return { icon: <FileText />, title: 'Extract Text' };
       case 'IMG_TO_PDF': return { icon: <FileImage />, title: 'Image to PDF' };
       case 'COMPRESS': return { icon: <Zap />, title: 'Optimize PDF' };
+      case 'ORGANIZE': return { icon: <LayoutTemplate />, title: 'Organize Pages' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
@@ -450,6 +511,64 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     onSave={handleSaveSignature}
                     onCancel={() => setSigningPage(null)}
                   />
+                )}
+              </div>
+            ) : mode === 'ORGANIZE' ? (
+              <div className="space-y-6 animate-fade-in w-full">
+                {organizedPages.length === 0 ? (
+                  <Button onClick={handleOrganizeLoad} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
+                    Load Pages to Organize
+                  </Button>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50 z-10 py-2 border-b border-slate-200">
+                      <p className="font-bold text-slate-700 text-sm">
+                        Total Pages: {organizedPages.filter(p => !p.isDeleted).length} / {organizedPages.length}
+                      </p>
+                      <Button onClick={handleProcess} isLoading={isProcessing} className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700">
+                        Save Changes
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {organizedPages.map((page, i) => (
+                        <div key={i} className={`relative group border-2 rounded-xl overflow-hidden transition-all bg-white ${page.isDeleted ? 'opacity-50 border-red-200 bg-red-50' : 'border-slate-200 hover:border-indigo-400'}`}>
+                          {/* Page Preview with rotation */}
+                          <div className="aspect-[3/4] p-2 overflow-hidden relative">
+                            <img
+                              src={resultImages[page.originalIndex]}
+                              className="w-full h-full object-contain transition-transform"
+                              style={{ transform: `rotate(${page.rotation}deg)` }}
+                            />
+                            {page.isDeleted && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-red-100/50 backdrop-blur-sm">
+                                <Trash2 className="text-red-500 w-12 h-12" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Controls */}
+                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-white/90 backdrop-blur border-t border-slate-100 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-1">
+                              <button onClick={() => movePage(i, 'left')} disabled={i === 0} className="p-1.5 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronLeft size={16} /></button>
+                              <button onClick={() => movePage(i, 'right')} disabled={i === organizedPages.length - 1} className="p-1.5 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronRight size={16} /></button>
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={() => rotatePage(i)} className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded" title="Rotate"><RotateCw size={16} /></button>
+                              <button onClick={() => toggleDeletePage(i)} className={`p-1.5 rounded ${page.isDeleted ? 'bg-green-100 text-green-600' : 'hover:bg-red-50 text-red-500'}`} title={page.isDeleted ? "Restore" : "Delete"}>
+                                {page.isDeleted ? <CheckCircle2 size={16} /> : <Trash2 size={16} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Page Number Badge */}
+                          <div className="absolute top-2 left-2 bg-slate-900/70 text-white text-xs px-2 py-0.5 rounded-md font-bold">
+                            {i + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (

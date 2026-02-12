@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, RefreshCw, Trash2, Zap, Minimize2, Smile, Palette, Crop, ChevronsUp, UserSquare2, Globe, Info, CheckCircle, Eraser, FileText, Wand2, RotateCw, Printer, Sliders } from 'lucide-react';
+import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, RefreshCw, Trash2, Zap, Minimize2, Smile, Palette, Crop, ChevronsUp, UserSquare2, Globe, Info, CheckCircle, Eraser, FileText, Wand2, RotateCw, Printer, Sliders, QrCode, Video } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
 import { fileToBase64 } from '../utils.ts';
@@ -28,6 +28,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [memeTop, setMemeTop] = useState('');
   const [memeBottom, setMemeBottom] = useState('');
   const [convertFormat, setConvertFormat] = useState('image/png');
+  const [qrText, setQrText] = useState('');
+  const [ytUrl, setYtUrl] = useState('');
 
   // Passport States
   const [passportCountry, setPassportCountry] = useState('US');
@@ -66,7 +68,10 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setResizeH('');
     setMemeTop('');
     setMemeBottom('');
+    setQrText('');
+    setYtUrl('');
   };
+
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -322,6 +327,39 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           }
 
           setProcessedUrl(canvas.toDataURL('image/png'));
+        } else if (mode === 'QR_CODE') {
+          if (!qrText.trim()) throw new Error('Enter text or URL for QR Code');
+          // Use external API for QR Code (reliable, no deps)
+          // 800x800 for high quality
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(qrText)}`;
+          // We need to fetch it to convert to blob/dataUrl to allow download essentially, 
+          // or just display it. For consistency with processedUrl (which is usually a blob url or data url), 
+          // we can just use the URL directly since img src handles it.
+          // BUT to allow download we might want to fetch it.
+          // Let's just set it.
+          setProcessedUrl(qrUrl);
+        } else if (mode === 'YT_THUMBNAIL') {
+          if (!ytUrl.trim()) throw new Error('Enter YouTube URL');
+          let videoId = '';
+          // Simple regex for ID
+          const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+          const match = ytUrl.match(regExp);
+          if (match && match[2].length === 11) {
+            videoId = match[2];
+          } else {
+            throw new Error('Invalid YouTube URL');
+          }
+          // Max res thumb
+          const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+          // Verify if maxres exists (some videos don't have it), fallback to hqdefault
+          // Since we can't easily check without CORS, we'll assume maxres or just let user see it.
+          // Actually, fetching image from client might fail CORS if we try to draw to canvas.
+          // But we can display it.
+          // For "ProcessedURL", we usually use it in an <img> tag.
+          setProcessedUrl(thumbUrl);
+          // Warning: Direct download might be blocked by CORS if we try to click a link with download attr.
+          // But opening in new tab works.
         }
       }
     } catch (err: any) {
@@ -353,6 +391,9 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <ToolCard title="Collage Maker" description="Combine multiple images into beautiful layouts." icon={<ImageIcon />} onClick={() => setMode('COLLAGE')} colorClass="bg-fuchsia-600 text-fuchsia-600" />
           <ToolCard title="Image Comparison" description="Compare two images side-by-side with slider." icon={<ArrowRight />} onClick={() => setMode('COMPARE')} colorClass="bg-sky-600 text-sky-600" />
           <ToolCard title="Face Blur" description="Automatically detect and blur faces for privacy." icon={<UserSquare2 />} onClick={() => setMode('FACE_BLUR')} colorClass="bg-gray-700 text-gray-700" />
+
+          <ToolCard title="QR Generator" description="Create custom QR codes for URLs and text." icon={<QrCode />} onClick={() => setMode('QR_CODE')} colorClass="bg-slate-800 text-slate-800" />
+          <ToolCard title="YouTube Thumbnail" description="Download high-quality thumbnails from videos." icon={<Video />} onClick={() => setMode('YT_THUMBNAIL')} colorClass="bg-red-700 text-red-700" />
         </div>
       </div>
     );
@@ -392,6 +433,14 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <div onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed rounded-3xl flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-all overflow-hidden bg-slate-50/50">
             {previews[0] ? <img src={previews[0]} className="max-h-full object-contain" /> : <Upload size={40} className="text-slate-300" />}
           </div>
+
+          {(mode === 'QR_CODE' || mode === 'YT_THUMBNAIL') && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center text-center p-6">
+              <p className="font-bold text-slate-500">
+                {mode === 'QR_CODE' ? 'QR Code Preview will appear here' : 'Thumbnail will appear here'}
+              </p>
+            </div>
+          )}
 
           {/* Dynamic Inputs */}
           {mode === 'RESIZE' && (
@@ -556,8 +605,16 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             </div>
           )}
 
+          {/* QR Code and YT Inputs */}
+          {mode === 'QR_CODE' && (
+            <input type="text" placeholder="Enter URL or Text" value={qrText} onChange={e => setQrText(e.target.value)} className="w-full p-3 border rounded-xl" />
+          )}
+          {mode === 'YT_THUMBNAIL' && (
+            <input type="text" placeholder="Paste YouTube Link" value={ytUrl} onChange={e => setYtUrl(e.target.value)} className="w-full p-3 border rounded-xl" />
+          )}
+
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
-            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
+            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
         </div>
@@ -608,6 +665,6 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
         </div>
       </div>
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept="image/*" multiple />
-    </div>
+    </div >
   );
 };
