@@ -243,7 +243,13 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             zip.file(`resized-${i + 1}.png`, base64Data, { base64: true });
           });
 
-          const content = await zip.generateAsync({ type: 'blob' });
+          const content = await zip.generateAsync({
+            type: 'blob',
+            compression: "DEFLATE",
+            compressionOptions: {
+              level: 5
+            }
+          });
           const zipUrl = URL.createObjectURL(content);
 
           setProcessedUrl(zipUrl);
