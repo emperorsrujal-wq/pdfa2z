@@ -50,20 +50,9 @@ export const VideoGenerator: React.FC = () => {
   };
 
 
-  if (!hasApiKey) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200 shadow-sm text-center animate-fade-in">
-        <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Enable Veo Video Generation</h2>
-        <p className="text-slate-500 mb-8 max-w-md">
-          To generate AI videos, please configure the API key in the source code or environment variables.
-        </p>
-        <div className="bg-slate-100 p-4 rounded-xl text-sm text-slate-600 font-mono">
-          File: config/apiKey.ts
-        </div>
-
-      </div>
-    );
+  // Error screen removed. If key is missing, handleGenerate will catch the error and show it in the UI toast/alert area.
+  if (!hasApiKey && false) { // effectively disabled
+    return null;
   }
 
   return (
