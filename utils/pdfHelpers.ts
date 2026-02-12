@@ -422,6 +422,9 @@ export const protectPdf = async (file: File, password: string): Promise<Uint8Arr
 
 export const unlockPdf = async (file: File, _password: string): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
+  // pdf-lib does not support decrypting with password in load().
+  // We use ignoreEncryption to attempt to read structure/metadata, which can sometimes remove owner restrictions.
+  // Full decryption of user-password protected files is not supported by this library version.
   const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
   return pdfDoc.save();
 };

@@ -83,9 +83,9 @@ export const VideoDownloader: React.FC = () => {
           Universal Video Downloader
         </h2>
         <p className="text-slate-500">Download videos from YouTube, Facebook, Instagram, TikTok & more.</p>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center justify-center gap-2">
-          <AlertCircle size={16} />
-          <span><strong>Demo Mode:</strong> This tool is a simulation. Real video downloading requires a backend server.</span>
+        <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 text-sm text-amber-900 flex items-center justify-center gap-2 shadow-sm">
+          <AlertCircle size={20} />
+          <span><strong>Frontend Demo:</strong> This tool is a simulation (UI-only). Real video downloading requires a backend server due to CORS and encryption policies.</span>
         </div>
       </div>
 
