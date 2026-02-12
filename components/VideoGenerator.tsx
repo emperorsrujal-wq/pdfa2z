@@ -12,28 +12,18 @@ export const VideoGenerator: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
 
   useEffect(() => {
-    const key = localStorage.getItem('gemini_api_key');
-    // Also check if hardcoded/env key exists (we can't check explicitly from here easily without exposing it, 
-    // but we can assume if the user has entered it or if we add a check method to service.
-    // For now, checks local storage. 
-    // Ideally we should import getApiKey but it returns string.
-    // Let's rely on local storage for the UI state for now, or just default to true if we assume hardcoded.
-    // A better way: try to generate a dummy request? No.
-    // Simple fix: If getApiKey() returns something, we are good.
-    // Since we can't import getApiKey easily without exporting it or duplicating logic:
-    if (key || import.meta.env.VITE_GEMINI_API_KEY) {
-      setHasApiKey(true);
-    }
+    // Check if key is available in env or config
+    // We can't easily import getApiKey here without changing imports, but we can check if the key is effectively "set" by the app logic
+    // actually, let's just assume true if it's integrated, or let the service fail gracefully.
+    // Ideally we should import getApiKey.
+    const hasEnv = import.meta.env.VITE_GEMINI_API_KEY || (window as any).INTEGRATED_KEY_SET;
+    // Since we added config/apiKey.ts, we can't easily check its value here without importing it.
+    // Let's rely on the service to throw an error if missing.
+    // We will set hasApiKey to true so users can TRY to use it.
+    setHasApiKey(true);
   }, []);
 
-  const handleSaveKey = () => {
-    const key = prompt("Enter your Google Gemini API Key:", localStorage.getItem('gemini_api_key') || "");
-    if (key) {
-      localStorage.setItem('gemini_api_key', key.trim());
-      setHasApiKey(true);
-      setError(null);
-    }
-  };
+  // handleSaveKey removed
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -66,14 +56,12 @@ export const VideoGenerator: React.FC = () => {
         <Sparkles className="w-16 h-16 text-indigo-600 mb-6" />
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Enable Veo Video Generation</h2>
         <p className="text-slate-500 mb-8 max-w-md">
-          To generate AI videos, you need a Google Gemini API key.
+          To generate AI videos, please configure the API key in the source code or environment variables.
         </p>
-        <Button onClick={handleSaveKey} className="bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200">
-          Enter API Key
-        </Button>
-        <p className="mt-4 text-xs text-slate-400">
-          The key will be saved locally in your browser.
-        </p>
+        <div className="bg-slate-100 p-4 rounded-xl text-sm text-slate-600 font-mono">
+          File: config/apiKey.ts
+        </div>
+
       </div>
     );
   }

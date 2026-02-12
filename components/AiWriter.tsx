@@ -45,16 +45,6 @@ export const AiWriter: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col animate-fade-in">
       <div className="mb-8 text-center relative">
-        <button
-          onClick={() => {
-            const current = localStorage.getItem('gemini_api_key') || '';
-            const key = prompt("Enter your Google Gemini API Key:", current);
-            if (key !== null) localStorage.setItem('gemini_api_key', key.trim());
-          }}
-          className="absolute right-0 top-0 p-2 text-xs font-bold text-slate-400 hover:text-teal-600 border border-transparent hover:border-slate-200 rounded-lg transition-all"
-        >
-          API Key
-        </button>
         <h2 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3 mb-2">
           <PenTool className="w-8 h-8 text-teal-600" />
           AI Writer
@@ -68,8 +58,8 @@ export const AiWriter: React.FC = () => {
             key={tool.id}
             onClick={() => { setMode(tool.id as WriterMode); setOutputText(''); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium border ${mode === tool.id
-                ? 'bg-teal-600 text-white shadow-md border-teal-600'
-                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+              ? 'bg-teal-600 text-white shadow-md border-teal-600'
+              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
               }`}
           >
             {React.cloneElement(tool.icon as React.ReactElement<any>, { className: 'w-4 h-4' })}
