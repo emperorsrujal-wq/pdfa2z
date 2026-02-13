@@ -97,7 +97,6 @@ export const Home: React.FC = () => {
                         <ToolCard title="Merge PDF" description="Combine PDFs." icon={<Layers />} colorClass="bg-blue-600 text-white" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'MERGE')} popular />
                         <ToolCard title="Compress PDF" description="Reduce size." icon={<Zap />} colorClass="bg-green-600 text-white" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'COMPRESS')} popular />
                         <ToolCard title="Remove BG" description="Transparent BG." icon={<Edit3 />} colorClass="bg-purple-600 text-white" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'REMOVE_BG')} popular />
-                        <ToolCard title="Video Downloader" description="Save videos." icon={<Download />} colorClass="bg-rose-600 text-white" onClick={() => navigateToTool(ToolType.VIDEO_SUITE, 'DOWNLOAD')} />
                         <ToolCard title="AI Image Gen" description="Text to Image." icon={<Wand2 />} colorClass="bg-pink-600 text-white" onClick={() => navigateToTool(ToolType.IMAGE_GENERATOR)} />
                     </div>
                 </section>
@@ -147,16 +146,15 @@ export const Home: React.FC = () => {
                     </div>
                 </section>
 
-                {/* AI & Video Tools */}
+                {/* AI Tools */}
                 <section>
                     <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                         <Wand2 size={24} className="text-pink-600" />
-                        <h2 className="text-2xl font-bold text-slate-900">AI & Video Tools</h2>
+                        <h2 className="text-2xl font-bold text-slate-900">AI Tools</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                         <ToolCard title="AI Writer" description="Write content." icon={<PenTool />} colorClass="bg-pink-50 text-pink-600" onClick={() => navigateToTool(ToolType.AI_WRITER)} />
                         <ToolCard title="AI Image Gen" description="Text to Art." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_GENERATOR)} />
-                        <ToolCard title="Video Downloader" description="Get videos." icon={<Download />} colorClass="bg-rose-600 text-rose-600" onClick={() => navigateToTool(ToolType.VIDEO_SUITE, 'DOWNLOAD')} />
                     </div>
                 </section>
 

@@ -61,7 +61,7 @@ export const Footer = () => {
                 </div>
 
                 <div className="mt-12 border-t border-slate-100 pt-8 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved.
+                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved. <span className="text-xs text-slate-300 ml-2">v1.3 build {new Date().toISOString().split('T')[0]}</span>
                 </div>
             </div>
         </footer>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert } from 'lucide-react';
 import { Button } from './Button.tsx';
-import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, PageOrder } from '../utils/pdfHelpers.ts';
+import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder } from '../utils/pdfHelpers.ts';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
@@ -219,6 +219,10 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         const res = await reorderPdf(files[0], order);
         downloadBlob(res, `organized-${files[0].name}`);
         setSuccessMsg("Organized PDF created!");
+      } else if (mode === 'SANITIZE') {
+        const res = await sanitizePdf(files[0]);
+        downloadBlob(res, `sanitized-${files[0].name}`);
+        setSuccessMsg("PDF Sanitized!");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred.");
@@ -307,6 +311,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="Excel Export" description="Extract data tables from PDF to Excel spreadsheets." icon={<FileSpreadsheet />} onClick={() => setMode('TO_EXCEL')} colorClass="bg-green-700 text-green-700" />
           <ToolCard title="HTML Export" description="Convert PDF documents to web-ready HTML code." icon={<FileCode />} onClick={() => setMode('TO_HTML')} colorClass="bg-orange-700 text-orange-700" />
           <ToolCard title="PDF Organizer" description="Reorder, rotate, and delete pages visually." icon={<LayoutTemplate />} onClick={() => setMode('ORGANIZE')} colorClass="bg-indigo-900 text-indigo-900" />
+          <ToolCard title="Sanitize PDF" description="Remove metadata and hidden data for security." icon={<ShieldAlert />} onClick={() => setMode('SANITIZE')} colorClass="bg-slate-800 text-slate-800" />
         </div>
       </div>
     );
@@ -331,6 +336,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'IMG_TO_PDF': return { icon: <FileImage />, title: 'Image to PDF' };
       case 'COMPRESS': return { icon: <Zap />, title: 'Optimize PDF' };
       case 'ORGANIZE': return { icon: <LayoutTemplate />, title: 'Organize Pages' };
+      case 'SANITIZE': return { icon: <ShieldAlert />, title: 'Sanitize PDF' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };

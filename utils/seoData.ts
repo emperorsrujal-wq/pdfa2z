@@ -428,5 +428,59 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.PDF_SUITE,
     mode: 'ORGANIZE'
+  },
+  'pdf-tools': {
+    slug: 'pdf-tools',
+    title: 'Free PDF Tools - Merge, Split, Convert & More',
+    description: 'Complete suite of free online PDF tools. Merge, split, compress, convert to Word/Excel, and more.',
+    h1: 'All PDF Tools',
+    intro: 'Select a tool to manage your PDF documents.',
+    steps: [],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'MENU'
+  },
+  'image-tools': {
+    slug: 'image-tools',
+    title: 'Free Image Tools - Resize, Crop, Convert & More',
+    description: 'Online image editing tools. Resize, crop, convert DB, remove background, and generate AI images.',
+    h1: 'All Image Tools',
+    intro: 'Professional image editing tools for everyone.',
+    steps: [],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'MENU'
+  },
+  'ai-tools': {
+    slug: 'ai-tools',
+    title: 'Free AI Tools - Writer, Generator & Chat',
+    description: 'Harness the power of AI to write content, generate images, and chat with documents.',
+    h1: 'AI Powered Tools',
+    intro: 'Smart AI tools to boost your productivity.',
+    steps: [],
+    faqs: [],
+    type: ToolType.AI_WRITER
+  },
+  'batch-resize': {
+    slug: 'batch-resize',
+    title: 'Batch Image Resizer - Resize Multiple Images',
+    description: 'Bulk resize images at once online for free.',
+    h1: 'Batch Resize Images',
+    intro: 'Resize multiple images simultaneously.',
+    steps: ['Upload images', 'Set dimensions', 'Download ZIP'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'BATCH_RESIZE'
+  },
+  'watermark-image': {
+    slug: 'watermark-image',
+    title: 'Watermark Image - Protect Photos',
+    description: 'Add text or logo watermarks to your images.',
+    h1: 'Add Watermark to Image',
+    intro: 'Protect your photos with custom watermarks.',
+    steps: ['Upload image', 'Add text', 'Download'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'WATERMARK'
   }
 };

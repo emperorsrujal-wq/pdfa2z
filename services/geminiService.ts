@@ -3,7 +3,7 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
 
-const HARDCODED_API_KEY = ""; // Put your key here if you want to hardcode it
+const HARDCODED_API_KEY: string = ""; // Put your key here if you want to hardcode it
 
 /**
  * Retrieves the Gemini API key from various sources.
@@ -15,8 +15,8 @@ const getApiKey = (): string => {
   }
 
   // 1. Try Vite env var (standard way)
-  if (import.meta.env.VITE_GEMINI_API_KEY) {
-    return import.meta.env.VITE_GEMINI_API_KEY;
+  if ((import.meta as any).env.VITE_GEMINI_API_KEY) {
+    return (import.meta as any).env.VITE_GEMINI_API_KEY;
   }
 
   // 2. Try process.env.API_KEY (legacy/build injection)

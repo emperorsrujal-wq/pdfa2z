@@ -9,7 +9,6 @@ export const Header: React.FC = () => {
         { name: 'AI Tools', href: '/ai-tools', icon: Zap },
         { name: 'PDF', href: '/pdf-tools', icon: FileText },
         { name: 'Image', href: '/image-tools', icon: Image },
-        { name: 'Video', href: '/video-tools', icon: Video },
         { name: 'File', href: '/file-tools', icon: File },
     ];
 

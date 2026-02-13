@@ -14,6 +14,8 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema 
     ? (canonical.startsWith('http') ? canonical : `${siteUrl}${canonical.startsWith('/') ? '' : '/'}${canonical}`)
     : siteUrl;
 
+  const ogImage = `${siteUrl}/icon.svg`; // updated to use available icon
+
   return (
     <Helmet>
       {/* Page Title */}
@@ -31,11 +33,13 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema 
       <meta property="og:url" content={fullCanonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="PDFA2Z" />
+      <meta property="og:image" content={ogImage} />
 
       {/* Twitter Tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
 
       {/* Schema */}
       {schema && (

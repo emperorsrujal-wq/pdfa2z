@@ -12,7 +12,7 @@ import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
  * Resolves the PDF.js engine and configures the worker.
  */
 const getPdfEngine = async () => {
-  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+  const pdfjsLib = await import('pdfjs-dist/build/pdf');
   const engine: any = (pdfjsLib as any).getDocument ? pdfjsLib : (pdfjsLib as any).default;
   if (!engine || typeof engine.getDocument !== 'function') {
     throw new Error("PDF engine failed to initialize.");
@@ -452,4 +452,32 @@ export const reorderPdf = async (file: File, order: PageOrder[]): Promise<Uint8A
   });
 
   return newPdf.save();
+};
+
+export const sanitizePdf = async (file: File): Promise<Uint8Array> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+  // 1. Remove Metadata
+  pdfDoc.setTitle('');
+  pdfDoc.setAuthor('');
+  pdfDoc.setSubject('');
+  pdfDoc.setKeywords([]);
+  pdfDoc.setProducer('');
+  pdfDoc.setCreator('');
+
+  // 2. Flatten Forms
+  try {
+    const form = pdfDoc.getForm();
+    form.flatten();
+  } catch (e) {
+    // Ignore if no form
+  }
+
+  // 3. Remove Annotations (Naive approach: remove all annotations)
+  // pdf-lib doesn't have a direct "removeAllAnnotations" but we can try to clear them if possible.
+  // Currently pdf-lib API for removing annotations is limited. 
+  // We can stick to metadata + flattening as "Sanitize".
+
+  return pdfDoc.save();
 };

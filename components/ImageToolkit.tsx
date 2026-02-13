@@ -7,6 +7,7 @@ import { upscaleImage, editImage, generateText } from '../services/geminiService
 import { generatePassportSheet, PASSPORT_STANDARDS, PRINT_SIZES, addWatermark, generateCollage, COLLAGE_LAYOUTS } from '../utils/imageHelpers.ts';
 import { ImageToolMode } from '../types.ts';
 import JSZip from 'jszip';
+import { Base64Converter } from './Base64Converter';
 
 interface ImageToolkitProps {
   initialMode?: ImageToolMode;
@@ -400,9 +401,30 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
           <ToolCard title="QR Generator" description="Create custom QR codes for URLs and text." icon={<QrCode />} onClick={() => setMode('QR_CODE')} colorClass="bg-slate-800 text-slate-800" />
           <ToolCard title="YouTube Thumbnail" description="Download high-quality thumbnails from videos." icon={<Video />} onClick={() => setMode('YT_THUMBNAIL')} colorClass="bg-red-700 text-red-700" />
+          <ToolCard title="Base64 Converter" description="Convert images to Base64 strings and vice versa." icon={<ArrowRight />} onClick={() => setMode('BASE64')} colorClass="bg-indigo-500 text-indigo-500" />
         </div>
       </div>
     );
+  }
+
+  // Base64 Converter Component Integration
+  if (mode === 'BASE64') {
+    return (
+      <div className="h-full flex flex-col p-6 animate-fade-in overflow-y-auto">
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
+          <h3 className="text-2xl font-black flex items-center gap-3">Base64 Converter</h3>
+        </div>
+        {/* We need to import Base64Converter or inline it. Since we created a file, let's use it. 
+                But wait, I need to add the import to the top of the file first. 
+                For now, I'll assume I'll add the import in a separate `replace_file_content` call or 
+                I'll leave this as a placeholder to prompt me to add the import.
+            */}
+        <div className="bg-white p-8 rounded-2xl border border-slate-200">
+          <Base64Converter />
+        </div>
+      </div>
+    )
   }
 
   return (

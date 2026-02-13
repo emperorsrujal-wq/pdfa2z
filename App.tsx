@@ -13,10 +13,16 @@ import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode } from './types';
 import { SEO, generateToolSchema } from './components/SEO';
 import { ToolSeoContent } from './components/ToolSeoContent';
 import { TOOLS_REGISTRY } from './utils/seoData';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
 
   const [activeTool, setActiveTool] = useState<ToolType>(ToolType.DASHBOARD);
   const [activePdfMode, setActivePdfMode] = useState<PdfToolMode>('MENU');
@@ -74,6 +80,24 @@ const App: React.FC = () => {
           canonical={seoData?.slug ? `/${seoData.slug}` : ''}
           schema={seoData ? generateToolSchema(seoData) : undefined}
         />
+      )}
+
+      {needRefresh && (
+        <div className="fixed bottom-4 right-4 z-50 p-4 bg-blue-600 text-white rounded-lg shadow-lg flex items-center gap-4">
+          <span>New version available!</span>
+          <button
+            onClick={() => updateServiceWorker(true)}
+            className="px-3 py-1 bg-white text-blue-600 rounded hover:bg-blue-50 font-medium text-sm"
+          >
+            Update
+          </button>
+          <button
+            onClick={() => setNeedRefresh(false)}
+            className="ml-2 text-white/80 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
       )}
 
       <Layout>

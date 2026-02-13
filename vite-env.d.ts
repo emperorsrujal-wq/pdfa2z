@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 declare module 'virtual:pwa-register/react' {
     export interface RegisterSWOptions {
         immediate?: boolean;
@@ -13,3 +14,5 @@ declare module 'virtual:pwa-register/react' {
         updateServiceWorker: (reloadPage?: boolean) => Promise<void>;
     };
 }
+
+declare module 'pdfjs-dist/build/pdf';

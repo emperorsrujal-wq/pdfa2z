@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -7,7 +7,8 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const pdfjsDistPath = path.dirname(require.resolve('pdfjs-dist/package.json'));
-const cMapsDir = path.join(pdfjsDistPath, 'cmaps');
+const cMapsDir = normalizePath(path.join(pdfjsDistPath, 'cmaps'));
+const workerPath = normalizePath(path.join(pdfjsDistPath, 'build', 'pdf.worker.min.js'));
 
 export default defineConfig({
   plugins: [
@@ -37,7 +38,7 @@ export default defineConfig({
           dest: ''
         },
         {
-          src: path.join(pdfjsDistPath, 'legacy', 'build', 'pdf.worker.min.js'),
+          src: workerPath,
           dest: ''
         }
       ]
