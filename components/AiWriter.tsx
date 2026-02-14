@@ -45,10 +45,10 @@ export const AiWriter: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col animate-fade-in">
       <div className="mb-8 text-center relative">
-        <h2 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3 mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3 mb-2">
           <PenTool className="w-8 h-8 text-teal-600" />
           AI Writer
-        </h2>
+        </h1>
         <p className="text-slate-500">Professional writing tools powered by Gemini</p>
       </div>
 

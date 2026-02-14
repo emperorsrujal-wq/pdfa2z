@@ -38,17 +38,31 @@ export const Home: React.FC = () => {
                 title={seoData.title}
                 description={seoData.description}
                 canonical="/"
-                schema={{
-                    "@context": "https://schema.org",
-                    "@type": "WebSite",
-                    "name": "PDF A2Z",
-                    "url": "https://pdfa2z.com",
-                    "potentialAction": {
-                        "@type": "SearchAction",
-                        "target": "https://pdfa2z.com/search?q={search_term_string}",
-                        "query-input": "required name=search_term_string"
+                schema={[
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "WebSite",
+                        "name": "PDF A2Z",
+                        "url": "https://pdfa2z.com",
+                        "potentialAction": {
+                            "@type": "SearchAction",
+                            "target": "https://pdfa2z.com/search?q={search_term_string}",
+                            "query-input": "required name=search_term_string"
+                        }
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "Organization",
+                        "name": "PDFA2Z",
+                        "url": "https://pdfa2z.com",
+                        "logo": "https://pdfa2z.com/icon.svg",
+                        "description": "Professional-grade PDF and image tools powered by AI. Merge, compress, convert, and analyze documents completely client-side.",
+                        "sameAs": [
+                            "https://twitter.com/pdfa2z",
+                            "https://github.com/pdfa2z"
+                        ]
                     }
-                }}
+                ]}
             />
 
             {/* Hero Section */}

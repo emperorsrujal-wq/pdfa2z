@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
@@ -11,9 +11,12 @@ import { AiWriter } from './components/AiWriter';
 import { VideoSuite } from './components/VideoSuite';
 import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode } from './types';
 import { SEO, generateToolSchema } from './components/SEO';
-import { ToolSeoContent } from './components/ToolSeoContent';
 import { TOOLS_REGISTRY } from './utils/seoData';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+
+const ToolSeoContent = React.lazy(() => import('./components/ToolSeoContent').then(m => ({ default: m.ToolSeoContent })));
+const Breadcrumbs = React.lazy(() => import('./components/Breadcrumbs').then(m => ({ default: m.Breadcrumbs })));
+const RelatedTools = React.lazy(() => import('./components/RelatedTools').then(m => ({ default: m.RelatedTools })));
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -38,6 +41,8 @@ const App: React.FC = () => {
     }
 
     const toolEntry = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug);
+
+
     if (toolEntry) {
       setActiveTool(toolEntry.type);
       if (toolEntry.type === ToolType.PDF_SUITE && toolEntry.mode) {
@@ -63,7 +68,9 @@ const App: React.FC = () => {
       case ToolType.DASHBOARD: return <Home />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
-      case ToolType.PDF_SUITE: return <PdfSuite initialTab={activePdfMode === 'CHAT' ? 'CHAT' : 'TOOLS'} initialToolMode={activePdfMode} />;
+      case ToolType.PDF_SUITE:
+
+        return <PdfSuite initialTab={activePdfMode === 'CHAT' ? 'CHAT' : 'TOOLS'} initialToolMode={activePdfMode} />;
       case ToolType.IMAGE_TOOLKIT: return <ImageToolkit initialMode={activeImageMode} />;
       case ToolType.VIDEO_SUITE: return <VideoSuite initialMode={activeVideoMode} />;
       case ToolType.AI_WRITER: return <AiWriter />;
@@ -79,6 +86,7 @@ const App: React.FC = () => {
           description={seoData?.description || ''}
           canonical={seoData?.slug ? `/${seoData.slug}` : ''}
           schema={seoData ? generateToolSchema(seoData) : undefined}
+          parentSlug={seoData?.parentSlug}
         />
       )}
 
@@ -102,10 +110,18 @@ const App: React.FC = () => {
 
       <Layout>
         <div className={activeTool !== ToolType.DASHBOARD ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" : ""}>
+          {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
+            <Suspense fallback={<div className="h-6 w-48 bg-slate-100 animate-pulse rounded mb-6" />}>
+              <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
+            </Suspense>
+          )}
+
           {renderContent()}
 
-          {activeTool !== ToolType.DASHBOARD && seoData && (
-            <ToolSeoContent tool={seoData} />
+          {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
+            <Suspense fallback={<div className="h-96 w-full bg-slate-50 animate-pulse rounded-3xl mt-12" />}>
+              <ToolSeoContent tool={seoData} />
+            </Suspense>
           )}
         </div>
       </Layout>

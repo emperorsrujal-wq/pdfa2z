@@ -444,7 +444,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   if (mode === 'MENU') {
     return (
       <div className="max-w-6xl mx-auto h-full flex flex-col animate-fade-in p-6">
-        <h3 className="text-3xl font-bold mb-8">Creative Studio</h3>
+        <h1 className="sr-only">Image Tools</h1>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ToolCard title="Background Remover" description="Automatically remove image backgrounds with AI precision." icon={<Eraser />} onClick={() => setMode('REMOVE_BG')} colorClass="bg-rose-600 text-rose-600" />
           <ToolCard title="AI OCR" description="Extract editable text from images and scanned documents." icon={<FileText />} onClick={() => setMode('OCR')} colorClass="bg-indigo-600 text-indigo-600" />
@@ -492,7 +493,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       <div className="h-full flex flex-col p-6 animate-fade-in overflow-y-auto">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-          <h3 className="text-2xl font-black flex items-center gap-3">Base64 Converter</h3>
+          <h1 className="text-2xl font-black flex items-center gap-3">Base64 Converter</h1>
         </div>
         {/* We need to import Base64Converter or inline it. Since we created a file, let's use it. 
                 But wait, I need to add the import to the top of the file first. 
@@ -511,7 +512,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       <div className="flex items-center gap-4 mb-8 justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-          <h3 className="text-2xl font-black uppercase tracking-tighter">{mode.replace('_', ' ')}</h3>
+          <h1 className="text-2xl font-black uppercase tracking-tighter">{mode.replace('_', ' ')}</h1>
         </div>
         {/* API Key button removed - Integrated */}
       </div>

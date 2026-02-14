@@ -26,21 +26,21 @@ export const VideoAnalyzer: React.FC = () => {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      
+
       // Simple validation for browser environment
       if (selectedFile.size > 20 * 1024 * 1024) {
-          alert("For this demo, please use videos under 20MB.");
-          return;
+        alert("For this demo, please use videos under 20MB.");
+        return;
       }
 
       setFile(selectedFile);
       setVideoPreview(URL.createObjectURL(selectedFile));
       setIsLoading(true);
-      
+
       try {
         const base64 = await fileToBase64(selectedFile);
         const initialResponse = await chatService.startChat(base64, selectedFile.type);
-        
+
         setMessages([
           {
             id: 'init-1',
@@ -52,11 +52,11 @@ export const VideoAnalyzer: React.FC = () => {
       } catch (err) {
         console.error(err);
         setMessages(prev => [...prev, {
-            id: 'err-init',
-            role: 'model',
-            text: "Sorry, I couldn't analyze that video. Please try a shorter or smaller file.",
-            isError: true,
-            timestamp: Date.now()
+          id: 'err-init',
+          role: 'model',
+          text: "Sorry, I couldn't analyze that video. Please try a shorter or smaller file.",
+          isError: true,
+          timestamp: Date.now()
         }]);
       } finally {
         setIsLoading(false);
@@ -100,10 +100,10 @@ export const VideoAnalyzer: React.FC = () => {
   };
 
   const reset = () => {
-      setFile(null);
-      setVideoPreview(null);
-      setMessages([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    setFile(null);
+    setVideoPreview(null);
+    setMessages([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -115,44 +115,45 @@ export const VideoAnalyzer: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col md:flex-row gap-6 animate-fade-in">
+      <h1 className="sr-only">AI Video Analyzer</h1>
       {!file ? (
         <div className="w-full flex flex-col items-center justify-center p-8 bg-white border border-slate-200 rounded-2xl border-dashed hover:border-rose-500 hover:bg-rose-50/20 transition-colors cursor-pointer min-h-[400px] shadow-sm" onClick={() => fileInputRef.current?.click()}>
-           <div className="p-4 bg-rose-50 rounded-full mb-4">
-               <Video className="w-8 h-8 text-rose-500" />
-            </div>
-            <p className="text-lg font-medium text-slate-900">Upload Video to Chat</p>
-            <p className="text-slate-500 mt-1">AI watches your video and answers questions.</p>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="video/mp4,video/webm,video/quicktime"
-              onChange={handleFileSelect}
-            />
+          <div className="p-4 bg-rose-50 rounded-full mb-4">
+            <Video className="w-8 h-8 text-rose-500" />
+          </div>
+          <p className="text-lg font-medium text-slate-900">Upload Video to Chat</p>
+          <p className="text-slate-500 mt-1">AI watches your video and answers questions.</p>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="video/mp4,video/webm,video/quicktime"
+            onChange={handleFileSelect}
+          />
         </div>
       ) : (
         <>
           <div className="w-full md:w-80 flex flex-col bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
             <div className="relative rounded-xl overflow-hidden bg-black mb-4 aspect-video">
-                <video src={videoPreview!} controls className="w-full h-full object-contain" />
-                <button onClick={reset} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors">
-                    <X size={14} />
-                </button>
+              <video src={videoPreview!} controls className="w-full h-full object-contain" />
+              <button onClick={reset} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors">
+                <X size={14} />
+              </button>
             </div>
-            
+
             <div className="mb-4">
-                <h4 className="font-bold text-slate-800 text-sm truncate">{file.name}</h4>
-                <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              <h4 className="font-bold text-slate-800 text-sm truncate">{file.name}</h4>
+              <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
 
             <div className="mt-auto">
-                <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={reset}
                 className="w-full"
-                >
+              >
                 Upload New Video
-                </Button>
+              </Button>
             </div>
           </div>
 
@@ -164,17 +165,16 @@ export const VideoAnalyzer: React.FC = () => {
                   <p>Watching video...</p>
                 </div>
               )}
-              
+
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-rose-600'}`}>
                     {msg.role === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-none' 
+                  <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
+                      ? 'bg-indigo-600 text-white rounded-tr-none'
                       : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
-                  }`}>
+                    }`}>
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                     <p className={`text-xs mt-2 opacity-70 ${msg.role === 'user' ? 'text-indigo-100' : 'text-slate-400'}`}>
                       {formatTime(msg.timestamp)}
@@ -194,7 +194,7 @@ export const VideoAnalyzer: React.FC = () => {
                   placeholder="Ask about the video..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none h-14"
                 />
-                <button 
+                <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
                   className="absolute right-2 top-2 bottom-2 p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-500 disabled:opacity-50 disabled:hover:bg-rose-600 transition-colors shadow-sm"

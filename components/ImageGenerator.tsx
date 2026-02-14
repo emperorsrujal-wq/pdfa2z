@@ -14,7 +14,7 @@ export const ImageGenerator: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    
+
     setIsGenerating(true);
     setError(null);
     setGeneratedImage(null);
@@ -32,10 +32,10 @@ export const ImageGenerator: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3">
+        <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-3">
           <Wand2 className="w-8 h-8 text-purple-600" />
           AI Image Generator
-        </h2>
+        </h1>
         <p className="text-slate-500">Transform your words into stunning visuals using Gemini 2.5 Flash & 3 Pro.</p>
       </div>
 
@@ -80,9 +80,9 @@ export const ImageGenerator: React.FC = () => {
             </button>
           </div>
 
-          <Button 
-            onClick={handleGenerate} 
-            isLoading={isGenerating} 
+          <Button
+            onClick={handleGenerate}
+            isLoading={isGenerating}
             disabled={!prompt.trim()}
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-200"
             icon={<Wand2 className="w-4 h-4" />}
@@ -95,14 +95,14 @@ export const ImageGenerator: React.FC = () => {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 flex items-center justify-center min-h-[400px] relative overflow-hidden group shadow-sm">
           {generatedImage ? (
             <>
-              <img 
-                src={generatedImage} 
-                alt="Generated" 
-                className="max-w-full max-h-[600px] object-contain rounded-lg shadow-lg" 
+              <img
+                src={generatedImage}
+                alt="Generated"
+                className="max-w-full max-h-[600px] object-contain rounded-lg shadow-lg"
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <a 
-                  href={generatedImage} 
+                <a
+                  href={generatedImage}
                   download={`lumina-gen-${Date.now()}.png`}
                   className="p-3 bg-white rounded-full text-slate-900 hover:bg-slate-100 transition-colors shadow-lg"
                 >
@@ -126,9 +126,9 @@ export const ImageGenerator: React.FC = () => {
             </div>
           )}
           {error && (
-             <div className="absolute bottom-4 left-4 right-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm text-center shadow-sm">
-               {error}
-             </div>
+            <div className="absolute bottom-4 left-4 right-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm text-center shadow-sm">
+              {error}
+            </div>
           )}
         </div>
       </div>

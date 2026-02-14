@@ -1,6 +1,6 @@
 import React from 'react';
 import { ToolSEO } from '../utils/seoData.ts';
-import { CheckCircle, HelpCircle } from 'lucide-react';
+import { HelpCircle, CheckCircle } from 'lucide-react';
 import { RelatedTools } from './RelatedTools.tsx';
 
 interface ToolSeoContentProps {
@@ -9,7 +9,7 @@ interface ToolSeoContentProps {
 
 export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
   return (
-    <section className="max-w-4xl mx-auto py-16 border-t border-slate-100 mt-20 animate-fade-in">
+    <section className="max-w-4xl mx-auto py-16 border-t border-slate-100 mt-20 animate-fade-in seo-content-ready">
       <header className="mb-12">
         <h2 className="text-4xl font-black text-slate-900 mb-6 tracking-tight leading-tight">{tool.h1}</h2>
         <p className="text-xl text-slate-600 leading-relaxed font-medium">{tool.intro}</p>
@@ -56,8 +56,41 @@ export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
         </div>
       )}
 
+      {tool.tips && tool.tips.length > 0 && (
+        <div className="mt-16 p-8 bg-blue-50/50 rounded-3xl border border-blue-100">
+          <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+            <CheckCircle className="text-blue-600" size={24} />
+            Pro Tips
+          </h3>
+          <ul className="space-y-3">
+            {tool.tips.map((tip, i) => (
+              <li key={i} className="text-blue-800 flex items-start gap-2">
+                <span className="text-blue-400 mt-1">•</span>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      <RelatedTools currentTool={tool} />
+      {tool.tradeoffs && tool.tradeoffs.length > 0 && (
+        <div className="mt-8 p-8 bg-amber-50/50 rounded-3xl border border-amber-100">
+          <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+            <HelpCircle className="text-amber-600" size={24} />
+            Important Considerations
+          </h3>
+          <ul className="space-y-3">
+            {tool.tradeoffs.map((t, i) => (
+              <li key={i} className="text-amber-800 flex items-start gap-2">
+                <span className="text-amber-400 mt-1">•</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <RelatedTools currentSlug={tool.slug} />
 
       {tool.features && tool.features.length > 0 && (
         <section className="mt-16 mb-16">
@@ -70,23 +103,6 @@ export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">{feature}</h3>
                 <p className="text-slate-600">Professional quality processing directly in your browser.</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {tool.faqs && tool.faqs.length > 0 && (
-        <section className="mt-16 mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-4">
-            {tool.faqs.map((faq, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-3">
-                  <HelpCircle className="text-blue-500" size={20} />
-                  {faq.q}
-                </h3>
-                <p className="text-slate-600 ml-8">{faq.a}</p>
               </div>
             ))}
           </div>

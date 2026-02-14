@@ -27,11 +27,11 @@ export const PdfAnalyzer: React.FC = () => {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       setIsLoading(true);
-      
+
       try {
         const base64 = await fileToBase64(selectedFile);
         const initialResponse = await chatService.startChat(base64, selectedFile.type);
-        
+
         setMessages([
           {
             id: 'init-1',
@@ -43,11 +43,11 @@ export const PdfAnalyzer: React.FC = () => {
       } catch (err) {
         console.error(err);
         setMessages(prev => [...prev, {
-            id: 'err-init',
-            role: 'model',
-            text: "Sorry, I couldn't process that PDF. Please try again.",
-            isError: true,
-            timestamp: Date.now()
+          id: 'err-init',
+          role: 'model',
+          text: "Sorry, I couldn't process that PDF. Please try again.",
+          isError: true,
+          timestamp: Date.now()
         }]);
       } finally {
         setIsLoading(false);
@@ -99,20 +99,21 @@ export const PdfAnalyzer: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col md:flex-row gap-6 animate-fade-in">
+      <h1 className="sr-only">PDF AI Analysis</h1>
       {!file ? (
         <div className="w-full flex flex-col items-center justify-center p-8 bg-white border border-slate-200 rounded-2xl border-dashed hover:border-teal-500 hover:bg-teal-50/20 transition-colors cursor-pointer min-h-[400px] shadow-sm" onClick={() => fileInputRef.current?.click()}>
-           <div className="p-4 bg-teal-50 rounded-full mb-4">
-               <Upload className="w-8 h-8 text-teal-500" />
-            </div>
-            <p className="text-lg font-medium text-slate-900">Upload PDF to Chat</p>
-            <p className="text-slate-500 mt-1">Get summaries and ask questions with AI</p>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="application/pdf"
-              onChange={handleFileSelect}
-            />
+          <div className="p-4 bg-teal-50 rounded-full mb-4">
+            <Upload className="w-8 h-8 text-teal-500" />
+          </div>
+          <p className="text-lg font-medium text-slate-900">Upload PDF to Chat</p>
+          <p className="text-slate-500 mt-1">Get summaries and ask questions with AI</p>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="application/pdf"
+            onChange={handleFileSelect}
+          />
         </div>
       ) : (
         <>
@@ -125,13 +126,13 @@ export const PdfAnalyzer: React.FC = () => {
               </div>
             </div>
             <div className="md:mt-auto">
-                <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => { setFile(null); setMessages([]); }}
                 className="w-full"
-                >
+              >
                 Upload New File
-                </Button>
+              </Button>
             </div>
           </div>
 
@@ -143,17 +144,16 @@ export const PdfAnalyzer: React.FC = () => {
                   <p>Analyzing document...</p>
                 </div>
               )}
-              
+
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-teal-600'}`}>
                     {msg.role === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-none' 
+                  <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
+                      ? 'bg-indigo-600 text-white rounded-tr-none'
                       : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
-                  }`}>
+                    }`}>
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                     <p className={`text-xs mt-2 opacity-70 ${msg.role === 'user' ? 'text-indigo-100' : 'text-slate-400'}`}>
                       {formatTime(msg.timestamp)}
@@ -173,7 +173,7 @@ export const PdfAnalyzer: React.FC = () => {
                   placeholder="Ask something about the document..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none h-14"
                 />
-                <button 
+                <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
                   className="absolute right-2 top-2 bottom-2 p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 disabled:opacity-50 disabled:hover:bg-teal-600 transition-colors shadow-sm"

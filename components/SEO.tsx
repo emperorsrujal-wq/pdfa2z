@@ -6,12 +6,22 @@ interface SEOProps {
   description: string;
   canonical?: string;
   schema?: any;
+  parentSlug?: string;
 }
 
-export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema }) => {
+export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug }) => {
   const siteUrl = 'https://pdfa2z.com';
-  const fullCanonical = canonical
-    ? (canonical.startsWith('http') ? canonical : `${siteUrl}${canonical.startsWith('/') ? '' : '/'}${canonical}`)
+
+  // Smart Canonicalization Logic:
+  // 1. If parentSlug is provided AND it's not marked as unique, canonicalize to parent.
+  // 2. Otherwise use the provided canonical or fallback to siteUrl.
+  let targetCanonical = canonical;
+  if (parentSlug && !schema?.some((s: any) => s.unique)) {
+    targetCanonical = `/${parentSlug}`;
+  }
+
+  const fullCanonical = targetCanonical
+    ? (targetCanonical.startsWith('http') ? targetCanonical : `${siteUrl}${targetCanonical.startsWith('/') ? '' : '/'}${targetCanonical}`)
     : siteUrl;
 
   const ogImage = `${siteUrl}/icon.svg`; // updated to use available icon
@@ -53,6 +63,19 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema 
 
 
 
+const generateOrganizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PDFA2Z",
+  "url": "https://pdfa2z.com",
+  "logo": "https://pdfa2z.com/icon.svg",
+  "description": "Professional-grade PDF and image tools powered by AI. Merge, compress, convert, and analyze documents completely client-side.",
+  "sameAs": [
+    "https://twitter.com/pdfa2z",
+    "https://github.com/pdfa2z"
+  ]
+});
+
 export const generateToolSchema = (tool: any) => {
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -66,7 +89,8 @@ export const generateToolSchema = (tool: any) => {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD"
-    }
+    },
+    ...(tool.unique ? { unique: true } : {})
   };
 
   const howToSchema = tool.steps && tool.steps.length > 0 ? {
@@ -112,5 +136,7 @@ export const generateToolSchema = (tool: any) => {
     ]
   };
 
-  return [websiteSchema, howToSchema, faqSchema, breadcrumbSchema].filter(Boolean);
+  const organizationSchema = tool.slug === '' ? generateOrganizationSchema() : null;
+
+  return [websiteSchema, howToSchema, faqSchema, breadcrumbSchema, organizationSchema].filter(Boolean);
 };

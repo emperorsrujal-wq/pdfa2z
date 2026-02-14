@@ -12,6 +12,10 @@ export interface ToolSEO {
   type: ToolType;
   features?: string[];
   mode?: string;
+  parentSlug?: string;
+  tips?: string[];
+  tradeoffs?: string[];
+  unique?: boolean;
 }
 
 export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
@@ -747,5 +751,53 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'ADD_TEXT'
+  },
+  // Programmatic Use Cases (Virtual Routes)
+  'compress-pdf-100kb': {
+    slug: 'compress-pdf-100kb',
+    parentSlug: 'compress-pdf',
+    title: 'Compress PDF to 100KB - Free High-Quality Shrink',
+    description: 'Reduce your PDF file size to exactly 100KB or less without losing quality. Perfect for online applications.',
+    h1: 'Compress PDF to 100KB',
+    intro: 'Need to shrink your PDF for an official upload? Our tool optimizes your document to fit 100KB limits perfectly.',
+    steps: ['Upload your PDF.', 'Select "Extreme Compression".', 'Download your 100KB file.'],
+    faqs: [
+      { q: 'Will my PDF still be readable at 100KB?', a: 'Yes, we optimize images and fonts to preserve readability even at small sizes.' }
+    ],
+    tips: ['Use grayscale mode to save even more space.', 'Remove unnecessary metadata before saving.'],
+    tradeoffs: ['High compression may slightly blur very small text or complex images.'],
+    type: ToolType.PDF_SUITE,
+    mode: 'COMPRESS',
+    unique: true
+  },
+  'pdf-merger-real-estate': {
+    slug: 'pdf-merger-real-estate',
+    parentSlug: 'merge-pdf',
+    title: 'PDF Merger for Real Estate - Combine Property Docs',
+    description: 'The #1 tool for real estate agents. Combine closing docs, property listings, and contracts into one branded PDF.',
+    h1: 'Real Estate PDF Merger',
+    intro: 'Streamline your real estate workflow. Combine all property documents into a single, organized PDF for your clients.',
+    steps: ['Upload listing photos and contracts.', 'Arrange documents in chronological order.', 'Generate unified property PDF.'],
+    faqs: [
+      { q: 'Can I add a cover page?', a: 'Yes, just upload your cover page as the first file in the merger.' }
+    ],
+    tips: ['Keep your file names descriptive for better organization.', 'Ensure all scanned documents are right-side up.'],
+    type: ToolType.PDF_SUITE,
+    mode: 'MERGE',
+    unique: true
+  },
+  'instagram-image-resizer': {
+    slug: 'instagram-image-resizer',
+    parentSlug: 'resize-image',
+    title: 'Instagram Image Resizer - Perfect Post & Story Sizes',
+    description: 'Resize your photos for Instagram Posts, Stories, and Reels instantly. No cropping required.',
+    h1: 'Resize Image for Instagram',
+    intro: 'Get your photos ready for social media. Automatically resize to 1080x1080, 1080x1350, or 1080x1920.',
+    steps: ['Upload your photo.', 'Select "Instagram Story" or "Square Post".', 'Download and share.'],
+    faqs: [],
+    tips: ['Use PNG format for better color quality on Instagram.', 'Check "Maintain Aspect Ratio" to avoid stretching.'],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'RESIZE',
+    unique: true
   }
 };

@@ -323,7 +323,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     return (
       <div className="h-full flex flex-col animate-fade-in p-6 overflow-y-auto custom-scrollbar">
         <div className="mb-8">
-          <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">PDF Utilities</h3>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">PDF Utilities</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <ToolCard title="Merge PDF" description="Combine multiple PDF files into one single document securely." icon={<Layers />} onClick={() => setMode('MERGE')} colorClass="bg-indigo-600 text-indigo-600" />
@@ -397,7 +397,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       <div className="flex items-center gap-4 mb-8 justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-          <h3 className="text-2xl font-black flex items-center gap-3">{header.icon}{header.title}</h3>
+          <h1 className="text-2xl font-black flex items-center gap-3">{header.icon}{header.title}</h1>
         </div>
         {/* API Key button removed - Integrated */}
       </div>

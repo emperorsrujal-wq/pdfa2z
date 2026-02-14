@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /downloads/
+Disallow: /private/
 
 Sitemap: https://pdfa2z.com/sitemap.xml
