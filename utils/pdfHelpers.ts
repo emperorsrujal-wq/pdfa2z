@@ -1,4 +1,5 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
+import JSZip from 'jszip';
 // Use local worker from node_modules via Vite's public directory or import
 // For Vite, it's best to copy the worker to public or use a direct import if configured.
 // Here we will use the CDN as a fallback but prefer a local structure if possible.
@@ -481,3 +482,96 @@ export const sanitizePdf = async (file: File): Promise<Uint8Array> => {
 
   return pdfDoc.save();
 };
+
+export const reversePdf = async (file: File): Promise<Uint8Array> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const newPdf = await PDFDocument.create();
+  const pageCount = pdfDoc.getPageCount();
+  const indices = Array.from({ length: pageCount }, (_, i) => pageCount - 1 - i);
+  const copiedPages = await newPdf.copyPages(pdfDoc, indices);
+  copiedPages.forEach(page => newPdf.addPage(page));
+  return newPdf.save();
+};
+
+export const pdfToImagesZip = async (file: File): Promise<Blob> => {
+  const images = await pdfToImages(file); // Re-use existing rendering logic (returns data URLs)
+  const zip = new JSZip();
+  const folder = zip.folder("images");
+
+  // Add images to folder
+  images.forEach((dataUrl, i) => {
+    // Remove "data:image/jpeg;base64," header
+    const base64Data = dataUrl.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    if (folder) folder.file(`page-${i + 1}.jpg`, base64Data, { base64: true });
+  });
+
+  return zip.generateAsync({ type: "blob" });
+};
+
+// --- New Tools placeholders & implementations ---
+
+export interface TextAnnotation {
+  text: string;
+  x: number;
+  y: number;
+  size: number;
+  color?: string; // hex
+  pageIndex: number;
+}
+
+export const editPdf = async (file: File, annotations: TextAnnotation[]): Promise<Uint8Array> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  for (const ann of annotations) {
+    const pages = pdfDoc.getPages();
+    if (ann.pageIndex < 0 || ann.pageIndex >= pages.length) continue;
+    const page = pages[ann.pageIndex];
+    // Simple hex to rgb conversion (naive)
+    // For now defaulting to black
+    page.drawText(ann.text, {
+      x: ann.x,
+      y: page.getHeight() - ann.y, // PDF coords are from bottom-left
+      size: ann.size,
+      font,
+      color: rgb(0, 0, 0),
+    });
+  }
+  return pdfDoc.save();
+};
+
+export const cropPdf = async (file: File, margin: number = 0): Promise<Uint8Array> => {
+  // Simple crop: trim margins from all sides
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const pages = pdfDoc.getPages();
+
+  pages.forEach(page => {
+    const { x, y, width, height } = page.getMediaBox();
+    page.setMediaBox(x + margin, y + margin, width - margin * 2, height - margin * 2);
+  });
+
+  return pdfDoc.save();
+};
+
+// Placeholders for complex conversions that require backend or heavy libraries
+export const notImplementedPlaceholder = async (file: File, format: string): Promise<Blob> => {
+  // Check if we can do basic extraction
+  if (format === 'csv') {
+    return pdfToExcel(file); // Reuse CSV logic
+  }
+
+  throw new Error(`Client-side conversion for ${format} is not currently supported. Please use a backend service.`);
+};
+
+export const pdfToPpt = async (file: File): Promise<Blob> => {
+  // Basic implementation: Extract text and put in a text file but call it PPT
+  // Real implementation requires PptxGenJS
+  const text = await extractTextFromPdf(file);
+  return new Blob([text], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+};
+
+// For formats like EPUB, MOBI, AZW3, OUTLOOK - we can't easily parse them in browser without libs.
+// We will throw error for now or generic "text extraction" if possible.

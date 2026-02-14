@@ -10,6 +10,7 @@ export interface ToolSEO {
   steps: string[];
   faqs: { q: string; a: string }[];
   type: ToolType;
+  features?: string[];
   mode?: string;
 }
 
@@ -31,7 +32,12 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     h1: 'Merge PDF Files',
     intro: 'Combine multiple PDF documents into a single file with our easy-to-use tool.',
     steps: ['Upload PDF files.', 'Reorder if needed.', 'Click Process to merge.'],
-    faqs: [{ q: 'Is it free?', a: 'Yes, completely free.' }],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, completely free.' },
+      { q: 'Is it secure?', a: 'Yes, all processing happens in your browser.' },
+      { q: 'Can I merge different size pages?', a: 'Yes, our tool handles different page sizes automatically.' }
+    ],
+    features: ['Combine unlimited PDFs', 'Drag and drop reordering', '100% Client-side privacy'],
     type: ToolType.PDF_SUITE,
     mode: 'MERGE'
   },
@@ -42,7 +48,11 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     h1: 'Split PDF Document',
     intro: 'Extract pages from your PDF documents easily.',
     steps: ['Upload PDF.', 'Enter page ranges (e.g., 1-5).', 'Download split files.'],
-    faqs: [],
+    faqs: [
+      { q: 'Can I extract single pages?', a: 'Yes, just enter the page number.' },
+      { q: 'Can I split by range?', a: 'Yes, use format like 1-5, 8, 10-12.' }
+    ],
+    features: ['Extract specific pages', 'Split into multiple files', 'Instant processing'],
     type: ToolType.PDF_SUITE,
     mode: 'SPLIT'
   },
@@ -53,7 +63,11 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     h1: 'Compress PDF Online',
     intro: 'Reduce the file size of your PDFs significantly.',
     steps: ['Upload PDF.', 'Select compression level.', 'Download optimized file.'],
-    faqs: [],
+    faqs: [
+      { q: 'How much can I reduce size?', a: 'Up to 80-90% depending on the file content.' },
+      { q: 'Does it affect quality?', a: 'We use smart algorithms to maintain visual quality.' }
+    ],
+    features: ['Multiple compression levels', 'Target file size option', 'Batch processing'],
     type: ToolType.PDF_SUITE,
     mode: 'COMPRESS'
   },
@@ -482,5 +496,184 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'WATERMARK'
+  },
+  'flip-image': {
+    slug: 'flip-image',
+    title: 'Flip Image - Mirror Photo Online',
+    description: 'Flip your images horizontally or vertically instantly.',
+    h1: 'Flip Image Online',
+    intro: 'Mirror your photos with a single click.',
+    steps: ['Upload Image', 'Select Direction', 'Download'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'FLIP'
+  },
+  'pixelate-image': {
+    slug: 'pixelate-image',
+    title: 'Pixelate Image - Anonymize Photos',
+    description: 'Add pixelation effect to blur out details or faces.',
+    h1: 'Pixelate Image',
+    intro: 'Anonymize sensitive information or create retro art.',
+    steps: ['Upload Image', 'Adjust Pixel Size', 'Download'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'PIXELATE'
+  },
+  'invert-image': {
+    slug: 'invert-image',
+    title: 'Invert Colors - Negative Image Generator',
+    description: 'Invert colors of any image to create a negative effect.',
+    h1: 'Invert Image Colors',
+    intro: 'Create cool negative effects instantly.',
+    steps: ['Upload Image', 'Click Process', 'Download'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'INVERT'
+  },
+  'extract-images': {
+    slug: 'extract-images',
+    title: 'Extract Images from PDF - Save All Images',
+    description: 'Extract all images from a PDF file and save them as a ZIP archive.',
+    h1: 'Extract Images from PDF',
+    intro: 'Get all images from your PDF document in high quality.',
+    steps: ['Upload PDF', 'Wait for extraction', 'Download ZIP file'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'EXTRACT_IMAGES'
+  },
+  'reverse-pdf': {
+    slug: 'reverse-pdf',
+    title: 'Reverse PDF - Reverse Page Order',
+    description: 'Reverse the order of pages in your PDF document instantly.',
+    h1: 'Reverse PDF Pages',
+    intro: 'Flip the order of pages in your PDF file.',
+    steps: ['Upload PDF', 'Click Process', 'Download reversed PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'REVERSE'
+  },
+  'edit-pdf': {
+    slug: 'edit-pdf',
+    title: 'Edit PDF - Add Text & Annotations',
+    description: 'Add text, notes, and annotations to PDF documents online.',
+    h1: 'Edit PDF Online',
+    intro: 'Add text and edit your PDF documents easily.',
+    steps: ['Upload PDF', 'Add text or annotations', 'Download edited PDF'],
+    faqs: [
+      { q: 'Can I change existing text?', a: 'Currently you can only add new text and annotations.' },
+      { q: 'Is it free?', a: 'Yes, 100% free tool.' }
+    ],
+    features: ['Add text to PDF', 'Annotate documents', 'Browser-based editing'],
+    type: ToolType.PDF_SUITE,
+    mode: 'EDIT'
+  },
+  'crop-pdf': {
+    slug: 'crop-pdf',
+    title: 'Crop PDF - Trim Margins Online',
+    description: 'Crop PDF pages to remove margins or white space.',
+    h1: 'Crop PDF Pages',
+    intro: 'Trim unwanted areas from your PDF pages.',
+    steps: ['Upload PDF', 'Set crop margin', 'Download cropped PDF'],
+    faqs: [
+      { q: 'Does it crop all pages?', a: 'Yes, the crop is applied to all pages.' }
+    ],
+    features: ['Visual margin adjustment', 'Crop all pages', 'Instant download'],
+    type: ToolType.PDF_SUITE,
+    mode: 'CROP'
+  },
+  'pdf-to-csv': {
+    slug: 'pdf-to-csv',
+    title: 'PDF to CSV - Extract Data Tables',
+    description: 'Convert PDF data and tables to CSV format for Excel.',
+    h1: 'Convert PDF to CSV',
+    intro: 'Extract tables from PDF to CSV.',
+    steps: ['Upload PDF', 'Click Convert', 'Download CSV'],
+    faqs: [
+      { q: 'Can it handle scanned PDFs?', a: 'For scanned PDFs you might need an OCR tool.' }
+    ],
+    features: ['Extract tabular data', 'Excel compatible CSV', 'Fast conversion'],
+    type: ToolType.PDF_SUITE,
+    mode: 'PDF_TO_CSV'
+  },
+  'url-to-pdf': {
+    slug: 'url-to-pdf',
+    title: 'URL to PDF - Convert Webpage to PDF',
+    description: 'Save any webpage as a PDF document.',
+    h1: 'Convert URL to PDF',
+    intro: 'Turn web pages into PDF documents.',
+    steps: ['Open Webpage', 'Print (Ctrl+P)', 'Save as PDF'],
+    faqs: [
+      { q: 'Do I need software?', a: 'No, just your browser.' }
+    ],
+    features: ['Convert any website', 'Maintain layout', 'No installation needed'],
+    type: ToolType.PDF_SUITE,
+    mode: 'URL_TO_PDF'
+  },
+  'pdf-to-ppt': {
+    slug: 'pdf-to-ppt',
+    title: 'PDF to PowerPoint - Convert PDF to PPTX',
+    description: 'Convert PDF presentations to editable PowerPoint slides.',
+    h1: 'Convert PDF to PowerPoint',
+    intro: 'Turn your PDF slides into PowerPoint presentations.',
+    steps: ['Upload PDF', 'Convert', 'Download PPTX'],
+    faqs: [],
+    features: ['Convert slides', 'Editable PPTX', 'Preserve text'],
+    type: ToolType.PDF_SUITE,
+    mode: 'PDF_TO_PPT'
+  },
+  'ppt-to-pdf': {
+    slug: 'ppt-to-pdf',
+    title: 'PowerPoint to PDF - Convert PPT to PDF',
+    description: 'Convert PowerPoint presentations (PPT, PPTX) to PDF.',
+    h1: 'Convert PowerPoint to PDF',
+    intro: 'Save your slides as a PDF document.',
+    steps: ['Upload PPT', 'Convert', 'Download PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'PPT_TO_PDF'
+  },
+  'epub-to-pdf': {
+    slug: 'epub-to-pdf',
+    title: 'EPUB to PDF - Convert eBook to PDF',
+    description: 'Convert EPUB eBooks to universal PDF format.',
+    h1: 'Convert Is EPUB to PDF',
+    intro: 'Read your eBooks on any device by converting to PDF.',
+    steps: ['Upload EPUB', 'Convert', 'Download PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'EPUB_TO_PDF'
+  },
+  'mobi-to-pdf': {
+    slug: 'mobi-to-pdf',
+    title: 'MOBI to PDF - Convert Kindle to PDF',
+    description: 'Convert MOBI files to PDF format.',
+    h1: 'Convert MOBI to PDF',
+    intro: 'Convert Kindle eBooks to PDF easily.',
+    steps: ['Upload MOBI', 'Convert', 'Download PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'MOBI_TO_PDF'
+  },
+  'outlook-to-pdf': {
+    slug: 'outlook-to-pdf',
+    title: 'Outlook to PDF - Convert MSG/EML to PDF',
+    description: 'Convert Outlook emails (MSG, EML) to PDF documents.',
+    h1: 'Convert Email to PDF',
+    intro: 'Save your emails as PDF files for archiving.',
+    steps: ['Upload File', 'Convert', 'Download PDF'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'OUTLOOK_TO_PDF'
+  },
+  'pdf-to-text': {
+    slug: 'pdf-to-text',
+    title: 'PDF to Text - Extract Plain Text',
+    description: 'Extract all text content from a PDF file.',
+    h1: 'Extract Text from PDF',
+    intro: 'Get the plain text from your PDF documents.',
+    steps: ['Upload PDF', 'Extract', 'Copy Text'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'EXTRACT_TEXT'
   }
 };

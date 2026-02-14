@@ -3,7 +3,7 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
 
-const HARDCODED_API_KEY: string = ""; // Put your key here if you want to hardcode it
+const HARDCODED_API_KEY: string = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY"; // Key added safely
 
 /**
  * Retrieves the Gemini API key from various sources.

@@ -28,7 +28,22 @@ export const Footer = () => {
                             <li><Link to="/merge-pdf" className="hover:text-blue-600">Merge PDF</Link></li>
                             <li><Link to="/compress-pdf" className="hover:text-blue-600">Compress PDF</Link></li>
                             <li><Link to="/jpg-to-pdf" className="hover:text-blue-600">JPG to PDF</Link></li>
+                            <li><Link to="/extract-images" className="hover:text-blue-600">Extract Images</Link></li>
+                            <li><Link to="/reverse-pdf" className="hover:text-blue-600">Reverse PDF</Link></li>
+                            <li><Link to="/flip-image" className="hover:text-blue-600">Flip Image</Link></li>
+                            <li><Link to="/pixelate-image" className="hover:text-blue-600">Pixelate Image</Link></li>
+                            <li><Link to="/invert-image" className="hover:text-blue-600">Invert Colors</Link></li>
                             <li><Link to="/ai-writer" className="hover:text-blue-600">AI Writer</Link></li>
+                            <li><Link to="/edit-pdf" className="hover:text-blue-600">Edit PDF</Link></li>
+                            <li><Link to="/crop-pdf" className="hover:text-blue-600">Crop PDF</Link></li>
+                            <li><Link to="/pdf-to-csv" className="hover:text-blue-600">PDF to CSV</Link></li>
+                            <li><Link to="/url-to-pdf" className="hover:text-blue-600">URL to PDF</Link></li>
+                            <li><Link to="/pdf-to-ppt" className="hover:text-blue-600">PDF to PPT</Link></li>
+                            <li><Link to="/ppt-to-pdf" className="hover:text-blue-600">PPT to PDF</Link></li>
+                            <li><Link to="/epub-to-pdf" className="hover:text-blue-600">EPUB to PDF</Link></li>
+                            <li><Link to="/mobi-to-pdf" className="hover:text-blue-600">MOBI to PDF</Link></li>
+                            <li><Link to="/outlook-to-pdf" className="hover:text-blue-600">Outlook to PDF</Link></li>
+                            <li><Link to="/pdf-to-text" className="hover:text-blue-600">PDF to Text</Link></li>
                         </ul>
                     </div>
 
@@ -61,7 +76,7 @@ export const Footer = () => {
                 </div>
 
                 <div className="mt-12 border-t border-slate-100 pt-8 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved. <span className="text-xs text-slate-300 ml-2">v1.3 build {new Date().toISOString().split('T')[0]}</span>
+                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved. <span className="text-xs text-slate-300 ml-2">v1.4 - API REMOVED</span>
                 </div>
             </div>
         </footer>

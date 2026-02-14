@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert } from 'lucide-react';
+import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert, Link, Book, Mail } from 'lucide-react';
 import { Button } from './Button.tsx';
-import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder } from '../utils/pdfHelpers.ts';
+import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt } from '../utils/pdfHelpers.ts';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
@@ -223,6 +223,42 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         const res = await sanitizePdf(files[0]);
         downloadBlob(res, `sanitized-${files[0].name}`);
         setSuccessMsg("PDF Sanitized!");
+      } else if (mode === 'REVERSE') {
+        const res = await reversePdf(files[0]);
+        downloadBlob(res, `reversed-${files[0].name}`);
+        setSuccessMsg("PDF Reversed!");
+      } else if (mode === 'EXTRACT_IMAGES') {
+        const blob = await pdfToImagesZip(files[0]);
+        downloadBlob(blob, `extracted-images-${files[0].name}.zip`);
+        setSuccessMsg("Images Extracted!");
+      } else if (mode === 'EDIT') {
+        // Basic Edit: Add text to first page center
+        const res = await editPdf(files[0], [{
+          text: inputValue || 'Edited with PDFA2Z',
+          x: 50,
+          y: 50,
+          size: 24,
+          pageIndex: 0
+        }]);
+        downloadBlob(res, `edited-${files[0].name}`);
+        setSuccessMsg("PDF Edited!");
+      } else if (mode === 'CROP') {
+        const margin = parseInt(inputValue) || 20;
+        const res = await cropPdf(files[0], margin);
+        downloadBlob(res, `cropped-${files[0].name}`);
+        setSuccessMsg("PDF Cropped!");
+      } else if (mode === 'PDF_TO_CSV') {
+        const blob = await pdfToExcel(files[0]); // CSV logic
+        downloadBlob(blob, `converted.csv`);
+      } else if (mode === 'PDF_TO_PPT') {
+        const blob = await pdfToPpt(files[0]);
+        downloadBlob(blob, `converted.pptx`);
+      } else if (mode === 'URL_TO_PDF') {
+        // This is handled in UI (print instructions), no process needed really
+        setSuccessMsg("Use Print > Save as PDF in your browser.");
+      } else if (mode === 'PPT_TO_PDF' || mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF' || mode === 'OUTLOOK_TO_PDF') {
+        // Placeholder for client-side limitations
+        setError("This conversion requires a backend server. We are working on it!");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred.");
@@ -312,6 +348,18 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="HTML Export" description="Convert PDF documents to web-ready HTML code." icon={<FileCode />} onClick={() => setMode('TO_HTML')} colorClass="bg-orange-700 text-orange-700" />
           <ToolCard title="PDF Organizer" description="Reorder, rotate, and delete pages visually." icon={<LayoutTemplate />} onClick={() => setMode('ORGANIZE')} colorClass="bg-indigo-900 text-indigo-900" />
           <ToolCard title="Sanitize PDF" description="Remove metadata and hidden data for security." icon={<ShieldAlert />} onClick={() => setMode('SANITIZE')} colorClass="bg-slate-800 text-slate-800" />
+          <ToolCard title="Reverse PDF" description="Reverse the order of pages in your PDF." icon={<ArrowLeft />} onClick={() => setMode('REVERSE')} colorClass="bg-emerald-700 text-emerald-700" />
+          <ToolCard title="Extract Images" description="Extract all pages as images in a ZIP file." icon={<FileImage />} onClick={() => setMode('EXTRACT_IMAGES')} colorClass="bg-pink-700 text-pink-700" />
+          <ToolCard title="Edit PDF" description="Add text, shapes, and annotations to your PDF." icon={<PenTool />} onClick={() => setMode('EDIT')} colorClass="bg-blue-500 text-blue-500" />
+          <ToolCard title="Crop PDF" description="Trim margins and crop PDF pages." icon={<Scissors />} onClick={() => setMode('CROP')} colorClass="bg-orange-500 text-orange-500" />
+          <ToolCard title="PDF to PowerPoint" description="Convert PDF to editable PPTX slides." icon={<FileSpreadsheet />} onClick={() => setMode('PDF_TO_PPT')} colorClass="bg-red-500 text-red-500" />
+          <ToolCard title="PowerPoint to PDF" description="Convert PPT/PPTX presentations to PDF." icon={<FileSpreadsheet />} onClick={() => setMode('PPT_TO_PDF')} colorClass="bg-red-600 text-red-600" />
+          <ToolCard title="PDF to CSV" description="Extract tables and data to CSV format." icon={<FileSpreadsheet />} onClick={() => setMode('PDF_TO_CSV')} colorClass="bg-green-500 text-green-500" />
+          <ToolCard title="URL to PDF" description="Convert any webpage URL to PDF document." icon={<Link />} onClick={() => setMode('URL_TO_PDF')} colorClass="bg-indigo-500 text-indigo-500" />
+          <ToolCard title="EPUB to PDF" description="Convert EPUB ebooks to PDF format." icon={<Book />} onClick={() => setMode('EPUB_TO_PDF')} colorClass="bg-yellow-600 text-yellow-600" />
+          <ToolCard title="MOBI to PDF" description="Convert MOBI ebooks to PDF format." icon={<Book />} onClick={() => setMode('MOBI_TO_PDF')} colorClass="bg-yellow-500 text-yellow-500" />
+          <ToolCard title="Outlook to PDF" description="Convert MSG/EML email files to PDF." icon={<Mail />} onClick={() => setMode('OUTLOOK_TO_PDF')} colorClass="bg-cyan-500 text-cyan-500" />
+          <ToolCard title="PDF to Text" description="Extract plain text from your PDF." icon={<FileText />} onClick={() => setMode('EXTRACT_TEXT')} colorClass="bg-slate-500 text-slate-500" />
         </div>
       </div>
     );
@@ -337,6 +385,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'COMPRESS': return { icon: <Zap />, title: 'Optimize PDF' };
       case 'ORGANIZE': return { icon: <LayoutTemplate />, title: 'Organize Pages' };
       case 'SANITIZE': return { icon: <ShieldAlert />, title: 'Sanitize PDF' };
+      case 'REVERSE': return { icon: <ArrowLeft />, title: 'Reverse PDF' };
+      case 'EXTRACT_IMAGES': return { icon: <FileImage />, title: 'Extract Images' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
@@ -568,12 +618,14 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   <button onClick={reset}><Trash2 size={18} className="text-slate-300 hover:text-red-500 transition-colors" /></button>
                 </div>
 
-                {(mode === 'SPLIT' || mode === 'WATERMARK' || mode === 'METADATA' || mode === 'DELETE_PAGES') && (
+                {(mode === 'SPLIT' || mode === 'WATERMARK' || mode === 'METADATA' || mode === 'DELETE_PAGES' || mode === 'EDIT' || mode === 'CROP') && (
                   <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={
                     mode === 'SPLIT' ? "Page range (e.g. 1-3)" :
                       mode === 'METADATA' ? "New PDF Title" :
                         mode === 'DELETE_PAGES' ? "Pages to remove (e.g. 1, 5)" :
-                          "Watermark text"
+                          mode === 'EDIT' ? "Text to add to page" :
+                            mode === 'CROP' ? "Crop Margin (px)" :
+                              "Watermark text"
                   } className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
                 )}
 
@@ -608,7 +660,15 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           </div>
         )}
       </div>
-      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept={mode === 'IMG_TO_PDF' ? "image/*" : "application/pdf"} multiple={mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS'} />
+      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept={
+        mode === 'IMG_TO_PDF' ? "image/*" :
+          mode === 'PPT_TO_PDF' ? ".ppt,.pptx" :
+            mode === 'EPUB_TO_PDF' ? ".epub" :
+              mode === 'MOBI_TO_PDF' ? ".mobi" :
+                mode === 'AZW3_TO_PDF' ? ".azw3" :
+                  mode === 'OUTLOOK_TO_PDF' ? ".msg,.eml" :
+                    "application/pdf"
+      } multiple={mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS'} />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, RefreshCw, Trash2, Zap, Minimize2, Smile, Palette, Crop, ChevronsUp, UserSquare2, Globe, Info, CheckCircle, Eraser, FileText, Wand2, RotateCw, Printer, Sliders, QrCode, Video } from 'lucide-react';
+import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, RefreshCw, Trash2, Zap, Minimize2, Smile, Palette, Crop, ChevronsUp, UserSquare2, Globe, Info, CheckCircle, Eraser, FileText, Wand2, RotateCw, Printer, Sliders, QrCode, Video, FlipHorizontal, Grid, Droplet } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
 import { fileToBase64 } from '../utils.ts';
@@ -26,6 +26,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [resizeW, setResizeW] = useState('');
   const [resizeH, setResizeH] = useState('');
   const [rotateAngle, setRotateAngle] = useState(90);
+  const [flipDirection, setFlipDirection] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [pixelateSize, setPixelateSize] = useState(10);
   const [memeTop, setMemeTop] = useState('');
   const [memeBottom, setMemeBottom] = useState('');
   const [convertFormat, setConvertFormat] = useState('image/png');
@@ -180,7 +182,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setIsProcessing(true);
     setError(null);
     try {
-      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND'].includes(mode)) {
+      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT'].includes(mode)) {
         const res = await processClientSide();
         setProcessedUrl(res);
       } else {
@@ -399,6 +401,12 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <ToolCard title="Image Comparison" description="Compare two images side-by-side with slider." icon={<ArrowRight />} onClick={() => setMode('COMPARE')} colorClass="bg-sky-600 text-sky-600" />
           <ToolCard title="Face Blur" description="Automatically detect and blur faces for privacy." icon={<UserSquare2 />} onClick={() => setMode('FACE_BLUR')} colorClass="bg-gray-700 text-gray-700" />
 
+          <ToolCard title="Face Blur" description="Automatically detect and blur faces for privacy." icon={<UserSquare2 />} onClick={() => setMode('FACE_BLUR')} colorClass="bg-gray-700 text-gray-700" />
+
+          <ToolCard title="Flip Image" description="Mirror images horizontally or vertically." icon={<FlipHorizontal />} onClick={() => setMode('FLIP')} colorClass="bg-indigo-700 text-indigo-700" />
+          <ToolCard title="Pixelate Image" description="Add pixelation effect to anonymize images." icon={<Grid />} onClick={() => setMode('PIXELATE')} colorClass="bg-lime-700 text-lime-700" />
+          <ToolCard title="Invert Colors" description="Create negative effect by inverting colors." icon={<Droplet />} onClick={() => setMode('INVERT')} colorClass="bg-fuchsia-700 text-fuchsia-700" />
+
           <ToolCard title="QR Generator" description="Create custom QR codes for URLs and text." icon={<QrCode />} onClick={() => setMode('QR_CODE')} colorClass="bg-slate-800 text-slate-800" />
           <ToolCard title="YouTube Thumbnail" description="Download high-quality thumbnails from videos." icon={<Video />} onClick={() => setMode('YT_THUMBNAIL')} colorClass="bg-red-700 text-red-700" />
           <ToolCard title="Base64 Converter" description="Convert images to Base64 strings and vice versa." icon={<ArrowRight />} onClick={() => setMode('BASE64')} colorClass="bg-indigo-500 text-indigo-500" />
@@ -613,6 +621,29 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             </div>
           )}
 
+          {/* Flip Controls */}
+          {mode === 'FLIP' && (
+            <div className="flex gap-4">
+              <button onClick={() => setFlipDirection('horizontal')} className={`flex-1 py-3 border rounded-xl font-bold ${flipDirection === 'horizontal' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700'}`}>Flip Horizontal</button>
+              <button onClick={() => setFlipDirection('vertical')} className={`flex-1 py-3 border rounded-xl font-bold ${flipDirection === 'vertical' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700'}`}>Flip Vertical</button>
+            </div>
+          )}
+
+          {/* Pixelate Controls */}
+          {mode === 'PIXELATE' && (
+            <div>
+              <label className="text-sm font-bold">Pixel Size: {pixelateSize}</label>
+              <input type="range" min="1" max="50" value={pixelateSize} onChange={e => setPixelateSize(parseInt(e.target.value))} className="w-full" />
+            </div>
+          )}
+
+          {/* Invert Controls */}
+          {mode === 'INVERT' && (
+            <p className="text-sm text-slate-600">Click process to invert colors.</p>
+          )}
+
+          {/* QR Code and YT Inputs */}
+
           {/* QR Code and YT Inputs */}
           {mode === 'QR_CODE' && (
             <input type="text" placeholder="Enter URL or Text" value={qrText} onChange={e => setQrText(e.target.value)} className="w-full p-3 border rounded-xl" />
@@ -622,7 +653,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           )}
 
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
-            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
+            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
         </div>
