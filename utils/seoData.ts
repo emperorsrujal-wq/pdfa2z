@@ -249,6 +249,17 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     type: ToolType.VIDEO_SUITE,
     mode: 'GENERATE'
   },
+  'magic-ai-editor': {
+    slug: 'magic-ai-editor',
+    title: 'Magic AI Editor - Edit Images with Reference & AI',
+    description: 'The ultimate AI image editor. Upload a base image, a reference image, and instructions to magically transform your photos.',
+    h1: 'Magic AI Image Editor',
+    intro: 'Transform your images using AI-powered reference editing.',
+    steps: ['Upload base image.', 'Upload reference image or style.', 'Enter your magic instructions.', 'Download the AI-transformed result.'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'MAGIC_EDITOR'
+  },
   'rotate-pdf': {
     slug: 'rotate-pdf',
     title: 'Rotate PDF - Rotate PDF Pages Online',

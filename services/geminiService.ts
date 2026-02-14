@@ -119,6 +119,52 @@ export const editImage = async (
   throw new Error("No edited image data returned.");
 };
 
+export const magicTransform = async (
+  baseImage: string,
+  baseMime: string,
+  refImage: string,
+  refMime: string,
+  prompt: string
+): Promise<string> => {
+  const ai = getFreshAi();
+  const model = 'gemini-2.5-flash-image'; // Use vision-optimized model
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              data: baseImage,
+              mimeType: baseMime
+            }
+          },
+          {
+            inlineData: {
+              data: refImage,
+              mimeType: refMime
+            }
+          },
+          { text: `Using the first image as the base and the second image as a style/content reference, follow these instructions: ${prompt}. Return ONLY the processed image.` }
+        ]
+      }
+    });
+
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData?.data) {
+          return `data:image/png;base64,${part.inlineData.data}`;
+        }
+      }
+    }
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to transform image.");
+  }
+
+  throw new Error("No extracted image data returned.");
+};
+
 export const upscaleImage = async (
   base64Image: string,
   mimeType: string,

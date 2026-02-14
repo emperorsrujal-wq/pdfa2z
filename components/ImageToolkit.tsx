@@ -3,7 +3,7 @@ import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, R
 import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
 import { fileToBase64 } from '../utils.ts';
-import { upscaleImage, editImage, generateText } from '../services/geminiService.ts';
+import { upscaleImage, editImage, generateText, magicTransform } from '../services/geminiService.ts';
 import { performOCR } from '../services/ocrService.ts';
 import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { generatePassportSheet, PASSPORT_STANDARDS, PRINT_SIZES, addWatermark, generateCollage, COLLAGE_LAYOUTS } from '../utils/imageHelpers.ts';
@@ -57,6 +57,11 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   // Face Blur States
   const [blurIntensity, setBlurIntensity] = useState(20);
 
+  // Magic Editor States
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [referencePreview, setReferencePreview] = useState<string | null>(null);
+  const [magicInstructions, setMagicInstructions] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -75,6 +80,9 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setMemeBottom('');
     setQrText('');
     setYtUrl('');
+    setReferenceFile(null);
+    setReferencePreview(null);
+    setMagicInstructions('');
   };
 
 
@@ -85,6 +93,14 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       setPreviews(selectedFiles.map(file => URL.createObjectURL(file)));
       setProcessedUrl(null);
       setOcrResult(null);
+    }
+  };
+
+  const handleReferenceSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setReferenceFile(file);
+      setReferencePreview(URL.createObjectURL(file));
     }
   };
 
@@ -440,6 +456,15 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           setProcessedUrl(thumbUrl);
           // Warning: Direct download might be blocked by CORS if we try to click a link with download attr.
           // But opening in new tab works.
+        } else if (mode === 'MAGIC_EDITOR') {
+          if (!referenceFile) throw new Error('Please upload a reference image.');
+          if (!magicInstructions.trim()) throw new Error('Please enter instructions.');
+
+          const base64 = await fileToBase64(files[0]);
+          const refBase64 = await fileToBase64(referenceFile);
+
+          const res = await magicTransform(base64, files[0].type, refBase64, referenceFile.type, magicInstructions);
+          setProcessedUrl(res);
         }
         {
           mode === 'ADD_TEXT' && (
@@ -756,6 +781,39 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           )}
           {mode === 'YT_THUMBNAIL' && (
             <input type="text" placeholder="Paste YouTube Link" value={ytUrl} onChange={e => setYtUrl(e.target.value)} className="w-full p-3 border rounded-xl" />
+          )}
+
+          {/* Magic Editor Controls */}
+          {mode === 'MAGIC_EDITOR' && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-bold mb-2 block">Reference Image / Style</label>
+                <div
+                  onClick={() => document.getElementById('ref-upload')?.click()}
+                  className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:bg-slate-50 transition-colors"
+                >
+                  {referencePreview ? (
+                    <img src={referencePreview} alt="Reference" className="h-32 mx-auto object-contain rounded-lg" />
+                  ) : (
+                    <div className="flex flex-col items-center text-slate-400">
+                      <ImageIcon size={24} />
+                      <span className="text-xs mt-1">Upload Reference</span>
+                    </div>
+                  )}
+                  <input type="file" id="ref-upload" className="hidden" onChange={handleReferenceSelect} accept="image/*" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold mb-2 block">Magic Instructions</label>
+                <textarea
+                  value={magicInstructions}
+                  onChange={e => setMagicInstructions(e.target.value)}
+                  placeholder="e.g., 'Transfer the artistic style of the reference image to the base image' or 'Replace the background with the scene from the reference'"
+                  className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
           )}
 
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
