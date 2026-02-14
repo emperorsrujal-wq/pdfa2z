@@ -38,6 +38,101 @@ export const Home: React.FC = () => {
         ? { ...seoData, ...seoData.translations[i18n.language] }
         : seoData;
 
+    // Helper to get localized tool data
+    const getLocalizedTool = (tool: any) => {
+        return i18n.language !== 'en' && tool.translations?.[i18n.language]
+            ? { ...tool, ...tool.translations[i18n.language] }
+            : tool;
+    };
+
+    // Icon Mapping
+    const getIcon = (slug: string) => {
+        switch (slug) {
+            case 'merge-pdf': return <Layers />;
+            case 'split-pdf': return <Scissors />;
+            case 'compress-pdf': return <Zap />;
+            case 'pdf-to-word': case 'pdf-to-excel': case 'pdf-to-ppt': case 'pdf-to-text': return <FileText />;
+            case 'pdf-chat': return <Sparkles />;
+            case 'protect-pdf': case 'unlock-pdf': return <FileText />;
+            case 'sign-pdf': return <PenTool />;
+            case 'rotate-pdf': return <Layers />;
+            case 'delete-pages': return <FileText />;
+            case 'page-numbers': return <FileText />;
+            case 'watermark-pdf': return <FileText />;
+            case 'remove-bg': return <Edit3 />;
+            case 'resize-image': return <LucideImage />;
+            case 'compress-image': return <Zap />;
+            case 'convert-image': return <Zap />;
+            case 'crop-image': return <LucideImage />;
+            case 'upscale-image': return <Wand2 />;
+            case 'face-blur': return <LucideImage />;
+            case 'round-image': return <Scissors />;
+            case 'passport-photo': return <LucideImage />;
+            case 'collage-maker': return <LucideImage />;
+            case 'meme-maker': return <Edit3 />;
+            case 'ai-writer': return <PenTool />;
+            case 'ai-image-generator': return <Wand2 />;
+            case 'magic-ai-editor': return <Wand2 />;
+            default: return <Zap />;
+        }
+    };
+
+    // Color Mapping
+    const getColorClass = (slug: string) => {
+        if (slug.includes('merge')) return "bg-blue-600 text-white";
+        if (slug.includes('compress')) return "bg-green-600 text-white";
+        if (slug.includes('remove-bg')) return "bg-purple-600 text-white";
+        if (slug.includes('magic')) return "bg-indigo-600 text-white";
+        if (slug.includes('image-generator')) return "bg-pink-600 text-white";
+        if (slug.includes('split')) return "bg-orange-600 text-orange-600";
+        if (slug.includes('chat')) return "bg-purple-600 text-purple-600";
+        return "bg-slate-600 text-white";
+    };
+
+    // Filter Tools
+    const allTools = Object.values(TOOLS_REGISTRY).filter(t => t.slug !== '' && t.slug !== 'home');
+    const filteredTools = allTools.filter(tool => {
+        const localTool = getLocalizedTool(tool);
+        const term = searchQuery.toLowerCase();
+        return localTool.title.toLowerCase().includes(term) ||
+            localTool.description.toLowerCase().includes(term) ||
+            localTool.h1.toLowerCase().includes(term);
+    });
+
+    const renderToolGrid = (tools: any[], limit?: number) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {tools.slice(0, limit || tools.length).map(tool => {
+                const localTool = getLocalizedTool(tool);
+                // Determine click handler args based on tool type/mode
+                const handleClick = () => {
+                    navigate(`${i18n.language !== 'en' ? `/${i18n.language}` : ''}/${tool.slug}`);
+                    window.scrollTo(0, 0);
+                };
+
+                // Specific colors for specific tools to match old design
+                let colorClass = "bg-blue-50 text-blue-600";
+                if (tool.slug === 'merge-pdf') colorClass = "bg-blue-600 text-white";
+                if (tool.slug === 'compress-pdf') colorClass = "bg-green-600 text-white";
+                if (tool.slug === 'remove-bg') colorClass = "bg-purple-600 text-white";
+                if (tool.slug === 'ai-image-generator') colorClass = "bg-pink-600 text-white";
+                if (tool.slug === 'magic-ai-editor') colorClass = "bg-indigo-600 text-white";
+                if (tool.slug === 'split-pdf') colorClass = "bg-orange-600 text-orange-600";
+
+                return (
+                    <ToolCard
+                        key={tool.slug}
+                        title={localTool.h1} // Use H1 directly as title to fix missing translations
+                        description={localTool.description}
+                        icon={getIcon(tool.slug)}
+                        colorClass={colorClass}
+                        onClick={handleClick}
+                        popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator'].includes(tool.slug)}
+                    />
+                );
+            })}
+        </div>
+    );
+
     return (
         <div className="animate-fade-in pb-20">
             <SEO
@@ -95,82 +190,60 @@ export const Home: React.FC = () => {
             {/* Tools Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
 
-                {/* Popular Tools */}
-                <section>
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                            <Star size={24} className="fill-orange-600" />
+                {searchQuery ? (
+                    <section>
+                        <div className="flex items-center gap-3 mb-8">
+                            <h2 className="text-2xl font-bold text-slate-900">Search Results</h2>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900">{t('home.popular')}</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title={t('merge-pdf.h1') || "Merge PDF"} description="Combine PDFs." icon={<Layers />} colorClass="bg-blue-600 text-white" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'MERGE')} popular />
-                        <ToolCard title={t('compress-pdf.h1') || "Compress PDF"} description="Reduce size." icon={<Zap />} colorClass="bg-green-600 text-white" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'COMPRESS')} popular />
-                        <ToolCard title={t('remove-bg.h1') || "Remove BG"} description="Transparent BG." icon={<Edit3 />} colorClass="bg-purple-600 text-white" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'REMOVE_BG')} popular />
-                        <ToolCard title={t('ai-image-generator.h1') || "AI Image Gen"} description="Text to Image." icon={<Wand2 />} colorClass="bg-pink-600 text-white" onClick={() => navigateToTool(ToolType.IMAGE_GENERATOR)} />
-                    </div>
-                </section>
+                        {renderToolGrid(filteredTools)}
+                        {filteredTools.length === 0 && (
+                            <p className="text-center text-slate-500 text-lg py-10">No tools found matching "{searchQuery}"</p>
+                        )}
+                    </section>
+                ) : (
+                    <>
+                        {/* Popular Tools */}
+                        <section>
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                                    <Star size={24} className="fill-orange-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-900">{t('home.popular')}</h2>
+                            </div>
+                            {renderToolGrid(allTools.filter(t => ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor'].includes(t.slug)))}
+                        </section>
 
+                        {/* PDF Tools */}
+                        <section>
+                            <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
+                                <FileText size={24} className="text-blue-600" />
+                                <h2 className="text-2xl font-bold text-slate-900">{t('common.pdfTools')} {t('common.tools')}</h2>
+                            </div>
+                            {renderToolGrid(allTools.filter(t => t.type === ToolType.PDF_SUITE))}
+                        </section>
 
-                {/* PDF Tools */}
-                <section>
-                    <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
-                        <FileText size={24} className="text-blue-600" />
-                        <h2 className="text-2xl font-bold text-slate-900">{t('common.pdfTools')} {t('common.tools')}</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title={t('merge-pdf.h1') || "Merge PDF"} description="Combine PDFs." icon={<Layers />} colorClass="bg-indigo-600 text-indigo-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'MERGE')} />
-                        <ToolCard title={t('split-pdf.h1') || "Split PDF"} description="Extract pages." icon={<Scissors />} colorClass="bg-orange-600 text-orange-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'SPLIT')} />
-                        <ToolCard title={t('compress-pdf.h1') || "Compress PDF"} description="Reduce size." icon={<Zap />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'COMPRESS')} />
-                        <ToolCard title={t('pdf-to-word.h1') || "PDF to Word"} description="Convert to DOC." icon={<FileText />} colorClass="bg-blue-600 text-blue-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'TO_WORD')} />
-                        <ToolCard title={t('pdf-to-excel.h1') || "PDF to Excel"} description="Convert to XLS." icon={<FileText />} colorClass="bg-green-700 text-green-700" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'TO_EXCEL')} />
-                        <ToolCard title={t('pdf-chat.h1') || "Use AI Chat"} description="Chat with PDF." icon={<Sparkles />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'CHAT')} />
-                        <ToolCard title={t('protect-pdf.h1') || "Protect PDF"} description="Add Password." icon={<FileText />} colorClass="bg-slate-800 text-slate-800" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PROTECT')} />
-                        <ToolCard title={t('unlock-pdf.h1') || "Unlock PDF"} description="Remove Password." icon={<FileText />} colorClass="bg-sky-500 text-sky-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'UNLOCK')} />
-                        <ToolCard title={t('sign-pdf.h1') || "Sign PDF"} description="E-Sign document." icon={<PenTool />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'SIGN')} />
-                        <ToolCard title={t('rotate-pdf.h1') || "Rotate PDF"} description="Fix orientation." icon={<Layers />} colorClass="bg-amber-600 text-amber-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'ROTATE')} />
-                        <ToolCard title={t('delete-pages.h1') || "Delete Pages"} description="Remove pages." icon={<FileText />} colorClass="bg-red-500 text-red-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'DELETE_PAGES')} />
-                        <ToolCard title={t('page-numbers.h1') || "Add Page Numbers"} description="Number pages." icon={<FileText />} colorClass="bg-cyan-600 text-cyan-600" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'PAGE_NUMBERS')} />
-                        <ToolCard title={t('watermark-pdf.h1') || "Watermark"} description="Stamp text." icon={<FileText />} colorClass="bg-blue-500 text-blue-500" onClick={() => navigateToTool(ToolType.PDF_SUITE, 'WATERMARK')} />
-                    </div>
-                </section>
+                        {/* Image Tools */}
+                        <section>
+                            <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
+                                <LucideImage size={24} className="text-purple-600" />
+                                <h2 className="text-2xl font-bold text-slate-900">{t('common.imageTools')} {t('common.tools')}</h2>
+                            </div>
+                            {renderToolGrid(allTools.filter(t => t.type === ToolType.IMAGE_TOOLKIT))}
+                        </section>
 
-                {/* Image Tools */}
-                <section>
-                    <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
-                        <LucideImage size={24} className="text-purple-600" />
-                        <h2 className="text-2xl font-bold text-slate-900">{t('common.imageTools')} {t('common.tools')}</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title={t('remove-bg.h1') || "Remove BG"} description="Transparent BG." icon={<Edit3 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'REMOVE_BG')} />
-                        <ToolCard title={t('resize-image.h1') || "Resize Image"} description="Change size." icon={<LucideImage />} colorClass="bg-amber-600 text-amber-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'RESIZE')} />
-                        <ToolCard title={t('compress-image.h1') || "Compress Image"} description="Reduce KB/MB." icon={<Zap />} colorClass="bg-pink-600 text-pink-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'COMPRESS')} />
-                        <ToolCard title={t('convert-image.h1') || "Convert Image"} description="JPG to PNG..." icon={<Zap />} colorClass="bg-orange-600 text-orange-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CONVERT')} />
-                        <ToolCard title={t('crop-image.h1') || "Crop Image"} description="Trim edges." icon={<LucideImage />} colorClass="bg-green-600 text-green-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'CROP')} />
-                        <ToolCard title={t('upscale-image.h1') || "Upscale"} description="AI Enhance." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'UPSCALE')} />
-                        <ToolCard title={t('face-blur.h1') || "Blur Faces"} description="Hide faces." icon={<LucideImage />} colorClass="bg-gray-700 text-gray-700" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'FACE_BLUR')} />
-                        <ToolCard title={t('round-image.h1') || "Round Image"} description="Circle crop." icon={<Scissors />} colorClass="bg-pink-500 text-pink-500" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'ROUND')} />
-                        <ToolCard title={t('passport-photo.h1') || "Passport Photo"} description="ID Photo Maker." icon={<LucideImage />} colorClass="bg-blue-600 text-blue-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'PASSPORT')} />
-                        <ToolCard title={t('collage-maker.h1') || "Collage Maker"} description="Grid photos." icon={<LucideImage />} colorClass="bg-fuchsia-600 text-fuchsia-600" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'COLLAGE')} />
-                        <ToolCard title={t('meme-maker.h1') || "Meme Maker"} description="Funny captions." icon={<Edit3 />} colorClass="bg-yellow-500 text-yellow-500" onClick={() => navigateToTool(ToolType.IMAGE_TOOLKIT, 'MEME')} />
-                    </div>
-                </section>
-
-                {/* AI Tools */}
-                <section>
-                    <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
-                        <Wand2 size={24} className="text-pink-600" />
-                        <h2 className="text-2xl font-bold text-slate-900">{t('common.aiTools')} {t('common.tools')}</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        <ToolCard title={t('ai-writer.h1') || "AI Writer"} description="Write content." icon={<PenTool />} colorClass="bg-pink-50 text-pink-600" onClick={() => navigateToTool(ToolType.AI_WRITER)} />
-                        <ToolCard title={t('ai-image-generator.h1') || "AI Image Gen"} description="Text to Art." icon={<Wand2 />} colorClass="bg-purple-600 text-purple-600" onClick={() => navigateToTool(ToolType.IMAGE_GENERATOR)} />
-                    </div>
-                </section>
+                        {/* AI Tools */}
+                        <section>
+                            <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
+                                <Wand2 size={24} className="text-pink-600" />
+                                <h2 className="text-2xl font-bold text-slate-900">{t('common.aiTools')} {t('common.tools')}</h2>
+                            </div>
+                            {renderToolGrid(allTools.filter(t => t.type === ToolType.AI_WRITER || t.type === ToolType.IMAGE_GENERATOR || t.slug === 'magic-ai-editor' || t.slug === 'video-generator'))}
+                        </section>
+                    </>
+                )}
 
             </div>
         </div>
     );
 };
-
 
