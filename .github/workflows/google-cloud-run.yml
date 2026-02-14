@@ -28,14 +28,9 @@ jobs:
         run: |-
           gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      - name: 'Build and Push Container'
-        run: |-
-          docker build -t us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }} .
-          docker push us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}
-
       - name: 'Deploy to Cloud Run'
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          source: '.'
           service: ${{ env.SERVICE_NAME }}
-          image: us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}
           region: ${{ env.REGION }}
