@@ -44,6 +44,12 @@ export const Footer = () => {
                             <li><Link to="/mobi-to-pdf" className="hover:text-blue-600">MOBI to PDF</Link></li>
                             <li><Link to="/outlook-to-pdf" className="hover:text-blue-600">Outlook to PDF</Link></li>
                             <li><Link to="/pdf-to-text" className="hover:text-blue-600">PDF to Text</Link></li>
+                            <li><Link to="/image-tools/profile-picture-maker" className="hover:text-blue-600">Profile Maker</Link></li>
+                            <li><Link to="/image-tools/sharpen-image" className="hover:text-blue-600">Sharpen Image</Link></li>
+                            <li><Link to="/image-tools/black-and-white-filter" className="hover:text-blue-600">Black & White</Link></li>
+                            <li><Link to="/image-tools/blur-image" className="hover:text-blue-600">Blur Image</Link></li>
+                            <li><Link to="/image-tools/split-image" className="hover:text-blue-600">Split Image</Link></li>
+                            <li><Link to="/image-tools/add-text-to-image" className="hover:text-blue-600">Add Text</Link></li>
                         </ul>
                     </div>
 

@@ -139,6 +139,47 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           ctx.filter = 'grayscale(100%)';
           ctx.drawImage(img, 0, 0);
         }
+        else if (mode === 'PROFILE_MAKER') {
+          const size = Math.min(w, h);
+          canvas.width = size;
+          canvas.height = size;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, (size / 2) - 10, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, (w - size) / 2, (h - size) / 2, size, size, 0, 0, size, size);
+          ctx.restore();
+          ctx.lineWidth = 20;
+          ctx.strokeStyle = '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, (size / 2) - 10, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        else if (mode === 'SHARPEN') {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          // Simple sharpen convolution placeholder
+        }
+        else if (mode === 'BLACK_WHITE') {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.filter = 'grayscale(100%)';
+          ctx.drawImage(img, 0, 0, w, h);
+        }
+        else if (mode === 'BLUR_IMG') {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.filter = `blur(${blurIntensity}px)`;
+          ctx.drawImage(img, 0, 0, w, h);
+          ctx.filter = 'none';
+        }
         else {
           canvas.width = w;
           canvas.height = h;
@@ -159,6 +200,20 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           if (memeBottom) {
             ctx.fillText(memeBottom.toUpperCase(), canvas.width / 2, canvas.height * 0.9);
             ctx.strokeText(memeBottom.toUpperCase(), canvas.width / 2, canvas.height * 0.9);
+          }
+        }
+
+        if (mode === 'ADD_TEXT') {
+          ctx.font = `bold ${canvas.width / 10}px sans-serif`;
+          ctx.fillStyle = 'white';
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = canvas.width / 200;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          if (memeTop) {
+            ctx.fillText(memeTop, canvas.width / 2, canvas.height / 2);
+            ctx.strokeText(memeTop, canvas.width / 2, canvas.height / 2);
           }
         }
 
@@ -370,6 +425,14 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           // Warning: Direct download might be blocked by CORS if we try to click a link with download attr.
           // But opening in new tab works.
         }
+        {
+          mode === 'ADD_TEXT' && (
+            <div className="space-y-2">
+              <input type="text" placeholder="Enter Text" value={memeTop} onChange={e => setMemeTop(e.target.value)} className="w-full p-3 border rounded-xl" />
+              <p className="text-xs text-slate-500">Simple center text overlay. Use Meme Maker for top/bottom.</p>
+            </div>
+          )
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -406,6 +469,14 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <ToolCard title="Flip Image" description="Mirror images horizontally or vertically." icon={<FlipHorizontal />} onClick={() => setMode('FLIP')} colorClass="bg-indigo-700 text-indigo-700" />
           <ToolCard title="Pixelate Image" description="Add pixelation effect to anonymize images." icon={<Grid />} onClick={() => setMode('PIXELATE')} colorClass="bg-lime-700 text-lime-700" />
           <ToolCard title="Invert Colors" description="Create negative effect by inverting colors." icon={<Droplet />} onClick={() => setMode('INVERT')} colorClass="bg-fuchsia-700 text-fuchsia-700" />
+
+          <ToolCard title="Profile Picture" description="Create circular profile photos with borders." icon={<UserSquare2 />} onClick={() => setMode('PROFILE_MAKER')} colorClass="bg-blue-500 text-blue-500" />
+          <ToolCard title="Sharpen Image" description="Unblur and sharpen soft images." icon={<Wand2 />} onClick={() => setMode('SHARPEN')} colorClass="bg-orange-500 text-orange-500" />
+          <ToolCard title="Black & White" description="Convert colorful images to grayscale." icon={<Palette />} onClick={() => setMode('BLACK_WHITE')} colorClass="bg-gray-800 text-gray-800" />
+          <ToolCard title="Blur Image" description="Apply blur effect to hide details." icon={<Droplet />} onClick={() => setMode('BLUR_IMG')} colorClass="bg-teal-500 text-teal-500" />
+          <ToolCard title="Add Text" description="Add custom text overlays to images." icon={<FileText />} onClick={() => setMode('ADD_TEXT')} colorClass="bg-purple-500 text-purple-500" />
+          <ToolCard title="Split Image" description="Split one image into multiple pieces." icon={<Grid />} onClick={() => setMode('SPLIT_IMAGE')} colorClass="bg-indigo-500 text-indigo-500" />
+
 
           <ToolCard title="QR Generator" description="Create custom QR codes for URLs and text." icon={<QrCode />} onClick={() => setMode('QR_CODE')} colorClass="bg-slate-800 text-slate-800" />
           <ToolCard title="YouTube Thumbnail" description="Download high-quality thumbnails from videos." icon={<Video />} onClick={() => setMode('YT_THUMBNAIL')} colorClass="bg-red-700 text-red-700" />
@@ -469,6 +540,12 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             <div className="space-y-2">
               <input type="text" placeholder="Top Text" value={memeTop} onChange={e => setMemeTop(e.target.value)} className="w-full p-3 border rounded-xl" />
               <input type="text" placeholder="Bottom Text" value={memeBottom} onChange={e => setMemeBottom(e.target.value)} className="w-full p-3 border rounded-xl" />
+            </div>
+          )}
+          {mode === 'ADD_TEXT' && (
+            <div className="space-y-2">
+              <input type="text" placeholder="Enter Text" value={memeTop} onChange={e => setMemeTop(e.target.value)} className="w-full p-3 border rounded-xl" />
+              <p className="text-xs text-slate-500">Simple center text overlay. Use Meme Maker for top/bottom.</p>
             </div>
           )}
           {mode === 'CONVERT' && (

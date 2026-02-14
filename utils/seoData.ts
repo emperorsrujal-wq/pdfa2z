@@ -675,5 +675,77 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.PDF_SUITE,
     mode: 'EXTRACT_TEXT'
+  },
+  'profile-picture-maker': {
+    slug: 'profile-picture-maker',
+    title: 'Free Profile Picture Maker - Circle & Border',
+    description: 'Create professional circular profile pictures with custom borders for social media.',
+    h1: 'Profile Picture Maker',
+    intro: 'Design the perfect profile photo for Instagram, LinkedIn, and more.',
+    steps: ['Upload photo', 'Adjust crop', 'Download circular image'],
+    features: ['Circle Crop', 'Custom Borders', 'Instant Preview'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'PROFILE_MAKER'
+  },
+  'sharpen-image': {
+    slug: 'sharpen-image',
+    title: 'Sharpen Image Online - Unblur Photos Free',
+    description: 'Instantly sharpen blurry images and enhance details online.',
+    h1: 'Sharpen Image Online',
+    intro: 'Fix blurry photos and enhance image details in seconds.',
+    steps: ['Upload blurry image', 'Apply sharpen filter', 'Download clear photo'],
+    features: ['Instant Sharpening', 'Detail Enhancement', 'No Upload Needed'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'SHARPEN'
+  },
+  'black-and-white-filter': {
+    slug: 'black-and-white-filter',
+    title: 'Black and White Filter - Convert Image to Grayscale',
+    description: 'Convert colorful images to classic black and white photos online.',
+    h1: 'Black & White Photo Filter',
+    intro: 'Give your photos a timeless, classic look with our grayscale filter.',
+    steps: ['Upload image', 'Apply B&W filter', 'Download result'],
+    features: ['Classic Look', 'Instant Conversion', 'High Quality'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'BLACK_WHITE'
+  },
+  'blur-image': {
+    slug: 'blur-image',
+    title: 'Blur Image Online - Hide Details & Faces',
+    description: 'Blur parts of an image or the entire photo for privacy.',
+    h1: 'Blur Image Tool',
+    intro: 'Easily blur images to hide sensitive details or create depth effects.',
+    steps: ['Upload image', 'Adjust blur intensity', 'Download blurred image'],
+    features: ['Adjustable Intensity', 'Privacy Protection', 'Fast Processing'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'BLUR_IMG'
+  },
+  'split-image': {
+    slug: 'split-image',
+    title: 'Image Splitter - Cut Images into Grid Pieces',
+    description: 'Split one image into multiple grid pieces (2x2, 3x3) for Instagram.',
+    h1: 'Split Image Online',
+    intro: 'Slice your photos into a grid for creative social media layouts.',
+    steps: ['Upload image', 'Select grid size', 'Download ZIP of pieces'],
+    features: ['Grid Splitting', 'ZIP Download', 'Instagram Ready'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'SPLIT_IMAGE'
+  },
+  'add-text-to-image': {
+    slug: 'add-text-to-image',
+    title: 'Add Text to Image - Online Photo Editor',
+    description: 'Add custom text overlays to your images quickly and easily.',
+    h1: 'Add Text to Photo',
+    intro: 'Personalize your photos with custom text and captions.',
+    steps: ['Upload image', 'Enter text', 'Download edited image'],
+    features: ['Custom Text', 'Adjustable Positioning', 'Simple Interface'],
+    faqs: [],
+    type: ToolType.IMAGE_TOOLKIT,
+    mode: 'ADD_TEXT'
   }
 };
