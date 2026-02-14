@@ -29,17 +29,34 @@ async function generateSitemap() {
             }
         }
 
-        console.log(`Found ${slugs.size} unique routes.`);
+        const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
+        const allUrls = [];
+
+        for (const slug of slugs) {
+            // English version (Default)
+            allUrls.push({
+                url: slug ? `${BASE_URL}/${slug}` : BASE_URL,
+                priority: slug === '' ? '1.0' : '0.8'
+            });
+
+            // Localized versions
+            for (const lang of SUPPORTED_LANGS) {
+                allUrls.push({
+                    url: slug ? `${BASE_URL}/${lang}/${slug}` : `${BASE_URL}/${lang}`,
+                    priority: slug === '' ? '0.9' : '0.7'
+                });
+            }
+        }
+
+        console.log(`Generating sitemap for ${allUrls.length} total URLs.`);
 
         const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${Array.from(slugs).map(slug => {
-            const url = slug ? `${BASE_URL}/${slug}` : BASE_URL;
-            const priority = slug === '' ? '1.0' : '0.8';
+${allUrls.map(u => {
             return `  <url>
-    <loc>${url}</loc>
+    <loc>${u.url}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <priority>${priority}</priority>
+    <priority>${u.priority}</priority>
   </url>`;
         }).join('\n')}
 </urlset>`;

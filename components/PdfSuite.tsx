@@ -18,7 +18,7 @@ export const PdfSuite: React.FC<PdfSuiteProps> = ({ initialTab = 'CHAT', initial
   }, [initialTab]);
 
   return (
-    <div className="max-w-6xl mx-auto h-[calc(100vh-8rem)] flex flex-col animate-fade-in px-4">
+    <div className="max-w-6xl mx-auto min-h-[calc(100vh-14rem)] flex flex-col animate-fade-in px-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <h2 className="text-4xl font-black text-slate-900 flex items-center gap-4">
           <div className="p-2.5 bg-indigo-600 rounded-2xl text-white shadow-lg">

@@ -29,7 +29,10 @@ async function prerender() {
         console.log(`Server started on http://localhost:${PORT}`);
 
         // 2. Launch Puppeteer
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        });
         const page = await browser.newPage();
 
         // 3. Get routes from sitemap (generated via build)

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert, Link, Book, Mail } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt } from '../utils/pdfHelpers.ts';
+import { performOcrOnImages } from '../services/ocrService.ts';
+import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
@@ -36,7 +38,10 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (initialMode) setMode(initialMode);
+    if (initialMode) {
+      setMode(initialMode);
+      reset(); // Ensure state is cleared when mode changes from props
+    }
   }, [initialMode]);
 
   const formatFileSize = (bytes: number) => {
@@ -165,7 +170,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `rotated-${files[0].name}`);
       }
       else if (mode === 'EXTRACT_TEXT') {
-        const text = await extractTextFromPdf(files[0]);
+        const images = await pdfToImages(files[0]);
+        const text = await performOcrOnImages(images);
         setResultText(text);
       }
       else if (mode === 'PAGE_NUMBERS') {
@@ -267,6 +273,26 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     }
   };
 
+  const handleCopyText = () => {
+    if (resultText) {
+      navigator.clipboard.writeText(resultText);
+      setSuccessMsg('Copied to clipboard!');
+      setTimeout(() => setSuccessMsg(null), 2000);
+    }
+  };
+
+  const handleDownloadText = () => {
+    if (resultText) {
+      const blob = new Blob([resultText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `extracted-text-${Date.now()}.txt`;
+      a.click();
+    }
+  };
+
+
   const handleSaveSignature = (signedImage: string) => {
     if (signingPage) {
       const newImages = [...resultImages];
@@ -359,7 +385,6 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="EPUB to PDF" description="Convert EPUB ebooks to PDF format." icon={<Book />} onClick={() => setMode('EPUB_TO_PDF')} colorClass="bg-yellow-600 text-yellow-600" />
           <ToolCard title="MOBI to PDF" description="Convert MOBI ebooks to PDF format." icon={<Book />} onClick={() => setMode('MOBI_TO_PDF')} colorClass="bg-yellow-500 text-yellow-500" />
           <ToolCard title="Outlook to PDF" description="Convert MSG/EML email files to PDF." icon={<Mail />} onClick={() => setMode('OUTLOOK_TO_PDF')} colorClass="bg-cyan-500 text-cyan-500" />
-          <ToolCard title="PDF to Text" description="Extract plain text from your PDF." icon={<FileText />} onClick={() => setMode('EXTRACT_TEXT')} colorClass="bg-slate-500 text-slate-500" />
         </div>
       </div>
     );
@@ -402,13 +427,37 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         {/* API Key button removed - Integrated */}
       </div>
       <div className="flex-1 bg-slate-50 rounded-3xl p-8 flex flex-col overflow-y-auto custom-scrollbar">
-        {files.length === 0 ? (
+        {files.length === 0 && mode !== 'URL_TO_PDF' ? (
           <div onClick={() => fileInputRef.current?.click()} className="flex-1 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-600 transition-all min-h-[300px]">
             <Upload size={40} className="mb-4 text-indigo-600" />
-            <p className="font-black uppercase tracking-tighter">Upload your PDF</p>
+            <p className="font-black uppercase tracking-tighter">
+              {mode === 'IMG_TO_PDF' ? 'Upload Images' :
+                mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
+                  mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' ? 'Upload Ebook' :
+                    'Upload your PDF'}
+            </p>
           </div>
         ) : (
           <div className="space-y-6 max-w-2xl mx-auto w-full pb-8">
+            {mode === 'URL_TO_PDF' && files.length === 0 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                  <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 mb-4">
+                    <Link size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Webpage to PDF</h3>
+                  <p className="text-slate-500 mb-6 text-sm">Enter a URL to convert the webpage into a high-quality PDF document.</p>
+                  <input
+                    type="url"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 font-medium mb-4"
+                  />
+                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4">Convert to PDF</Button>
+                </div>
+              </div>
+            )}
 
             {/* COMPRESS MODE UI */}
             {mode === 'COMPRESS' ? (
@@ -610,13 +659,15 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
             ) : (
               <>
                 {/* GENERIC UI FOR OTHER TOOLS */}
-                <div className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><FileIcon size={20} /></div>
-                    <span className="font-bold text-sm truncate text-slate-700">{files[0].name}</span>
+                {files.length > 0 && (
+                  <div className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><FileIcon size={20} /></div>
+                      <span className="font-bold text-sm truncate text-slate-700">{files[0].name}</span>
+                    </div>
+                    <button onClick={reset}><Trash2 size={18} className="text-slate-300 hover:text-red-500 transition-colors" /></button>
                   </div>
-                  <button onClick={reset}><Trash2 size={18} className="text-slate-300 hover:text-red-500 transition-colors" /></button>
-                </div>
+                )}
 
                 {(mode === 'SPLIT' || mode === 'WATERMARK' || mode === 'METADATA' || mode === 'DELETE_PAGES' || mode === 'EDIT' || mode === 'CROP') && (
                   <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={
@@ -653,10 +704,24 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
             {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold text-center animate-fade-in">{error}</div>}
 
             {resultText && (
-              <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200 max-h-60 overflow-y-auto whitespace-pre-wrap font-mono text-sm shadow-inner">
-                {resultText}
+              <div className="w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-inner overflow-hidden mt-8 animate-fade-in">
+                <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Extracted Content</span>
+                  <div className="flex gap-2">
+                    <button onClick={handleCopyText} className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors" title="Copy to clipboard">
+                      <Copy size={16} />
+                    </button>
+                    <button onClick={handleDownloadText} className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors" title="Download as .txt">
+                      <DownloadIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6 overflow-y-auto max-h-[500px] bg-white">
+                  <pre className="whitespace-pre-wrap text-sm text-slate-700 font-mono leading-relaxed">{resultText}</pre>
+                </div>
               </div>
             )}
+
           </div>
         )}
       </div>

@@ -7,9 +7,12 @@ interface SEOProps {
   canonical?: string;
   schema?: any;
   parentSlug?: string;
+  currentLang?: string;
 }
 
-export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug }) => {
+const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
+
+export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en' }) => {
   const siteUrl = 'https://pdfa2z.com';
 
   // Smart Canonicalization Logic:
@@ -20,11 +23,23 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     targetCanonical = `/${parentSlug}`;
   }
 
+  const baseSlug = targetCanonical?.startsWith('/') ? targetCanonical.slice(1) : (targetCanonical || '');
+
   const fullCanonical = targetCanonical
     ? (targetCanonical.startsWith('http') ? targetCanonical : `${siteUrl}${targetCanonical.startsWith('/') ? '' : '/'}${targetCanonical}`)
     : siteUrl;
 
   const ogImage = `${siteUrl}/icon.svg`; // updated to use available icon
+
+  // Generate Hreflang Tags
+  const hreflangs = [
+    { lang: 'x-default', href: `${siteUrl}/${baseSlug}` },
+    { lang: 'en', href: `${siteUrl}/${baseSlug}` },
+    ...SUPPORTED_LANGS.map(l => ({
+      lang: l,
+      href: `${siteUrl}/${l}/${baseSlug}`
+    }))
+  ];
 
   return (
     <Helmet>
@@ -36,6 +51,11 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
 
       {/* Canonical */}
       <link rel="canonical" href={fullCanonical} />
+
+      {/* Hreflang Tags */}
+      {hreflangs.map(h => (
+        <link key={h.lang} rel="alternate" hrefLang={h.lang} href={h.href} />
+      ))}
 
       {/* OG Tags */}
       <meta property="og:title" content={title} />

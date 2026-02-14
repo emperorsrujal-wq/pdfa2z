@@ -4,6 +4,8 @@ import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
 import { fileToBase64 } from '../utils.ts';
 import { upscaleImage, editImage, generateText } from '../services/geminiService.ts';
+import { performOCR } from '../services/ocrService.ts';
+import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { generatePassportSheet, PASSPORT_STANDARDS, PRINT_SIZES, addWatermark, generateCollage, COLLAGE_LAYOUTS } from '../utils/imageHelpers.ts';
 import { ImageToolMode } from '../types.ts';
 import JSZip from 'jszip';
@@ -232,6 +234,25 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     });
   };
 
+  const handleCopyOCR = () => {
+    if (ocrResult) {
+      navigator.clipboard.writeText(ocrResult);
+      setError('Copied to clipboard!');
+      setTimeout(() => setError(null), 2000);
+    }
+  };
+
+  const handleDownloadOCR = () => {
+    if (ocrResult) {
+      const blob = new Blob([ocrResult], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ocr-result-${Date.now()}.txt`;
+      a.click();
+    }
+  };
+
   const handleProcess = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
@@ -247,12 +268,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           const res = await editImage(base64, "Remove the entire background of this image and make it perfectly solid white. Focus only on the subject.", files[0].type);
           setProcessedUrl(res);
         } else if (mode === 'OCR') {
-          const res = await generateText(`Act as an advanced OCR engine. Extract all text from this image while preserving its structural layout. 
-          - Preserve headings and bullet points.
-          - If there are tables, represent them as Markdown tables.
-          - Maintain the hierarchical structure of the document.
-          - Output JSON if structured data is detected.
-          - Otherwise, output formatted Markdown.`, base64);
+          const res = await performOCR(base64, files[0].type);
           setOcrResult(res);
         } else if (mode === 'COLORIZE') {
           const res = await editImage(base64, "Add natural, realistic colors to this black and white photo. Maintain historical accuracy.", files[0].type);
@@ -518,14 +534,26 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       </div>
       <div className="bg-white rounded-[2rem] border p-8 flex flex-col md:flex-row gap-8 shadow-sm">
         <div className="flex-1 space-y-6">
-          <div onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed rounded-3xl flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-all overflow-hidden bg-slate-50/50">
-            {previews[0] ? <img src={previews[0]} className="max-h-full object-contain" /> : <Upload size={40} className="text-slate-300" />}
-          </div>
+          {!(mode === 'QR_CODE' || mode === 'YT_THUMBNAIL') && (
+            <div onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all overflow-hidden bg-slate-50/50">
+              {previews[0] ? (
+                <img src={previews[0]} className="max-h-full object-contain" />
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Upload size={40} className="text-slate-300" />
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">
+                    {mode === 'BATCH_RESIZE' || mode === 'COLLAGE' ? 'Select multiple images' :
+                      mode === 'COMPARE' ? 'Select 2 images' : 'Upload your photo'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {(mode === 'QR_CODE' || mode === 'YT_THUMBNAIL') && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center text-center p-6">
-              <p className="font-bold text-slate-500">
-                {mode === 'QR_CODE' ? 'QR Code Preview will appear here' : 'Thumbnail will appear here'}
+            <div className="aspect-square border-2 border-slate-100 rounded-3xl flex items-center justify-center text-center p-6 bg-slate-50">
+              <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">
+                {mode === 'QR_CODE' ? 'QR Code Preview' : 'Thumbnail Preview'}
               </p>
             </div>
           )}
@@ -777,7 +805,24 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
               </a>
             </>
           ) :
-            ocrResult ? <pre className="whitespace-pre-wrap text-xs text-slate-700 font-mono w-full">{ocrResult}</pre> :
+            ocrResult ? (
+              <div className="w-full h-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-inner overflow-hidden absolute inset-0">
+                <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Extracted Text</span>
+                  <div className="flex gap-2">
+                    <button onClick={handleCopyOCR} className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors" title="Copy to clipboard">
+                      <Copy size={16} />
+                    </button>
+                    <button onClick={handleDownloadOCR} className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors" title="Download as .txt">
+                      <DownloadIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm text-slate-700 font-mono leading-relaxed">{ocrResult}</pre>
+                </div>
+              </div>
+            ) :
               <div className="text-slate-300 text-center"><ImageIcon size={40} className="mx-auto mb-2 opacity-20" /><p className="text-xs uppercase font-black tracking-widest">Result Preview</p></div>}
         </div>
       </div>

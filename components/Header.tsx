@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Search, FileText, Image, Video, File, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from './LanguageSelector';
 
 export const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { t } = useTranslation();
 
     const navigation = [
-        { name: 'AI Tools', href: '/ai-tools', icon: Zap },
-        { name: 'PDF', href: '/pdf-tools', icon: FileText },
-        { name: 'Image', href: '/image-tools', icon: Image },
-        { name: 'File', href: '/file-tools', icon: File },
+        { name: t('common.aiTools'), href: '/ai-tools', icon: Zap },
+        { name: t('common.pdfTools'), href: '/pdf-tools', icon: FileText },
+        { name: t('common.imageTools'), href: '/image-tools', icon: Image },
+        { name: t('common.fileTools'), href: '/file-tools', icon: File },
     ];
 
     return (
@@ -41,6 +44,7 @@ export const Header: React.FC = () => {
 
                 {/* Search & Actions */}
                 <div className="hidden md:flex items-center gap-4">
+                    <LanguageSelector />
                     <button className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
                         <Search className="h-5 w-5" />
                     </button>
@@ -48,7 +52,7 @@ export const Header: React.FC = () => {
                         to="/login"
                         className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
                     >
-                        Sign In
+                        {t('common.signIn')}
                     </Link>
                 </div>
 
@@ -65,13 +69,17 @@ export const Header: React.FC = () => {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-slate-200 bg-white">
-                    <div className="space-y-1 px-4 pb-3 pt-2">
+                <div className="md:hidden border-t border-slate-200 bg-white p-4">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{t('common.language')}</span>
+                        <LanguageSelector />
+                    </div>
+                    <div className="space-y-1">
                         {navigation.map((item) => (
                             <Link
                                 key={item.name}
                                 to={item.href}
-                                className="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                                className="flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <item.icon className="h-5 w-5" />

@@ -14,13 +14,18 @@ import { SEO, generateToolSchema } from './components/SEO';
 import { TOOLS_REGISTRY } from './utils/seoData';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
+import { useTranslation } from 'react-i18next';
+
 const ToolSeoContent = React.lazy(() => import('./components/ToolSeoContent').then(m => ({ default: m.ToolSeoContent })));
 const Breadcrumbs = React.lazy(() => import('./components/Breadcrumbs').then(m => ({ default: m.Breadcrumbs })));
 const RelatedTools = React.lazy(() => import('./components/RelatedTools').then(m => ({ default: m.RelatedTools })));
 
+const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
+
 const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { i18n, t } = useTranslation();
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -32,16 +37,25 @@ const App: React.FC = () => {
   const [activeImageMode, setActiveImageMode] = useState<ImageToolMode>('MENU');
   const [activeVideoMode, setActiveVideoMode] = useState<VideoToolMode>('DOWNLOAD');
 
+  const pathParts = useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
+  const lang = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
+  const slug = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? (pathParts[1] || '') : (pathParts[0] || ''), [pathParts]);
+
+  // Sync i18n with URL
+  useEffect(() => {
+    if (i18n.language !== lang) {
+      i18n.changeLanguage(lang);
+    }
+  }, [lang, i18n]);
+
   // Sync state with URL path
   useEffect(() => {
-    const slug = location.pathname.split('/')[1] || '';
     if (slug === '') {
       setActiveTool(ToolType.DASHBOARD);
       return;
     }
 
     const toolEntry = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug);
-
 
     if (toolEntry) {
       setActiveTool(toolEntry.type);
@@ -56,12 +70,15 @@ const App: React.FC = () => {
       // Handle routes that might not be in registry yet explicitly if needed
       if (slug === 'ai-writer') setActiveTool(ToolType.AI_WRITER);
     }
-  }, [location.pathname]);
+  }, [slug]);
 
   const seoData = useMemo(() => {
-    const slug = location.pathname.split('/')[1] || '';
-    return Object.values(TOOLS_REGISTRY).find(t => t.slug === slug) || TOOLS_REGISTRY['home'];
-  }, [location.pathname]);
+    const tool = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug) || TOOLS_REGISTRY['home'];
+    if (lang !== 'en' && tool.translations?.[lang]) {
+      return { ...tool, ...tool.translations[lang] };
+    }
+    return tool;
+  }, [slug, lang]);
 
   const renderContent = () => {
     switch (activeTool) {
@@ -87,6 +104,7 @@ const App: React.FC = () => {
           canonical={seoData?.slug ? `/${seoData.slug}` : ''}
           schema={seoData ? generateToolSchema(seoData) : undefined}
           parentSlug={seoData?.parentSlug}
+          currentLang={lang}
         />
       )}
 

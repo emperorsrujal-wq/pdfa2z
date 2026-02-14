@@ -1,0 +1,32 @@
+{
+    "common": {
+        "home": "Inicio",
+        "aiTools": "Herramientas IA",
+        "pdfTools": "PDF",
+        "imageTools": "Imagen",
+        "fileTools": "Archivo",
+        "signIn": "Iniciar Sesión",
+        "about": "Sobre Nosotros",
+        "contact": "Contacto",
+        "privacy": "Política de Privacidad",
+        "terms": "Términos de Servicio",
+        "rights": "Todos los derechos reservados.",
+        "footerDesc": "Herramientas gratuitas en línea de PDF, Imagen, Video e IA. Sin registro. 100% gratuito para estudiantes, profesionales y todos."
+    },
+    "home": {
+        "heroTitle": "Herramientas Profesionales de PDF e IA",
+        "heroSubtitle": "Completamente gratis, ejecución local y potenciado por IA.",
+        "startTool": "Iniciar Herramienta",
+        "popular": "Popular"
+    },
+    "tools": {
+        "howTo": "Cómo usar esta herramienta",
+        "faq": "Preguntas Frecuentes",
+        "proTips": "Consejos Pro",
+        "considerations": "Consideraciones Importantes",
+        "alsoUse": "La gente también usa",
+        "openTool": "ABRIR HERRAMIENTA",
+        "upload": "Sube tu archivo",
+        "processing": "Procesando..."
+    }
+}

@@ -16,6 +16,7 @@ export interface ToolSEO {
   tips?: string[];
   tradeoffs?: string[];
   unique?: boolean;
+  translations?: Record<string, Partial<Omit<ToolSEO, 'slug' | 'type' | 'mode' | 'parentSlug' | 'unique' | 'translations'>>>;
 }
 
 export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
@@ -27,7 +28,27 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'PDFA2Z provides a complete suite of utilities to manage your documents and images. No signup required.',
     steps: [],
     faqs: [],
-    type: ToolType.DASHBOARD
+    type: ToolType.DASHBOARD,
+    translations: {
+      es: {
+        title: 'PDFA2Z - Herramientas Gratuitas de PDF e IA',
+        description: 'Herramientas todo en uno para PDF e imágenes. Combinar, dividir, comprimir y generar contenido con IA.',
+        h1: 'Herramientas Profesionales de PDF e Imagen',
+        intro: 'PDFA2Z ofrece un conjunto completo de utilidades para gestionar sus documentos e imágenes. Sin registro.'
+      },
+      fr: {
+        title: 'PDFA2Z - Outils PDF et IA Gratuits en Ligne',
+        description: 'Outils PDF et Image tout-en-un. Fusionner, diviser, compresser et générer du contenu avec l\'IA.',
+        h1: 'Outils PDF et Image Professionnels',
+        intro: 'PDFA2Z propose une suite complète d\'utilitaires pour gérer vos documents et images. Aucun abonnement requis.'
+      },
+      hi: {
+        title: 'PDFA2Z - मुफ्त ऑनलाइन PDF और AI टूल्स',
+        description: 'ऑल-इन-वन PDF और इमेज टूल्स। AI के साथ PDF मर्ज, स्प्लिट, कंप्रेस और कंटेंट जेनरेट करें।',
+        h1: 'प्रोफेशनल PDF और इमेज टूल्स',
+        intro: 'PDFA2Z आपके दस्तावेज़ों और छवियों को प्रबंधित करने के लिए उपयोगिताओं का एक पूरा सूट प्रदान करता है।'
+      }
+    }
   },
   'merge-pdf': {
     slug: 'merge-pdf',
@@ -38,12 +59,37 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF files.', 'Reorder if needed.', 'Click Process to merge.'],
     faqs: [
       { q: 'Is it free?', a: 'Yes, completely free.' },
-      { q: 'Is it secure?', a: 'Yes, all processing happens in your browser.' },
-      { q: 'Can I merge different size pages?', a: 'Yes, our tool handles different page sizes automatically.' }
+      { q: 'Is it secure?', a: 'Yes, all processing happens in your browser.' }
     ],
-    features: ['Combine unlimited PDFs', 'Drag and drop reordering', '100% Client-side privacy'],
+    features: ['Combine unlimited PDFs', 'Drag and drop reordering'],
     type: ToolType.PDF_SUITE,
-    mode: 'MERGE'
+    mode: 'MERGE',
+    translations: {
+      es: {
+        title: 'Combinar PDF - Unir Archivos PDF Gratis Online',
+        description: 'Combina varios PDF en un solo documento. Herramienta rápida, segura y fácil de usar.',
+        h1: 'Combinar Archivos PDF',
+        intro: 'Une múltiples documentos PDF en un solo archivo con nuestra herramienta fácil de usar.',
+        steps: ['Sube archivos PDF.', 'Reordena si es necesario.', 'Haz clic en Procesar.'],
+        faqs: [{ q: '¿Es gratis?', a: 'Sí, totalmente gratis.' }]
+      },
+      fr: {
+        title: 'Fusionner PDF - Combiner des Fichiers PDF en Ligne',
+        description: 'Fusionnez plusieurs fichiers PDF en un seul document. Outil rapide, sécurisé et facile.',
+        h1: 'Fusionner des PDF',
+        intro: 'Combinez plusieurs documents PDF en un seul fichier grâce à notre outil simple.',
+        steps: ['Téléchargez les PDF.', 'Réorganisez-les.', 'Cliquez sur Fusionner.'],
+        faqs: [{ q: 'Est-ce gratuit?', a: 'Oui, totalement gratuit.' }]
+      },
+      hi: {
+        title: 'मर्ज PDF - PDF फाइलों को मुफ्त में ऑनलाइन जोड़ें',
+        description: 'कई PDF को एक दस्तावेज़ में जोड़ें। तेज़, सुरक्षित और आसान PDF मर्जर टूल।',
+        h1: 'PDF फाइलें जोड़ें',
+        intro: 'हमारे उपयोग में आसान टूल के साथ कई PDF दस्तावेज़ों को एक साथ जोड़ें।',
+        steps: ['PDF फाइलें अपलोड करें।', 'यदि आवश्यक हो तो क्रम बदलें।', 'मर्ज करने के लिए क्लिक करें।'],
+        faqs: [{ q: 'क्या यह मुफ्त है?', a: 'हाँ, पूरी तरह से मुफ्त।' }]
+      }
+    }
   },
   'split-pdf': {
     slug: 'split-pdf',
@@ -58,7 +104,33 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: ['Extract specific pages', 'Split into multiple files', 'Instant processing'],
     type: ToolType.PDF_SUITE,
-    mode: 'SPLIT'
+    mode: 'SPLIT',
+    translations: {
+      es: {
+        title: 'Dividir PDF - Extraer Páginas Online',
+        description: 'Separar un PDF en varios archivos o extraer páginas específicas al instante.',
+        h1: 'Dividir Documento PDF',
+        intro: 'Extrae páginas de tus documentos PDF fácilmente.',
+        steps: ['Sube el PDF.', 'Ingresa rangos de página (ej. 1-5).', 'Descarga los archivos.'],
+        faqs: [{ q: '¿Puedo extraer páginas sueltas?', a: 'Sí, solo ingresa el número de página.' }]
+      },
+      fr: {
+        title: 'Diviser PDF - Extraire des Pages en Ligne',
+        description: 'Séparez un PDF en plusieurs fichiers ou extrayez des pages spécifiques instantanément.',
+        h1: 'Diviser un Document PDF',
+        intro: 'Extrayez facilement les pages de vos documents PDF.',
+        steps: ['Téléchargez le PDF.', 'Entrez les plages de pages (ex. 1-5).', 'Téléchargez les fichiers.'],
+        faqs: [{ q: 'Puis-je extraire des pages uniques ?', a: 'Oui, entrez simplement le numéro de la page.' }]
+      },
+      hi: {
+        title: 'स्प्लिट PDF - ऑनलाइन पेज निकालें',
+        description: 'एक PDF को कई फाइलों में अलग करें या विशिष्ट पेजों को तुरंत निकालें।',
+        h1: 'PDF दस्तावेज़ स्प्लिट करें',
+        intro: 'अपने PDF दस्तावेज़ों से आसानी से पेज निकालें।',
+        steps: ['PDF अपलोड करें।', 'पेज रेंज दर्ज करें (जैसे 1-5)।', 'स्प्लिट फाइलें डाउनलोड करें।'],
+        faqs: [{ q: 'क्या मैं सिंगल पेज निकाल सकता हूँ?', a: 'हाँ, बस पेज नंबर दर्ज करें।' }]
+      }
+    }
   },
   'compress-pdf': {
     slug: 'compress-pdf',
@@ -73,8 +145,35 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: ['Multiple compression levels', 'Target file size option', 'Batch processing'],
     type: ToolType.PDF_SUITE,
-    mode: 'COMPRESS'
+    mode: 'COMPRESS',
+    translations: {
+      es: {
+        title: 'Comprimir PDF - Reducir Tamaño de Archivo',
+        description: 'Optimiza archivos PDF para web y correo electrónico sin perder calidad.',
+        h1: 'Comprimir PDF Online',
+        intro: 'Reduce significativamente el tamaño de tus archivos PDF.',
+        steps: ['Sube el PDF.', 'Selecciona el nivel de compresión.', 'Descarga el archivo optimizado.'],
+        faqs: [{ q: '¿Cuánto puedo reducir el tamaño?', a: 'Hasta un 80-90% según el contenido.' }]
+      },
+      fr: {
+        title: 'Compresser PDF - Réduire la Taille du Fichier',
+        description: 'Optimisez les fichiers PDF pour le Web et les e-mails sans perte de qualité.',
+        h1: 'Compresser un PDF en Ligne',
+        intro: 'Réduisez considérablement la taille de vos fichiers PDF.',
+        steps: ['Téléchargez le PDF.', 'Sélectionnez le niveau de compression.', 'Téléchargez le fichier.'],
+        faqs: [{ q: 'De combien puis-je réduire la taille ?', a: 'Jusqu\'à 80-90% selon le contenu.' }]
+      },
+      hi: {
+        title: 'कंप्रेस PDF - फाइल का आकार कम करें',
+        description: 'बिना गुणवत्ता खोए वेब और ईमेल के लिए PDF फाइलों को ऑप्टिमाइज़ करें।',
+        h1: 'ऑनलाइन PDF कंप्रेस करें',
+        intro: 'अपने PDF के फाइल आकार को महत्वपूर्ण रूप से कम करें।',
+        steps: ['PDF अपलोड करें।', 'कंप्रेशन लेवल चुनें।', 'ऑप्टिमाइज़ फाइल डाउनलोड करें।'],
+        faqs: [{ q: 'मैं साइज कितना कम कर सकता हूँ?', a: 'फाइल कंटेंट के आधार पर 80-90% तक।' }]
+      }
+    }
   },
+
   'pdf-to-word': {
     slug: 'pdf-to-word',
     title: 'PDF to Word - Convert PDF to DOCX Online',
