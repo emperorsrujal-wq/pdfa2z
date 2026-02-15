@@ -122,32 +122,79 @@ export const editImage = async (
 export const magicTransform = async (
   baseImage: string,
   baseMime: string,
-  refImage: string,
-  refMime: string,
-  prompt: string
+  refImage: string | null,
+  refMime: string | null,
+  prompt: string,
+  mode: 'GENERAL' | 'FACE_SWAP' | 'ID_EDIT' = 'GENERAL'
 ): Promise<string> => {
   const ai = getFreshAi();
   const model = 'gemini-2.5-flash-image'; // Use vision-optimized model
+
+  let systemPrompt = "";
+
+  if (mode === 'FACE_SWAP') {
+    systemPrompt = `
+      TASK: Face Swap.
+      INPUT 1 (Base): Target image. 
+      INPUT 2 (Ref): Source face provider.
+      INSTRUCTIONS:
+      1. Swap the face from the Reference image onto the person in the Base image.
+      2. PRESERVE the Base image's lighting, skin tone match, shadows, grain, and resolution.
+      3. Do NOT change the background, clothing, or other details of the Base image unless explicitly asked.
+      4. Blend perfectly.
+      USER PROMPT: ${prompt}
+    `;
+  } else if (mode === 'ID_EDIT') {
+    systemPrompt = `
+      TASK: ID / Document Editing.
+      INPUT 1 (Base): Target Document/ID.
+      INPUT 2 (Ref): Person Reference (Optional).
+      INSTRUCTIONS:
+      1. If a Reference image is provided, swap the ID photo with the Reference person's face. MATCH the ID photo's style (passport style, lighting, background color of the ID photo area).
+      2. Edit the TEXT fields on the document as requested in the PROMPT.
+      3. CRITICAL: Match the existing font, size, perspective, noise, and blur of the document. The text must look authentic.
+      4. Do NOT hallucinate new fields. Only edit what is asked.
+      USER PROMPT: ${prompt}
+    `;
+  } else {
+    // General
+    systemPrompt = `
+      TASK: General Image Editing / Magic Transform.
+      INPUT 1 (Base): Image to edit.
+      INPUT 2 (Ref): Style/Content Reference (Optional).
+      INSTRUCTIONS:
+      1. Edit the Base image according to the User Prompt.
+      2. If a Reference is provided, use it to guide the style, content, or transformation.
+      3. If no Reference is provided, perform a generative edit based on the prompt alone.
+      USER PROMPT: ${prompt}
+    `;
+  }
+
+  const parts: any[] = [
+    {
+      inlineData: {
+        data: baseImage,
+        mimeType: baseMime
+      }
+    }
+  ];
+
+  if (refImage && refMime) {
+    parts.push({
+      inlineData: {
+        data: refImage,
+        mimeType: refMime
+      }
+    });
+  }
+
+  parts.push({ text: systemPrompt });
 
   try {
     const response = await ai.models.generateContent({
       model,
       contents: {
-        parts: [
-          {
-            inlineData: {
-              data: baseImage,
-              mimeType: baseMime
-            }
-          },
-          {
-            inlineData: {
-              data: refImage,
-              mimeType: refMime
-            }
-          },
-          { text: `Using the first image as the base and the second image as a style/content reference, follow these instructions: ${prompt}. Return ONLY the processed image.` }
-        ]
+        parts: parts
       }
     });
 

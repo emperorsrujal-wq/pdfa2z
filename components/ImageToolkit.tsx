@@ -61,6 +61,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [referencePreview, setReferencePreview] = useState<string | null>(null);
   const [magicInstructions, setMagicInstructions] = useState('');
+  const [magicMode, setMagicMode] = useState<'GENERAL' | 'FACE_SWAP' | 'ID_EDIT'>('GENERAL');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -457,13 +458,22 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           // Warning: Direct download might be blocked by CORS if we try to click a link with download attr.
           // But opening in new tab works.
         } else if (mode === 'MAGIC_EDITOR') {
-          if (!referenceFile) throw new Error('Please upload a reference image.');
-          if (!magicInstructions.trim()) throw new Error('Please enter instructions.');
+          // Reference is now optional for GENERAL mode, but we might want to enforce it for FACE_SWAP? 
+          // Actually, let's keep it flexible. If they want to face swap without a ref check, the prompt might handle it or fail gracefully.
+          // But effectively, Face Swap implies a source face. ID Edit implies a source face if swapping.
+
+          if (!magicInstructions.trim() && mode === 'MAGIC_EDITOR') throw new Error('Please enter instructions.');
 
           const base64 = await fileToBase64(files[0]);
-          const refBase64 = await fileToBase64(referenceFile);
+          let refBase64 = null;
+          let refMime = null;
 
-          const res = await magicTransform(base64, files[0].type, refBase64, referenceFile.type, magicInstructions);
+          if (referenceFile) {
+            refBase64 = await fileToBase64(referenceFile);
+            refMime = referenceFile.type;
+          }
+
+          const res = await magicTransform(base64, files[0].type, refBase64, refMime, magicInstructions, magicMode);
           setProcessedUrl(res);
         }
         {
@@ -786,14 +796,50 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           {/* Magic Editor Controls */}
           {mode === 'MAGIC_EDITOR' && (
             <div className="space-y-4">
+              {/* Mode Selector */}
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  onClick={() => setMagicMode('GENERAL')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${magicMode === 'GENERAL' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  General
+                </button>
+                <button
+                  onClick={() => setMagicMode('FACE_SWAP')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${magicMode === 'FACE_SWAP' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Face Swap
+                </button>
+                <button
+                  onClick={() => setMagicMode('ID_EDIT')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${magicMode === 'ID_EDIT' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  ID / Doc
+                </button>
+              </div>
+
               <div>
-                <label className="text-sm font-bold mb-2 block">Reference Image / Style</label>
+                <label className="text-sm font-bold mb-2 block">
+                  Reference Image {magicMode === 'GENERAL' ? '(Optional)' : '(Recommended)'}
+                </label>
                 <div
                   onClick={() => document.getElementById('ref-upload')?.click()}
                   className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:bg-slate-50 transition-colors"
                 >
                   {referencePreview ? (
-                    <img src={referencePreview} alt="Reference" className="h-32 mx-auto object-contain rounded-lg" />
+                    <div className="relative group">
+                      <img src={referencePreview} alt="Reference" className="h-32 mx-auto object-contain rounded-lg" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReferenceFile(null);
+                          setReferencePreview(null);
+                        }}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center text-slate-400">
                       <ImageIcon size={24} />
@@ -805,11 +851,19 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
               </div>
 
               <div>
-                <label className="text-sm font-bold mb-2 block">Magic Instructions</label>
+                <label className="text-sm font-bold mb-2 block">
+                  Instructions
+                  {magicMode === 'FACE_SWAP' && <span className="text-xs font-normal text-slate-500 ml-2">(e.g., "Swap face with reference")</span>}
+                  {magicMode === 'ID_EDIT' && <span className="text-xs font-normal text-slate-500 ml-2">(e.g., "Change name to John Doe")</span>}
+                </label>
                 <textarea
                   value={magicInstructions}
                   onChange={e => setMagicInstructions(e.target.value)}
-                  placeholder="e.g., 'Transfer the artistic style of the reference image to the base image' or 'Replace the background with the scene from the reference'"
+                  placeholder={
+                    magicMode === 'FACE_SWAP' ? "Describe any specific adjustment (e.g., 'Make it look happy'). The system will handle the swap automatically." :
+                      magicMode === 'ID_EDIT' ? "List the text changes you want (e.g., Name: Sarah Connor, DOB: 01/01/2000). The system will also swap the photo if a reference is provided." :
+                        "e.g., 'Transfer the artistic style of the reference image to the base image' or 'Replace the background with a beach scene'"
+                  }
                   className="w-full p-3 border rounded-xl h-24 text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
