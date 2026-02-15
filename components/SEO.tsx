@@ -8,11 +8,12 @@ interface SEOProps {
   schema?: any;
   parentSlug?: string;
   currentLang?: string;
+  tool?: any;
 }
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
-export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en' }) => {
+export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en', tool }) => {
   const siteUrl = 'https://pdfa2z.com';
 
   // Smart Canonicalization Logic:
@@ -41,6 +42,8 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     }))
   ];
 
+  const keywords = tool?.features ? tool.features.join(', ') + ', ' + title : title + ', online tool, free';
+
   return (
     <Helmet>
       {/* Page Title */}
@@ -48,6 +51,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
 
       {/* Standard Meta */}
       <meta name="description" content={description} />
+      <meta name="keywords" content={keywords} />
 
       {/* Canonical */}
       <link rel="canonical" href={fullCanonical} />
@@ -63,13 +67,17 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       <meta property="og:url" content={fullCanonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="PDFA2Z" />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:image" content={`${siteUrl}/icon.svg`} />
+      <meta property="og:image:width" content="512" />
+      <meta property="og:image:height" content="512" />
 
       {/* Twitter Tags */}
-      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:site" content="@pdfa2z" />
+      <meta name="twitter:creator" content="@pdfa2z" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={`${siteUrl}/icon.svg`} />
 
       {/* Schema */}
       {schema && (

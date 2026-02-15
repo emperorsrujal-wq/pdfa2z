@@ -462,7 +462,13 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           // Actually, let's keep it flexible. If they want to face swap without a ref check, the prompt might handle it or fail gracefully.
           // But effectively, Face Swap implies a source face. ID Edit implies a source face if swapping.
 
-          if (!magicInstructions.trim() && mode === 'MAGIC_EDITOR') throw new Error('Please enter instructions.');
+          // Auto-fill prompt for Face Swap if empty
+          let effectivePrompt = magicInstructions;
+          if (magicMode === 'FACE_SWAP' && !effectivePrompt.trim()) {
+            effectivePrompt = "Swap the face from the reference image onto the base image. Blend naturally.";
+          }
+
+          if (!effectivePrompt.trim() && mode === 'MAGIC_EDITOR') throw new Error('Please enter instructions.');
 
           const base64 = await fileToBase64(files[0]);
           let refBase64 = null;
@@ -473,7 +479,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             refMime = referenceFile.type;
           }
 
-          const res = await magicTransform(base64, files[0].type, refBase64, refMime, magicInstructions, magicMode);
+          const res = await magicTransform(base64, files[0].type, refBase64, refMime, effectivePrompt, magicMode);
           setProcessedUrl(res);
         }
         {
@@ -820,7 +826,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
               <div>
                 <label className="text-sm font-bold mb-2 block">
-                  Reference Image {magicMode === 'GENERAL' ? '(Optional)' : '(Recommended)'}
+                  {magicMode === 'FACE_SWAP' ? 'Reference Face (Source)' : magicMode === 'ID_EDIT' ? 'Reference Person (Optional)' : 'Reference Image (Optional)'}
                 </label>
                 <div
                   onClick={() => document.getElementById('ref-upload')?.click()}
@@ -860,7 +866,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
                   value={magicInstructions}
                   onChange={e => setMagicInstructions(e.target.value)}
                   placeholder={
-                    magicMode === 'FACE_SWAP' ? "Describe any specific adjustment (e.g., 'Make it look happy'). The system will handle the swap automatically." :
+                    magicMode === 'FACE_SWAP' ? "Optional: Describe any specific adjustment (e.g., 'Make it look happy'). Leave empty to just swap the face." :
                       magicMode === 'ID_EDIT' ? "List the text changes you want (e.g., Name: Sarah Connor, DOB: 01/01/2000). The system will also swap the photo if a reference is provided." :
                         "e.g., 'Transfer the artistic style of the reference image to the base image' or 'Replace the background with a beach scene'"
                   }

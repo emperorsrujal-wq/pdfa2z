@@ -53,15 +53,32 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'merge-pdf': {
     slug: 'merge-pdf',
     title: 'Merge PDF - Combine PDF Files Online for Free',
-    description: 'Combine multiple PDFs into one unified document. Fast, secure, and easy PDF merger tool.',
+    description: 'Combine multiple PDFs into one unified document. Fast, secure, and easy PDF merger tool. No software installation required.',
     h1: 'Merge PDF Files',
-    intro: 'Combine multiple PDF documents into a single file with our easy-to-use tool.',
-    steps: ['Upload PDF files.', 'Reorder if needed.', 'Click Process to merge.'],
-    faqs: [
-      { q: 'Is it free?', a: 'Yes, completely free.' },
-      { q: 'Is it secure?', a: 'Yes, all processing happens in your browser.' }
+    intro: 'Select multiple PDF files and merge them into one in seconds. Drag and drop pages to reorder them exactly how you want. Our PDF merger is secure, fast, and free.',
+    steps: [
+      'Click "Upload" to select your PDF files, or drag and drop them into the box.',
+      'Drag the thumbnails to rearrange the files in your desired order.',
+      'Click "Merge PDF" to combine them.',
+      'Download your single, unified PDF document.'
     ],
-    features: ['Combine unlimited PDFs', 'Drag and drop reordering'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, PDFA2Z is completely free to use for merging files.' },
+      { q: 'Is it secure?', a: 'Absolutely. We process your files locally in your browser when possible, or use secure temporary servers that delete files immediately after processing.' },
+      { q: 'Can I merge PDF and JPG?', a: 'Currently this tool is for PDFs. To merge images, first use our JPG to PDF tool.' },
+      { q: 'Is there a file limit?', a: 'You can merge unlimited files, provided they fit within your browser memory.' }
+    ],
+    features: [
+      'Combine unlimited PDFs',
+      'Visual Drag & Drop Reordering',
+      'Secure Processing',
+      'Retain Formatting',
+      'Mobile Friendly'
+    ],
+    tips: [
+      'Number your files (1.pdf, 2.pdf) before uploading to sort them automatically.',
+      'Use the "Organize" mode if you need to rotate individual pages before merging.'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'MERGE',
     translations: {
@@ -93,16 +110,32 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'split-pdf': {
     slug: 'split-pdf',
-    title: 'Split PDF - Extract Pages Online',
-    description: 'Separate one PDF into multiple files or extract specific pages instantly.',
+    title: 'Split PDF - Extract Pages & Separate Documents',
+    description: 'Separate one PDF into multiple files or extract specific pages instantly. User-friendly and free PDF splitter.',
     h1: 'Split PDF Document',
-    intro: 'Extract pages from your PDF documents easily.',
-    steps: ['Upload PDF.', 'Enter page ranges (e.g., 1-5).', 'Download split files.'],
-    faqs: [
-      { q: 'Can I extract single pages?', a: 'Yes, just enter the page number.' },
-      { q: 'Can I split by range?', a: 'Yes, use format like 1-5, 8, 10-12.' }
+    intro: 'Need to get a specific page out of a large document? Or split a book into chapters? Our Split PDF tool lets you extract specific pages or ranges with ease.',
+    steps: [
+      'Upload your PDF document.',
+      'Enter the page numbers you want to extract (e.g., "1, 3, 5") or a range (e.g., "10-20").',
+      'Choose to merge extracted pages into one file or download them separately.',
+      'Click "Split PDF" and download your files.'
     ],
-    features: ['Extract specific pages', 'Split into multiple files', 'Instant processing'],
+    faqs: [
+      { q: 'Can I extract single pages?', a: 'Yes, simply enter the specific page number you need.' },
+      { q: 'Can I split by range?', a: 'Yes, use the format "Start-End" (e.g., 1-5).' },
+      { q: 'Will the original file be modified?', a: 'No, your original file remains untouched. We create new files from the extracted pages.' }
+    ],
+    features: [
+      'Extract Specific Pages',
+      'Split by Range',
+      'Batch Extraction',
+      'Instant Preview',
+      'No Quality Loss'
+    ],
+    tips: [
+      'Use commas to separate different ranges (e.g., "1-5, 8, 11-15").',
+      'Perfect for separating invoices or receipts from a long scanned document.'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'SPLIT',
     translations: {
@@ -134,16 +167,32 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'compress-pdf': {
     slug: 'compress-pdf',
-    title: 'Compress PDF - Reduce File Size',
-    description: 'Optimize PDF files for web and email without losing quality.',
+    title: 'Compress PDF - Reduce File Size Online',
+    description: 'Optimize PDF files for web and email without losing quality. Reduce PDF file size by up to 90%.',
     h1: 'Compress PDF Online',
-    intro: 'Reduce the file size of your PDFs significantly.',
-    steps: ['Upload PDF.', 'Select compression level.', 'Download optimized file.'],
-    faqs: [
-      { q: 'How much can I reduce size?', a: 'Up to 80-90% depending on the file content.' },
-      { q: 'Does it affect quality?', a: 'We use smart algorithms to maintain visual quality.' }
+    intro: 'Too large to email? Reduce the file size of your PDFs significantly using our intelligent compression algorithm. We optimize images and fonts to save space while maintaining readability.',
+    steps: [
+      'Select your PDF file from your computer or mobile.',
+      'Choose a compression level: "Recommended" (Best balance) or "Extreme" (Smallest size).',
+      'Click "Compress PDF".',
+      'Compare size reduction and download your optimized file.'
     ],
-    features: ['Multiple compression levels', 'Target file size option', 'Batch processing'],
+    faqs: [
+      { q: 'How much can I reduce size?', a: 'Results vary, but we often see reductions of 50-80% for image-heavy documents.' },
+      { q: 'Does it affect quality?', a: 'Our "Recommended" setting keeps quality almost identical to the original. "Extreme" may slightly reduce image quality for maximum space saving.' },
+      { q: 'Can I compress multiple files?', a: 'Yes, you can upload and compress multiple PDFs at once.' }
+    ],
+    features: [
+      'Smart Compression Algorithm',
+      'Multiple Compression Levels',
+      'Batch Processing',
+      'Quality Preservation',
+      'Detailed Size Report'
+    ],
+    tips: [
+      'Use "Extreme" compression for documents that are only for screen viewing.',
+      'Use "Recommended" for documents you intend to print.'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'COMPRESS',
     translations: {
@@ -176,87 +225,250 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
 
   'pdf-to-word': {
     slug: 'pdf-to-word',
-    title: 'PDF to Word - Convert PDF to DOCX Online',
-    description: 'Convert PDF documents to editable Microsoft Word files with high accuracy.',
+    title: 'PDF to Word Converter - Free Online Docx',
+    description: 'Convert PDF documents to editable Microsoft Word (DOC/DOCX) files with high accuracy. Preserve layout, fonts, and tables.',
     h1: 'Convert PDF to Word',
-    intro: 'Turn your PDFs into editable Word documents.',
-    steps: ['Upload PDF.', 'Wait for conversion.', 'Download DOCX file.'],
-    faqs: [],
+    intro: 'Turn your static PDFs into editable Word documents. Our AI-powered conversion engine maintains your original formatting, paragraphs, lists, and tables so you can start editing immediately.',
+    steps: [
+      'Upload your PDF file.',
+      'Wait a moment while we convert the document.',
+      'Download your fully editable Word (.docx) file.',
+      'Open in Microsoft Word, Google Docs, or any office suite.'
+    ],
+    faqs: [
+      { q: 'Will the formatting be messed up?', a: 'We try our best to preserve the exact layout, including columns and tables.' },
+      { q: 'Can I convert scanned PDFs?', a: 'Yes, but for images of text, the editable output depends on the clarity of the scan.' },
+      { q: 'Is it compatible with Google Docs?', a: 'Yes, you can upload the resulting .docx, file to Google Drive and edit it there.' }
+    ],
+    features: [
+      'High-Fidelity Conversion',
+      'Table Reconstruction',
+      'Paragraph Recognition',
+      'Fast & Confidential',
+      'No Account Needed'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'TO_WORD'
   },
   'pdf-chat': {
     slug: 'pdf-chat',
     title: 'Chat with PDF - AI Document Assistant',
-    description: 'Upload PDF and chat with it. Ask questions, summarize, and analyze PDF with AI.',
+    description: 'Upload any PDF and chat with it using AI. Ask questions, get summaries, and extract insights from your documents instantly.',
     h1: 'Chat with PDF using AI',
-    intro: 'Interact with your documents using advanced AI.',
-    steps: ['Upload PDF.', 'Ask questions in the chat.', 'Get instant AI answers.'],
-    faqs: [],
+    intro: 'Turn your static documents into an interactive conversation. Upload research papers, contracts, or manuals and get instant answers without reading hundreds of pages.',
+    steps: [
+      'Upload your PDF document.',
+      'Wait for the AI to analyze the content.',
+      'Type your question in the chat box (e.g., "Summarize this file").',
+      'Get instant, accurate answers based on the document.'
+    ],
+    faqs: [
+      { q: 'Does it work with scanned PDFs?', a: 'It works best with text-based PDFs. For scanned files, ensure they are clear.' },
+      { q: 'Is my data private?', a: 'Yes, files are processed securely and are not used to train our models.' },
+      { q: 'Can I ask about specific details?', a: 'Absolutely. You can ask for dates, names, or specific clauses within the document.' }
+    ],
+    features: [
+      'Interactive Document Chat',
+      'Instant Summarization',
+      'Citation & References',
+      'Multi-document Support',
+      'Secure Analysis'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'CHAT'
   },
   'ai-image-generator': {
     slug: 'ai-image-generator',
-    title: 'AI Image Generator - Text to Image',
-    description: 'Generate stunning artwork and realistic photos from text prompts using Gemini AI.',
+    title: 'Free AI Image Generator - Text to Image Online',
+    description: 'Generate stunning artwork, realistic photos, and 3D assets from text prompts using Gemini AI. 100% free, unlimited generations.',
     h1: 'Free AI Image Generator',
-    intro: 'Create unlimited AI art from text descriptions.',
-    steps: ['Enter prompt.', 'Choose style.', 'Generate and download.'],
-    faqs: [],
+    intro: 'Turn your imagination into reality. Describe what you want to see, and our advanced AI will generate high-quality images in seconds. Perfect for designers, marketers, and creatives.',
+    steps: [
+      'Enter a detailed text prompt (e.g., "A futuristic city with flying cars at sunset").',
+      'Select a style (Cinematic, Anime, Digital Art, Photography).',
+      'Click "Generate Images".',
+      'Download your favorite creations in high resolution.'
+    ],
+    faqs: [
+      { q: 'Is it really free?', a: 'Yes, you can generate unlimited images for free.' },
+      { q: 'Can I use the images for commercial projects?', a: 'Yes, you own the rights to the images you generate.' },
+      { q: 'What is the best way to write a prompt?', a: 'Be descriptive! Mention the subject, lighting, style, and mood. For example: "A cute cat, studio lighting, 4k, realistic."' }
+    ],
+    features: [
+      'Text-to-Image Generation',
+      'Multiple Art Styles',
+      'High Resolution Output',
+      'Fast Generation',
+      'No Daily Limits'
+    ],
+    tips: [
+      'Experiment with different styles to see how they affect the result.',
+      'Use negative prompts (if available) to specify what you don\'t want in the image.'
+    ],
     type: ToolType.IMAGE_GENERATOR
   },
   'remove-bg': {
     slug: 'remove-bg',
-    title: 'Remove Background - Free AI Background Remover',
-    description: 'Instantly remove backgrounds from images automatically with AI.',
-    h1: 'Remove Image Background',
-    intro: 'Make your image background transparent in seconds.',
-    steps: ['Upload image.', 'AI removes background.', 'Download PNG.'],
-    faqs: [],
+    title: 'Free Background Remover - Remove BG Online',
+    description: 'Remove image backgrounds automatically in 5 seconds with AI. Download transparent PNGs for free. High accuracy for people, products, and cars.',
+    h1: 'Remove Background from Image Free',
+    intro: 'Instantly remove the background from your photos using our advanced AI technology. Perfect for e-commerce, profile pictures, and design projects. No sign-up required.',
+    steps: [
+      'Click "Upload Image" or drag and drop your file.',
+      'Wait a few seconds while our AI detects and removes the background.',
+      'Preview the transparent result.',
+      'Download your high-quality PNG image.'
+    ],
+    faqs: [
+      { q: 'Is this tool really free?', a: 'Yes, PDFA2Z provides unlimited free background removals.' },
+      { q: 'What image formats are supported?', a: 'We support JPG, PNG, WebP, and BMP files.' },
+      { q: 'Does it work on complex hair?', a: 'Yes, our AI is trained to handle fine details like hair and fur with high precision.' },
+      { q: 'Can I add a new background?', a: 'Currently, we provide a transparent PNG, which you can place on any background using our other image tools.' }
+    ],
+    features: [
+      'Automatic AI Detection',
+      'Handle Hair & Fur Details',
+      'Transparent PNG Output',
+      'No Watermark',
+      'Unlimited Free Usage'
+    ],
+    tips: [
+      'Ensure your subject is clearly visible for the best results.',
+      'High-contrast images work best for automatic detection.'
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'REMOVE_BG'
   },
   'ai-writer': {
     slug: 'ai-writer',
-    title: 'AI Writer - Free AI Writing Assistant',
-    description: 'Write emails, fix grammar, and summarize text with AI.',
-    h1: 'Free AI Writing Tool',
-    intro: 'Improve your writing instantly with AI.',
-    steps: ['Enter text.', 'Select mode.', 'Get results.'],
-    faqs: [],
+    title: 'Free AI Writer - Content Generator & Copywriting Tool',
+    description: 'Write emails, blog posts, essays, and social media captions 10x faster with AI. Fix grammar, summarize text, and generate creative content.',
+    h1: 'Free AI Writing Assistant',
+    intro: 'Writer\'s block is a thing of the past. Whether you need a professional email, a catchy headline, or a full article, our AI writer helps you create high-quality content instantly.',
+    steps: [
+      'Choose your use case (Email, Blog, Social Media, etc.).',
+      'Enter a short topic or description of what you need.',
+      'Select the tone (Professional, Casual, Funny).',
+      'Click "Generate" and get your text.'
+    ],
+    faqs: [
+      { q: 'Is the content unique?', a: 'Yes, our AI generates original content every time.' },
+      { q: 'Can it rewrite existing text?', a: 'Yes, use the "Rewrite" or "Paraphrase" mode to improve existing content.' },
+      { q: 'What languages does it support?', a: 'It supports over 30 languages including English, Spanish, French, and Hindi.' }
+    ],
+    features: [
+      'Email & Blog Writing',
+      'Grammar Correction',
+      'Text Summarization',
+      'Multi-language Support',
+      'Tone Adjustment'
+    ],
     type: ToolType.AI_WRITER
   },
   'video-downloader': {
     slug: 'video-downloader',
-    title: 'Video Downloader - Download from YouTube, FB, TikTok',
-    description: 'Free online video downloader. Save videos from YouTube, Facebook, Instagram, and TikTok in MP4/MP3.',
-    h1: 'Universal Video Downloader',
-    intro: 'Download videos from any social platform instantly.',
-    steps: ['Paste video link.', 'Click Analyze.', 'Choose quality and download.'],
-    faqs: [],
+    title: 'Universal Video Downloader - YouTube, TikTok, Insta',
+    description: 'Download videos from YouTube, Facebook, Instagram, TikTok, and Twitter in MP4 HD quality. Free online video saver, no watermark.',
+    h1: 'Free Universal Video Downloader',
+    intro: 'Save your favorite videos for offline viewing from over 50+ websites. Whether it\'s a YouTube tutorial, an Instagram Reel, or a TikTok trend, our tool grabs the highest quality version available instantly.',
+    steps: [
+      'Copy the video URL from YouTube, Instagram, Facebook, or TikTok.',
+      'Paste the link into the input box above.',
+      'Click the "Analyze" button.',
+      'Choose your desired format (MP4, MP3) and quality (720p, 1080p).',
+      'Click "Download" to save the file to your device.'
+    ],
+    faqs: [
+      { q: 'Is it legal to download videos?', a: 'It is legal to download videos for personal offline use. However, you should not distribute copyrighted material without permission.' },
+      { q: 'Does it work on mobile?', a: 'Yes, our tool works perfectly on iPhone (iOS) and Android browsers.' },
+      { q: 'Can I download MP3 audio only?', a: 'Yes, you can extract the audio track from YouTube videos and save it as MP3.' },
+      { q: 'Do you remove TikTok watermarks?', a: 'Yes, for most TikTok videos, we provide a "No Watermark" download option.' }
+    ],
+    features: [
+      'Support for 50+ Platforms (YT, FB, Insta, TikTok)',
+      '4K and HD Downloads',
+      'MP3 Audio Extraction',
+      'No Watermark Options',
+      'Fast & Secure'
+    ],
+    tips: [
+      'For Instagram, make sure the account is public.',
+      'If the download doesn\'t start, right-click the button and select "Save Link As".'
+    ],
     type: ToolType.VIDEO_SUITE,
     mode: 'DOWNLOAD'
   },
   'video-generator': {
     slug: 'video-generator',
-    title: 'AI Video Generator - Text to Video (Veo)',
-    description: 'Create professional videos from text prompts using Google Veo AI model.',
-    h1: 'AI Video Generator',
-    intro: 'Turn text into cinematic videos with Veo.',
-    steps: ['Enter video description.', 'Select aspect ratio.', 'Generate video.'],
-    faqs: [],
+    title: 'AI Video Generator - Text to Video Online (Free)',
+    description: 'Create amazing videos from text descriptions using Google Veo. Explain your idea, and AI generates a professional video clip.',
+    h1: 'Text to Video AI Generator',
+    intro: 'Turn your words into motion. Our AI Video Generator uses Google\'s advanced Veo model to create cinematic clips, animations, and realistic scenes from simple text prompts.',
+    steps: [
+      'Enter a detailed text description of the video you want (e.g., "A cyberpunk city in rain").',
+      'Select the Aspect Ratio (16:9 for YouTube, 9:16 for TikTok/Shorts).',
+      'Click "Generate Video".',
+      'Wait for the AI to render your unique clip.',
+      'Preview and Download.'
+    ],
+    faqs: [
+      { q: 'How long are the generated videos?', a: 'Currently, the AI generates 5-second clips. You can generate multiple clips and combine them using a video editor.' },
+      { q: 'Is it copyright free?', a: 'Yes, you own the rights to the video content generated by our AI.' },
+      { q: 'What is the resolution?', a: 'Videos are generated in 720p HD resolution.' }
+    ],
+    features: [
+      'Text-to-Video generation',
+      'Cinematic & Realistic Styles',
+      'Multiple Aspect Ratios',
+      'Powered by Google Veo',
+      'No Watermark'
+    ],
+    tips: [
+      'Be descriptive with lighting and style (e.g., "Cinematic lighting, 4k, slow motion").',
+      'Mention camera movements like "Drone shot" or "Close up".'
+    ],
+    tradeoffs: [
+      'Video generation is computationally expensive and may take 1-2 minutes.',
+      'Faces in complex scenes may sometimes appear slightly distorted.'
+    ],
     type: ToolType.VIDEO_SUITE,
     mode: 'GENERATE'
   },
   'magic-ai-editor': {
     slug: 'magic-ai-editor',
-    title: 'Magic AI Editor - Edit Images with Reference & AI',
-    description: 'The ultimate AI image editor. Upload a base image, a reference image, and instructions to magically transform your photos.',
-    h1: 'Magic AI Image Editor',
-    intro: 'Transform your images using AI-powered reference editing.',
-    steps: ['Upload base image.', 'Upload reference image or style.', 'Enter your magic instructions.', 'Download the AI-transformed result.'],
-    faqs: [],
+    title: 'Magic AI Editor - Edit Images with Generative AI',
+    description: 'Transform photos using advanced Generative AI. Swap faces, change backgrounds, add objects, and edit ID cards with professional precision. 100% Free.',
+    h1: 'Free Magic AI Photo Editor',
+    intro: 'Unleash the power of Generative AI to magically transform your images. Whether you need to swap a face, update text on an ID card, or completely reimagine a scene, our Magic Editor does it all with simple text prompts.',
+    steps: [
+      'Upload your Base Image (the image you want to edit).',
+      '(Optional) Upload a Reference Image for face swaps or style transfer.',
+      'Select your mode: "General", "Face Swap", or "ID / Doc".',
+      'Enter your instructions (e.g., "Make him smile" or "Swap face with reference").',
+      'Click "Apply Magic" and download your high-quality result.'
+    ],
+    faqs: [
+      { q: 'What can I do with Magic Editor?', a: 'You can swap faces, remove objects, change backgrounds, edit text on documents, and apply artistic styles.' },
+      { q: 'Is it free?', a: 'Yes, our Magic AI tools are completely free to use online.' },
+      { q: 'How does Face Swap work?', a: 'We use advanced AI to detect facial features in both images and seamlessly blend the reference face onto the target body, matching lighting and skin tone.' },
+      { q: 'Can I edit ID cards?', a: 'Yes, use the "ID / Doc" mode to swap photos or change text on ID cards while maintaining the original document\'s look and feel.' }
+    ],
+    features: [
+      'Generative Fill & Replace',
+      'Realistic Face Swapping',
+      'ID Card & Document Editing',
+      'Style Transfer',
+      'High-Resolution Output'
+    ],
+    tips: [
+      'For best face swap results, use photos with similar angles and lighting.',
+      'Be specific in your prompts (e.g., "Add a red hat" works better than "Change style").',
+      'Use "ID / Doc" mode specifically for text documents to preserve fonts.'
+    ],
+    tradeoffs: [
+      'Complex generative edits may take 10-20 seconds to process.',
+      'AI might occasionally hallucinate details on very low-resolution images.'
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'MAGIC_EDITOR'
   },
@@ -274,33 +486,79 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'protect-pdf': {
     slug: 'protect-pdf',
     title: 'Protect PDF - Encrypt PDF with Password',
-    description: 'Secure your PDF files with military-grade encryption.',
+    description: 'Secure your PDF files with military-grade AES encryption. Add a password to prevent unauthorized access.',
     h1: 'Password Protect PDF',
-    intro: 'Add a password to your PDF files securely.',
-    steps: ['Upload PDF', 'Enter password', 'Download protected file'],
-    faqs: [],
+    intro: 'Keep your sensitive documents safe. Add a strong password to your PDF files so only authorized people can view them.',
+    steps: [
+      'Upload the PDF you want to protect.',
+      'Enter a strong password.',
+      'Confirm the password.',
+      'Click "Protect PDF" and download your encrypted file.'
+    ],
+    faqs: [
+      { q: 'What kind of encryption is used?', a: 'We use industry-standard 128-bit or 256-bit AES encryption.' },
+      { q: 'Can you recover my password if I lose it?', a: 'No. For your security, we do not store your password. Please remember it.' }
+    ],
+    features: [
+      'Strong AES Encryption',
+      'Instant Processing',
+      'Client-side Options',
+      'No File Storage',
+      'Cross-Platform Compatibility'
+    ],
+    tips: ['Use a password manager to generate and save a strong, unique password.'],
     type: ToolType.PDF_SUITE,
     mode: 'PROTECT'
   },
   'unlock-pdf': {
     slug: 'unlock-pdf',
-    title: 'Unlock PDF - Remove PDF Password',
-    description: 'Remove security restrictions and passwords from PDFs.',
+    title: 'Unlock PDF - Remove Password Online',
+    description: 'Remove security restrictions and passwords from PDFs you own. Decrypt secured PDF files instantly.',
     h1: 'Unlock PDF',
-    intro: 'Remove passwords from PDF files instantly.',
-    steps: ['Upload PDF', 'Enter owner password', 'Download unlocked file'],
-    faqs: [],
+    intro: 'Forgot the editing password? Or want to remove the password from a file you access frequently? Use our Unlock PDF tool to create an unprotected copy.',
+    steps: [
+      'Upload the secured PDF file.',
+      'If the file has an "Open Password", enter it to verify ownership.',
+      'Click "Unlock PDF".',
+      'Download the password-free version.'
+    ],
+    faqs: [
+      { q: 'Can you crack a password I don\'t know?', a: 'No, this tool removes known passwords or owner restrictions. You must have the right to unlock the file.' },
+      { q: 'Is it safe?', a: 'Yes, the unlocking process happens securely.' }
+    ],
+    features: [
+      'Remove Open Passwords',
+      'Remove Editing Restrictions',
+      'Safe & Secure',
+      'Instant Decryption',
+      'No Watermark'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'UNLOCK'
   },
   'pdf-to-excel': {
     slug: 'pdf-to-excel',
-    title: 'PDF to Excel - Convert PDF to XLS',
-    description: 'Extract tables from PDF to Excel spreadsheets.',
+    title: 'PDF to Excel - Extract Tables to XLS',
+    description: 'Extract tables from PDF to Excel spreadsheets automatically. Convert PDF data into editable rows and columns.',
     h1: 'Convert PDF to Excel',
-    intro: 'Turn PDF tables into editable Excel sheets.',
-    steps: ['Upload PDF', 'Wait for extraction', 'Download Excel file'],
-    faqs: [],
+    intro: 'Stop retyping data manually! Our PDF to Excel converter automatically detects tables in your document and converts them into an editable spreadsheet.',
+    steps: [
+      'Upload the PDF containing data tables.',
+      'Our engine analyzes the document structure.',
+      'Download your converted Excel (.xlsx) file.',
+      'Open in Excel, Numbers, or Google Sheets.'
+    ],
+    faqs: [
+      { q: 'Does it handle multiple tables?', a: 'Yes, all detected tables will be extracted.' },
+      { q: 'What happens to non-table text?', a: 'It is typically placed in cells preserving the general layout, or skipped depending on the mode.' }
+    ],
+    features: [
+      'Smart Table Detection',
+      'Preserve Number Formatting',
+      'Multi-page Extraction',
+      'Secure & Private',
+      'XLSX Output'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'TO_EXCEL'
   },
@@ -482,12 +740,36 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'upscale-image': {
     slug: 'upscale-image',
-    title: 'Upscale Image - AI Enhancer',
-    description: 'Increase image resolution with AI upscaling.',
-    h1: 'AI Image Upscaler',
-    intro: 'Enhance low-res images to 2x or 4x.',
-    steps: ['Upload Image', 'Wait for AI', 'Download HD'],
-    faqs: [],
+    title: 'AI Image Upscaler - Enhance Photo Quality 4K',
+    description: 'Upscale low-resolution images to 2x or 4x without losing quality using AI. Fix blurry photos and enhance details instantly.',
+    h1: 'Free AI Image Upscaler',
+    intro: 'Don\'t let low-resolution photos ruin your project. Our AI Image Upscaler adds missing pixels and enhances clarity to give you crisp, high-definition results up to 4K resolution.',
+    steps: [
+      'Upload your low-resolution image (JPG, PNG).',
+      'Select your upscale factor (2x or 4x).',
+      'Wait for the AI to analyze and enhance the image.',
+      'Download your sharp, high-resolution photo.'
+    ],
+    faqs: [
+      { q: 'How does AI upscaling work?', a: 'Traditional resizing simply stretches pixels, making images blurry. AI upscaling "hallucinates" realistic details based on millions of training images to create a sharp result.' },
+      { q: 'What is the maximum resolution?', a: 'You can upscale images up to 4096px (4K) depending on the input size.' },
+      { q: 'Can it fix blurry text?', a: 'Yes, it works exceptionally well for sharpening blurry text and logos.' }
+    ],
+    features: [
+      '2x and 4x Upscaling',
+      'Noise Reduction',
+      'Face Enhancement',
+      'Restore Old Photos',
+      'Fix Blurriness'
+    ],
+    tips: [
+      'Use 2x for subtle enhancement and 4x for maximum size increase.',
+      'This tool is perfect for preparing old photos for printing.'
+    ],
+    tradeoffs: [
+      'Processing 4x upscales may take up to 20-30 seconds depending on server load.',
+      'Extremely small thumbnails (e.g., <100px) may not have enough data to recover perfectly.'
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'UPSCALE'
   },

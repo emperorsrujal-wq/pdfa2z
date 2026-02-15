@@ -105,6 +105,7 @@ const App: React.FC = () => {
           schema={seoData ? generateToolSchema(seoData) : undefined}
           parentSlug={seoData?.parentSlug}
           currentLang={lang}
+          tool={seoData}
         />
       )}
 
