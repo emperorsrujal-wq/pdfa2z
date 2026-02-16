@@ -3,6 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
 import { ImageGenerator } from './components/ImageGenerator';
 import { ImageEditor } from './components/ImageEditor';
 import { PdfSuite } from './components/PdfSuite';
@@ -86,11 +90,18 @@ const App: React.FC = () => {
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
       case ToolType.PDF_SUITE:
-
         return <PdfSuite initialTab={activePdfMode === 'CHAT' ? 'CHAT' : 'TOOLS'} initialToolMode={activePdfMode} />;
       case ToolType.IMAGE_TOOLKIT: return <ImageToolkit initialMode={activeImageMode} />;
       case ToolType.VIDEO_SUITE: return <VideoSuite initialMode={activeVideoMode} />;
       case ToolType.AI_WRITER: return <AiWriter />;
+      case ToolType.INFO_PAGE:
+        switch (slug) {
+          case 'about': return <About />;
+          case 'contact': return <Contact />;
+          case 'privacy': return <Privacy />;
+          case 'terms': return <Terms />;
+          default: return <Home />;
+        }
       default: return <Home />;
     }
   };

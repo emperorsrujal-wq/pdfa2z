@@ -50,6 +50,46 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       }
     }
   },
+  'about': {
+    slug: 'about',
+    title: 'About Us - PDF A2Z',
+    description: 'Learn about PDF A2Z mission to provide free, secure, and easy-to-use PDF and image tools for everyone.',
+    h1: 'About PDF A2Z',
+    intro: 'We are on a mission to make document management accessible, free, and secure.',
+    steps: [],
+    faqs: [],
+    type: ToolType.INFO_PAGE
+  },
+  'contact': {
+    slug: 'contact',
+    title: 'Contact Us - PDF A2Z Support',
+    description: 'Get in touch with the PDF A2Z team for support, feedback, or inquiries.',
+    h1: 'Contact Us',
+    intro: 'Have a question? We are here to help.',
+    steps: [],
+    faqs: [],
+    type: ToolType.INFO_PAGE
+  },
+  'privacy': {
+    slug: 'privacy',
+    title: 'Privacy Policy - PDF A2Z',
+    description: 'Read our privacy policy to understand how we handle your data and ensure your security.',
+    h1: 'Privacy Policy',
+    intro: 'Your privacy is our priority.',
+    steps: [],
+    faqs: [],
+    type: ToolType.INFO_PAGE
+  },
+  'terms': {
+    slug: 'terms',
+    title: 'Terms of Service - PDF A2Z',
+    description: 'Terms and conditions for using PDF A2Z services.',
+    h1: 'Terms of Service',
+    intro: 'Please read our terms carefully.',
+    steps: [],
+    faqs: [],
+    type: ToolType.INFO_PAGE
+  },
   'merge-pdf': {
     slug: 'merge-pdf',
     title: 'Merge PDF - Combine PDF Files Online for Free',
