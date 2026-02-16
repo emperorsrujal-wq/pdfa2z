@@ -1,0 +1,36 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#2563EB"/>
+  <rect width="1200" height="630" fill="url(#paint0_linear)"/>
+  <mask id="mask0" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="1200" height="630">
+    <rect width="1200" height="630" fill="white"/>
+  </mask>
+  <g mask="url(#mask0)">
+    <circle cx="1066.5" cy="54.5" r="354.5" fill="#1E40AF" fill-opacity="0.2"/>
+    <circle cx="102" cy="621" r="281" fill="#60A5FA" fill-opacity="0.2"/>
+  </g>
+  <g filter="url(#filter0_d)">
+    <rect x="135" y="130" width="120" height="120" rx="24" fill="white"/>
+    <path d="M195 210H175C169.477 210 165 205.523 165 200V160C165 154.477 169.477 150 175 150H195C206.046 150 215 158.954 215 170V190C215 201.046 206.046 210 195 210Z" stroke="#2563EB" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M175 210V230" stroke="#2563EB" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M165 180H215" stroke="#2563EB" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text fill="white" xml:space="preserve" style="white-space: pre" font-family="Inter, system-ui, sans-serif" font-size="80" font-weight="900" letter-spacing="-0.02em"><tspan x="290" y="218">PDF A2Z</tspan></text>
+  <text fill="white" xml:space="preserve" style="white-space: pre" font-family="Inter, system-ui, sans-serif" font-size="48" font-weight="500" letter-spacing="-0.01em" opacity="0.9"><tspan x="135" y="340">Free Online PDF &amp; AI Tools</tspan></text>
+  <text fill="white" xml:space="preserve" style="white-space: pre" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="400" opacity="0.7"><tspan x="135" y="480">• Merge, Split, Compress PDF</tspan><tspan x="135" y="530">• Edit Images &amp; AI Generation</tspan><tspan x="680" y="480">• 100% Free &amp; Secure</tspan><tspan x="680" y="530">• No Sign-up Required</tspan></text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="600" y1="0" x2="600" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E3A8A" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <filter id="filter0_d" x="115" y="114" width="160" height="160" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="10"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+</svg>

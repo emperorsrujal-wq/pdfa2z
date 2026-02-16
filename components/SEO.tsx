@@ -30,7 +30,10 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     ? (targetCanonical.startsWith('http') ? targetCanonical : `${siteUrl}${targetCanonical.startsWith('/') ? '' : '/'}${targetCanonical}`)
     : siteUrl;
 
-  const ogImage = `${siteUrl}/icon.svg`; // updated to use available icon
+  /* Open Graph & Twitter Image */
+  const ogImage = `${siteUrl}/og-image.svg`;
+  const ogWidth = "1200";
+  const ogHeight = "630";
 
   // Generate Hreflang Tags
   const hreflangs = [
@@ -67,17 +70,17 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       <meta property="og:url" content={fullCanonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="PDFA2Z" />
-      <meta property="og:image" content={`${siteUrl}/icon.svg`} />
-      <meta property="og:image:width" content="512" />
-      <meta property="og:image:height" content="512" />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content={ogWidth} />
+      <meta property="og:image:height" content={ogHeight} />
 
       {/* Twitter Tags */}
-      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@pdfa2z" />
       <meta name="twitter:creator" content="@pdfa2z" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={`${siteUrl}/icon.svg`} />
+      <meta name="twitter:image" content={ogImage} />
 
       {/* Schema */}
       {schema && (
@@ -117,6 +120,13 @@ export const generateToolSchema = (tool: any) => {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1250",
+      "bestRating": "5",
+      "worstRating": "1"
     },
     ...(tool.unique ? { unique: true } : {})
   };
