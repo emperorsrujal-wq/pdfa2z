@@ -1500,5 +1500,58 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'RESIZE',
     unique: true
+  },
+  'pdf-to-jpg': {
+    slug: 'pdf-to-jpg',
+    parentSlug: 'extract-images',
+    title: 'PDF to JPG - Convert PDF Pages to Images',
+    description: 'Convert PDF pages to high-quality JPG images. Save each page of your PDF as a separate JPG file.',
+    h1: 'Convert PDF to JPG',
+    intro: 'Turn your PDF document into a set of JPG images. Perfect for sharing on social media or inserting into other documents.',
+    steps: ['Upload PDF.', 'Select "Convert to JPG".', 'Download ZIP of images.'],
+    features: ['High Quality JPGs', 'Batch Conversion', 'Secure Processing'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'EXTRACT_IMAGES',
+    unique: true
+  },
+  'pdf-to-png': {
+    slug: 'pdf-to-png',
+    parentSlug: 'extract-images',
+    title: 'PDF to PNG - Convert PDF to Transparent Images',
+    description: 'Convert PDF pages to PNG images. Best for high-quality graphics and preserving text clarity.',
+    h1: 'Convert PDF to PNG',
+    intro: 'Extract pages from your PDF as lossless PNG images. Ideal for when you need higher quality than JPG.',
+    steps: ['Upload PDF.', 'Select "Convert to PNG".', 'Download ZIP of images.'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'EXTRACT_IMAGES',
+    unique: true
+  },
+  'png-to-pdf': {
+    slug: 'png-to-pdf',
+    parentSlug: 'jpg-to-pdf',
+    title: 'PNG to PDF - Convert PNG Images to PDF',
+    description: 'Convert PNG images to PDF documents. Merge multiple PNGs into a single PDF file.',
+    h1: 'Convert PNG to PDF',
+    intro: 'Turn your PNG images into a professional PDF document. Combine multiple files into one.',
+    steps: ['Upload PNG images.', 'Drag to reorder.', 'Download combined PDF.'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'IMAGES_TO_PDF',
+    unique: true
+  },
+  'bmp-to-pdf': {
+    slug: 'bmp-to-pdf',
+    parentSlug: 'jpg-to-pdf',
+    title: 'BMP to PDF - Convert Bitmap to PDF',
+    description: 'Convert BMP images to PDF format online for free.',
+    h1: 'Convert BMP to PDF',
+    intro: 'Easily convert older BMP bitmap images into modern, shareable PDF documents.',
+    steps: ['Upload BMP images.', 'Convert to PDF.', 'Download.'],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'IMAGES_TO_PDF',
+    unique: true
   }
 };
