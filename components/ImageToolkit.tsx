@@ -918,7 +918,19 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           ) : processedUrl ? (
             <>
               <img src={processedUrl} className="max-h-full object-contain shadow-2xl rounded-xl" />
-              <a href={processedUrl} download={`processed-${Date.now()}`} className="absolute bottom-4 right-4 p-3 bg-indigo-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+              <a
+                href={processedUrl}
+                download={(function () {
+                  if (mode === 'BATCH_RESIZE') return `batch-resized-${Date.now()}.zip`;
+                  let ext = '.png';
+                  if (typeof processedUrl === 'string') {
+                    if (processedUrl.startsWith('data:image/jpeg')) ext = '.jpg';
+                    else if (processedUrl.startsWith('data:image/webp')) ext = '.webp';
+                  }
+                  return `processed-${Date.now()}${ext}`;
+                })()}
+                className="absolute bottom-4 right-4 p-3 bg-indigo-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
                 <Download size={24} />
               </a>
             </>

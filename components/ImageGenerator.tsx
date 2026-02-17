@@ -103,7 +103,12 @@ export const ImageGenerator: React.FC = () => {
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                 <a
                   href={generatedImage}
-                  download={`lumina-gen-${Date.now()}.png`}
+                  download={(function () {
+                    let ext = '.png';
+                    if (generatedImage.startsWith('data:image/jpeg')) ext = '.jpg';
+                    else if (generatedImage.startsWith('data:image/webp')) ext = '.webp';
+                    return `lumina-gen-${Date.now()}${ext}`;
+                  })()}
                   className="p-3 bg-white rounded-full text-slate-900 hover:bg-slate-100 transition-colors shadow-lg"
                 >
                   <Download className="w-6 h-6" />
