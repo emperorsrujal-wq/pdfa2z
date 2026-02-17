@@ -45,7 +45,20 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     }))
   ];
 
-  const keywords = tool?.features ? tool.features.join(', ') + ', ' + title : title + ', online tool, free';
+  const GLOBAL_KEYWORDS = [
+    'pdf converter',
+    'free pdf tools',
+    'online pdf editor',
+    'ilovepdf alternative',
+    'smallpdf alternative',
+    'pdf to word',
+    'merge pdf',
+    'compress pdf'
+  ];
+
+  const keywords = (tool?.features ? tool.features.join(', ') : '') +
+    ', ' + title +
+    ', ' + GLOBAL_KEYWORDS.join(', ');
 
   return (
     <Helmet>
@@ -115,7 +128,10 @@ export const generateToolSchema = (tool: any) => {
     "description": tool.description,
     "url": `https://pdfa2z.com/${tool.slug}`,
     "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "Any",
+    "applicationSubCategory": tool.type === 'PDF_SUITE' ? 'ProductivityApplication' : 'PhotoEditor',
+    "operatingSystem": "Web, Windows, macOS, Android, iOS",
+    "screenshot": `https://pdfa2z.com/og-image.svg`,
+    "featureList": tool.features ? tool.features.join(', ') : 'Free online tool, No installation required, Secure processing',
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -135,9 +151,11 @@ export const generateToolSchema = (tool: any) => {
     "@context": "https://schema.org",
     "@type": "HowTo",
     "name": `How to use ${tool.title}`,
+    "totalTime": "PT1M",
     "step": tool.steps.map((step: string, index: number) => ({
       "@type": "HowToStep",
       "position": index + 1,
+      "name": `Step ${index + 1}`,
       "text": step
     }))
   } : null;

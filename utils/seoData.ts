@@ -92,15 +92,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'merge-pdf': {
     slug: 'merge-pdf',
-    title: 'Merge PDF - Combine PDF Files Online for Free',
-    description: 'Combine multiple PDFs into one unified document. Fast, secure, and easy PDF merger tool. No software installation required.',
-    h1: 'Merge PDF Files',
-    intro: 'Select multiple PDF files and merge them into one in seconds. Drag and drop pages to reorder them exactly how you want. Our PDF merger is secure, fast, and free.',
+    title: 'Merge PDF - Combine PDF Files Online (Free like iLovePDF)',
+    description: 'Merge PDF documents online for free. Combine multiple PDFs into one unified file instantly. Secure, fast, and easy PDF merger.',
+    h1: 'Merge PDF Files Online',
+    intro: 'Select multiple PDF files and merge them into one in seconds. Drag and drop pages to reorder them exactly how you want. Our PDF merger is secure, fast, and free - a great alternative to iLovePDF.',
     steps: [
-      'Click "Upload" to select your PDF files, or drag and drop them into the box.',
+      'Click "Upload" to select your PDF files, or drag and drop them.',
       'Drag the thumbnails to rearrange the files in your desired order.',
-      'Click "Merge PDF" to combine them.',
-      'Download your single, unified PDF document.'
+      'Click "Merge PDF" to combine them into one document.',
+      'Download your single, unified PDF file.'
     ],
     faqs: [
       { q: 'Is it free?', a: 'Yes, PDFA2Z is completely free to use for merging files.' },
@@ -150,15 +150,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'split-pdf': {
     slug: 'split-pdf',
-    title: 'Split PDF - Extract Pages & Separate Documents',
-    description: 'Separate one PDF into multiple files or extract specific pages instantly. User-friendly and free PDF splitter.',
+    title: 'Split PDF - Extract Pages & Separate Documents Online',
+    description: 'Split PDF files into individual pages or extract specific ranges. Free online PDF splitter to separate PDF documents instantly.',
     h1: 'Split PDF Document',
-    intro: 'Need to get a specific page out of a large document? Or split a book into chapters? Our Split PDF tool lets you extract specific pages or ranges with ease.',
+    intro: 'Need to extract specific pages from a large PDF? Our Split PDF tool lets you separate PDF documents by range or extract every page into a new file.',
     steps: [
-      'Upload your PDF document.',
-      'Enter the page numbers you want to extract (e.g., "1, 3, 5") or a range (e.g., "10-20").',
-      'Choose to merge extracted pages into one file or download them separately.',
-      'Click "Split PDF" and download your files.'
+      'Upload your PDF document to the splitter.',
+      'Enter page numbers (e.g., "1, 3, 5") or ranges (e.g., "10-20").',
+      'Select "Merge extracted pages" or download separately.',
+      'Click "Split PDF" to process and download.'
     ],
     faqs: [
       { q: 'Can I extract single pages?', a: 'Yes, simply enter the specific page number you need.' },
@@ -167,7 +167,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: [
       'Extract Specific Pages',
-      'Split by Range',
+      'Split by Page Range',
       'Batch Extraction',
       'Instant Preview',
       'No Quality Loss'
@@ -207,15 +207,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'compress-pdf': {
     slug: 'compress-pdf',
-    title: 'Compress PDF - Reduce File Size Online',
-    description: 'Optimize PDF files for web and email without losing quality. Reduce PDF file size by up to 90%.',
+    title: 'Compress PDF - Reduce File Size Online (100kb, 200kb)',
+    description: 'Compress PDF file size online for free. Reduce PDF size to 100kb, 200kb, or less without losing quality. Best PDF compressor.',
     h1: 'Compress PDF Online',
-    intro: 'Too large to email? Reduce the file size of your PDFs significantly using our intelligent compression algorithm. We optimize images and fonts to save space while maintaining readability.',
+    intro: 'Reduce PDF file size significantly for email or web uploads. Our intelligent compression optimizes images and fonts to shrink PDFs to 100kb, 200kb, or 1MB while maintaining quality.',
     steps: [
-      'Select your PDF file from your computer or mobile.',
-      'Choose a compression level: "Recommended" (Best balance) or "Extreme" (Smallest size).',
-      'Click "Compress PDF".',
-      'Compare size reduction and download your optimized file.'
+      'Select your PDF file to compress.',
+      'Choose a compression level: "Recommended" (Best quality) or "Extreme" (Smallest size).',
+      'Click "Compress PDF" to reduce file size.',
+      'Download your optimized, smaller PDF file.'
     ],
     faqs: [
       { q: 'How much can I reduce size?', a: 'Results vary, but we often see reductions of 50-80% for image-heavy documents.' },
@@ -224,8 +224,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: [
       'Smart Compression Algorithm',
-      'Multiple Compression Levels',
-      'Batch Processing',
+      'Target 100kb, 200kb, 1MB',
+      'Batch Compress PDFs',
       'Quality Preservation',
       'Detailed Size Report'
     ],
@@ -248,9 +248,9 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
         title: 'Compresser PDF - Réduire la Taille du Fichier',
         description: 'Optimisez les fichiers PDF pour le Web et les e-mails sans perte de qualité.',
         h1: 'Compresser un PDF en Ligne',
-        intro: 'Réduisez considérablement la taille de vos fichiers PDF.',
+        intro: 'Réduisez considérablement la taille de vos archivos PDF.',
         steps: ['Téléchargez le PDF.', 'Sélectionnez le niveau de compression.', 'Téléchargez le fichier.'],
-        faqs: [{ q: 'De combien puis-je réduire la taille ?', a: 'Jusqu\'à 80-90% selon le contenu.' }]
+        faqs: [{ q: 'De combien puis-je réduire la taille ?', a: 'Jusqu\'à 80-90% según el contenido.' }]
       },
       hi: {
         title: 'कंप्रेस PDF - फाइल का आकार कम करें',
@@ -265,15 +265,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
 
   'pdf-to-word': {
     slug: 'pdf-to-word',
-    title: 'PDF to Word Converter - Free Online Docx',
-    description: 'Convert PDF documents to editable Microsoft Word (DOC/DOCX) files with high accuracy. Preserve layout, fonts, and tables.',
+    title: 'PDF to Word Converter - Convert PDF to Docx Online',
+    description: 'Convert PDF to Word (Docx) online for free. Editable text, tables, and formatting preserved. Best PDF to Word converter.',
     h1: 'Convert PDF to Word',
-    intro: 'Turn your static PDFs into editable Word documents. Our AI-powered conversion engine maintains your original formatting, paragraphs, lists, and tables so you can start editing immediately.',
+    intro: 'Turn your static PDFs into editable Word documents (.docx). Our AI-powered converter maintains original formatting, tables, and fonts so you can edit text in Microsoft Word or Google Docs.',
     steps: [
-      'Upload your PDF file.',
-      'Wait a moment while we convert the document.',
-      'Download your fully editable Word (.docx) file.',
-      'Open in Microsoft Word, Google Docs, or any office suite.'
+      'Upload your PDF file to convert.',
+      'Wait for the PDF to Word conversion process.',
+      'Download your editable Word (.docx) document.',
+      'Open and edit in Microsoft Word or Google Docs.'
     ],
     faqs: [
       { q: 'Will the formatting be messed up?', a: 'We try our best to preserve the exact layout, including columns and tables.' },
@@ -282,9 +282,9 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: [
       'High-Fidelity Conversion',
-      'Table Reconstruction',
+      'Table & Layout Reconstruction',
       'Paragraph Recognition',
-      'Fast & Confidential',
+      'Convert Scanned PDFs (OCR)',
       'No Account Needed'
     ],
     type: ToolType.PDF_SUITE,
@@ -349,15 +349,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'remove-bg': {
     slug: 'remove-bg',
-    title: 'Free Background Remover - Remove BG Online',
-    description: 'Remove image backgrounds automatically in 5 seconds with AI. Download transparent PNGs for free. High accuracy for people, products, and cars.',
-    h1: 'Remove Background from Image Free',
-    intro: 'Instantly remove the background from your photos using our advanced AI technology. Perfect for e-commerce, profile pictures, and design projects. No sign-up required.',
+    title: 'Free Background Remover - Remove Background from Image',
+    description: 'Remove background from image online for free. Automatic AI background eraser for JPG, PNG, WebP. transparent background instantly.',
+    h1: 'Remove Background from Image',
+    intro: 'Instantly remove the background from any photo. Our AI automatically detects the subject and creates a transparent background PNG in seconds. Perfect for e-commerce and profiles.',
     steps: [
-      'Click "Upload Image" or drag and drop your file.',
-      'Wait a few seconds while our AI detects and removes the background.',
-      'Preview the transparent result.',
-      'Download your high-quality PNG image.'
+      'Upload an image to remove the background.',
+      'Wait 5 seconds for AI to auto-detect the subject.',
+      'Preview your image with a transparent background.',
+      'Download your high-quality PNG.'
     ],
     faqs: [
       { q: 'Is this tool really free?', a: 'Yes, PDFA2Z provides unlimited free background removals.' },
@@ -407,16 +407,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'video-downloader': {
     slug: 'video-downloader',
-    title: 'Universal Video Downloader - YouTube, TikTok, Insta',
-    description: 'Download videos from YouTube, Facebook, Instagram, TikTok, and Twitter in MP4 HD quality. Free online video saver, no watermark.',
-    h1: 'Free Universal Video Downloader',
-    intro: 'Save your favorite videos for offline viewing from over 50+ websites. Whether it\'s a YouTube tutorial, an Instagram Reel, or a TikTok trend, our tool grabs the highest quality version available instantly.',
+    title: 'Video Downloader - Download Video from YouTube, Insta, TikTok',
+    description: 'Universal video downloader for YouTube, Instagram, TikTok, Facebook. Download MP4 HD videos online for free. No watermark.',
+    h1: 'Universal Video Downloader',
+    intro: 'Download videos from YouTube, Instagram, Facebook, TikTok, and Twitter (X) in MP4 HD or MP3. Save your favorite content for offline viewing with our free video downloader.',
     steps: [
-      'Copy the video URL from YouTube, Instagram, Facebook, or TikTok.',
-      'Paste the link into the input box above.',
-      'Click the "Analyze" button.',
-      'Choose your desired format (MP4, MP3) and quality (720p, 1080p).',
-      'Click "Download" to save the file to your device.'
+      'Paste the video URL from YouTube, Instagram, or TikTok.',
+      'Click "Analyze" to find available formats.',
+      'Choose MP4 (Video) or MP3 (Audio) and quality (HD/4K).',
+      'Click "Download" to save to your device.'
     ],
     faqs: [
       { q: 'Is it legal to download videos?', a: 'It is legal to download videos for personal offline use. However, you should not distribute copyrighted material without permission.' },
@@ -578,15 +577,15 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-to-excel': {
     slug: 'pdf-to-excel',
-    title: 'PDF to Excel - Extract Tables to XLS',
-    description: 'Extract tables from PDF to Excel spreadsheets automatically. Convert PDF data into editable rows and columns.',
+    title: 'PDF to Excel Converter - Convert PDF to XLS/XLSX Online',
+    description: 'Convert PDF to Excel spreadsheets online for free. Extract tables from PDF to Excel (XLSX) automatically. Best PDF to Excel converter.',
     h1: 'Convert PDF to Excel',
-    intro: 'Stop retyping data manually! Our PDF to Excel converter automatically detects tables in your document and converts them into an editable spreadsheet.',
+    intro: 'Stop retyping data manually! Our PDF to Excel converter automatically detects tables in your document and converts them into editable Excel spreadsheets (.xlsx).',
     steps: [
       'Upload the PDF containing data tables.',
-      'Our engine analyzes the document structure.',
+      'Our AI analyzes the document structure.',
       'Download your converted Excel (.xlsx) file.',
-      'Open in Excel, Numbers, or Google Sheets.'
+      'Open in Microsoft Excel, Numbers, or Google Sheets.'
     ],
     faqs: [
       { q: 'Does it handle multiple tables?', a: 'Yes, all detected tables will be extracted.' },
@@ -601,6 +600,53 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     type: ToolType.PDF_SUITE,
     mode: 'TO_EXCEL'
+  },
+  'jpg-to-pdf': {
+    slug: 'jpg-to-pdf',
+    title: 'JPG to PDF - Convert Images to PDF Document',
+    description: 'Convert JPG, PNG, or BMP images to PDF online for free. Merge multiple images into one PDF file. Best JPG to PDF converter.',
+    h1: 'Convert JPG to PDF',
+    intro: 'Turn your images into a professional PDF document. Combine multiple JPGs into a single PDF file for easy sharing and archiving.',
+    steps: [
+      'Upload your JPG or PNG images.',
+      'Drag and drop to rearrange the order.',
+      'Click "Convert to PDF".',
+      'Download your new PDF document.'
+    ],
+    features: [
+      'Support JPG, PNG, BMP',
+      'Merge Multiple Images',
+      'Adjust Orientation',
+      'No File Limit',
+      'Secure Conversion'
+    ],
+    faqs: [
+      { q: 'Can I convert multiple images?', a: 'Yes, you can upload and merge unlimited images into one PDF.' },
+      { q: 'Does it reduce quality?', a: 'We maintain the original image quality in the PDF.' }
+    ],
+    type: ToolType.PDF_SUITE,
+    mode: 'IMAGES_TO_PDF'
+  },
+  'word-to-pdf': {
+    slug: 'word-to-pdf',
+    title: 'Word to PDF Converter - Convert Docx to PDF',
+    description: 'Convert Microsoft Word documents to PDF online for free. Save Doc and Docx files as PDF instantly. Best Word to PDF converter.',
+    h1: 'Convert Word to PDF',
+    intro: 'Create professional PDFs from your Word documents. Preserve your formatting, fonts, and layout exactly as they appear in Microsoft Word.',
+    steps: [
+      'Upload your Word document (.doc, .docx).',
+      'Wait for the conversion to PDF.',
+      'Download your secure PDF file.'
+    ],
+    features: [
+      'Preserve Formatting',
+      'Support DOC and DOCX',
+      'Fast Conversion',
+      'Secure & Private'
+    ],
+    faqs: [],
+    type: ToolType.PDF_SUITE,
+    mode: 'WORD_TO_PDF'
   },
   'pdf-to-html': {
     slug: 'pdf-to-html',
@@ -681,100 +727,218 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'resize-image': {
     slug: 'resize-image',
-    title: 'Resize Image - Change Dimensions',
-    description: 'Resize JPG, PNG, WebP images by pixel or percentage.',
-    h1: 'Resize Image Online',
-    intro: 'Change image size without losing quality.',
-    steps: ['Upload Image', 'Set dimensions', 'Download'],
-    faqs: [],
+    title: 'Resize Image - Change Photo Dimensions Online (Free)',
+    description: 'Resize JPG, PNG, and WebP images by pixel dimensions or percentage online. Resize images for Instagram, Facebook, and Web.',
+    h1: 'Free Online Image Resizer',
+    intro: 'Change the size of your images instantly. Resize photos for social media profiles, banners, or website optimization without losing quality.',
+    steps: [
+      'Upload your image file.',
+      'Enter new width and height in pixels or percentage.',
+      'Toggle "Lock Aspect Ratio" to prevent distortion.',
+      'Download your resized image.'
+    ],
+    features: [
+      'Pixel & Percentage Resizing',
+      'Lock Aspect Ratio',
+      'No Quality Loss',
+      'Batch Processing Supported'
+    ],
+    faqs: [
+      { q: 'Will my image lose quality?', a: 'We use high-quality resampling algorithms to ensure your image stays sharp.' },
+      { q: 'Can I resize multiple images?', a: 'Yes, use our "Batch Resize" tool for processing multiple files at once.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'RESIZE'
   },
   'convert-image': {
     slug: 'convert-image',
-    title: 'Convert Image - JPG to PNG, WebP',
-    description: 'Convert between common image formats like JPG, PNG, and WebP.',
-    h1: 'Image Converter',
-    intro: 'Convert images to different formats.',
-    steps: ['Upload Image', 'Select format', 'Download'],
-    faqs: [],
+    title: 'Image Converter - Convert JPG to PNG, WebP, GIF',
+    description: 'Convert images to JPG, PNG, WebP, BMP, or GIF online. Free image format converter for all your photos.',
+    h1: 'Convert Image Format Online',
+    intro: 'Need a different image format? Convert your photos instantly to JPG, PNG, WebP or other formats for compatibility with any device or website.',
+    steps: [
+      'Upload your image (JPG, PNG, WebP, HEIC).',
+      'Select the output format (e.g., JPG to PNG).',
+      'Click "Convert Image".',
+      'Download your converted file.'
+    ],
+    features: [
+      'Support JPG, PNG, WebP, GIF',
+      'High-Speed Conversion',
+      'Batch Conversion',
+      'Secure & Private'
+    ],
+    faqs: [
+      { q: 'Which format is best for web?', a: 'WebP offers the best balance of quality and file size for websites.' },
+      { q: 'Can I convert to transparent PNG?', a: 'Yes, if your source image has transparency, converting to PNG will preserve it.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'CONVERT'
   },
   'crop-image': {
     slug: 'crop-image',
-    title: 'Crop Image - Cut Photo Online',
-    description: 'Crop images to remove unwanted areas.',
-    h1: 'Crop Image',
-    intro: 'Trim your photos to the perfect size.',
-    steps: ['Upload Image', 'Select area', 'Crop'],
-    faqs: [],
+    title: 'Crop Image Online - Cut Photos Free',
+    description: 'Crop images to remove unwanted areas or change aspect ratio. Free online photo cropper.',
+    h1: 'Crop Image Online',
+    intro: 'Trim your photos to focus on the subject. Use preset aspect ratios like 1:1 (Square), 16:9, or freeform crop.',
+    steps: [
+      'Upload your photo.',
+      'Drag the corners of the crop box to select the area.',
+      'Choose a preset ratio if needed.',
+      'Click "Crop" and download.'
+    ],
+    features: [
+      'Visual Crop Editor',
+      'Preset Aspect Ratios',
+      'Mobile Friendly'
+    ],
+    faqs: [
+      { q: 'Does it reduce resolution?', a: 'The output resolution depends on the size of the cropped area.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'CROP'
   },
   'rotate-image': {
     slug: 'rotate-image',
-    title: 'Rotate Image - Flip Photo',
-    description: 'Rotate images 90 degrees left or right.',
-    h1: 'Rotate Image',
-    intro: 'Fix image orientation instantly.',
-    steps: ['Upload Image', 'Rotate', 'Download'],
+    title: 'Rotate Image - Flip & Rotate Photos',
+    description: 'Rotate images 90 degrees left or right, or flip them horizontally/vertically.',
+    h1: 'Rotate Image Online',
+    intro: 'Fix upside-down or sideways photos instantly. Rotate or mirror your images with a click.',
+    steps: [
+      'Upload your image.',
+      'Use the buttons to rotate left/right or flip.',
+      'Click "download" when satisfied.'
+    ],
+    features: [
+      '90° Rotation',
+      'Horizontal & Vertical Flip',
+      'Lossless Rotation'
+    ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'ROTATE'
   },
   'meme-maker': {
     slug: 'meme-maker',
-    title: 'Meme Maker - Create Memes Online',
-    description: 'Add top and bottom text to images to make memes.',
-    h1: 'Free Meme Generator',
-    intro: 'Create funny memes in seconds.',
-    steps: ['Upload Image', 'Add text', 'Download Meme'],
-    faqs: [],
+    title: 'Free Meme Generator - Create Funny Memes Online',
+    description: 'Make your own memes instantly. Add top and bottom text to any image. No watermarks, completely free meme maker.',
+    h1: 'Online Meme Generator',
+    intro: 'Turn your photos into viral memes in seconds. Use our simple tool to add custom text to popular templates or your own images.',
+    steps: [
+      'Upload your image or select a template.',
+      'Add top and bottom text strings.',
+      'Adjust text size and color if needed.',
+      'Click "Generate Meme" and download.'
+    ],
+    features: [
+      'No Watermarks',
+      'Custom Text Styling',
+      'Works on Mobile',
+      'High Quality Output'
+    ],
+    faqs: [
+      { q: 'Is there a watermark?', a: 'No, all memes generated are 100% watermark-free.' },
+      { q: 'Can I use my own images?', a: 'Yes, you can upload any JPG or PNG file to create a meme.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'MEME'
   },
   'passport-photo': {
     slug: 'passport-photo',
-    title: 'Passport Photo Maker - ID Photo',
-    description: 'Create compliant passport, visa, and ID photos.',
-    h1: 'Passport Photo Generator',
-    intro: 'Make professional ID photos at home.',
-    steps: ['Upload Photo', 'Select Country', 'Get Printable Sheet'],
-    faqs: [],
+    title: 'Passport Photo Maker - Create ID Photos Online',
+    description: 'Create biometric passport, visa, and ID photos for over 100 countries. AI automatically crops and adjusts background.',
+    h1: 'Free Passport Photo Generator',
+    intro: 'Save money on studio fees. Take a photo with your phone and convert it into a perfectly compliant passport or visa photo instantly.',
+    steps: [
+      'Upload a clear photo of yourself against a plain background.',
+      'Select your country and document type (Passport, Visa, ID).',
+      'Our AI automatically crops and centers the photo.',
+      'Download a printable sheet or a single digital photo.'
+    ],
+    features: [
+      'Biometric Standards Check',
+      'White Background Support',
+      'Printable 4x6 Inch Sheets',
+      'Supports 100+ Countries'
+    ],
+    faqs: [
+      { q: 'Is this acceptable for official documents?', a: 'Our tool follows standard biometric guidelines (dimensions, head size). However, always double-check your official government requirements.' },
+      { q: 'Do you verify the photo?', a: 'We provide the correct cropping and sizing, but you must ensure your original photo has good lighting and a neutral expression.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'PASSPORT'
   },
   'collage-maker': {
     slug: 'collage-maker',
-    title: 'Collage Maker - Photo Grid',
-    description: 'Create beautiful photo collages online.',
-    h1: 'Photo Collage Maker',
-    intro: 'Combine photos into stunning grids.',
-    steps: ['Upload Photos', 'Choose layout', 'Download Collage'],
-    faqs: [],
+    title: 'Free Photo Collage Maker - Create Photo Grids',
+    description: 'Combine multiple photos into beautiful collages. Choose from varied layouts and styles. No sign-up required.',
+    h1: 'Online Photo Collage Maker',
+    intro: 'Tell a story with your photos. improved collage maker lets you combine memories into stunning grids and artistic layouts.',
+    steps: [
+      'Upload multiple photos from your gallery.',
+      'Choose a grid layout that fits your style.',
+      'Adjust spacing, borders, and background colors.',
+      'Download your high-resolution collage.'
+    ],
+    features: [
+      'Drag & Drop Interface',
+      'Multiple Layout Options',
+      'Custom Borders & Backgrounds',
+      'HD Download'
+    ],
+    faqs: [
+      { q: 'How many photos can I add?', a: 'You can add up to 10 photos in a single collage.' },
+      { q: 'Can I resize individual photos?', a: 'Yes, you can zoom and pan each photo within its cell.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'COLLAGE'
   },
   'compare-image': {
     slug: 'compare-image',
-    title: 'Image Comparison - Before After Slider',
-    description: 'Compare two images with a slider.',
-    h1: 'Compare Images',
-    intro: 'Visualize difference between two images.',
-    steps: ['Upload 2 images', 'Use slider', 'Analyze'],
-    faqs: [],
+    title: 'Image Comparison Tool - Before and After Slider',
+    description: 'Create interactive "Before and After" comparison images. Perfect for showcasing edits, renovations, or weight loss.',
+    h1: 'Compare Images Online',
+    intro: 'Visualise the difference. Upload a "Before" and "After" image to generate a side-by-side comparison with a draggable slider.',
+    steps: [
+      'Upload your "Before" image.',
+      'Upload your "After" image.',
+      'Customize the slider orientation (Horizontal/Vertical).',
+      'Download the comparison as a GIF or shareable image.'
+    ],
+    features: [
+      'Interactive Slider',
+      'GIF Export',
+      'Side-by-Side View',
+      'Responsive Design'
+    ],
+    faqs: [
+      { q: 'Can I export as video?', a: 'Currently we support GIF and static image export.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'COMPARE'
   },
   'face-blur': {
     slug: 'face-blur',
-    title: 'Face Blur - Privacy Tool',
-    description: 'Automatically detect and blur faces in photos.',
-    h1: 'Blur Faces in Photos',
-    intro: 'Protect privacy by blurring faces automatically.',
-    steps: ['Upload Photo', 'AI Blurs Faces', 'Download'],
-    faqs: [],
+    title: 'Face Blur - Anonymize Faces in Photos',
+    description: 'Automatically detect and blur faces in your photos to protect privacy. AI-powered face redaction tool.',
+    h1: 'Blur Faces Online',
+    intro: 'Privacy matters. Our AI automatically detects faces in your uploaded photos and applies a secure blur effect. Perfect for sharing public photos or news media.',
+    steps: [
+      'Upload your photo.',
+      'Wait for AI to detect all faces.',
+      'Adjust the blur intensity leveling.',
+      'Download your anonymized photo.'
+    ],
+    features: [
+      'Auto Face Detection',
+      'Adjustable Blur Level',
+      'Multiple Face Support',
+      'Secure Processing'
+    ],
+    faqs: [
+      { q: 'Does it work on groups?', a: 'Yes, our AI can detect and blur multiple faces in a single photo.' },
+      { q: 'Can I blur only specific faces?', a: 'Currently, the tool applies blur to all detected faces for maximum privacy.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'FACE_BLUR'
   },
@@ -816,11 +980,23 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'round-image': {
     slug: 'round-image',
     title: 'Round Image Cropper - Circle Crop Online',
-    description: 'Crop your photos into a perfect circle shape instantly.',
+    description: 'Crop photos into perfect circles for profile pictures. Transparent background support. Free online tool.',
     h1: 'Round Image Cropper',
-    intro: 'Create circular profile pictures or icons easily.',
-    steps: ['Upload Photo', 'Adjust Circle', 'Download PNG'],
-    faqs: [],
+    intro: 'Create circular profile pictures instantly. Upload any photo and crop it into a perfect circle with a transparent background.',
+    steps: [
+      'Upload your photo (JPG, PNG).',
+      'Adjust the circle selection area.',
+      'Zoom and pan to perfect the crop.',
+      'Download your circular image as a PNG.'
+    ],
+    features: [
+      'Perfect Circle Crop',
+      'Transparent Background',
+      'Profile Picture Ready'
+    ],
+    faqs: [
+      { q: 'Is the background transparent?', a: 'Yes, the output is a PNG file with a transparent background outside the circle.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'ROUND'
   },
@@ -913,55 +1089,112 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'batch-resize': {
     slug: 'batch-resize',
-    title: 'Batch Image Resizer - Resize Multiple Images',
-    description: 'Bulk resize images at once online for free.',
-    h1: 'Batch Resize Images',
-    intro: 'Resize multiple images simultaneously.',
-    steps: ['Upload images', 'Set dimensions', 'Download ZIP'],
-    faqs: [],
+    title: 'Batch Image Resizer - Resize Multiple Images at Once',
+    description: 'Bulk resize JPG, PNG, and WebP images simultaneously. Save time by processing up to 50 images in one go.',
+    h1: 'Bulk Resize Images Online',
+    intro: 'Need to resize a whole album? Our batch processing tool handles multiple files instantly. Set your dimensions once and apply to all.',
+    steps: [
+      'Click "Upload Images" and select multiple files.',
+      'Enter the target width and height.',
+      'Choose to crop or fit images to the new size.',
+      'Download all resized images as a ZIP file.'
+    ],
+    features: [
+      'Process 50+ Images',
+      'Download as ZIP',
+      'Consistent Sizing',
+      'Fast Client-Side Processing'
+    ],
+    faqs: [
+      { q: 'Is there a limit on files?', a: 'Your browser memory is the only limit, but we recommend up to 50 files for best performance.' },
+      { q: 'Are my photos uploaded?', a: 'No, batch resizing happens locally in your browser for maximum privacy.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'BATCH_RESIZE'
   },
   'watermark-image': {
     slug: 'watermark-image',
-    title: 'Watermark Image - Protect Photos',
-    description: 'Add text or logo watermarks to your images.',
-    h1: 'Add Watermark to Image',
-    intro: 'Protect your photos with custom watermarks.',
-    steps: ['Upload image', 'Add text', 'Download'],
-    faqs: [],
+    title: 'Watermark Image Online - Add Logo or Text',
+    description: 'Protect your photography with custom watermarks. Add text copyrights or logo overlays to photos online.',
+    h1: 'Add Watermark to Photo',
+    intro: 'Secure your creative work. Easily add transparency-adjusted logos or repeated text patterns to your images to prevent theft.',
+    steps: [
+      'Upload your main image.',
+      'Choose "Text Watermark" or "Logo Watermark".',
+      'Adjust opacity, size, and position.',
+      'Download your protected image.'
+    ],
+    features: [
+      'Text & Image Support',
+      'Adjustable Opacity',
+      'Tiled / Repeated Patterns',
+      'Custom Fonts'
+    ],
+    faqs: [
+      { q: 'Can I batch watermark?', a: 'Currently this tool processes one image at a time. Check back for batch updates!' },
+      { q: 'Does it support transparent logos?', a: 'Yes, upload a PNG logo with transparency for the best results.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'WATERMARK'
   },
   'flip-image': {
     slug: 'flip-image',
-    title: 'Flip Image - Mirror Photo Online',
-    description: 'Flip your images horizontally or vertically instantly.',
-    h1: 'Flip Image Online',
-    intro: 'Mirror your photos with a single click.',
-    steps: ['Upload Image', 'Select Direction', 'Download'],
+    title: 'Flip Image Online - Mirror Photo Horizontally',
+    description: 'Mirror photos horizontally or vertically. Create reflection effects or correct selfie orientation.',
+    h1: 'Mirror Image Online',
+    intro: 'Did your phone take a mirrored selfie? Fix it instantly with our Flip Image tool.',
+    steps: [
+      'Upload your photo.',
+      'Click "Flip Horizontal" or "Flip Vertical".',
+      'Preview the result.',
+      'Download the corrected image.'
+    ],
+    features: [
+      'Instant Mirroring',
+      'Fix Selfies',
+      'No Quality Loss'
+    ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'FLIP'
   },
   'pixelate-image': {
     slug: 'pixelate-image',
-    title: 'Pixelate Image - Anonymize Photos',
-    description: 'Add pixelation effect to blur out details or faces.',
-    h1: 'Pixelate Image',
-    intro: 'Anonymize sensitive information or create retro art.',
-    steps: ['Upload Image', 'Adjust Pixel Size', 'Download'],
+    title: 'Pixelate Image Tool - Censor Photos Online',
+    description: 'Pixelate faces, license plates, or sensitive info. Create retro 8-bit style art effects.',
+    h1: 'Pixelate Photo Online',
+    intro: 'Hide sensitive details or create artistic pixel art. Adjust the block size to control the level of pixelation.',
+    steps: [
+      'Upload your photo.',
+      'Adjust the "Pixel Size" slider.',
+      'See the pixelation effect in real-time.',
+      'Download the censored or stylized image.'
+    ],
+    features: [
+      'Adjustable Block Size',
+      'Censor Sensitive Info',
+      'Retro Game Style'
+    ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'PIXELATE'
   },
   'invert-image': {
     slug: 'invert-image',
-    title: 'Invert Colors - Negative Image Generator',
-    description: 'Invert colors of any image to create a negative effect.',
-    h1: 'Invert Image Colors',
-    intro: 'Create cool negative effects instantly.',
-    steps: ['Upload Image', 'Click Process', 'Download'],
+    title: 'Invert Colors Online - Negative Photo Effect',
+    description: 'Invert image colors to make a negative. Turn white to black and black to white instantly.',
+    h1: 'Negative Image Generator',
+    intro: 'Create a "camera negative" effect by inverting all colors in your photo. Useful for analyzing contrasts or artistic effects.',
+    steps: [
+      'Upload your image.',
+      'The tool automatically inverts the colors.',
+      'Download the negative image.'
+    ],
+    features: [
+      'Instant Negative Effect',
+      'High Contrast Analysis',
+      'Artistic Filters'
+    ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'INVERT'
@@ -1114,13 +1347,25 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'profile-picture-maker': {
     slug: 'profile-picture-maker',
-    title: 'Free Profile Picture Maker - Circle & Border',
-    description: 'Create professional circular profile pictures with custom borders for social media.',
+    title: 'Free Profile Picture Maker - Border & Circle Crop',
+    description: 'Create professional profile pictures for LinkedIn, Instagram, and more. Add colorful borders and circle crops instantly.',
     h1: 'Profile Picture Maker',
-    intro: 'Design the perfect profile photo for Instagram, LinkedIn, and more.',
-    steps: ['Upload photo', 'Adjust crop', 'Download circular image'],
-    features: ['Circle Crop', 'Custom Borders', 'Instant Preview'],
-    faqs: [],
+    intro: 'Stand out on social media. Create a perfect circular profile photo with custom borders and backgrounds.',
+    steps: [
+      'Upload your photo.',
+      'Adjust the zoom and position.',
+      'Choose a border color and thickness.',
+      'Download your new profile picture.'
+    ],
+    features: [
+      'Custom Borders',
+      'Circle Crop',
+      'Professional Templates',
+      'Instant Preview'
+    ],
+    faqs: [
+      { q: 'What is the best size for profile pics?', a: 'Most platforms use 400x400px. We output high-resolution images suitable for all social media.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'PROFILE_MAKER'
   },
@@ -1162,25 +1407,49 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'split-image': {
     slug: 'split-image',
-    title: 'Image Splitter - Cut Images into Grid Pieces',
-    description: 'Split one image into multiple grid pieces (2x2, 3x3) for Instagram.',
-    h1: 'Split Image Online',
-    intro: 'Slice your photos into a grid for creative social media layouts.',
-    steps: ['Upload image', 'Select grid size', 'Download ZIP of pieces'],
-    features: ['Grid Splitting', 'ZIP Download', 'Instagram Ready'],
-    faqs: [],
+    title: 'Image Splitter - Grid Maker for Instagram',
+    description: 'Split photos into 3x1, 3x2, or 3x3 grids. Create swipeable panoramas and giant square grids for Instagram.',
+    h1: 'Split Image for Instagram',
+    intro: 'Plan your Instagram feed with precision. Split your large photos into multiple square posts to create a stunning grid layout.',
+    steps: [
+      'Upload your large photo.',
+      'Select grid columns and rows (e.g., 3x3).',
+      'Preview the split consistency.',
+      'Download a ZIP file containing all the pieces.'
+    ],
+    features: [
+      'Grid Splitting (2x1, 3x1, 3x3)',
+      'High Resolution Output',
+      'ZIP Download',
+      'No Watermarks'
+    ],
+    faqs: [
+      { q: 'How do I post these?', a: 'Post them in reverse order (bottom-right to top-left) to form the grid on your profile.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'SPLIT_IMAGE'
   },
   'add-text-to-image': {
     slug: 'add-text-to-image',
-    title: 'Add Text to Image - Online Photo Editor',
-    description: 'Add custom text overlays to your images quickly and easily.',
-    h1: 'Add Text to Photo',
-    intro: 'Personalize your photos with custom text and captions.',
-    steps: ['Upload image', 'Enter text', 'Download edited image'],
-    features: ['Custom Text', 'Adjustable Positioning', 'Simple Interface'],
-    faqs: [],
+    title: 'Add Text to Photo - Online Image Editor',
+    description: 'Add captions, quotes, and text overlays to images. Choose custom fonts, colors, and styles.',
+    h1: 'Add Text to Image',
+    intro: 'Make your photos speak. Add custom text with a variety of fonts and styles to create memes, quotes, or social media posts.',
+    steps: [
+      'Upload your image.',
+      'Type your text and choose a font.',
+      'Adjust size, color, and position.',
+      'Download your edited image.'
+    ],
+    features: [
+      'Custom Fonts Library',
+      'Text Styling (Bold, Italic)',
+      'Drag and Drop Positioning',
+      'Layer Management'
+    ],
+    faqs: [
+      { q: 'Can I add multiple text boxes?', a: 'Yes, you can add as many text layers as you need.' }
+    ],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'ADD_TEXT'
   },
