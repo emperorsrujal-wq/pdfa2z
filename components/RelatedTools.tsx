@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { TOOLS_REGISTRY } from '../utils/seoData.ts';
 import { ArrowRight } from 'lucide-react';
 
@@ -9,6 +9,18 @@ interface RelatedToolsProps {
 }
 
 export const RelatedTools: React.FC<RelatedToolsProps> = ({ currentSlug, category }) => {
+    const location = useLocation();
+    const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const currentLang = SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en';
+
+    // Helper to generate localized paths
+    const getLocalizedPath = (path: string) => {
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        if (currentLang === 'en') return `/${cleanPath}`;
+        return `/${currentLang}/${cleanPath}`;
+    };
+
     // Filter tools: same category, not current tool, limit 4
     const tools = Object.values(TOOLS_REGISTRY)
         .filter(t => t.slug !== currentSlug && (!category || t.slug.includes(category.toLowerCase()) || (category === 'PDF' && t.slug.includes('pdf'))))
@@ -23,7 +35,7 @@ export const RelatedTools: React.FC<RelatedToolsProps> = ({ currentSlug, categor
                 {tools.map((tool) => (
                     <Link
                         key={tool.slug}
-                        to={`/${tool.slug}`}
+                        to={getLocalizedPath(`/${tool.slug}`)}
                         className="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-rose-500 hover:shadow-lg transition-all"
                     >
                         <h3 className="font-bold text-slate-900 group-hover:text-rose-600 transition-colors mb-2">

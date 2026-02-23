@@ -4,9 +4,20 @@ import { Menu, X, Search, FileText, Image, Video, File, Zap } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+    currentLang?: string;
+}
+
+export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+
+    // Helper to generate localized paths
+    const getLocalizedPath = (path: string) => {
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        if (currentLang === 'en') return `/${cleanPath}`;
+        return `/${currentLang}/${cleanPath}`;
+    };
 
     const navigation = [
         { name: t('common.aiTools'), href: '/ai-tools', icon: Zap },
@@ -20,7 +31,7 @@ export const Header: React.FC = () => {
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-blue-600">
+                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
                             <FileText className="h-5 w-5" />
                         </div>
@@ -33,7 +44,7 @@ export const Header: React.FC = () => {
                     {navigation.map((item) => (
                         <Link
                             key={item.name}
-                            to={item.href}
+                            to={getLocalizedPath(item.href)}
                             className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
                         >
                             <item.icon className="h-4 w-4" />
@@ -49,7 +60,7 @@ export const Header: React.FC = () => {
                         <Search className="h-5 w-5" />
                     </button>
                     <Link
-                        to="/login"
+                        to={getLocalizedPath('/login')}
                         className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
                     >
                         {t('common.signIn')}
@@ -78,7 +89,7 @@ export const Header: React.FC = () => {
                         {navigation.map((item) => (
                             <Link
                                 key={item.name}
-                                to={item.href}
+                                to={getLocalizedPath(item.href)}
                                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
                                 onClick={() => setIsMenuOpen(false)}
                             >

@@ -49,8 +49,8 @@ export const generateImage = async (
   aspectRatio: AspectRatio,
   highQuality: boolean
 ): Promise<string> => {
-  // Use gemini-2.5-flash-image for standard, gemini-3-pro-image-preview for high quality
-  const model = highQuality ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+  // Use gemini-2.0-pro-exp-02-05 for high quality if available, or 2.0-flash for speed
+  const model = highQuality ? 'gemini-2.0-pro-exp-02-05' : 'gemini-2.0-flash';
 
   const ai = getFreshAi();
   try {
@@ -87,7 +87,7 @@ export const editImage = async (
   mimeType: string
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.5-flash-image';
+  const model = 'gemini-2.0-flash';
 
   try {
     const response = await ai.models.generateContent({
@@ -128,7 +128,7 @@ export const magicTransform = async (
   mode: 'GENERAL' | 'FACE_SWAP' | 'ID_EDIT' = 'GENERAL'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.5-flash-image'; // Use vision-optimized model
+  const model = 'gemini-2.0-flash'; // Use vision-optimized model
 
   let systemPrompt = "";
 
@@ -218,7 +218,7 @@ export const upscaleImage = async (
   targetSize: '2K' | '4K' = '2K'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-3-pro-image-preview';
+  const model = 'gemini-2.0-flash';
 
   try {
     const response = await ai.models.generateContent({
@@ -257,7 +257,7 @@ export const upscaleImage = async (
 
 export const generateText = async (prompt: string, systemInstruction?: string): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-3-flash-preview';
+  const model = 'gemini-2.0-flash';
 
   try {
     const response = await ai.models.generateContent({
@@ -281,7 +281,7 @@ export const generateVideo = async (
   aspectRatio: '16:9' | '9:16' = '16:9'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'veo-3.1-fast-generate-preview';
+  const model = 'veo-2.0-flash-preview';
 
   try {
     let operation = await ai.models.generateVideos({
@@ -308,7 +308,8 @@ export const generateVideo = async (
     if (!downloadLink) throw new Error("No video URI returned.");
 
     // Fetch the video bytes
-    const response = await fetch(`${downloadLink}&key=${getApiKey()}`);
+    const apiKey = getApiKey();
+    const response = await fetch(`${downloadLink}${downloadLink.includes('?') ? '&' : '?'}key=${apiKey}`);
     if (!response.ok) throw new Error("Failed to download generated video.");
 
     const blob = await response.blob();
@@ -325,7 +326,7 @@ export class PdfChatService {
   async startChat(pdfBase64: string, mimeType: string = 'application/pdf'): Promise<string> {
     const ai = getFreshAi();
     this.chat = ai.chats.create({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash',
       config: {
         systemInstruction: "You are a professional PDF analyzer. Provide concise summaries and answer questions based on the document.",
       }
@@ -368,8 +369,8 @@ export class VideoChatService {
 
   async startChat(videoBase64: string, mimeType: string): Promise<string> {
     const ai = getFreshAi();
-    // Using gemini-3-flash-preview for multimodal tasks as recommended for general text/multimodal tasks
-    const model = 'gemini-3-flash-preview';
+    // Using gemini-2.0-flash for multimodal tasks as recommended for general text/multimodal tasks
+    const model = 'gemini-2.0-flash';
 
     this.chat = ai.chats.create({
       model,

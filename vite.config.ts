@@ -31,19 +31,39 @@ export default defineConfig({
         ]
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/]
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          }
+        ]
       }
     }),
     viteStaticCopy({
       targets: [
-        {
-          src: cMapsDir,
-          dest: ''
-        },
-        {
-          src: workerPath,
-          dest: ''
-        }
+        { src: cMapsDir, dest: '' },
+        { src: workerPath, dest: '' }
       ]
     })
   ],
@@ -52,6 +72,19 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false
+    sourcemap: false,
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Put all node_modules into a single vendor chunk to avoid initialization issues
+          // between split chunks (like react vs react-router-dom circularities).
+          if (id.includes('node_modules/')) {
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 });
