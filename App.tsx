@@ -57,10 +57,18 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
+  // Delay SW registration to avoid main thread contention during initial paint
+  const [shouldRegister, setShouldRegister] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldRegister(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const sw = useRegisterSW();
+  const needRefresh = shouldRegister ? sw.needRefresh[0] : false;
+  const setNeedRefresh = shouldRegister ? sw.needRefresh[1] : () => { };
+  const updateServiceWorker = shouldRegister ? sw.updateServiceWorker : () => { };
+
 
   const [activeTool, setActiveTool] = useState<ToolType>(ToolType.DASHBOARD);
   const [activePdfMode, setActivePdfMode] = useState<PdfToolMode>('MENU');
@@ -154,7 +162,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {needRefresh && (
+      {shouldRegister && needRefresh && (
         <div className="fixed bottom-4 right-4 z-50 p-4 bg-blue-600 text-white rounded-lg shadow-lg flex items-center gap-4">
           <span>New version available!</span>
           <button

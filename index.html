@@ -8,23 +8,17 @@
   <title>PDFA2Z - Professional Online PDF & Image Tools</title>
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
 
-  <!-- DNS prefetch + preconnect for fonts (non-render-blocking) -->
+  <!-- Reduced font weights to 400, 600, 700 to save bandwidth on mobile -->
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="dns-prefetch" href="https://fonts.gstatic.com">
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!--
-    Load Google Fonts non-render-blocking using the media="print" trick.
-    The onload switches it to all media once loaded; the <noscript> fallback
-    covers browsers with JS disabled.
-  -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" media="print"
-    onload="this.media='all'">
+  <!-- Google Fonts loaded asynchronously to avoid render-blocking -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+    onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   </noscript>
 
   <script>
@@ -62,6 +56,7 @@
     })();
   </script>
   <style>
+    /* Critical Inline CSS for basic layout/fonts */
     body {
       font-family: 'Inter', sans-serif;
       background-color: #ffffff;

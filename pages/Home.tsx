@@ -214,7 +214,7 @@ export const Home: React.FC = () => {
                         </section>
 
                         {/* PDF Tools */}
-                        <section>
+                        <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
                             <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                                 <FileText size={24} className="text-blue-600" />
                                 <h2 className="text-2xl font-bold text-slate-900">{t('common.pdfTools')} {t('common.tools')}</h2>
@@ -223,7 +223,7 @@ export const Home: React.FC = () => {
                         </section>
 
                         {/* Image Tools */}
-                        <section>
+                        <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
                             <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                                 <LucideImage size={24} className="text-purple-600" />
                                 <h2 className="text-2xl font-bold text-slate-900">{t('common.imageTools')} {t('common.tools')}</h2>
@@ -232,7 +232,7 @@ export const Home: React.FC = () => {
                         </section>
 
                         {/* AI Tools */}
-                        <section>
+                        <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
                             <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                                 <Wand2 size={24} className="text-pink-600" />
                                 <h2 className="text-2xl font-bold text-slate-900">{t('common.aiTools')} {t('common.tools')}</h2>
