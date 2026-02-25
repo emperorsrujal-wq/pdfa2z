@@ -7,7 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/generateSitemap.js",
     "build": "npm run prebuild && tsc && vite build",
-    "postbuild": "node scripts/postbuild-inject.js && npm run prerender",
+    "postbuild": "npm run prerender",
     "prerender": "node scripts/prerender.js",
     "preview": "vite preview"
   },
