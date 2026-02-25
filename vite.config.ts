@@ -31,7 +31,17 @@ export default defineConfig({
   build: {
     target: 'esnext',
     minify: 'esbuild',
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'pdf-vendor': ['pdfjs-dist', 'pdf-lib'],
+          'ai-vendor': ['@google/genai'],
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['lucide-react', 'i18next', 'react-i18next']
+        }
+      }
+    }
   },
   optimizeDeps: {
     include: ['pdfjs-dist', 'pdf-lib']

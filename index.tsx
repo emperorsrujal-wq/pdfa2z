@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
@@ -45,8 +45,7 @@ if (typeof (window as any).aistudio === 'undefined') {
 
 const container = document.getElementById('root');
 if (container) {
-  const root = createRoot(container);
-  root.render(
+  const app = (
     <React.StrictMode>
       <ThemeProvider>
         <BrowserRouter>
@@ -55,4 +54,11 @@ if (container) {
       </ThemeProvider>
     </React.StrictMode>
   );
+
+  if (container.hasChildNodes()) {
+    hydrateRoot(container, app);
+  } else {
+    const root = createRoot(container);
+    root.render(app);
+  }
 }

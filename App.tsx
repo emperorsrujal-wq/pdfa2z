@@ -9,17 +9,18 @@ import { useTranslation } from 'react-i18next';
 
 // ── Imports (Non-lazy for emergency stability) ───────────────────────────────
 import { Home } from './pages/Home';
-import { About } from './pages/About';
-import { Contact } from './pages/Contact';
-import { Privacy } from './pages/Privacy';
-import { Terms } from './pages/Terms';
-import { ImageGenerator } from './components/ImageGenerator';
-import { ImageEditor } from './components/ImageEditor';
-import { PdfSuite } from './components/PdfSuite';
-import { ImageToolkit } from './components/ImageToolkit';
-import { AiWriter } from './components/AiWriter';
-import { VideoSuite } from './components/VideoSuite';
 import { ToolSeoContent } from './components/ToolSeoContent';
+
+const About = React.lazy(() => import('./pages/About').then(m => ({ default: m.About })));
+const Contact = React.lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
+const Privacy = React.lazy(() => import('./pages/Privacy').then(m => ({ default: m.Privacy })));
+const Terms = React.lazy(() => import('./pages/Terms').then(m => ({ default: m.Terms })));
+const ImageGenerator = React.lazy(() => import('./components/ImageGenerator').then(m => ({ default: m.ImageGenerator })));
+const ImageEditor = React.lazy(() => import('./components/ImageEditor').then(m => ({ default: m.ImageEditor })));
+const PdfSuite = React.lazy(() => import('./components/PdfSuite').then(m => ({ default: m.PdfSuite })));
+const ImageToolkit = React.lazy(() => import('./components/ImageToolkit').then(m => ({ default: m.ImageToolkit })));
+const AiWriter = React.lazy(() => import('./components/AiWriter').then(m => ({ default: m.AiWriter })));
+const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => ({ default: m.VideoSuite })));
 import { Breadcrumbs } from './components/Breadcrumbs';
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
