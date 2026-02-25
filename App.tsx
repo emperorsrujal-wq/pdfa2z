@@ -5,47 +5,25 @@ import { Layout } from './components/Layout';
 import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode } from './types';
 import { SEO, generateToolSchema } from './components/SEO';
 import { TOOLS_REGISTRY } from './utils/seoData';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 
-// ── Eagerly loaded pages (tiny, always needed) ────────────────────────────────
+// ── Imports (Non-lazy for emergency stability) ───────────────────────────────
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
-
-// ── Lazy-loaded heavy tool components ─────────────────────────────────────────
-const ImageGenerator = React.lazy(() =>
-  import('./components/ImageGenerator').then(m => ({ default: m.ImageGenerator }))
-);
-const ImageEditor = React.lazy(() =>
-  import('./components/ImageEditor').then(m => ({ default: m.ImageEditor }))
-);
-const PdfSuite = React.lazy(() =>
-  import('./components/PdfSuite').then(m => ({ default: m.PdfSuite }))
-);
-const ImageToolkit = React.lazy(() =>
-  import('./components/ImageToolkit').then(m => ({ default: m.ImageToolkit }))
-);
-const AiWriter = React.lazy(() =>
-  import('./components/AiWriter').then(m => ({ default: m.AiWriter }))
-);
-const VideoSuite = React.lazy(() =>
-  import('./components/VideoSuite').then(m => ({ default: m.VideoSuite }))
-);
-
-// ── Other lazy components ──────────────────────────────────────────────────────
-const ToolSeoContent = React.lazy(() =>
-  import('./components/ToolSeoContent').then(m => ({ default: m.ToolSeoContent }))
-);
-const Breadcrumbs = React.lazy(() =>
-  import('./components/Breadcrumbs').then(m => ({ default: m.Breadcrumbs }))
-);
+import { ImageGenerator } from './components/ImageGenerator';
+import { ImageEditor } from './components/ImageEditor';
+import { PdfSuite } from './components/PdfSuite';
+import { ImageToolkit } from './components/ImageToolkit';
+import { AiWriter } from './components/AiWriter';
+import { VideoSuite } from './components/VideoSuite';
+import { ToolSeoContent } from './components/ToolSeoContent';
+import { Breadcrumbs } from './components/Breadcrumbs';
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
-// Shared loading skeleton used by all lazy tool components
 const ToolLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
@@ -57,19 +35,6 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
-  // Delay SW registration to avoid main thread contention during initial paint
-  const [shouldRegister, setShouldRegister] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setShouldRegister(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const sw = useRegisterSW();
-  const needRefresh = shouldRegister ? sw.needRefresh[0] : false;
-  const setNeedRefresh = shouldRegister ? sw.needRefresh[1] : () => { };
-  const updateServiceWorker = shouldRegister ? sw.updateServiceWorker : () => { };
-
-
   const [activeTool, setActiveTool] = useState<ToolType>(ToolType.DASHBOARD);
   const [activePdfMode, setActivePdfMode] = useState<PdfToolMode>('MENU');
   const [activeImageMode, setActiveImageMode] = useState<ImageToolMode>('MENU');
@@ -79,14 +44,12 @@ const App: React.FC = () => {
   const lang = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
   const slug = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? (pathParts[1] || '') : (pathParts[0] || ''), [pathParts]);
 
-  // Sync i18n with URL
   useEffect(() => {
     if (i18n.language !== lang) {
       i18n.changeLanguage(lang);
     }
   }, [lang, i18n]);
 
-  // Sync state with URL path
   useEffect(() => {
     if (slug === '') {
       setActiveTool(ToolType.DASHBOARD);
@@ -120,22 +83,16 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTool) {
       case ToolType.DASHBOARD: return <Home />;
-      case ToolType.IMAGE_GENERATOR:
-        return <Suspense fallback={<ToolLoader />}><ImageGenerator /></Suspense>;
-      case ToolType.IMAGE_EDITOR:
-        return <Suspense fallback={<ToolLoader />}><ImageEditor /></Suspense>;
+      case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
+      case ToolType.IMAGE_EDITOR: return <ImageEditor />;
       case ToolType.PDF_SUITE:
-        return (
-          <Suspense fallback={<ToolLoader />}>
-            <PdfSuite initialTab={activePdfMode === 'CHAT' ? 'CHAT' : 'TOOLS'} initialToolMode={activePdfMode} />
-          </Suspense>
-        );
+        return <PdfSuite initialTab={activePdfMode === 'CHAT' ? 'CHAT' : 'TOOLS'} initialToolMode={activePdfMode} />;
       case ToolType.IMAGE_TOOLKIT:
-        return <Suspense fallback={<ToolLoader />}><ImageToolkit initialMode={activeImageMode} /></Suspense>;
+        return <ImageToolkit initialMode={activeImageMode} />;
       case ToolType.VIDEO_SUITE:
-        return <Suspense fallback={<ToolLoader />}><VideoSuite initialMode={activeVideoMode} /></Suspense>;
+        return <VideoSuite initialMode={activeVideoMode} />;
       case ToolType.AI_WRITER:
-        return <Suspense fallback={<ToolLoader />}><AiWriter /></Suspense>;
+        return <AiWriter />;
       case ToolType.INFO_PAGE:
         switch (slug) {
           case 'about': return <About />;
@@ -162,38 +119,18 @@ const App: React.FC = () => {
         />
       )}
 
-      {shouldRegister && needRefresh && (
-        <div className="fixed bottom-4 right-4 z-50 p-4 bg-blue-600 text-white rounded-lg shadow-lg flex items-center gap-4">
-          <span>New version available!</span>
-          <button
-            onClick={() => updateServiceWorker(true)}
-            className="px-3 py-1 bg-white text-blue-600 rounded hover:bg-blue-50 font-medium text-sm"
-          >
-            Update
-          </button>
-          <button
-            onClick={() => setNeedRefresh(false)}
-            className="ml-2 text-white/80 hover:text-white"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
       <Layout currentLang={lang}>
         <div className={activeTool !== ToolType.DASHBOARD ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" : ""}>
           {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
-            <Suspense fallback={<div className="h-6 w-48 bg-slate-100 animate-pulse rounded mb-6" />}>
-              <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
-            </Suspense>
+            <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
           )}
 
-          {renderContent()}
+          <Suspense fallback={<ToolLoader />}>
+            {renderContent()}
+          </Suspense>
 
           {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
-            <Suspense fallback={<div className="h-96 w-full bg-slate-50 animate-pulse rounded-3xl mt-12" />}>
-              <ToolSeoContent tool={seoData} />
-            </Suspense>
+            <ToolSeoContent tool={seoData} />
           )}
         </div>
       </Layout>

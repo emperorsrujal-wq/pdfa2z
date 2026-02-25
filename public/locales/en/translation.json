@@ -1,0 +1,32 @@
+{
+    "common": {
+        "home": "Home",
+        "aiTools": "AI Tools",
+        "pdfTools": "PDF",
+        "imageTools": "Image",
+        "fileTools": "File",
+        "signIn": "Sign In",
+        "about": "About Us",
+        "contact": "Contact",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "rights": "All rights reserved.",
+        "footerDesc": "Free online PDF, Image, Video, and AI tools. No sign-up required. 100% Free suitable for students, professionals and everyone."
+    },
+    "home": {
+        "heroTitle": "Professional PDF & AI Tools",
+        "heroSubtitle": "Completely free, client-side, and powered by AI.",
+        "startTool": "Start Tool",
+        "popular": "Popular"
+    },
+    "tools": {
+        "howTo": "How to use this tool",
+        "faq": "Frequently Asked Questions",
+        "proTips": "Pro Tips",
+        "considerations": "Important Considerations",
+        "alsoUse": "People also use",
+        "openTool": "OPEN TOOL",
+        "upload": "Upload your file",
+        "processing": "Processing..."
+    }
+}

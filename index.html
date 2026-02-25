@@ -2,60 +2,14 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#4f46e5" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDFA2Z - Professional Online PDF & Image Tools</title>
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="stylesheet" href="/index.css">
-
-  <!-- Reduced font weights to 400, 600, 700 to save bandwidth on mobile -->
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <!-- Google Fonts loaded asynchronously to avoid render-blocking -->
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-    onload="this.onload=null;this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-  </noscript>
-
-  <script>
-    (function () {
-      const processPolyfill = {
-        env: { API_KEY: "" },
-        browser: true,
-        version: '',
-        nextTick: (cb) => setTimeout(cb, 0)
-      };
-      window.process = window.process || processPolyfill;
-      window.process.env = window.process.env || {};
-      if (typeof window.process.env.API_KEY === 'undefined') { window.process.env.API_KEY = ""; }
-      window.global = window;
-      if (typeof window.Buffer === 'undefined') {
-        window.Buffer = {
-          isBuffer: (obj) => obj instanceof Uint8Array || (obj && obj._isBuffer),
-          from: (data) => {
-            if (typeof data === 'string') return new TextEncoder().encode(data);
-            if (data instanceof ArrayBuffer) return new Uint8Array(data);
-            return new Uint8Array(data);
-          },
-          alloc: (size) => new Uint8Array(size),
-          byteLength: (s) => (typeof s === 'string' ? new TextEncoder().encode(s).length : s.length)
-        };
-      }
-      if (typeof window.aistudio === 'undefined') {
-        window.aistudio = {
-          hasSelectedApiKey: async () => false,
-          openSelectKey: async () => {
-            alert("In a production environment, this would open the Google AI Studio key selection dialog.");
-          }
-        };
-      }
-    })();
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
