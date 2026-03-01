@@ -1,0 +1,21 @@
+{
+    "name": "PDFA2Z - Professional Online PDF & Image Tools",
+    "short_name": "PDFA2Z",
+    "description": "The number one PDF tool website for merging, splitting, compressing and more.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "icons": [
+        {
+            "src": "/pwa-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/pwa-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

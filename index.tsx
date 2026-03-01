@@ -7,30 +7,34 @@ import './i18n';
 import { ThemeProvider } from './components/ThemeContext.tsx';
 
 // --- Polyfills and Guards (Replaced manual HTML scripts) ---
-if (typeof window.global === 'undefined') {
-  (window as any).global = window;
-}
+try {
+  if (typeof window.global === 'undefined') {
+    (window as any).global = window;
+  }
 
-if (typeof window.process === 'undefined') {
-  (window as any).process = {
-    env: { API_KEY: "" },
-    browser: true,
-    version: '',
-    nextTick: (cb: any) => setTimeout(cb, 0)
-  };
-}
+  if (typeof window.process === 'undefined') {
+    (window as any).process = {
+      env: { API_KEY: "" },
+      browser: true,
+      version: '',
+      nextTick: (cb: any) => setTimeout(cb, 0)
+    };
+  }
 
-if (typeof window.Buffer === 'undefined') {
-  (window as any).Buffer = {
-    isBuffer: (obj: any) => obj instanceof Uint8Array || (obj && obj._isBuffer),
-    from: (data: any) => {
-      if (typeof data === 'string') return new TextEncoder().encode(data);
-      if (data instanceof ArrayBuffer) return new Uint8Array(data);
-      return new Uint8Array(data);
-    },
-    alloc: (size: number) => new Uint8Array(size),
-    byteLength: (s: any) => (typeof s === 'string' ? new TextEncoder().encode(s).length : s.length)
-  };
+  if (typeof window.Buffer === 'undefined') {
+    (window as any).Buffer = {
+      isBuffer: (obj: any) => obj instanceof Uint8Array || (obj && obj._isBuffer),
+      from: (data: any) => {
+        if (typeof data === 'string') return new TextEncoder().encode(data);
+        if (data instanceof ArrayBuffer) return new Uint8Array(data);
+        return new Uint8Array(data);
+      },
+      alloc: (size: number) => new Uint8Array(size),
+      byteLength: (s: any) => (typeof s === 'string' ? new TextEncoder().encode(s).length : s.length)
+    };
+  }
+} catch (e) {
+  console.warn("Global polyfills failed to initialize (possibly due to SES lockdown):", e);
 }
 
 if (typeof (window as any).aistudio === 'undefined') {

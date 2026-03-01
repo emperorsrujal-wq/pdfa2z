@@ -34,12 +34,7 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'pdf-vendor': ['pdfjs-dist', 'pdf-lib'],
-          'ai-vendor': ['@google/genai'],
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react', 'i18next', 'react-i18next']
-        }
+        // Removed manualChunks to resolve React binding issues and simplify deployment
       }
     }
   },
