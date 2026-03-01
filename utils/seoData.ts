@@ -318,6 +318,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Multi-document Support',
       'Secure Analysis'
     ],
+    relatedGuides: ['ai-chat-with-pdf'],
     type: ToolType.PDF_SUITE,
     mode: 'CHAT'
   },
@@ -551,6 +552,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Cross-Platform Compatibility'
     ],
     tips: ['Use a password manager to generate and save a strong, unique password.'],
+    relatedGuides: ['how-to-password-protect-pdf'],
     type: ToolType.PDF_SUITE,
     mode: 'PROTECT'
   },

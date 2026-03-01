@@ -133,5 +133,47 @@ export const BLOG_POSTS: BlogPost[] = [
       <h3>Perfect for E-commerce</h3>
       <p>Selling products on Amazon or eBay? A clean, transparent background makes your items pop and look professional. Just upload, wait 3 seconds, and download your PNG.</p>
     `
+  },
+  {
+    slug: 'how-to-password-protect-pdf',
+    title: 'Step-by-Step Guide: How to Password Protect Your Sensitive PDFs',
+    excerpt: 'Keep your private documents safe from prying eyes. Learn how to add enterprise-grade encryption to any PDF for free.',
+    date: '2026-03-01',
+    author: 'PDFA2Z Security',
+    category: 'Security',
+    content: `
+      <h2>Security in a Digital Age</h2>
+      <p>Whether it's a financial statement, a legal contract, or a personal diary, some documents are meant for your eyes only. Password protection is the first line of defense.</p>
+      
+      <h3>Military-Grade Encryption</h3>
+      <p>Our <a href="/protect-pdf">Protect PDF tool</a> uses AES-256 bit encryption, the same standard used by banks and governments. Once protected, the file cannot be opened without the correct password.</p>
+      
+      <h3>Choosing a Strong Password</h3>
+      <p>We recommend using a mix of uppercase letters, numbers, and symbols. Since we process files locally in your browser, your password never even touches our servers.</p>
+      
+      <h3>Instant Protection</h3>
+      <p>Simply upload your file, enter your chosen password, and download the encrypted version. It's that simple to stay secure.</p>
+    `
+  },
+  {
+    slug: 'ai-chat-with-pdf',
+    title: 'How to Use AI to Chat with Your Documents and Get Instant Answers',
+    excerpt: 'Stop reading hundreds of pages! Learn how to use our AI assistant to summarize and query your PDFs instantly.',
+    date: '2026-03-01',
+    author: 'PDFA2Z AI Lab',
+    category: 'AI Tools',
+    content: `
+      <h2>The Future of Reading is Interactive</h2>
+      <p>We've all been there: a 50-page research paper or a complex 20-page manual that you need to understand in 5 minutes. Static reading is slow; chatting is fast.</p>
+      
+      <h3>Meet Your PDF Assistant</h3>
+      <p>Our <a href="/pdf-chat">Chat with PDF tool</a> uses advanced LLMs to "read" your document. Once uploaded, you can ask questions like "What are the three main points of this paper?" or "Summarize the termination clause."</p>
+      
+      <h3>Data Privacy with AI</h3>
+      <p>Your documents are analyzed in a secure session and are not used to train global AI models. You get the intelligence of AI with the privacy of a local tool.</p>
+      
+      <h3>Boost Your Productivity</h3>
+      <p>Whether you're a student studying for finals or a lawyer reviewing a lease, AI chat helps you find the needle in the haystack in seconds instead of hours.</p>
+    `
   }
 ];
