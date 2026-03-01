@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
