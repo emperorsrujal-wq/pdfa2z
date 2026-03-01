@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert, Link, Book, Mail } from 'lucide-react';
+import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
-import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt } from '../utils/pdfHelpers.ts';
+import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea } from '../utils/pdfHelpers.ts';
 import { performOcrOnImages } from '../services/ocrService.ts';
 import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
+import { Redactor } from './Redactor.tsx';
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -34,6 +36,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
 
   // Organize State
   const [organizedPages, setOrganizedPages] = useState<{ index: number, rotation: number, isDeleted: boolean, originalIndex: number }[]>([]);
+  const [redactionAreas, setRedactionAreas] = useState<RedactionArea[]>([]);
+  const [activeRedactPage, setActiveRedactPage] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +86,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setCompressionMode('preset');
     setSigningPage(null);
     setOrganizedPages([]);
+    setRedactionAreas([]);
+    setActiveRedactPage(null);
   };
 
   const removeFile = (index: number) => {
@@ -237,6 +243,35 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         const blob = await pdfToImagesZip(files[0]);
         downloadBlob(blob, `extracted-images-${files[0].name}.zip`);
         setSuccessMsg("Images Extracted!");
+      } else if (mode === 'REDACT') {
+        if (resultImages.length === 0) {
+          const imgs = await pdfToImages(files[0]);
+          setResultImages(imgs);
+          setIsProcessing(false);
+          return;
+        }
+        const res = await redactPdf(files[0], await Promise.all(redactionAreas.map(async (area) => {
+          // Mapping from 0-1000 scale to PDF points
+          const arrayBuffer = await files[0].arrayBuffer();
+          const pdfDoc = await LibPDFDocument.load(arrayBuffer);
+          const page = pdfDoc.getPage(area.pageIndex);
+          const { width, height } = page.getSize();
+
+          return {
+            ...area,
+            x: (area.x / 1000) * width,
+            y: (area.y / 1000) * height,
+            width: (area.width / 1000) * width,
+            height: (area.height / 1000) * height
+          };
+        })));
+
+        // FOOLPROOF STEP: Strip all remaining metadata for maximum security
+        const redactedBlob = new Blob([res as any], { type: 'application/pdf' });
+        const finalizedRes = await sanitizePdf(new File([redactedBlob], files[0].name, { type: 'application/pdf' }));
+
+        downloadBlob(finalizedRes, `redacted-${files[0].name}`);
+        setSuccessMsg("PDF Redacted & Sanitized Successfully!");
       } else if (mode === 'EDIT') {
         // Basic Edit: Add text to first page center
         const res = await editPdf(files[0], [{
@@ -300,6 +335,15 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       setResultImages(newImages);
       setSigningPage(null);
     }
+  };
+
+  const handleSaveRedactions = (pageIdx: number, areas: RedactionArea[]) => {
+    // Remove old areas for this page and add new ones
+    setRedactionAreas(prev => [
+      ...prev.filter(a => a.pageIndex !== pageIdx),
+      ...areas
+    ]);
+    setActiveRedactPage(null);
   };
 
   const handleOrganizeLoad = async () => {
@@ -412,6 +456,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'SANITIZE': return { icon: <ShieldAlert />, title: 'Sanitize PDF' };
       case 'REVERSE': return { icon: <ArrowLeft />, title: 'Reverse PDF' };
       case 'EXTRACT_IMAGES': return { icon: <FileImage />, title: 'Extract Images' };
+      case 'REDACT': return { icon: <EyeOff />, title: 'Redact PDF' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
@@ -595,6 +640,61 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     image={signingPage.image}
                     onSave={handleSaveSignature}
                     onCancel={() => setSigningPage(null)}
+                  />
+                )}
+              </div>
+            ) : mode === 'REDACT' ? (
+              <div className="space-y-6 animate-fade-in w-full">
+                {resultImages.length === 0 ? (
+                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
+                    Load PDF to Redact
+                  </Button>
+                ) : (
+                  <div className="space-y-6 w-full">
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold flex items-center gap-2 justify-center">
+                      <EyeOff size={20} /> Click a page to select redaction areas
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {resultImages.map((img, i) => (
+                        <div key={i} className="relative group cursor-pointer" onClick={() => setActiveRedactPage(i)}>
+                          <div className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-slate-200 hover:border-red-500 transition-all shadow-lg bg-slate-100">
+                            <img src={img} className="w-full h-full object-contain" />
+
+                            {/* Overlay showing number of redactions on this page */}
+                            <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-lg">
+                              {redactionAreas.filter(a => a.pageIndex === i).length} REDACTIONS
+                            </div>
+
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
+                              <div className="bg-white p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all text-red-600">
+                                <EyeOff />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-center mt-2 font-bold text-slate-500 text-sm">Page {i + 1}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-4 sticky bottom-4">
+                      <Button onClick={handleProcess} isLoading={isProcessing} className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white shadow-lg">
+                        <CheckCircle2 size={20} className="mr-2" /> Apply All Redactions
+                      </Button>
+                      <Button onClick={reset} className="px-8 py-4 bg-white border border-slate-200 text-slate-400 font-bold hover:bg-slate-50">
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {activeRedactPage !== null && (
+                  <Redactor
+                    image={resultImages[activeRedactPage]}
+                    pageIndex={activeRedactPage}
+                    existingAreas={redactionAreas.filter(a => a.pageIndex === activeRedactPage)}
+                    onSave={(areas) => handleSaveRedactions(activeRedactPage, areas)}
+                    onCancel={() => setActiveRedactPage(null)}
                   />
                 )}
               </div>

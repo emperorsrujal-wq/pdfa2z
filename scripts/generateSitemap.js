@@ -22,12 +22,18 @@ async function generateSitemap() {
         // Always add home
         slugs.add('');
 
-        let match;
-        while ((match = SLUG_REGEX.exec(seoDataContent)) !== null) {
-            if (match[1]) {
-                slugs.add(match[1]);
-            }
+        // Import blog posts (requires dynamic import or reading file as text)
+        const blogDataContent = fs.readFileSync(path.join(__dirname, '../utils/blogData.ts'), 'utf-8');
+        const blogSlugs = [];
+        const BLOG_SLUG_REGEX = /slug:\s*['"]([^'"]+)['"]/g;
+        let bMatch;
+        while ((bMatch = BLOG_SLUG_REGEX.exec(blogDataContent)) !== null) {
+            blogSlugs.push(`blog/${bMatch[1]}`);
         }
+
+        // Add blog index
+        slugs.add('blog');
+        blogSlugs.forEach(s => slugs.add(s));
 
         const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
         const allUrls = [];

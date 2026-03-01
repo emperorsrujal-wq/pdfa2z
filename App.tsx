@@ -21,6 +21,8 @@ const PdfSuite = React.lazy(() => import('./components/PdfSuite').then(m => ({ d
 const ImageToolkit = React.lazy(() => import('./components/ImageToolkit').then(m => ({ default: m.ImageToolkit })));
 const AiWriter = React.lazy(() => import('./components/AiWriter').then(m => ({ default: m.AiWriter })));
 const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => ({ default: m.VideoSuite })));
+const Blog = React.lazy(() => import('./pages/Blog').then(m => ({ default: m.Blog })));
+const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ default: m.BlogPost })));
 import { Breadcrumbs } from './components/Breadcrumbs';
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
@@ -43,7 +45,21 @@ const App: React.FC = () => {
 
   const pathParts = useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
   const lang = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
-  const slug = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? (pathParts[1] || '') : (pathParts[0] || ''), [pathParts]);
+  const slug = useMemo(() => {
+    if (pathParts.length === 0) return '';
+    if (SUPPORTED_LANGS.includes(pathParts[0])) {
+      return pathParts[1] || '';
+    }
+    return pathParts[0] || '';
+  }, [pathParts]);
+
+  const blogSlug = useMemo(() => {
+    const startIdx = SUPPORTED_LANGS.includes(pathParts[0]) ? 1 : 0;
+    if (pathParts[startIdx] === 'blog') {
+      return pathParts[startIdx + 1] || 'MENU';
+    }
+    return null;
+  }, [pathParts]);
 
   useEffect(() => {
     if (i18n.language !== lang) {
@@ -68,8 +84,17 @@ const App: React.FC = () => {
       } else if (toolEntry.type === ToolType.VIDEO_SUITE && toolEntry.mode) {
         setActiveVideoMode(toolEntry.mode as VideoToolMode);
       }
-    } else {
-      if (slug === 'ai-writer') setActiveTool(ToolType.AI_WRITER);
+      return;
+    }
+
+    if (slug === 'ai-writer') {
+      setActiveTool(ToolType.AI_WRITER);
+      return;
+    }
+
+    if (slug === 'blog') {
+      setActiveTool(ToolType.INFO_PAGE);
+      return;
     }
   }, [slug]);
 
@@ -95,6 +120,9 @@ const App: React.FC = () => {
       case ToolType.AI_WRITER:
         return <AiWriter />;
       case ToolType.INFO_PAGE:
+        if (slug === 'blog') {
+          return blogSlug === 'MENU' ? <Blog /> : <BlogPost />;
+        }
         switch (slug) {
           case 'about': return <About />;
           case 'contact': return <Contact />;

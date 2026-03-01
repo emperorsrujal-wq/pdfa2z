@@ -16,6 +16,7 @@ export interface ToolSEO {
   tips?: string[];
   tradeoffs?: string[];
   unique?: boolean;
+  relatedGuides?: string[];
   translations?: Record<string, Partial<Omit<ToolSEO, 'slug' | 'type' | 'mode' | 'parentSlug' | 'unique' | 'translations'>>>;
 }
 
@@ -92,10 +93,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'merge-pdf': {
     slug: 'merge-pdf',
-    title: 'Merge PDF - Combine PDF Files Online (Free like iLovePDF)',
-    description: 'Merge PDF documents online for free. Combine multiple PDFs into one unified file instantly. Secure, fast, and easy PDF merger.',
+    title: 'Merge PDF Online - Combine PDF Files for Free (No. 1 iLovePDF Alternative)',
+    description: 'Merge PDF documents online for free. Combine multiple PDFs into one unified file instantly. Secure, fast, and easy PDF merger without registration.',
     h1: 'Merge PDF Files Online',
-    intro: 'Select multiple PDF files and merge them into one in seconds. Drag and drop pages to reorder them exactly how you want. Our PDF merger is secure, fast, and free - a great alternative to iLovePDF.',
+    intro: 'Combine multiple PDF files into a single document in seconds. Our professional-grade PDF merger allows you to reorder pages and merge unlimited files for free. No signup, no watermarks - the perfect alternative to iLovePDF.',
     steps: [
       'Click "Upload" to select your PDF files, or drag and drop them.',
       'Drag the thumbnails to rearrange the files in your desired order.',
@@ -119,6 +120,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Number your files (1.pdf, 2.pdf) before uploading to sort them automatically.',
       'Use the "Organize" mode if you need to rotate individual pages before merging.'
     ],
+    relatedGuides: ['best-ilovepdf-alternative-2026'],
     type: ToolType.PDF_SUITE,
     mode: 'MERGE',
     translations: {
@@ -207,10 +209,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'compress-pdf': {
     slug: 'compress-pdf',
-    title: 'Compress PDF - Reduce File Size Online (100kb, 200kb)',
-    description: 'Compress PDF file size online for free. Reduce PDF size to 100kb, 200kb, or less without losing quality. Best PDF compressor.',
+    title: 'Compress PDF Online - Reduce File Size to 100kb & 200kb (Free)',
+    description: 'Compress PDF file size online for free. Reduce PDF size to 100kb, 200kb, or 500kb without losing quality. Best PDF compressor for email and web.',
     h1: 'Compress PDF Online',
-    intro: 'Reduce PDF file size significantly for email or web uploads. Our intelligent compression optimizes images and fonts to shrink PDFs to 100kb, 200kb, or 1MB while maintaining quality.',
+    intro: 'Shrink your PDF files without losing quality. Our smart compression algorithm optimizes images and fonts to help you reach target sizes like 100kb or 200kb for official uploads.',
     steps: [
       'Select your PDF file to compress.',
       'Choose a compression level: "Recommended" (Best quality) or "Extreme" (Smallest size).',
@@ -233,6 +235,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Use "Extreme" compression for documents that are only for screen viewing.',
       'Use "Recommended" for documents you intend to print.'
     ],
+    relatedGuides: ['how-to-compress-pdf-to-100kb'],
     type: ToolType.PDF_SUITE,
     mode: 'COMPRESS',
     translations: {
@@ -265,10 +268,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
 
   'pdf-to-word': {
     slug: 'pdf-to-word',
-    title: 'PDF to Word Converter - Convert PDF to Docx Online',
-    description: 'Convert PDF to Word (Docx) online for free. Editable text, tables, and formatting preserved. Best PDF to Word converter.',
+    title: 'PDF to Word Converter - Free Online PDF to Docx (High Quality)',
+    description: 'Convert PDF to Word (Docx) online for free. Our AI-powered converter preserves editable text, tables, and original formatting perfectly.',
     h1: 'Convert PDF to Word',
-    intro: 'Turn your static PDFs into editable Word documents (.docx). Our AI-powered converter maintains original formatting, tables, and fonts so you can edit text in Microsoft Word or Google Docs.',
+    intro: 'Turn your PDF documents into fully editable Microsoft Word files. We use advanced OCR and layout reconstruction to ensure your Word docs look exactly like the original PDF.',
     steps: [
       'Upload your PDF file to convert.',
       'Wait for the PDF to Word conversion process.',
@@ -724,6 +727,31 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.PDF_SUITE,
     mode: 'FLATTEN'
+  },
+  'redact-pdf': {
+    slug: 'redact-pdf',
+    title: 'Redact PDF Online - Remove Sensitive Info for Free (Secure)',
+    description: 'Permanently remove sensitive text and images from PDF documents. Secure, client-side PDF redaction tool for privacy.',
+    h1: 'Redact & Censor PDF',
+    intro: 'Protect your privacy by permanently removing sensitive information. Our redaction tool blacks out text or images so they can never be recovered. 100% secure processing in your browser.',
+    steps: [
+      'Upload the PDF you want to redact.',
+      'Select the text or areas you want to black out.',
+      'Click "Apply Redaction" to permanently erase the data.',
+      'Download your secure, redacted PDF.'
+    ],
+    faqs: [
+      { q: 'Is redaction permanent?', a: 'Yes, our tool doesn\'t just cover the text with a black box; it removes the underlying data from the PDF stream.' },
+      { q: 'Can I redact images?', a: 'Currently, you can draw boxes over sensitive areas to censor them.' }
+    ],
+    features: [
+      'Permanent Data Removal',
+      'Secure Local Processing',
+      'Visual Selection',
+      'No Quality Loss'
+    ],
+    type: ToolType.PDF_SUITE,
+    mode: 'REDACT'
   },
   'resize-image': {
     slug: 'resize-image',

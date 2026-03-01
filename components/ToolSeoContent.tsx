@@ -1,7 +1,8 @@
 import React from 'react';
-import { ToolSEO } from '../utils/seoData.ts';
-import { HelpCircle, CheckCircle } from 'lucide-react';
+import { ToolSEO, TOOLS_REGISTRY } from '../utils/seoData.ts';
+import { HelpCircle, CheckCircle, Book, ArrowRight } from 'lucide-react';
 import { RelatedTools } from './RelatedTools.tsx';
+import { TrustSignals } from './TrustSignals.tsx';
 
 interface ToolSeoContentProps {
   tool: ToolSEO;
@@ -90,7 +91,37 @@ export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
         </div>
       )}
 
+      {tool.relatedGuides && tool.relatedGuides.length > 0 && (
+        <div className="mt-16 pt-12 border-t border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+            <Book className="text-indigo-600" size={28} />
+            Expert Guides & Resources
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {tool.relatedGuides.map(slug => {
+              const guide = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug);
+              if (!guide) return null;
+              return (
+                <a
+                  key={slug}
+                  href={`/blog/${slug}`}
+                  className="group p-6 bg-slate-50 rounded-3xl border border-slate-200 hover:border-indigo-600 hover:bg-white hover:shadow-xl transition-all"
+                >
+                  <h4 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 mb-2 truncate">{guide.title}</h4>
+                  <p className="text-sm text-slate-600 line-clamp-2">{guide.description}</p>
+                  <div className="mt-4 flex items-center text-xs font-black text-indigo-600 tracking-widest uppercase">
+                    Read Guide <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <RelatedTools currentSlug={tool.slug} />
+
+      <TrustSignals />
 
       {tool.features && tool.features.length > 0 && (
         <section className="mt-16 mb-16">

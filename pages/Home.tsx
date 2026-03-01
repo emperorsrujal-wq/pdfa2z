@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles } from 'lucide-react';
+import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles, BookOpen, ArrowRight } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
 import { ToolType } from '../types';
 import { SEO } from '../components/SEO';
@@ -241,6 +241,49 @@ export const Home: React.FC = () => {
                         </section>
                     </>
                 )}
+
+                {/* Knowledge Hub / Blog Section */}
+                <section className="mt-20 border-t border-slate-100 pt-20">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-indigo-900 rounded-[3rem] p-8 md:p-16 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <Sparkles size={160} className="text-white" />
+                        </div>
+                        <div className="md:w-2/3 relative z-10 text-center md:text-left">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 text-indigo-200 rounded-full text-sm font-bold mb-6 border border-indigo-500/30">
+                                <BookOpen size={16} />
+                                <span>NEW: KNOWLEDGE HUB</span>
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight leading-tight">
+                                Learn how to manage PDFs <br /><span className="text-indigo-400">like a professional.</span>
+                            </h2>
+                            <p className="text-lg text-indigo-100/70 font-medium mb-10 max-w-xl">
+                                From compressing to 100kb to AI-powered document analysis, our experts share everything they know.
+                            </p>
+                            <button
+                                onClick={() => navigate(i18n.language === 'en' ? '/blog' : `/${i18n.language}/blog`)}
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-900 font-black rounded-2xl shadow-xl hover:bg-slate-50 transition-all transform hover:-translate-y-1"
+                            >
+                                BROWSE GUIDES <ArrowRight size={20} />
+                            </button>
+                        </div>
+                        <div className="md:w-1/3 flex justify-center relative z-10">
+                            <div className="grid grid-cols-2 gap-4 opacity-50">
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 aspect-square flex items-center justify-center">
+                                    <FileText size={40} className="text-white" />
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 aspect-square flex items-center justify-center">
+                                    <Sparkles size={40} className="text-white" />
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 aspect-square flex items-center justify-center">
+                                    <Wand2 size={40} className="text-white" />
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 aspect-square flex items-center justify-center">
+                                    <Layers size={40} className="text-white" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
             </div>
         </div>

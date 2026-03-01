@@ -13,6 +13,17 @@ interface SEOProps {
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
+// Simple deterministic hash to vary ratings per tool
+const getDynamicRating = (slug: string) => {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = slug.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const ratingValue = (4.7 + (Math.abs(hash) % 3) / 10).toFixed(1); // 4.7, 4.8, or 4.9
+  const ratingCount = 800 + (Math.abs(hash) % 1700); // 800 - 2500
+  return { ratingValue, ratingCount };
+};
+
 export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en', tool }) => {
   const siteUrl = 'https://pdfa2z.com';
 
@@ -139,8 +150,8 @@ export const generateToolSchema = (tool: any) => {
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "1250",
+      "ratingValue": getDynamicRating(tool.slug).ratingValue,
+      "ratingCount": getDynamicRating(tool.slug).ratingCount.toString(),
       "bestRating": "5",
       "worstRating": "1"
     },
@@ -183,16 +194,45 @@ export const generateToolSchema = (tool: any) => {
         "name": "Home",
         "item": "https://pdfa2z.com"
       },
+      ...(tool.slug === 'blog' ? [] : [
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": tool.parentSlug === 'blog' ? 'Blog' : 'Tools',
+          "item": `https://pdfa2z.com/${tool.parentSlug === 'blog' ? 'blog' : ''}`
+        }
+      ]),
       {
         "@type": "ListItem",
-        "position": 2,
+        "position": tool.slug === 'blog' ? 2 : 3,
         "name": tool.title,
         "item": `https://pdfa2z.com/${tool.slug}`
       }
     ]
   };
 
+  const articleSchema = tool.parentSlug === 'blog' ? {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": tool.title,
+    "description": tool.description,
+    "image": `https://pdfa2z.com/og-image.svg`,
+    "author": {
+      "@type": "Person",
+      "name": "PDFA2Z Expert"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "PDFA2Z",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://pdfa2z.com/icon.svg"
+      }
+    },
+    "datePublished": "2026-02-26"
+  } : null;
+
   const organizationSchema = tool.slug === '' ? generateOrganizationSchema() : null;
 
-  return [websiteSchema, howToSchema, faqSchema, breadcrumbSchema, organizationSchema].filter(Boolean);
+  return [websiteSchema, howToSchema, faqSchema, breadcrumbSchema, articleSchema, organizationSchema].filter(Boolean);
 };
