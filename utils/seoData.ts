@@ -120,7 +120,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Number your files (1.pdf, 2.pdf) before uploading to sort them automatically.',
       'Use the "Organize" mode if you need to rotate individual pages before merging.'
     ],
-    relatedGuides: ['best-ilovepdf-alternative-2026'],
+    relatedGuides: ['best-ilovepdf-alternative-2026', 'how-to-merge-pdfs'],
     type: ToolType.PDF_SUITE,
     mode: 'MERGE',
     translations: {
@@ -290,6 +290,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Convert Scanned PDFs (OCR)',
       'No Account Needed'
     ],
+    relatedGuides: ['pdf-to-word-conversion'],
     type: ToolType.PDF_SUITE,
     mode: 'TO_WORD'
   },
@@ -379,6 +380,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Ensure your subject is clearly visible for the best results.',
       'High-contrast images work best for automatic detection.'
     ],
+    relatedGuides: ['remove-image-background'],
     type: ToolType.IMAGE_TOOLKIT,
     mode: 'REMOVE_BG'
   },
