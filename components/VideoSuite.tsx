@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { Video, Bot, Film, Download } from 'lucide-react';
 import { VideoGenerator } from './VideoGenerator.tsx';
 import { VideoAnalyzer } from './VideoAnalyzer.tsx';

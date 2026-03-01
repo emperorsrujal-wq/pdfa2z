@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Shield, Zap, Heart, Globe } from 'lucide-react';
 import { SEO } from '../components/SEO';
 

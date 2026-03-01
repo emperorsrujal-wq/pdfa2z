@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
+import {  useState, useRef, useEffect  } from 'react';
 import { X, Check, Trash2, MousePointer2 } from 'lucide-react';
 import { RedactionArea } from '../utils/pdfHelpers';
 

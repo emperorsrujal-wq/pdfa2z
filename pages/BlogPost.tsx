@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { BLOG_POSTS } from '../utils/blogData';
 import { Calendar, User, ArrowLeft, Share2, BookOpen } from 'lucide-react';

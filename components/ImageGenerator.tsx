@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { Wand2, Download, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateImage } from '../services/geminiService.ts';

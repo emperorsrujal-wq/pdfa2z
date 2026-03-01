@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
+import {  useState, useRef  } from 'react';
 import { Upload, ArrowRightLeft, Copy, CheckCircle2, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button } from './Button';
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { PenTool, Check, Copy, Wand2, RefreshCw, FileText, AlignLeft, Mail } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateText } from '../services/geminiService.ts';

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { Download, Link, Youtube, Facebook, Instagram, Twitter, Search, CheckCircle2, AlertCircle, Video, FileAudio } from 'lucide-react';
 import { Button } from './Button.tsx';
 

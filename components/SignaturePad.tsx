@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import * as React from 'react';
+import {  useRef, useEffect, useState  } from 'react';
 import { Save, X, Undo, Eraser, PenTool } from 'lucide-react';
 
 interface SignaturePadProps {

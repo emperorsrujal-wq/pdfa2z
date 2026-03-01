@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
+import {  useState, useRef  } from 'react';
 import { Edit3, Upload, Image as ImageIcon, Download, RefreshCw } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { fileToBase64 } from '../utils.ts';

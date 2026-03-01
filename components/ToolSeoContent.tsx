@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { ToolSEO, TOOLS_REGISTRY } from '../utils/seoData.ts';
 import { HelpCircle, CheckCircle, Book, ArrowRight } from 'lucide-react';
 import { RelatedTools } from './RelatedTools.tsx';

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import {  useState, useEffect  } from 'react';
 import { Film, Download, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateVideo } from '../services/geminiService.ts';

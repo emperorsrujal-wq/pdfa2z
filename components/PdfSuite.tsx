@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { FileText, Settings, Bot } from 'lucide-react';
 import { PdfAnalyzer } from './PdfAnalyzer.tsx';
 import { PdfToolkit } from './PdfToolkit.tsx';

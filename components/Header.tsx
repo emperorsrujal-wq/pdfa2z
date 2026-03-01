@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {  useState  } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Search, FileText, Image, Video, File, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

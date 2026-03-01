@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, X } from 'lucide-react';
 import { Button } from './Button';
