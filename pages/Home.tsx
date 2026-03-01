@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState  } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles, BookOpen, ArrowRight } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
@@ -122,11 +122,12 @@ export const Home: React.FC = () => {
                 return (
                     <ToolCard
                         key={tool.slug}
-                        title={localTool.h1} // Use H1 directly as title to fix missing translations
+                        title={localTool.h1}
                         description={localTool.description}
                         icon={getIcon(tool.slug)}
                         colorClass={colorClass}
                         onClick={handleClick}
+                        to={`${i18n.language !== 'en' ? `/${i18n.language}` : ''}/${tool.slug}`}
                         popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator'].includes(tool.slug)}
                     />
                 );

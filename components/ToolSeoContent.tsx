@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ToolSEO, TOOLS_REGISTRY } from '../utils/seoData.ts';
+import { BLOG_POSTS } from '../utils/blogData.ts';
 import { HelpCircle, CheckCircle, Book, ArrowRight } from 'lucide-react';
 import { RelatedTools } from './RelatedTools.tsx';
 import { TrustSignals } from './TrustSignals.tsx';
@@ -99,7 +100,7 @@ export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tool.relatedGuides.map(slug => {
-              const guide = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug);
+              const guide = BLOG_POSTS.find(p => p.slug === slug);
               if (!guide) return null;
               return (
                 <a
@@ -108,7 +109,7 @@ export const ToolSeoContent: React.FC<ToolSeoContentProps> = ({ tool }) => {
                   className="group p-6 bg-slate-50 rounded-3xl border border-slate-200 hover:border-indigo-600 hover:bg-white hover:shadow-xl transition-all"
                 >
                   <h4 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 mb-2 truncate">{guide.title}</h4>
-                  <p className="text-sm text-slate-600 line-clamp-2">{guide.description}</p>
+                  <p className="text-sm text-slate-600 line-clamp-2">{guide.excerpt}</p>
                   <div className="mt-4 flex items-center text-xs font-black text-indigo-600 tracking-widest uppercase">
                     Read Guide <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
