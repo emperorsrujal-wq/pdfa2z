@@ -42,9 +42,9 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     : siteUrl;
 
   /* Open Graph & Twitter Image */
-  const ogImage = `${siteUrl}/og-image.svg`;
-  const ogWidth = "1200";
-  const ogHeight = "630";
+  const ogImage = `${siteUrl}/pwa-512x512.png`;
+  const ogWidth = "512";
+  const ogHeight = "512";
 
   // Generate Hreflang Tags
   const hreflangs = [
@@ -216,7 +216,7 @@ export const generateToolSchema = (tool: any) => {
     "@type": "Article",
     "headline": tool.title,
     "description": tool.description,
-    "image": `https://pdfa2z.com/og-image.svg`,
+    "image": `https://pdfa2z.com/pwa-512x512.png`,
     "author": {
       "@type": "Person",
       "name": "PDFA2Z Expert"
@@ -226,10 +226,11 @@ export const generateToolSchema = (tool: any) => {
       "name": "PDFA2Z",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://pdfa2z.com/icon.svg"
+        "url": "https://pdfa2z.com/pwa-512x512.png"
       }
     },
-    "datePublished": "2026-02-26"
+    "datePublished": "2026-02-26",
+    "dateModified": new Date().toISOString().split('T')[0]
   } : null;
 
   const organizationSchema = tool.slug === '' ? generateOrganizationSchema() : null;

@@ -79,13 +79,13 @@ export const Footer: React.FC<FooterProps> = ({ currentLang = 'en' }) => {
                     <div>
                         <h3 className="mb-4 text-sm font-semibold text-slate-900">Connect</h3>
                         <div className="flex space-x-4">
-                            <a href="#" className="text-slate-400 hover:text-blue-600">
+                            <a href="https://twitter.com/pdfa2z" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600">
                                 <Twitter className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-slate-400 hover:text-blue-600">
+                            <a href="https://github.com/pdfa2z" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600">
                                 <Github className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-slate-400 hover:text-blue-600">
+                            <a href="https://linkedin.com/company/pdfa2z" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600">
                                 <Linkedin className="h-5 w-5" />
                             </a>
                         </div>
@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang = 'en' }) => {
                 </div>
 
                 <div className="mt-12 border-t border-slate-100 pt-8 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved. <span className="text-xs text-slate-300 ml-2">v1.4 - API REMOVED</span>
+                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved.
                 </div>
             </div>
         </footer>

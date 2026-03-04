@@ -1,7 +1,7 @@
 import * as React from 'react';
-import {  useState  } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Search, FileText, Image, Video, File, Zap } from 'lucide-react';
+import { Menu, X, FileText, Image, File, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
 
@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     // Helper to generate localized paths
     const getLocalizedPath = (path: string) => {
@@ -21,10 +21,10 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     };
 
     const navigation = [
-        { name: t('common.aiTools'), href: '/ai-tools', icon: Zap },
-        { name: t('common.pdfTools'), href: '/pdf-tools', icon: FileText },
-        { name: t('common.imageTools'), href: '/image-tools', icon: Image },
-        { name: t('common.fileTools'), href: '/file-tools', icon: File },
+        { name: t('common.aiTools'), href: '/ai-image-generator', icon: Zap },
+        { name: t('common.pdfTools'), href: '/merge-pdf', icon: FileText },
+        { name: t('common.imageTools'), href: '/remove-bg', icon: Image },
+        { name: 'Blog', href: '/blog', icon: File },
     ];
 
     return (
@@ -54,18 +54,9 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     ))}
                 </nav>
 
-                {/* Search & Actions */}
+                {/* Language Selector */}
                 <div className="hidden md:flex items-center gap-4">
                     <LanguageSelector />
-                    <button className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
-                        <Search className="h-5 w-5" />
-                    </button>
-                    <Link
-                        to={getLocalizedPath('/login')}
-                        className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
-                    >
-                        {t('common.signIn')}
-                    </Link>
                 </div>
 
                 {/* Mobile Menu Button */}
