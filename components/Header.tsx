@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, FileText, Image, File, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const { t } = useTranslation();
 
     // Helper to generate localized paths
