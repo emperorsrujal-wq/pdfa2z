@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, FileText, Image, File, Zap } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, FileText, Image, File, Zap, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
+import { TOOLS_REGISTRY } from '../utils/seoData';
 
 interface HeaderProps {
     currentLang?: string;
@@ -10,7 +11,9 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
     const { t } = useTranslation();
+    const location = useLocation();
 
     // Helper to generate localized paths
     const getLocalizedPath = (path: string) => {
@@ -19,11 +22,30 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
         return `/${currentLang}/${cleanPath}`;
     };
 
+    // Check if a path is active
+    const isPathActive = (href: string) => {
+        const currentPath = location.pathname.replace(`/${currentLang}`, '').replace('/en', '') || '/';
+        const cleanHref = href.startsWith('/') ? href : `/${href}`;
+        return currentPath.startsWith(cleanHref) || currentPath === cleanHref;
+    };
+
+    // Get tools by category
+    const pdfTools = Object.values(TOOLS_REGISTRY)
+        .filter((t: any) => t.type === 'PDF_SUITE' && t.unique !== false)
+        .slice(0, 7);
+    
+    const imageTools = Object.values(TOOLS_REGISTRY)
+        .filter((t: any) => t.type === 'IMAGE_TOOLKIT' && t.unique !== false)
+        .slice(0, 7);
+    
+    const aiTools = Object.values(TOOLS_REGISTRY)
+        .filter((t: any) => ['IMAGE_GENERATOR', 'AI_WRITER', 'AI_VISION'].includes(t.type));
+
     const navigation = [
-        { name: t('common.aiTools'), href: '/ai-image-generator', icon: Zap },
-        { name: t('common.pdfTools'), href: '/merge-pdf', icon: FileText },
-        { name: t('common.imageTools'), href: '/remove-bg', icon: Image },
-        { name: 'Blog', href: '/blog', icon: File },
+        { name: t('common.aiTools'), href: '/ai-image-generator', icon: Zap, id: 'ai', tools: aiTools },
+        { name: t('common.pdfTools'), href: '/merge-pdf', icon: FileText, id: 'pdf', tools: pdfTools },
+        { name: t('common.imageTools'), href: '/remove-bg', icon: Image, id: 'image', tools: imageTools },
+        { name: 'Blog', href: '/blog', icon: File, id: 'blog', tools: [] },
     ];
 
     return (
@@ -40,16 +62,45 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-8">
+                <nav className="hidden md:flex items-center gap-4">
                     {navigation.map((item) => (
-                        <Link
-                            key={item.name}
-                            to={getLocalizedPath(item.href)}
-                            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
-                        >
-                            <item.icon className="h-4 w-4" />
-                            {item.name}
-                        </Link>
+                        <div key={item.id} className="relative group">
+                            <Link
+                                to={getLocalizedPath(item.href)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    isPathActive(item.href)
+                                        ? 'text-blue-600 bg-blue-50 border-b-2 border-blue-600'
+                                        : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                                }`}
+                            >
+                                <item.icon className="h-4 w-4" />
+                                {item.name}
+                                {item.tools.length > 0 && <ChevronDown className="h-3 w-3 opacity-60" />}
+                            </Link>
+
+                            {/* Dropdown Menu */}
+                            {item.tools.length > 0 && (
+                                <div className="absolute left-0 mt-0 w-72 bg-white rounded-lg shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-2">
+                                    {item.tools.map((tool: any) => (
+                                        <Link
+                                            key={tool.slug}
+                                            to={getLocalizedPath(`/${tool.slug}`)}
+                                            className="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors truncate"
+                                        >
+                                            {tool.h1 || tool.title}
+                                        </Link>
+                                    ))}
+                                    <div className="border-t border-slate-100 py-2 px-4">
+                                        <Link
+                                            to={getLocalizedPath(item.href)}
+                                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                        >
+                                            View all {item.name.toLowerCase()} →
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </nav>
 
@@ -78,15 +129,53 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     </div>
                     <div className="space-y-1">
                         {navigation.map((item) => (
-                            <Link
-                                key={item.name}
-                                to={getLocalizedPath(item.href)}
-                                className="flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                <item.icon className="h-5 w-5" />
-                                {item.name}
-                            </Link>
+                            <div key={item.id}>
+                                {item.tools.length > 0 ? (
+                                    <button
+                                        onClick={() => setOpenDropdown(openDropdown === item.id ? null : item.id)}
+                                        className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-base font-semibold transition-all ${
+                                            isPathActive(item.href)
+                                                ? 'bg-blue-100 text-blue-600'
+                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <item.icon className="h-5 w-5" />
+                                            {item.name}
+                                        </div>
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${openDropdown === item.id ? 'rotate-180' : ''}`} />
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to={getLocalizedPath(item.href)}
+                                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition-all ${
+                                            isPathActive(item.href)
+                                                ? 'bg-blue-100 text-blue-600'
+                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
+                                        }`}
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        {item.name}
+                                    </Link>
+                                )}
+
+                                {/* Mobile Dropdown */}
+                                {item.tools.length > 0 && openDropdown === item.id && (
+                                    <div className="bg-slate-50 space-y-1 py-2">
+                                        {item.tools.map((tool: any) => (
+                                            <Link
+                                                key={tool.slug}
+                                                to={getLocalizedPath(`/${tool.slug}`)}
+                                                className="block px-6 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                                onClick={() => setIsMenuOpen(false)}
+                                            >
+                                                {tool.h1 || tool.title}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>

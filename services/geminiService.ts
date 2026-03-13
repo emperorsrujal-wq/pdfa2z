@@ -58,14 +58,8 @@ export const generateImage = async (
       model,
       contents: {
         parts: [{ text: prompt }]
-      },
-      config: {
-        imageConfig: {
-          aspectRatio: aspectRatio,
-          ...(highQuality ? { imageSize: '2K' } : {}),
-        }
-      } as any
-    });
+      }
+    } as any);
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
@@ -231,15 +225,10 @@ export const upscaleImage = async (
               mimeType: mimeType
             }
           },
-          { text: "Upscale this image. Sharpen details while maintaining composition." }
+          { text: `Upscale this image to ${targetSize}. Sharpen details while maintaining composition.` }
         ]
-      },
-      config: {
-        imageConfig: {
-          imageSize: targetSize,
-        }
-      } as any
-    });
+      }
+    } as any);
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {

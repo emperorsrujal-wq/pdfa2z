@@ -158,7 +158,7 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
     const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
     const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
 
-    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes));
+    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes) as any);
     const newPage = newPdf.addPage([viewport.width, viewport.height]);
     newPage.drawImage(jpgImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
   }
@@ -327,7 +327,7 @@ export const grayscalePdf = async (file: File): Promise<Uint8Array> => {
     await page.render({ canvasContext: context, viewport }).promise;
     const imgDataUrl = canvas.toDataURL('image/jpeg', 0.8);
     const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
-    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes));
+    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes) as any);
     const newPage = newPdf.addPage([viewport.width, viewport.height]);
     newPage.drawImage(jpgImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
   }

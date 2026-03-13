@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { getToolReviewData } from '../utils/reviewData';
 
 interface SEOProps {
   title: string;
@@ -12,17 +13,6 @@ interface SEOProps {
 }
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
-
-// Simple deterministic hash to vary ratings per tool
-const getDynamicRating = (slug: string) => {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) {
-    hash = slug.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const ratingValue = (4.7 + (Math.abs(hash) % 3) / 10).toFixed(1); // 4.7, 4.8, or 4.9
-  const ratingCount = 800 + (Math.abs(hash) % 1700); // 800 - 2500
-  return { ratingValue, ratingCount };
-};
 
 export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en', tool }) => {
   const siteUrl = 'https://pdfa2z.com';
@@ -150,8 +140,8 @@ export const generateToolSchema = (tool: any) => {
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": getDynamicRating(tool.slug).ratingValue,
-      "ratingCount": getDynamicRating(tool.slug).ratingCount.toString(),
+      "ratingValue": getToolReviewData(tool.slug).rating.toString(),
+      "ratingCount": getToolReviewData(tool.slug).count.toString(),
       "bestRating": "5",
       "worstRating": "1"
     },
@@ -236,4 +226,45 @@ export const generateToolSchema = (tool: any) => {
   const organizationSchema = tool.slug === '' ? generateOrganizationSchema() : null;
 
   return [websiteSchema, howToSchema, faqSchema, breadcrumbSchema, articleSchema, organizationSchema].filter(Boolean);
+};
+
+/**
+ * Generate ImageObject schema for image tools
+ */
+export const generateImageSchema = (tool: any) => {
+  if (!tool || tool.type !== 'IMAGE_TOOLKIT') return null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    "name": tool.h1 || tool.title,
+    "description": tool.description,
+    "url": `https://pdfa2z.com/${tool.slug}`,
+    "creator": {
+      "@type": "Organization",
+      "name": "PDFA2Z"
+    }
+  };
+};
+
+/**
+ * Generate VideoObject schema for video tools
+ */
+export const generateVideoSchema = (tool: any) => {
+  if (!tool || tool.type !== 'VIDEO_SUITE') return null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": tool.h1 || tool.title,
+    "description": tool.description,
+    "url": `https://pdfa2z.com/${tool.slug}`,
+    "uploadDate": new Date().toISOString().split('T')[0],
+    "duration": "PT5M",
+    "thumbnailUrl": "https://pdfa2z.com/pwa-512x512.png",
+    "creator": {
+      "@type": "Organization",
+      "name": "PDFA2Z"
+    }
+  };
 };
