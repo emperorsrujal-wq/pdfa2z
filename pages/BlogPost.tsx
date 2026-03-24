@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useLocation, Link, Navigate } from 'react-router-dom';
 import { BLOG_POSTS } from '../utils/blogData';
 import { Calendar, ArrowLeft, Share2, BookOpen } from 'lucide-react';
 import { SEO } from '../components/SEO';
@@ -35,7 +35,11 @@ const getCTA = (slug: string, category: string) => {
 };
 
 export const BlogPost: React.FC = () => {
-    const { postSlug } = useParams<{ postSlug: string }>();
+    const location = useLocation();
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    // Handle /blog/slug and /lang/blog/slug
+    const blogIdx = pathParts.indexOf('blog');
+    const postSlug = blogIdx >= 0 ? pathParts[blogIdx + 1] : undefined;
     const post = BLOG_POSTS.find(p => p.slug === postSlug);
 
     if (!post) return <Navigate to="/blog" replace />;
