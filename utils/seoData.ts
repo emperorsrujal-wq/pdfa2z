@@ -1337,7 +1337,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     slug: 'epub-to-pdf',
     title: 'EPUB to PDF - Convert eBook to PDF',
     description: 'Convert EPUB eBooks to universal PDF format.',
-    h1: 'Convert Is EPUB to PDF',
+    h1: 'Convert EPUB to PDF',
     intro: 'Read your eBooks on any device by converting to PDF.',
     steps: ['Upload EPUB', 'Convert', 'Download PDF'],
     faqs: [],

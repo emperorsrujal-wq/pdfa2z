@@ -63,7 +63,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
 
   // Dynamic Clickbait Injection
   const titleHook = " | 100% Free & No Signup";
-  const descHook = " 🚀 100% Free! No Signup Required & No Credit Card Ever. Instant Access!";
+  const descHook = " - 100% Free, No Signup Required. Instant Access!";
 
   // Only add if not already extremely long or already containing the hook
   const finalTitle = title.includes("Free") ? title : `${title}${titleHook}`;

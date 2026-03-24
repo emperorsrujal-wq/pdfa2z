@@ -24,6 +24,8 @@ const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => 
 const Blog = React.lazy(() => import('./pages/Blog').then(m => ({ default: m.Blog })));
 const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ default: m.BlogPost })));
 import { Breadcrumbs } from './components/Breadcrumbs';
+import { ErrorBoundary } from './components/ErrorBoundary';
+const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -96,6 +98,17 @@ const App: React.FC = () => {
       setActiveTool(ToolType.INFO_PAGE);
       return;
     }
+
+    // Known info pages
+    if (['about', 'contact', 'privacy', 'terms'].includes(slug)) {
+      setActiveTool(ToolType.INFO_PAGE);
+      return;
+    }
+
+    // Unknown route - show 404
+    if (slug !== '') {
+      setActiveTool('NOT_FOUND' as ToolType);
+    }
   }, [slug]);
 
   const seoData = React.useMemo(() => {
@@ -130,11 +143,12 @@ const App: React.FC = () => {
           case 'terms': return <Terms />;
           default: return <Home />;
         }
-      default: return <Home />;
+      default: return <NotFound />;
     }
   };
 
   return (
+    <ErrorBoundary>
     <HelmetProvider>
       {activeTool !== ToolType.DASHBOARD && (
         <SEO
@@ -164,6 +178,7 @@ const App: React.FC = () => {
         </div>
       </Layout>
     </HelmetProvider>
+    </ErrorBoundary>
   );
 };
 

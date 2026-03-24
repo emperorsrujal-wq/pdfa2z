@@ -167,7 +167,7 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
 
   // CRITICAL CHECK: If compressed file is larger than original, return original
   if (compressedBytes.byteLength >= originalBuffer.byteLength) {
-    console.log(`Compressed size (${compressedBytes.byteLength}) larger than original (${originalBuffer.byteLength}). Returning original.`);
+    // Compressed file larger than original - return original
     // Safe to use originalBuffer here because we passed a copy to PDF.js
     return new Uint8Array(originalBuffer);
   }
