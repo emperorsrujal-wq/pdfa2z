@@ -1,17 +1,17 @@
 import * as React from 'react';
-import {  useState  } from 'react';
+
 import { Wand2, Download, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateImage } from '../services/geminiService.ts';
 import { AspectRatio } from '../types.ts';
 
 export const ImageGenerator: React.FC = () => {
-  const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
-  const [highQuality, setHighQuality] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [prompt, setPrompt] = React.useState('');
+  const [aspectRatio, setAspectRatio] = React.useState<AspectRatio>('1:1');
+  const [highQuality, setHighQuality] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [generatedImage, setGeneratedImage] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;

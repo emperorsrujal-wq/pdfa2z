@@ -1,18 +1,17 @@
 import * as React from 'react';
-import {  useState, useEffect  } from 'react';
 import { Film, Download, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateVideo } from '../services/geminiService.ts';
 
 export const VideoGenerator: React.FC = () => {
-  const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(false);
+  const [prompt, setPrompt] = React.useState('');
+  const [aspectRatio, setAspectRatio] = React.useState<'16:9' | '9:16'>('16:9');
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Check if key is available in env or config
     // We can't easily import getApiKey here without changing imports, but we can check if the key is effectively "set" by the app logic
     // actually, let's just assume true if it's integrated, or let the service fail gracefully.

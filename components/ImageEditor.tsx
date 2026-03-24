@@ -1,18 +1,18 @@
 import * as React from 'react';
-import {  useState, useRef  } from 'react';
+
 import { Edit3, Upload, Image as ImageIcon, Download, RefreshCw } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { fileToBase64 } from '../utils.ts';
 import { editImage } from '../services/geminiService.ts';
 
 export const ImageEditor: React.FC = () => {
-  const [sourceImage, setSourceImage] = useState<string | null>(null);
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [editedImage, setEditedImage] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sourceImage, setSourceImage] = React.useState<string | null>(null);
+  const [sourceFile, setSourceFile] = React.useState<File | null>(null);
+  const [editedImage, setEditedImage] = React.useState<string | null>(null);
+  const [prompt, setPrompt] = React.useState('');
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

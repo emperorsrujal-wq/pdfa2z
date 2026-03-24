@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState, useRef, useEffect  } from 'react';
+
 import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert, Link, Book, Mail } from 'lucide-react';
 import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
@@ -16,33 +16,33 @@ interface PdfToolkitProps {
 }
 
 export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) => {
-  const [mode, setMode] = useState<PdfToolMode>(initialMode);
-  const [files, setFiles] = useState<File[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [mode, setMode] = React.useState<PdfToolMode>(initialMode);
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
-  const [resultImages, setResultImages] = useState<string[]>([]);
-  const [resultText, setResultText] = useState<string>('');
+  const [resultImages, setResultImages] = React.useState<string[]>([]);
+  const [resultText, setResultText] = React.useState<string>('');
 
-  const [signingPage, setSigningPage] = useState<{ index: number, image: string } | null>(null);
+  const [signingPage, setSigningPage] = React.useState<{ index: number, image: string } | null>(null);
 
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = React.useState('');
   // Compression Settings
-  const [compressionMode, setCompressionMode] = useState<'preset' | 'target'>('preset');
-  const [compressionLevel, setCompressionLevel] = useState<'high' | 'balanced' | 'max'>('balanced');
-  const [targetSizeMB, setTargetSizeMB] = useState<string>('1.0');
+  const [compressionMode, setCompressionMode] = React.useState<'preset' | 'target'>('preset');
+  const [compressionLevel, setCompressionLevel] = React.useState<'high' | 'balanced' | 'max'>('balanced');
+  const [targetSizeMB, setTargetSizeMB] = React.useState<string>('1.0');
 
-  const [rotationAngle, setRotationAngle] = useState<number>(90);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [rotationAngle, setRotationAngle] = React.useState<number>(90);
+  const [error, setError] = React.useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
 
   // Organize State
-  const [organizedPages, setOrganizedPages] = useState<{ index: number, rotation: number, isDeleted: boolean, originalIndex: number }[]>([]);
-  const [redactionAreas, setRedactionAreas] = useState<RedactionArea[]>([]);
-  const [activeRedactPage, setActiveRedactPage] = useState<number | null>(null);
+  const [organizedPages, setOrganizedPages] = React.useState<{ index: number, rotation: number, isDeleted: boolean, originalIndex: number }[]>([]);
+  const [redactionAreas, setRedactionAreas] = React.useState<RedactionArea[]>([]);
+  const [activeRedactPage, setActiveRedactPage] = React.useState<number | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initialMode) {
       setMode(initialMode);
       reset(); // Ensure state is cleared when mode changes from props

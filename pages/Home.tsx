@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles, BookOpen, ArrowRight } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
@@ -11,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 export const Home: React.FC = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = React.useState('');
 
     const navigateToTool = (tool: ToolType, subMode?: any) => {
         let slug = '';

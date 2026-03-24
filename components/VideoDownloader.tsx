@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {  useState  } from 'react';
 import { Download, Link, Youtube, Facebook, Instagram, Twitter, Search, CheckCircle2, AlertCircle, Video, FileAudio } from 'lucide-react';
 import { Button } from './Button.tsx';
 
@@ -11,16 +10,16 @@ interface VideoQuality {
 }
 
 export const VideoDownloader: React.FC = () => {
-  const [url, setUrl] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<{
+  const [url, setUrl] = React.useState('');
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [result, setResult] = React.useState<{
     title: string;
     thumbnail: string;
     duration: string;
     source: 'YouTube' | 'Facebook' | 'Instagram' | 'TikTok' | 'Twitter' | 'Unknown';
     qualities: VideoQuality[];
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!url.trim()) return;

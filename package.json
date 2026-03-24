@@ -8,7 +8,10 @@
     "prebuild": "node scripts/generateSitemap.js",
     "build": "npm run prebuild && tsc && vite build",
     "postbuild": "node scripts/prerender.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sitemap": "node scripts/generateSitemap.js",
+    "sitemap:verify": "node scripts/verify-blog-sitemap.js",
+    "sitemap:watch": "node scripts/generateSitemap.js && npm run sitemap"
   },
   "dependencies": {
     "@google/genai": "1.3.0",

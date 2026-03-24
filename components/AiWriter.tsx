@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState  } from 'react';
+
 import { PenTool, Check, Copy, Wand2, RefreshCw, FileText, AlignLeft, Mail } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateText } from '../services/geminiService.ts';
@@ -7,11 +7,11 @@ import { generateText } from '../services/geminiService.ts';
 type WriterMode = 'GRAMMAR' | 'SUMMARIZE' | 'PARAPHRASE' | 'EMAIL';
 
 export const AiWriter: React.FC = () => {
-  const [mode, setMode] = useState<WriterMode>('GRAMMAR');
-  const [inputText, setInputText] = useState('');
-  const [outputText, setOutputText] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [mode, setMode] = React.useState<WriterMode>('GRAMMAR');
+  const [inputText, setInputText] = React.useState('');
+  const [outputText, setOutputText] = React.useState('');
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   const tools = [
     { id: 'GRAMMAR', label: 'Grammar Fixer', icon: <Check />, prompt: 'Fix grammar, spelling, and punctuation in the following text. Keep the original meaning but make it flawless:' },

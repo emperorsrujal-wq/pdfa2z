@@ -1,12 +1,11 @@
 import * as React from 'react';
-import {  useState  } from 'react';
 import { Mail, MessageCircle, MapPin } from 'lucide-react';
 import { SEO } from '../components/SEO';
 
 export const Contact: React.FC = () => {
-    const [email, setEmail] = useState('');
-    const [message, setMessage] = useState('');
-    const [submitted, setSubmitted] = useState(false);
+    const [email, setEmail] = React.useState('');
+    const [message, setMessage] = React.useState('');
+    const [submitted, setSubmitted] = React.useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

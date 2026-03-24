@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState, useRef, useEffect  } from 'react';
+
 import { Send, Upload, Bot, User, File as FileIcon } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { fileToBase64, formatTime } from '../utils.ts';
@@ -7,19 +7,19 @@ import { PdfChatService } from '../services/geminiService.ts';
 import { ChatMessage } from '../types.ts';
 
 export const PdfAnalyzer: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [chatService] = useState(() => new PdfChatService());
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = React.useState<File | null>(null);
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [chatService] = React.useState(() => new PdfChatService());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     scrollToBottom();
   }, [messages]);
 

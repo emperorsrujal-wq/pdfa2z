@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
@@ -39,14 +38,14 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
-  const [activeTool, setActiveTool] = useState<ToolType>(ToolType.DASHBOARD);
-  const [activePdfMode, setActivePdfMode] = useState<PdfToolMode>('MENU');
-  const [activeImageMode, setActiveImageMode] = useState<ImageToolMode>('MENU');
-  const [activeVideoMode, setActiveVideoMode] = useState<VideoToolMode>('DOWNLOAD');
+  const [activeTool, setActiveTool] = React.useState<ToolType>(ToolType.DASHBOARD);
+  const [activePdfMode, setActivePdfMode] = React.useState<PdfToolMode>('MENU');
+  const [activeImageMode, setActiveImageMode] = React.useState<ImageToolMode>('MENU');
+  const [activeVideoMode, setActiveVideoMode] = React.useState<VideoToolMode>('DOWNLOAD');
 
-  const pathParts = useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
-  const lang = useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
-  const slug = useMemo(() => {
+  const pathParts = React.useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
+  const lang = React.useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
+  const slug = React.useMemo(() => {
     if (pathParts.length === 0) return '';
     if (SUPPORTED_LANGS.includes(pathParts[0])) {
       return pathParts[1] || '';
@@ -54,7 +53,7 @@ const App: React.FC = () => {
     return pathParts[0] || '';
   }, [pathParts]);
 
-  const blogSlug = useMemo(() => {
+  const blogSlug = React.useMemo(() => {
     const startIdx = SUPPORTED_LANGS.includes(pathParts[0]) ? 1 : 0;
     if (pathParts[startIdx] === 'blog') {
       return pathParts[startIdx + 1] || 'MENU';
@@ -62,13 +61,13 @@ const App: React.FC = () => {
     return null;
   }, [pathParts]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (i18n.language !== lang) {
       i18n.changeLanguage(lang);
     }
   }, [lang, i18n]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (slug === '') {
       setActiveTool(ToolType.DASHBOARD);
       return;
@@ -99,7 +98,7 @@ const App: React.FC = () => {
     }
   }, [slug]);
 
-  const seoData = useMemo(() => {
+  const seoData = React.useMemo(() => {
     const tool = Object.values(TOOLS_REGISTRY).find(t => t.slug === slug) || TOOLS_REGISTRY['home'];
     if (lang !== 'en' && tool.translations?.[lang]) {
       return { ...tool, ...tool.translations[lang] };
@@ -155,9 +154,9 @@ const App: React.FC = () => {
             <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
           )}
 
-          <Suspense fallback={<ToolLoader />}>
+          <React.Suspense fallback={<ToolLoader />}>
             {renderContent()}
-          </Suspense>
+          </React.Suspense>
 
           {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
             <ToolSeoContent tool={seoData} />

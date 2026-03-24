@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {  useState, useRef, useEffect  } from 'react';
 import { X, Check, Trash2, MousePointer2 } from 'lucide-react';
 import { RedactionArea } from '../utils/pdfHelpers';
 
@@ -12,11 +11,11 @@ interface RedactorProps {
 }
 
 export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAreas, onSave, onCancel }) => {
-    const [areas, setAreas] = useState<RedactionArea[]>(existingAreas);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-    const [currentArea, setCurrentArea] = useState<RedactionArea | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const [areas, setAreas] = React.useState<RedactionArea[]>(existingAreas);
+    const [isDrawing, setIsDrawing] = React.useState(false);
+    const [startPos, setStartPos] = React.useState({ x: 0, y: 0 });
+    const [currentArea, setCurrentArea] = React.useState<RedactionArea | null>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
     const getPos = (e: React.MouseEvent | React.TouchEvent) => {
         if (!containerRef.current) return { x: 0, y: 0 };

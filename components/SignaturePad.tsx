@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {  useRef, useEffect, useState  } from 'react';
 import { Save, X, Undo, Eraser, PenTool } from 'lucide-react';
 
 interface SignaturePadProps {
@@ -9,14 +8,14 @@ interface SignaturePadProps {
 }
 
 export const SignaturePad: React.FC<SignaturePadProps> = ({ image, onSave, onCancel }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [color, setColor] = useState('#000000');
-    const [lineWidth, setLineWidth] = useState(2);
-    const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 });
+    const canvasRef = React.useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = React.useState(false);
+    const [color, setColor] = React.useState('#000000');
+    const [lineWidth, setLineWidth] = React.useState(2);
+    const [canvasSize, setCanvasSize] = React.useState({ w: 0, h: 0 });
 
     // Initialize canvas with image
-    useEffect(() => {
+    React.useEffect(() => {
         const img = new Image();
         img.src = image;
         img.onload = () => {

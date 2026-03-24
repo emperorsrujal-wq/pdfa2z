@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {  useState  } from 'react';
 import { Video, Bot, Film, Download } from 'lucide-react';
 import { VideoGenerator } from './VideoGenerator.tsx';
 import { VideoAnalyzer } from './VideoAnalyzer.tsx';
@@ -11,7 +10,7 @@ interface VideoSuiteProps {
 }
 
 export const VideoSuite: React.FC<VideoSuiteProps> = ({ initialMode = 'GENERATE' }) => {
-  const [activeTab, setActiveTab] = useState<VideoToolMode>(
+  const [activeTab, setActiveTab] = React.useState<VideoToolMode>(
       (initialMode === 'MENU') ? 'GENERATE' : initialMode
   );
 

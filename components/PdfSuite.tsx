@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState  } from 'react';
+
 import { FileText, Settings, Bot } from 'lucide-react';
 import { PdfAnalyzer } from './PdfAnalyzer.tsx';
 import { PdfToolkit } from './PdfToolkit.tsx';
@@ -11,7 +11,7 @@ interface PdfSuiteProps {
 }
 
 export const PdfSuite: React.FC<PdfSuiteProps> = ({ initialTab = 'CHAT', initialToolMode = 'MENU' }) => {
-  const [activeTab, setActiveTab] = useState<'CHAT' | 'TOOLS'>(initialTab);
+  const [activeTab, setActiveTab] = React.useState<'CHAT' | 'TOOLS'>(initialTab);
 
   // If initial props change (e.g. from dashboard navigation), update state
   React.useEffect(() => {

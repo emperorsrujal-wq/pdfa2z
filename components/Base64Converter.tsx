@@ -1,15 +1,15 @@
 import * as React from 'react';
-import {  useState, useRef  } from 'react';
+
 import { Upload, ArrowRightLeft, Copy, CheckCircle2, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button } from './Button';
 
 export const Base64Converter: React.FC = () => {
-    const [mode, setMode] = useState<'ENCODE' | 'DECODE'>('ENCODE');
-    const [inputType, setInputType] = useState<'TEXT' | 'IMAGE'>('TEXT');
-    const [inputText, setInputText] = useState('');
-    const [output, setOutput] = useState('');
-    const [fileName, setFileName] = useState('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [mode, setMode] = React.useState<'ENCODE' | 'DECODE'>('ENCODE');
+    const [inputType, setInputType] = React.useState<'TEXT' | 'IMAGE'>('TEXT');
+    const [inputText, setInputText] = React.useState('');
+    const [output, setOutput] = React.useState('');
+    const [fileName, setFileName] = React.useState('');
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {

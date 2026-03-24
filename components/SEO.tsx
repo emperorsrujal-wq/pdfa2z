@@ -61,13 +61,21 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     ', ' + title +
     ', ' + GLOBAL_KEYWORDS.join(', ');
 
+  // Dynamic Clickbait Injection
+  const titleHook = " | 100% Free & No Signup";
+  const descHook = " 🚀 100% Free! No Signup Required & No Credit Card Ever. Instant Access!";
+
+  // Only add if not already extremely long or already containing the hook
+  const finalTitle = title.includes("Free") ? title : `${title}${titleHook}`;
+  const finalDescription = description.includes("No Signup") ? description : `${description}${descHook}`;
+
   return (
     <Helmet>
       {/* Page Title */}
-      <title>{title}</title>
+      <title>{finalTitle}</title>
 
       {/* Standard Meta */}
-      <meta name="description" content={description} />
+      <meta name="description" content={finalDescription} />
       <meta name="keywords" content={keywords} />
 
       {/* Canonical */}
@@ -79,8 +87,8 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       ))}
 
       {/* OG Tags */}
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
+      <meta property="og:title" content={finalTitle} />
+      <meta property="og:description" content={finalDescription} />
       <meta property="og:url" content={fullCanonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="PDFA2Z" />
@@ -92,8 +100,8 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@pdfa2z" />
       <meta name="twitter:creator" content="@pdfa2z" />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:title" content={finalTitle} />
+      <meta name="twitter:description" content={finalDescription} />
       <meta name="twitter:image" content={ogImage} />
 
       {/* Schema */}

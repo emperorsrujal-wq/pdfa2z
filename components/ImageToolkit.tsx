@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState, useRef, useEffect  } from 'react';
+
 import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, RefreshCw, Trash2, Zap, Minimize2, Smile, Palette, Crop, ChevronsUp, UserSquare2, Globe, Info, CheckCircle, Eraser, FileText, Wand2, RotateCw, Printer, Sliders, QrCode, Video, FlipHorizontal, Grid, Droplet } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
@@ -17,56 +17,56 @@ interface ImageToolkitProps {
 }
 
 export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU' }) => {
-  const [mode, setMode] = useState<ImageToolMode>(initialMode);
-  const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
-  const [ocrResult, setOcrResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = React.useState<ImageToolMode>(initialMode);
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [previews, setPreviews] = React.useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [processedUrl, setProcessedUrl] = React.useState<string | null>(null);
+  const [ocrResult, setOcrResult] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   // New input states
-  const [resizeW, setResizeW] = useState('');
-  const [resizeH, setResizeH] = useState('');
-  const [rotateAngle, setRotateAngle] = useState(90);
-  const [flipDirection, setFlipDirection] = useState<'horizontal' | 'vertical'>('horizontal');
-  const [pixelateSize, setPixelateSize] = useState(10);
-  const [memeTop, setMemeTop] = useState('');
-  const [memeBottom, setMemeBottom] = useState('');
-  const [convertFormat, setConvertFormat] = useState('image/png');
-  const [qrText, setQrText] = useState('');
-  const [ytUrl, setYtUrl] = useState('');
+  const [resizeW, setResizeW] = React.useState('');
+  const [resizeH, setResizeH] = React.useState('');
+  const [rotateAngle, setRotateAngle] = React.useState(90);
+  const [flipDirection, setFlipDirection] = React.useState<'horizontal' | 'vertical'>('horizontal');
+  const [pixelateSize, setPixelateSize] = React.useState(10);
+  const [memeTop, setMemeTop] = React.useState('');
+  const [memeBottom, setMemeBottom] = React.useState('');
+  const [convertFormat, setConvertFormat] = React.useState('image/png');
+  const [qrText, setQrText] = React.useState('');
+  const [ytUrl, setYtUrl] = React.useState('');
 
   // Passport States
-  const [passportCountry, setPassportCountry] = useState('US');
-  const [printSize, setPrintSize] = useState('4x6');
+  const [passportCountry, setPassportCountry] = React.useState('US');
+  const [printSize, setPrintSize] = React.useState('4x6');
 
   // Watermark States
-  const [watermarkText, setWatermarkText] = useState('');
-  const [watermarkPosition, setWatermarkPosition] = useState('BR'); // Bottom Right
-  const [watermarkOpacity, setWatermarkOpacity] = useState(50);
-  const [watermarkSize, setWatermarkSize] = useState(24);
+  const [watermarkText, setWatermarkText] = React.useState('');
+  const [watermarkPosition, setWatermarkPosition] = React.useState('BR'); // Bottom Right
+  const [watermarkOpacity, setWatermarkOpacity] = React.useState(50);
+  const [watermarkSize, setWatermarkSize] = React.useState(24);
 
   // Collage States
-  const [collageLayout, setCollageLayout] = useState('grid-2x2');
-  const [collageSpacing, setCollageSpacing] = useState(10);
+  const [collageLayout, setCollageLayout] = React.useState('grid-2x2');
+  const [collageSpacing, setCollageSpacing] = React.useState(10);
 
   // Comparison States
-  const [comparisonMode, setComparisonMode] = useState('side-by-side');
-  const [comparisonSlider, setComparisonSlider] = useState(50);
+  const [comparisonMode, setComparisonMode] = React.useState('side-by-side');
+  const [comparisonSlider, setComparisonSlider] = React.useState(50);
 
   // Face Blur States
-  const [blurIntensity, setBlurIntensity] = useState(20);
+  const [blurIntensity, setBlurIntensity] = React.useState(20);
 
   // Magic Editor States
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
-  const [referencePreview, setReferencePreview] = useState<string | null>(null);
-  const [magicInstructions, setMagicInstructions] = useState('');
-  const [magicMode, setMagicMode] = useState<'GENERAL' | 'FACE_SWAP' | 'ID_EDIT'>('GENERAL');
+  const [referenceFile, setReferenceFile] = React.useState<File | null>(null);
+  const [referencePreview, setReferencePreview] = React.useState<string | null>(null);
+  const [magicInstructions, setMagicInstructions] = React.useState('');
+  const [magicMode, setMagicMode] = React.useState<'GENERAL' | 'FACE_SWAP' | 'ID_EDIT'>('GENERAL');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initialMode) setMode(initialMode);
   }, [initialMode]);
 

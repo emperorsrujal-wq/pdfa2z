@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {  useState, useRef, useEffect  } from 'react';
+
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Languages, ChevronDown, Check } from 'lucide-react';
@@ -12,16 +12,16 @@ const LANGUAGES = [
 ];
 
 export const LanguageSelector: React.FC = () => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = React.useState(false);
     const { i18n } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     const currentLangCode = i18n.language || 'en';
     const currentLang = LANGUAGES.find(l => l.code === (currentLangCode.split('-')[0])) || LANGUAGES[0];
 
-    useEffect(() => {
+    React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);

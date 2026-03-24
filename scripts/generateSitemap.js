@@ -37,16 +37,42 @@ const TOOL_SLUGS = [
     'about', 'contact', 'privacy', 'terms',
 ];
 
-// ── Blog posts (read from blogData.ts) ─────────────────────────────────────
-const blogDataContent = fs.readFileSync(
-    path.join(__dirname, '../utils/blogData.ts'), 'utf-8'
-);
-const BLOG_SLUG_REGEX = /slug:\s*['"]([^'"]+)['"]/g;
-const blogSlugs = [];
-let bMatch;
-while ((bMatch = BLOG_SLUG_REGEX.exec(blogDataContent)) !== null) {
-    blogSlugs.push(`blog/${bMatch[1]}`);
+// ── Blog posts (read from blogData.ts and src/content/blog-index.json) ────
+const blogSlugs = new Set();
+
+// Read static blog posts from utils/blogData.ts
+try {
+    const blogDataContent = fs.readFileSync(
+        path.join(__dirname, '../utils/blogData.ts'), 'utf-8'
+    );
+    const BLOG_SLUG_REGEX = /slug:\s*['"]([^'"]+)['"]/g;
+    let bMatch;
+    while ((bMatch = BLOG_SLUG_REGEX.exec(blogDataContent)) !== null) {
+        blogSlugs.add(`blog/${bMatch[1]}`);
+    }
+} catch (error) {
+    console.warn('Warning: Could not read static blog posts from blogData.ts');
 }
+
+// Read dynamically generated blog posts from src/content/blog-index.json
+try {
+    const blogIndexPath = path.join(__dirname, '../src/content/blog-index.json');
+    if (fs.existsSync(blogIndexPath)) {
+        const blogIndex = JSON.parse(fs.readFileSync(blogIndexPath, 'utf-8'));
+        if (Array.isArray(blogIndex)) {
+            for (const post of blogIndex) {
+                if (post.slug) {
+                    blogSlugs.add(`blog/${post.slug}`);
+                }
+            }
+        }
+    }
+} catch (error) {
+    console.warn('Warning: Could not read blog-index.json');
+}
+
+// Convert Set to Array
+const blogSlugsArray = Array.from(blogSlugs);
 
 // ── Priority map ─────────────────────────────────────────────────────────────
 const getPriority = (slug) => {
@@ -80,7 +106,7 @@ async function generateSitemap() {
         }
 
         // Blog posts (with localized versions)
-        for (const slug of blogSlugs) {
+        for (const slug of blogSlugsArray) {
             allUrls.push({ url: `${BASE_URL}/${slug}`, priority: '0.8' });
             for (const lang of SUPPORTED_LANGS) {
                 allUrls.push({ url: `${BASE_URL}/${lang}/${slug}`, priority: '0.7' });
