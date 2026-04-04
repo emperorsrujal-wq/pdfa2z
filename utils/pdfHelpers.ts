@@ -733,5 +733,73 @@ export const redactPdf = async (file: File, areas: RedactionArea[]): Promise<Uin
   return pdfDoc.save();
 };
 
+export const detectSigningLines = async (file: File, pageIndex: number): Promise<RedactionArea[]> => {
+  const engine = await getPdfEngine();
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
+  const pdf = await loadingTask.promise;
+  const page = await pdf.getPage(pageIndex + 1);
+  const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1.0 });
+
+  const keywords = ['Signature', 'Sign Here', 'Date', 'X _', 'Initial'];
+  const suggestedAreas: RedactionArea[] = [];
+
+  for (const item of textContent.items as any[]) {
+    const text = item.str || '';
+    const hasKeyword = keywords.some(k => text.toLowerCase().includes(k.toLowerCase()));
+    
+    if (hasKeyword || text.includes('___')) {
+      const transform = item.transform; 
+      const x = transform[4];
+      const y = viewport.height - transform[5]; 
+      const width = item.width || 100;
+      const height = item.height || 20;
+
+      suggestedAreas.push({
+        pageIndex,
+        x,
+        y: y - height,
+        width: width + 50,
+        height: height + 10
+      });
+    }
+  }
+  return suggestedAreas;
+};
+
+export const extractStyleAtPoint = async (file: File, pageIndex: number, px: number, py: number): Promise<{ color: string, fontSize: number, fontName: string }> => {
+  const engine = await getPdfEngine();
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
+  const pdf = await loadingTask.promise;
+  const page = await pdf.getPage(pageIndex + 1);
+  const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1.0 });
+
+  const targetX = (px / 1000) * viewport.width;
+  const targetY = (py / 1000) * viewport.height;
+
+  let bestMatch = { color: '#000000', fontSize: 12, fontName: 'Helvetica' };
+  let minDistance = Infinity;
+
+  for (const item of textContent.items as any[]) {
+    const tx = item.transform[4];
+    const ty = viewport.height - item.transform[5];
+    const dist = Math.sqrt(Math.pow(tx - targetX, 2) + Math.pow(ty - targetY, 2));
+
+    if (dist < minDistance && dist < 50) {
+      minDistance = dist;
+      bestMatch = {
+        color: '#000000',
+        fontSize: Math.round(item.transform[0]),
+        fontName: item.fontName || 'Helvetica'
+      };
+    }
+  }
+
+  return bestMatch;
+};
+
 // For formats like EPUB, MOBI, AZW3, OUTLOOK - we can't easily parse them in browser without libs.
 // We will throw error for now or generic "text extraction" if possible.
