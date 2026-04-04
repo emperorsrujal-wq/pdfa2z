@@ -1255,16 +1255,26 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'edit-pdf': {
     slug: 'edit-pdf',
-    title: 'Edit PDF - Add Text & Annotations',
-    description: 'Add text, notes, and annotations to PDF documents online.',
-    h1: 'Edit PDF Online',
-    intro: 'Add text and edit your PDF documents easily.',
-    steps: ['Upload PDF', 'Add text or annotations', 'Download edited PDF'],
-    faqs: [
-      { q: 'Can I change existing text?', a: 'Currently you can only add new text and annotations.' },
-      { q: 'Is it free?', a: 'Yes, 100% free tool.' }
+    title: 'Edit PDF Online - Add Text and Draw on PDFs Free',
+    description: 'Free online PDF editor. Add text, draw shapes, and annotate your PDF files directly in your browser. Fast, secure, and interactive PDF editing.',
+    h1: 'Edit PDF Files Online',
+    intro: 'Add text, drawings, and annotations to your PDF documents instantly. Our interactive visual editor makes modifying your PDFs easier than ever.',
+    steps: [
+      'Upload the PDF file you want to edit.',
+      'Select a page from the gallery to open the interactive canvas.',
+      'Use the Pen to draw, or select the Text Tool to add text.',
+      'Save your changes and click "Download Edited PDF".'
     ],
-    features: ['Add text to PDF', 'Annotate documents', 'Browser-based editing'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, our PDF Editor is completely free to use.' },
+      { q: 'Does it work on mobile?', a: 'Yes, you can tap and draw on any modern mobile device.' }
+    ],
+    features: [
+      'Interactive Canvas Editor',
+      'Add & Drag Custom Text',
+      'Freehand Drawing (Pen)',
+      'Secure Browser Processing'
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'EDIT'
   },
