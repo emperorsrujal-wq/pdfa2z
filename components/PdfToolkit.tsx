@@ -10,6 +10,7 @@ import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
 import { SignaturePad } from './SignaturePad.tsx';
 import { Redactor } from './Redactor.tsx';
+import { PdfEditorUI } from './PdfEditorUI.tsx';
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -273,17 +274,6 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
 
         downloadBlob(finalizedRes, `redacted-${files[0].name}`);
         setSuccessMsg("PDF Redacted & Sanitized Successfully!");
-      } else if (mode === 'EDIT') {
-        // Basic Edit: Add text to first page center
-        const res = await editPdf(files[0], [{
-          text: inputValue || 'Edited with PDFA2Z',
-          x: 50,
-          y: 50,
-          size: 24,
-          pageIndex: 0
-        }]);
-        downloadBlob(res, `edited-${files[0].name}`);
-        setSuccessMsg("PDF Edited!");
       } else if (mode === 'CROP') {
         const margin = parseInt(inputValue) || 20;
         const res = await cropPdf(files[0], margin);
@@ -757,6 +747,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   </div>
                 )}
               </div>
+            ) : mode === 'EDIT' ? (
+              <PdfEditorUI file={files[0]} onCancel={reset} />
             ) : (
               <>
                 {/* GENERIC UI FOR OTHER TOOLS */}
@@ -770,12 +762,11 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   </div>
                 )}
 
-                {(mode === 'SPLIT' || mode === 'WATERMARK' || mode === 'METADATA' || mode === 'DELETE_PAGES' || mode === 'EDIT' || mode === 'CROP') && (
+                {(mode === 'SPLIT' || mode === 'WATERMARK' || mode === 'METADATA' || mode === 'DELETE_PAGES' || mode === 'CROP') && (
                   <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={
                     mode === 'SPLIT' ? "Page range (e.g. 1-3)" :
                       mode === 'METADATA' ? "New PDF Title" :
                         mode === 'DELETE_PAGES' ? "Pages to remove (e.g. 1, 5)" :
-                          mode === 'EDIT' ? "Text to add to page" :
                             mode === 'CROP' ? "Crop Margin (px)" :
                               "Watermark text"
                   } className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />

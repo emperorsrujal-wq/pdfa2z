@@ -511,33 +511,80 @@ export const pdfToImagesZip = async (file: File): Promise<Blob> => {
 
 // --- New Tools placeholders & implementations ---
 
-export interface TextAnnotation {
-  text: string;
-  x: number;
-  y: number;
-  size: number;
-  color?: string; // hex
+export type EditElementType = 'text' | 'path';
+
+export interface EditElement {
+  id: string;
+  type: EditElementType;
   pageIndex: number;
+  x: number; // 0-1000 relative to page width
+  y: number; // 0-1000 relative to page height
+  color?: string; // hex color
+  
+  // Text specific
+  text?: string;
+  size?: number; // relative font size (1-100 scale, usually mapped to points)
+  
+  // Path specific
+  path?: { x: number, y: number }[]; // Array of points 0-1000
+  strokeWidth?: number;
 }
 
-export const editPdf = async (file: File, annotations: TextAnnotation[]): Promise<Uint8Array> => {
+// Helper to convert hex to rgb for pdf-lib
+const hexToRgbPdf = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? rgb(
+    parseInt(result[1], 16) / 255,
+    parseInt(result[2], 16) / 255,
+    parseInt(result[3], 16) / 255
+  ) : rgb(0, 0, 0);
+};
+
+export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  for (const ann of annotations) {
+  for (const el of elements) {
     const pages = pdfDoc.getPages();
-    if (ann.pageIndex < 0 || ann.pageIndex >= pages.length) continue;
-    const page = pages[ann.pageIndex];
-    // Simple hex to rgb conversion (naive)
-    // For now defaulting to black
-    page.drawText(ann.text, {
-      x: ann.x,
-      y: page.getHeight() - ann.y, // PDF coords are from bottom-left
-      size: ann.size,
-      font,
-      color: rgb(0, 0, 0),
-    });
+    if (el.pageIndex < 0 || el.pageIndex >= pages.length) continue;
+    const page = pages[el.pageIndex];
+    const { width, height } = page.getSize();
+    
+    // Map 0-1000 coordinates to actual PDF points
+    const actualX = (el.x / 1000) * width;
+    const actualY = height - ((el.y / 1000) * height); // PDF y is from bottom
+
+    const elColor = el.color ? hexToRgbPdf(el.color) : rgb(0, 0, 0);
+
+    if (el.type === 'text' && el.text) {
+      // Scale font size: rough heuristic, if 1000 height = 11inch (792 pts)
+      // We assume el.size is somewhere between 10 to 100.
+      const fontSize = el.size || 24; 
+      
+      page.drawText(el.text, {
+        x: actualX,
+        y: actualY - fontSize, // Adjust so top-left alignment feels natural
+        size: fontSize,
+        font,
+        color: elColor,
+      });
+    } else if (el.type === 'path' && el.path && el.path.length > 0) {
+      // pdf-lib drawSvgPath could be used, or drawLine iteratively
+      const thickness = el.strokeWidth || 5;
+      const actualThickness = (thickness / 1000) * width;
+
+      for (let i = 0; i < el.path.length - 1; i++) {
+        const p1 = el.path[i];
+        const p2 = el.path[i+1];
+        page.drawLine({
+          start: { x: (p1.x / 1000) * width, y: height - ((p1.y / 1000) * height) },
+          end: { x: (p2.x / 1000) * width, y: height - ((p2.y / 1000) * height) },
+          color: elColor,
+          thickness: actualThickness,
+        });
+      }
+    }
   }
   return pdfDoc.save();
 };
