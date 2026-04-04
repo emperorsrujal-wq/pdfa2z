@@ -511,7 +511,7 @@ export const pdfToImagesZip = async (file: File): Promise<Blob> => {
 
 // --- New Tools placeholders & implementations ---
 
-export type EditElementType = 'text' | 'path' | 'image';
+export type EditElementType = 'text' | 'path' | 'image' | 'rect' | 'circle' | 'line' | 'audio';
 
 export interface EditElement {
   id: string;
@@ -520,19 +520,25 @@ export interface EditElement {
   x: number; // 0-1000 relative to page width
   y: number; // 0-1000 relative to page height
   color?: string; // hex color
+  rotation?: number; // degrees
+  opacity?: number; // 0 to 1
   
   // Text specific
   text?: string;
-  size?: number; // relative font size (1-100 scale, usually mapped to points)
+  size?: number; // font size in points
+  fontName?: string; // e.g. Helvetica, TimesRoman
   
-  // Path specific
+  // Path/Line specific
   path?: { x: number, y: number }[]; // Array of points 0-1000
   strokeWidth?: number;
 
-  // Image specific
+  // Image/Shape specific
   imageUrl?: string; // base64
   width?: number; // relative width 0-1000
   height?: number; // relative height 0-1000
+  
+  // Audio specific
+  audioData?: string; // base64 or URL
 }
 
 // Helper to convert hex to rgb for pdf-lib
@@ -548,7 +554,6 @@ const hexToRgbPdf = (hex: string) => {
 export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   for (const el of elements) {
     const pages = pdfDoc.getPages();
@@ -558,24 +563,26 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     
     // Map 0-1000 coordinates to actual PDF points
     const actualX = (el.x / 1000) * width;
-    const actualY = height - ((el.y / 1000) * height); // PDF y is from bottom
+    const actualY = height - ((el.y / 1000) * height); // PDF y is from bottom (Cartesian)
 
     const elColor = el.color ? hexToRgbPdf(el.color) : rgb(0, 0, 0);
+    const elOpacity = el.opacity !== undefined ? el.opacity : 1.0;
+    const elRotation = degrees(el.rotation || 0);
 
     if (el.type === 'text' && el.text) {
-      // Scale font size: rough heuristic, if 1000 height = 11inch (792 pts)
-      // We assume el.size is somewhere between 10 to 100.
       const fontSize = el.size || 24; 
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica); // Default font
       
       page.drawText(el.text, {
         x: actualX,
-        y: actualY - fontSize, // Adjust so top-left alignment feels natural
+        y: actualY - fontSize, // Adjust coordinate system alignment
         size: fontSize,
         font,
         color: elColor,
+        opacity: elOpacity,
+        rotate: elRotation,
       });
     } else if (el.type === 'path' && el.path && el.path.length > 0) {
-      // pdf-lib drawSvgPath could be used, or drawLine iteratively
       const thickness = el.strokeWidth || 5;
       const actualThickness = (thickness / 1000) * width;
 
@@ -587,6 +594,7 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
           end: { x: (p2.x / 1000) * width, y: height - ((p2.y / 1000) * height) },
           color: elColor,
           thickness: actualThickness,
+          opacity: elOpacity,
         });
       }
     } else if (el.type === 'image' && el.imageUrl) {
@@ -594,11 +602,8 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         let embeddedImage;
         const base64Data = el.imageUrl.split(',')[1];
         const binaryString = atob(base64Data);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
         
         if (el.imageUrl.startsWith('data:image/png')) {
           embeddedImage = await pdfDoc.embedPng(bytes);
@@ -611,13 +616,46 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         
         page.drawImage(embeddedImage, {
           x: actualX,
-          y: actualY - elHeight, // Adjust so actualY behaves like top-left
+          y: actualY - elHeight,
           width: elWidth,
           height: elHeight,
+          opacity: elOpacity,
+          rotate: elRotation,
         });
       } catch (err) {
         console.error("Failed to embed image", err);
       }
+    } else if (el.type === 'rect') {
+      const elWidth = el.width ? (el.width / 1000) * width : 100;
+      const elHeight = el.height ? (el.height / 1000) * height : 100;
+      page.drawRectangle({
+        x: actualX,
+        y: actualY - elHeight,
+        width: elWidth,
+        height: elHeight,
+        color: elColor,
+        opacity: elOpacity,
+        rotate: elRotation,
+      });
+    } else if (el.type === 'circle') {
+      const radius = el.width ? (el.width / 1000) * width / 2 : 50;
+      page.drawCircle({
+        x: actualX + radius,
+        y: actualY - radius,
+        size: radius,
+        color: elColor,
+        opacity: elOpacity,
+      });
+    } else if (el.type === 'line') {
+      const elWidth = el.width ? (el.width / 1000) * width : 100;
+      const elHeight = el.height ? (el.height / 1000) * height : 0;
+      page.drawLine({
+        start: { x: actualX, y: actualY },
+        end: { x: actualX + elWidth, y: actualY - elHeight },
+        color: elColor,
+        thickness: el.strokeWidth ? (el.strokeWidth / 1000) * width : 2,
+        opacity: elOpacity,
+      });
     }
   }
   return pdfDoc.save();
