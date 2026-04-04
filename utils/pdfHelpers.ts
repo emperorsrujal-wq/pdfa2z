@@ -511,7 +511,7 @@ export const pdfToImagesZip = async (file: File): Promise<Blob> => {
 
 // --- New Tools placeholders & implementations ---
 
-export type EditElementType = 'text' | 'path';
+export type EditElementType = 'text' | 'path' | 'image';
 
 export interface EditElement {
   id: string;
@@ -528,6 +528,11 @@ export interface EditElement {
   // Path specific
   path?: { x: number, y: number }[]; // Array of points 0-1000
   strokeWidth?: number;
+
+  // Image specific
+  imageUrl?: string; // base64
+  width?: number; // relative width 0-1000
+  height?: number; // relative height 0-1000
 }
 
 // Helper to convert hex to rgb for pdf-lib
@@ -583,6 +588,35 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
           color: elColor,
           thickness: actualThickness,
         });
+      }
+    } else if (el.type === 'image' && el.imageUrl) {
+      try {
+        let embeddedImage;
+        const base64Data = el.imageUrl.split(',')[1];
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        if (el.imageUrl.startsWith('data:image/png')) {
+          embeddedImage = await pdfDoc.embedPng(bytes);
+        } else {
+          embeddedImage = await pdfDoc.embedJpg(bytes);
+        }
+        
+        const elWidth = el.width ? (el.width / 1000) * width : 100;
+        const elHeight = el.height ? (el.height / 1000) * height : 50;
+        
+        page.drawImage(embeddedImage, {
+          x: actualX,
+          y: actualY - elHeight, // Adjust so actualY behaves like top-left
+          width: elWidth,
+          height: elHeight,
+        });
+      } catch (err) {
+        console.error("Failed to embed image", err);
       }
     }
   }

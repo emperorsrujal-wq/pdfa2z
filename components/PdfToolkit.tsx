@@ -8,7 +8,7 @@ import { performOcrOnImages } from '../services/ocrService.ts';
 import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
-import { SignaturePad } from './SignaturePad.tsx';
+import { PdfSignUI } from './PdfSignUI.tsx';
 import { Redactor } from './Redactor.tsx';
 import { PdfEditorUI } from './PdfEditorUI.tsx';
 
@@ -593,47 +593,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 </div>
               </div>
             ) : mode === 'SIGN' ? (
-              <div className="space-y-6 animate-fade-in w-full">
-                {resultImages.length === 0 ? (
-                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
-                    Load PDF to Sign
-                  </Button>
-                ) : (
-                  <div className="space-y-6 w-full">
-                    <div className="p-4 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl font-bold flex items-center gap-2 justify-center">
-                      <PenTool size={20} /> Click a page below to sign it
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {resultImages.map((img, i) => (
-                        <div key={i} className="relative group cursor-pointer" onClick={() => setSigningPage({ index: i, image: img })}>
-                          <div className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-slate-200 hover:border-indigo-500 transition-all shadow-lg bg-slate-100">
-                            <img src={img} className="w-full h-full object-contain" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-                              <div className="bg-white p-3 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all">
-                                <PenTool className="text-indigo-600" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-center mt-2 font-bold text-slate-500 text-sm">Page {i + 1}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4 bg-green-600 hover:bg-green-700 text-white shadow-lg sticky bottom-4">
-                      <Download size={20} className="mr-2" /> Download Signed PDF
-                    </Button>
-                  </div>
-                )}
-
-                {signingPage && (
-                  <SignaturePad
-                    image={signingPage.image}
-                    onSave={handleSaveSignature}
-                    onCancel={() => setSigningPage(null)}
-                  />
-                )}
-              </div>
+              <PdfSignUI files={files} />
             ) : mode === 'REDACT' ? (
               <div className="space-y-6 animate-fade-in w-full">
                 {resultImages.length === 0 ? (
