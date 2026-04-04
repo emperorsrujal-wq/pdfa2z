@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Volume2
 } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
 
 interface ObjectToolbarProps {
@@ -37,20 +38,23 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
     <div className="absolute -top-16 left-0 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl border border-white/10 text-white z-[200] animate-in slide-in-from-top-4 duration-300">
       {/* Basic Controls */}
       <div className="flex bg-white/5 rounded-xl p-1 gap-1">
-        <button 
-          onClick={() => onDelete(element.id)}
-          className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all"
-          title="Delete"
-        >
-          <Trash2 size={16} />
-        </button>
-        <button 
-          onClick={() => onDuplicate(element)}
-          className="p-2 hover:bg-white/10 rounded-lg transition-all"
-          title="Duplicate"
-        >
-          <Copy size={16} />
-        </button>
+        <Tooltip content="Delete this element forever.">
+          <button 
+            onClick={() => onDelete(element.id)}
+            className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all"
+          >
+            <Trash2 size={16} />
+          </button>
+        </Tooltip>
+        
+        <Tooltip content="Duplicate this element with all its settings.">
+          <button 
+            onClick={() => onDuplicate(element)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-all"
+          >
+            <Copy size={16} />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="w-px h-6 bg-white/10 mx-1" />
@@ -59,17 +63,18 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
       <div className="flex bg-white/5 rounded-xl p-1 gap-1">
         {(element.type === 'text' || element.type === 'rect' || element.type === 'circle' || element.type === 'line' || element.type === 'path') && (
           <div className="relative">
-            <button 
-              onClick={() => setShowColorPicker(!showColorPicker)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-2"
-              title="Color"
-            >
-              <div 
-                className="w-4 h-4 rounded-full border border-white/20" 
-                style={{ backgroundColor: element.color || '#000000' }}
-              />
-              <ChevronDown size={12} />
-            </button>
+            <Tooltip content="Change the color of this element.">
+              <button 
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-2"
+              >
+                <div 
+                  className="w-4 h-4 rounded-full border border-white/20" 
+                  style={{ backgroundColor: element.color || '#000000' }}
+                />
+                <ChevronDown size={12} />
+              </button>
+            </Tooltip>
             
             {showColorPicker && (
               <div className="absolute top-12 left-0 bg-slate-800 p-3 rounded-xl shadow-2xl border border-white/10 flex flex-wrap gap-2 w-32">
@@ -124,27 +129,32 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
       {/* Layout & Transform */}
       <div className="flex bg-white/5 rounded-xl p-1 gap-1">
-        <button 
-          onClick={() => onBringToFront(element.id)}
-          className="p-2 hover:bg-white/10 rounded-lg transition-all"
-          title="Bring to Front"
-        >
-          <ArrowUp size={16} />
-        </button>
-        <button 
-          onClick={() => onSendToBack(element.id)}
-          className="p-2 hover:bg-white/10 rounded-lg transition-all"
-          title="Send to Back"
-        >
-          <ArrowDown size={16} />
-        </button>
-        <button 
-          onClick={() => onUpdate(element.id, { rotation: ((element.rotation || 0) + 45) % 360 })}
-          className="p-2 hover:bg-white/10 rounded-lg transition-all"
-          title="Rotate 45°"
-        >
-          <RotateCw size={16} />
-        </button>
+        <Tooltip content="Bring this element to the very top.">
+          <button 
+            onClick={() => onBringToFront(element.id)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-all"
+          >
+            <ArrowUp size={16} />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="Send this element to the very bottom.">
+          <button 
+            onClick={() => onSendToBack(element.id)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-all"
+          >
+            <ArrowDown size={16} />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="Rotate this element by 45 degrees.">
+          <button 
+            onClick={() => onUpdate(element.id, { rotation: ((element.rotation || 0) + 45) % 360 })}
+            className="p-2 hover:bg-white/10 rounded-lg transition-all"
+          >
+            <RotateCw size={16} />
+          </button>
+        </Tooltip>
       </div>
 
       {element.type === 'audio' && (

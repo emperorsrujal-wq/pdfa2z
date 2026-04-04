@@ -768,7 +768,7 @@ export const detectSigningLines = async (file: File, pageIndex: number): Promise
   return suggestedAreas;
 };
 
-export const extractStyleAtPoint = async (file: File, pageIndex: number, px: number, py: number): Promise<{ color: string, fontSize: number, fontName: string }> => {
+export const extractStyleAtPoint = async (file: File, pageIndex: number, px: number, py: number, image?: string): Promise<{ color: string, fontSize: number, fontName: string, backgroundColor: string }> => {
   const engine = await getPdfEngine();
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
@@ -780,7 +780,7 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
   const targetX = (px / 1000) * viewport.width;
   const targetY = (py / 1000) * viewport.height;
 
-  let bestMatch = { color: '#000000', fontSize: 12, fontName: 'Helvetica' };
+  let bestMatch = { color: '#000000', fontSize: 12, fontName: 'Helvetica', backgroundColor: '#FFFFFF' };
   let minDistance = Infinity;
 
   for (const item of textContent.items as any[]) {
@@ -790,11 +790,28 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
 
     if (dist < minDistance && dist < 50) {
       minDistance = dist;
-      bestMatch = {
-        color: '#000000',
-        fontSize: Math.round(item.transform[0]),
-        fontName: item.fontName || 'Helvetica'
-      };
+      bestMatch.fontSize = Math.round(item.transform[0]);
+      bestMatch.fontName = item.fontName || 'Helvetica';
+    }
+  }
+
+  // Sample background color from the provided image/canvas if available
+  if (image) {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = image;
+      await new Promise(res => img.onload = res);
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const pixel = ctx?.getImageData((px / 1000) * img.width, (py / 1000) * img.height, 1, 1).data;
+      if (pixel) {
+        bestMatch.backgroundColor = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
+      }
+    } catch (e) {
+      console.warn("Could not sample BG color", e);
     }
   }
 

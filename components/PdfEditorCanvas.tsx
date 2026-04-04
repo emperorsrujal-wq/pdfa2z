@@ -14,6 +14,7 @@ import {
   Undo2,
   Redo2,
   Plus,
+  Zap,
   Pipette,
   Volume2,
   Mic,
@@ -21,6 +22,8 @@ import {
 } from 'lucide-react';
 import { EditElement, EditElementType } from '../utils/pdfHelpers';
 import { ObjectToolbar } from './ObjectToolbar';
+import { Tooltip } from './Tooltip';
+import { extractStyleAtPoint } from '../utils/pdfHelpers';
 
 interface PdfEditorCanvasProps {
   image: string;
@@ -31,7 +34,7 @@ interface PdfEditorCanvasProps {
   isEmbedded?: boolean;
 }
 
-type EditorMode = 'select' | 'text' | 'draw' | 'erase' | 'rect' | 'circle' | 'line' | 'image' | 'audio' | 'picker';
+type EditorMode = 'select' | 'text' | 'draw' | 'erase' | 'rect' | 'circle' | 'line' | 'image' | 'audio' | 'picker' | 'magic-edit';
 
 export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   image,
@@ -53,6 +56,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState<{ x: number, y: number }[]>([]);
+  const [dragStart, setDragStart] = React.useState<{ x: number, y: number } | null>(null);
+  const [dragEnd, setDragEnd] = React.useState<{ x: number, y: number } | null>(null);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -172,6 +177,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         setMode('select');
         break;
       }
+      case 'magic-edit': {
+        setIsDrawing(true);
+        setDragStart(pos);
+        setDragEnd(pos);
+        break;
+      }
       case 'draw':
       case 'line': {
         setIsDrawing(true);
@@ -202,9 +213,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isDrawing && (mode === 'draw' || mode === 'line')) {
+    if (isDrawing) {
       const pos = getPos(e);
-      if (mode === 'line') {
+      if (mode === 'magic-edit') {
+        setDragEnd(pos);
+      } else if (mode === 'line') {
         setCurrentPath([currentPath[0], pos]);
       } else {
         setCurrentPath(prev => [...prev, pos]);
@@ -212,43 +225,91 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     }
   };
 
-  const handlePointerUp = () => {
-    if (isDrawing && currentPath.length > 1) {
-      let newEl: EditElement;
-      if (mode === 'line') {
-        const p1 = currentPath[0];
-        const p2 = currentPath[1];
-        newEl = {
-          id: `line-${Date.now()}`,
-          type: 'line',
-          pageIndex,
-          x: p1.x,
-          y: p1.y,
-          width: p2.x - p1.x,
-          height: p2.y - p1.y,
-          color: currentColor,
-          strokeWidth: strokeWidth,
-          opacity: 1
-        };
-      } else {
-        newEl = {
-          id: `path-${Date.now()}`,
-          type: 'path',
-          pageIndex,
-          x: 0, 
-          y: 0,
-          color: currentColor,
-          strokeWidth: strokeWidth,
-          path: currentPath,
-          opacity: 1
-        };
+  const handlePointerUp = async () => {
+    if (isDrawing) {
+      if (mode === 'magic-edit' && dragStart && dragEnd) {
+        const x = Math.min(dragStart.x, dragEnd.x);
+        const y = Math.min(dragStart.y, dragEnd.y);
+        const w = Math.abs(dragStart.x - dragEnd.x);
+        const h = Math.abs(dragStart.y - dragEnd.y);
+
+        if (w > 5 && h > 5) {
+          // 1. Detect Style & BG
+          const file = new File([], "doc.pdf"); // Placeholder - ideally actual file
+          const style = await extractStyleAtPoint(file, pageIndex, x + w / 2, y + h / 2, image);
+
+          // 2. Create Mask (Rect)
+          const maskId = `mask-${Date.now()}`;
+          const mask: EditElement = {
+            id: maskId,
+            type: 'rect',
+            pageIndex,
+            x, y, width: w, height: h,
+            color: style.backgroundColor,
+            opacity: 1,
+            rotation: 0
+          };
+
+          // 3. Create Text (Replacer)
+          const text: EditElement = {
+            id: `magic-txt-${Date.now()}`,
+            type: 'text',
+            pageIndex,
+            x, y: y + h / 2 - style.fontSize / 16 * 10,
+            width: w,
+            height: h,
+            color: style.color,
+            text: '',
+            size: style.fontSize,
+            opacity: 1,
+            rotation: 0
+          };
+
+          const next = [...elements, mask, text];
+          setElements(next);
+          addToHistory(next);
+          setActiveElementId(text.id);
+          setMode('select');
+        }
+      } else if (currentPath.length > 1) {
+        let newEl: EditElement;
+        if (mode === 'line') {
+          const p1 = currentPath[0];
+          const p2 = currentPath[1];
+          newEl = {
+            id: `line-${Date.now()}`,
+            type: 'line',
+            pageIndex,
+            x: p1.x,
+            y: p1.y,
+            width: p2.x - p1.x,
+            height: p2.y - p1.y,
+            color: currentColor,
+            strokeWidth: strokeWidth,
+            opacity: 1
+          };
+        } else {
+          newEl = {
+            id: `path-${Date.now()}`,
+            type: 'path',
+            pageIndex,
+            x: 0, 
+            y: 0,
+            color: currentColor,
+            strokeWidth: strokeWidth,
+            path: currentPath,
+            opacity: 1
+          };
+        }
+        const next = [...elements, newEl];
+        setElements(next);
+        addToHistory(next);
       }
-      const next = [...elements, newEl];
-      setElements(next);
-      addToHistory(next);
     }
     setIsDrawing(false);
     setCurrentPath([]);
+    setDragStart(null);
+    setDragEnd(null);
   };
 
   const updateElement = (id: string, updates: Partial<EditElement>) => {
@@ -323,41 +384,63 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     <div className={`flex flex-col h-full w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-200`}>
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-4 bg-slate-900 border-b border-slate-800 shrink-0">
         <div className="flex bg-slate-800/50 p-1 rounded-xl gap-1 shrink-0">
-          <button onClick={() => setMode('select')} className={`p-2.5 rounded-lg transition-all ${mode === 'select' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Select">
-            <MousePointer2 size={18} />
-          </button>
-          <button onClick={() => setMode('text')} className={`p-2.5 rounded-lg transition-all ${mode === 'text' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Text">
-            <Type size={18} />
-          </button>
-          <button onClick={() => setMode('draw')} className={`p-2.5 rounded-lg transition-all ${mode === 'draw' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Draw">
-            <PenTool size={18} />
-          </button>
-          <button onClick={() => setMode('rect')} className={`p-2.5 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Rectangle">
-            <Square size={18} />
-          </button>
-          <button onClick={() => setMode('circle')} className={`p-2.5 rounded-lg transition-all ${mode === 'circle' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Circle">
-            <CircleIcon size={18} />
-          </button>
-          <button onClick={() => setMode('line')} className={`p-2.5 rounded-lg transition-all ${mode === 'line' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Line">
-            <Minus size={18} />
-          </button>
-          <button 
-            onClick={() => document.getElementById('img-upload')?.click()} 
-            className={`p-2.5 rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-700`} 
-            title="Image"
-          >
-            <ImageIcon size={18} />
-            <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          </button>
-          <button onClick={() => setMode('picker')} className={`p-2.5 rounded-lg transition-all ${mode === 'picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Style Picker">
-            <Pipette size={18} />
-          </button>
-          <button onClick={() => setMode('audio')} className={`p-2.5 rounded-lg transition-all ${mode === 'audio' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Voice Note">
-            <Mic size={18} />
-          </button>
-          <button onClick={() => setMode('erase')} className={`p-2.5 rounded-lg transition-all ${mode === 'erase' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Eraser">
-            <Eraser size={18} />
-          </button>
+          <Tooltip content="Select and move elements around the page.">
+            <button onClick={() => setMode('select')} className={`p-2.5 rounded-lg transition-all ${mode === 'select' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <MousePointer2 size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Magic Edit: Drag to erase any area and immediately type its replacement.">
+            <button onClick={() => setMode('magic-edit')} className={`p-2.5 rounded-lg transition-all ${mode === 'magic-edit' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Zap size={18} className={mode === 'magic-edit' ? 'fill-white' : ''} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Add a new text block anywhere.">
+            <button onClick={() => setMode('text')} className={`p-2.5 rounded-lg transition-all ${mode === 'text' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Type size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Freehand draw or annotate.">
+            <button onClick={() => setMode('draw')} className={`p-2.5 rounded-lg transition-all ${mode === 'draw' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <PenTool size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Insert a rectangle mask or shape.">
+            <button onClick={() => setMode('rect')} className={`p-2.5 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Square size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Insert an image from your device.">
+            <button 
+              onClick={() => document.getElementById('img-upload')?.click()} 
+              className={`p-2.5 rounded-lg transition-all text-slate-400 hover:text-white hover:bg-slate-700`}
+            >
+              <ImageIcon size={18} />
+              <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Style Picker: Sample font size and color from the document.">
+            <button onClick={() => setMode('picker')} className={`p-2.5 rounded-lg transition-all ${mode === 'picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Pipette size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Add a voice annotation to the page.">
+            <button onClick={() => setMode('audio')} className={`p-2.5 rounded-lg transition-all ${mode === 'audio' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Mic size={18} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Eraser: Click on any added element to remove it.">
+            <button onClick={() => setMode('erase')} className={`p-2.5 rounded-lg transition-all ${mode === 'erase' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}>
+              <Eraser size={18} />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
@@ -451,6 +534,19 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   strokeLinejoin="round"
                 />
               )
+            )}
+
+            {mode === 'magic-edit' && isDrawing && dragStart && dragEnd && (
+              <rect 
+                x={`${Math.min(dragStart.x, dragEnd.x) / 10}%`}
+                y={`${Math.min(dragStart.y, dragEnd.y) / 10}%`}
+                width={`${Math.abs(dragStart.x - dragEnd.x) / 10}%`}
+                height={`${Math.abs(dragStart.y - dragEnd.y) / 10}%`}
+                fill="rgba(99, 102, 241, 0.2)"
+                stroke="#6366f1"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
             )}
           </svg>
 
