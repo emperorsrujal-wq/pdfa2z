@@ -511,7 +511,9 @@ export const pdfToImagesZip = async (file: File): Promise<Blob> => {
 
 // --- New Tools placeholders & implementations ---
 
-export type EditElementType = 'text' | 'path' | 'image' | 'rect' | 'circle' | 'line' | 'audio';
+export type EditElementType = 
+  'text' | 'path' | 'image' | 'rect' | 'circle' | 'line' | 'audio' | 
+  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'link';
 
 export interface EditElement {
   id: string;
@@ -537,8 +539,10 @@ export interface EditElement {
   width?: number; // relative width 0-1000
   height?: number; // relative height 0-1000
   
-  // Audio specific
+  // Audio/Link/Form specific
   audioData?: string; // base64 or URL
+  linkUrl?: string;
+  isChecked?: boolean;
 }
 
 // Helper to convert hex to rgb for pdf-lib
@@ -569,65 +573,47 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     const elOpacity = el.opacity !== undefined ? el.opacity : 1.0;
     const elRotation = degrees(el.rotation || 0);
 
+    const elWidth = el.width ? (el.width / 1000) * width : 100;
+    const elHeight = el.height ? (el.height / 1000) * height : 20;
+
     if (el.type === 'text' && el.text) {
       const fontSize = el.size || 24; 
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica); // Default font
-      
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica); 
       page.drawText(el.text, {
         x: actualX,
-        y: actualY - fontSize, // Adjust coordinate system alignment
+        y: actualY - fontSize,
         size: fontSize,
         font,
         color: elColor,
         opacity: elOpacity,
         rotate: elRotation,
       });
-    } else if (el.type === 'path' && el.path && el.path.length > 0) {
-      const thickness = el.strokeWidth || 5;
-      const actualThickness = (thickness / 1000) * width;
-
-      for (let i = 0; i < el.path.length - 1; i++) {
-        const p1 = el.path[i];
-        const p2 = el.path[i+1];
-        page.drawLine({
-          start: { x: (p1.x / 1000) * width, y: height - ((p1.y / 1000) * height) },
-          end: { x: (p2.x / 1000) * width, y: height - ((p2.y / 1000) * height) },
-          color: elColor,
-          thickness: actualThickness,
-          opacity: elOpacity,
-        });
-      }
-    } else if (el.type === 'image' && el.imageUrl) {
-      try {
-        let embeddedImage;
-        const base64Data = el.imageUrl.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        
-        if (el.imageUrl.startsWith('data:image/png')) {
-          embeddedImage = await pdfDoc.embedPng(bytes);
-        } else {
-          embeddedImage = await pdfDoc.embedJpg(bytes);
-        }
-        
-        const elWidth = el.width ? (el.width / 1000) * width : 100;
-        const elHeight = el.height ? (el.height / 1000) * height : 50;
-        
-        page.drawImage(embeddedImage, {
-          x: actualX,
-          y: actualY - elHeight,
-          width: elWidth,
-          height: elHeight,
-          opacity: elOpacity,
-          rotate: elRotation,
-        });
-      } catch (err) {
-        console.error("Failed to embed image", err);
-      }
+    } else if (el.type === 'highlight') {
+      page.drawRectangle({
+        x: actualX,
+        y: actualY - elHeight,
+        width: elWidth,
+        height: elHeight,
+        color: elColor,
+        opacity: 0.35, 
+      });
+    } else if (el.type === 'strikeout') {
+      page.drawLine({
+        start: { x: actualX, y: actualY - (elHeight/2) },
+        end: { x: actualX + elWidth, y: actualY - (elHeight/2) },
+        color: elColor,
+        thickness: 2,
+        opacity: elOpacity,
+      });
+    } else if (el.type === 'underline') {
+      page.drawLine({
+        start: { x: actualX, y: actualY - elHeight },
+        end: { x: actualX + elWidth, y: actualY - elHeight },
+        color: elColor,
+        thickness: 2,
+        opacity: elOpacity,
+      });
     } else if (el.type === 'rect') {
-      const elWidth = el.width ? (el.width / 1000) * width : 100;
-      const elHeight = el.height ? (el.height / 1000) * height : 100;
       page.drawRectangle({
         x: actualX,
         y: actualY - elHeight,
@@ -647,8 +633,6 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         opacity: elOpacity,
       });
     } else if (el.type === 'line') {
-      const elWidth = el.width ? (el.width / 1000) * width : 100;
-      const elHeight = el.height ? (el.height / 1000) * height : 0;
       page.drawLine({
         start: { x: actualX, y: actualY },
         end: { x: actualX + elWidth, y: actualY - elHeight },
@@ -656,6 +640,42 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         thickness: el.strokeWidth ? (el.strokeWidth / 1000) * width : 2,
         opacity: elOpacity,
       });
+    } else if (el.type === 'path' && el.path && el.path.length > 0) {
+      const thickness = el.strokeWidth || 5;
+      const actualThickness = (thickness / 1000) * width;
+      for (let i = 0; i < el.path.length - 1; i++) {
+        const p1 = el.path[i];
+        const p2 = el.path[i+1];
+        page.drawLine({
+          start: { x: (p1.x / 1000) * width, y: height - ((p1.y / 1000) * height) },
+          end: { x: (p2.x / 1000) * width, y: height - ((p2.y / 1000) * height) },
+          color: elColor,
+          thickness: actualThickness,
+          opacity: elOpacity,
+        });
+      }
+    } else if (el.type === 'image' && el.imageUrl) {
+      try {
+        let embeddedImage;
+        const base64Data = el.imageUrl.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        if (el.imageUrl.startsWith('data:image/png')) embeddedImage = await pdfDoc.embedPng(bytes);
+        else embeddedImage = await pdfDoc.embedJpg(bytes);
+        page.drawImage(embeddedImage, { x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, opacity: elOpacity, rotate: elRotation });
+      } catch (err) { console.error(err); }
+    } else if (el.type === 'form-check') {
+      page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0, 0, 0), borderWidth: 1.5 });
+      if (el.isChecked) {
+        page.drawLine({ start: { x: actualX + 5, y: actualY - 5 }, end: { x: actualX + elWidth - 5, y: actualY - elHeight + 5 }, thickness: 2, color: rgb(0, 0, 1) });
+        page.drawLine({ start: { x: actualX + 5, y: actualY - elHeight + 5 }, end: { x: actualX + elWidth - 5, y: actualY - 5 }, thickness: 2, color: rgb(0, 0, 1) });
+      }
+    } else if (el.type === 'form-text') {
+      page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+      if (el.text) {
+        page.drawText(el.text, { x: actualX + 5, y: actualY - 15, size: 8, color: rgb(0, 0, 0) });
+      }
     }
   }
   return pdfDoc.save();
