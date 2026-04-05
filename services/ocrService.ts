@@ -20,7 +20,7 @@ const getFreshAi = () => {
  */
 export const performOCR = async (base64: string, mimeType: string): Promise<string> => {
     const ai = getFreshAi();
-    const model = 'gemini-3-flash-preview';
+    const model = 'gemini-2.5-flash'; // Updated from deprecated gemini-3-flash-preview
 
     try {
         const response = await ai.models.generateContent({

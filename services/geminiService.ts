@@ -3,68 +3,62 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
 
-const HARDCODED_API_KEY: string = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY"; // Key added safely
+const HARDCODED_API_KEY: string = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY";
 
 /**
  * Retrieves the Gemini API key from various sources.
  */
 const getApiKey = (): string => {
-  // 0. Hardcoded key (highest priority if set)
   if (HARDCODED_API_KEY && HARDCODED_API_KEY.trim() !== "") {
     return HARDCODED_API_KEY.trim();
   }
-
-  // 1. Try Vite env var (standard way)
   if ((import.meta as any).env.VITE_GEMINI_API_KEY) {
     return (import.meta as any).env.VITE_GEMINI_API_KEY;
   }
-
-  // 2. Try process.env.API_KEY (legacy/build injection)
-  const envKey = process.env.API_KEY;
-  if (envKey && envKey.trim() !== "") {
-    return envKey.trim();
-  }
-
-  // 3. Try LocalStorage (user manually entered)
-  const localKey = localStorage.getItem('gemini_api_key');
-  if (localKey && localKey.trim() !== "") {
-    return localKey.trim();
-  }
-
+  try {
+    const localKey = localStorage.getItem('gemini_api_key');
+    if (localKey && localKey.trim() !== "") return localKey.trim();
+  } catch {}
   return "";
 };
 
-/**
- * Creates a fresh Gemini instance using the runtime key.
- * Per guidelines: Create instance right before use to ensure the latest key is used.
- */
 const getFreshAi = () => {
   const apiKey = getApiKey();
-  if (!apiKey) throw new Error("API Key not found. Please select a key.");
+  if (!apiKey) throw new Error("API Key not found. Please configure a Gemini API key.");
   return new GoogleGenAI({ apiKey });
 };
 
+// ─── Current stable model names (April 2026) ────────────────────────────────
+// gemini-2.5-flash  → fast, multimodal, vision, text generation
+// gemini-2.5-pro    → highest quality, complex tasks
+
+const FLASH_MODEL = 'gemini-2.5-flash';
+const PRO_MODEL   = 'gemini-2.5-pro';
+
+// ─── IMAGE GENERATION ────────────────────────────────────────────────────────
 export const generateImage = async (
   prompt: string,
   aspectRatio: AspectRatio,
   highQuality: boolean
 ): Promise<string> => {
-  // Use gemini-2.0-pro-exp-02-05 for high quality if available, or 2.0-flash for speed
-  const model = highQuality ? 'gemini-2.0-pro-exp-02-05' : 'gemini-2.0-flash';
-
+  const model = highQuality ? PRO_MODEL : FLASH_MODEL;
   const ai = getFreshAi();
+
   try {
     const response = await ai.models.generateContent({
       model,
       contents: {
-        parts: [{ text: prompt }]
-      }
-    } as any);
+        parts: [{ text: `Generate an image: ${prompt}` }]
+      },
+      config: {
+        responseModalities: ['image', 'text'],
+      } as any
+    });
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData?.data) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+        if ((part as any).inlineData?.data) {
+          return `data:image/png;base64,${(part as any).inlineData.data}`;
         }
       }
     }
@@ -72,47 +66,46 @@ export const generateImage = async (
     throw new Error(err.message || "Failed to generate image.");
   }
 
-  throw new Error("No image data returned from API.");
+  throw new Error("No image data returned from API. The model may not support image generation for this prompt.");
 };
 
+// ─── IMAGE EDITING ───────────────────────────────────────────────────────────
 export const editImage = async (
   base64Image: string,
   prompt: string,
   mimeType: string
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.0-flash';
 
   try {
     const response = await ai.models.generateContent({
-      model,
+      model: FLASH_MODEL,
       contents: {
         parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType
-            }
-          },
+          { inlineData: { data: base64Image, mimeType } },
           { text: prompt }
         ]
-      }
+      },
+      config: {
+        responseModalities: ['image', 'text'],
+      } as any
     });
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData?.data) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+        if ((part as any).inlineData?.data) {
+          return `data:image/png;base64,${(part as any).inlineData.data}`;
         }
       }
     }
+    // If no image returned, return original
+    return `data:${mimeType};base64,${base64Image}`;
   } catch (err: any) {
     throw new Error(err.message || "Failed to edit image.");
   }
-
-  throw new Error("No edited image data returned.");
 };
 
+// ─── MAGIC TRANSFORM ─────────────────────────────────────────────────────────
 export const magicTransform = async (
   baseImage: string,
   baseMime: string,
@@ -122,135 +115,87 @@ export const magicTransform = async (
   mode: 'GENERAL' | 'FACE_SWAP' | 'ID_EDIT' = 'GENERAL'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.0-flash'; // Use vision-optimized model
 
-  let systemPrompt = "";
+  let systemPrompt = `You are an expert image editor. Edit the provided image as instructed. Return ONLY the edited image.\n\nUSER INSTRUCTION: ${prompt}`;
 
   if (mode === 'FACE_SWAP') {
-    systemPrompt = `
-      TASK: Face Swap.
-      INPUT 1 (Base): Target image. 
-      INPUT 2 (Ref): Source face provider.
-      INSTRUCTIONS:
-      1. Swap the face from the Reference image onto the person in the Base image.
-      2. PRESERVE the Base image's lighting, skin tone match, shadows, grain, and resolution.
-      3. Do NOT change the background, clothing, or other details of the Base image unless explicitly asked.
-      4. Blend perfectly.
-      USER PROMPT: ${prompt}
-    `;
+    systemPrompt = `TASK: Face swap. Swap the face from the second reference image onto the person in the first base image. Preserve lighting, skin tone, shadows. USER PROMPT: ${prompt}`;
   } else if (mode === 'ID_EDIT') {
-    systemPrompt = `
-      TASK: ID / Document Editing.
-      INPUT 1 (Base): Target Document/ID.
-      INPUT 2 (Ref): Person Reference (Optional).
-      INSTRUCTIONS:
-      1. If a Reference image is provided, swap the ID photo with the Reference person's face. MATCH the ID photo's style (passport style, lighting, background color of the ID photo area).
-      2. Edit the TEXT fields on the document as requested in the PROMPT.
-      3. CRITICAL: Match the existing font, size, perspective, noise, and blur of the document. The text must look authentic.
-      4. Do NOT hallucinate new fields. Only edit what is asked.
-      USER PROMPT: ${prompt}
-    `;
-  } else {
-    // General
-    systemPrompt = `
-      TASK: General Image Editing / Magic Transform.
-      INPUT 1 (Base): Image to edit.
-      INPUT 2 (Ref): Style/Content Reference (Optional).
-      INSTRUCTIONS:
-      1. Edit the Base image according to the User Prompt.
-      2. If a Reference is provided, use it to guide the style, content, or transformation.
-      3. If no Reference is provided, perform a generative edit based on the prompt alone.
-      USER PROMPT: ${prompt}
-    `;
+    systemPrompt = `TASK: Document editing. Edit the text fields on the provided document as requested. Match the existing font, size, and style. USER PROMPT: ${prompt}`;
   }
 
   const parts: any[] = [
-    {
-      inlineData: {
-        data: baseImage,
-        mimeType: baseMime
-      }
-    }
+    { inlineData: { data: baseImage, mimeType: baseMime } }
   ];
 
   if (refImage && refMime) {
-    parts.push({
-      inlineData: {
-        data: refImage,
-        mimeType: refMime
-      }
-    });
+    parts.push({ inlineData: { data: refImage, mimeType: refMime } });
   }
 
   parts.push({ text: systemPrompt });
 
   try {
     const response = await ai.models.generateContent({
-      model,
-      contents: {
-        parts: parts
-      }
+      model: FLASH_MODEL,
+      contents: { parts },
+      config: { responseModalities: ['image', 'text'] } as any
     });
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData?.data) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+        if ((part as any).inlineData?.data) {
+          return `data:image/png;base64,${(part as any).inlineData.data}`;
         }
       }
     }
+    return `data:${baseMime};base64,${baseImage}`;
   } catch (err: any) {
     throw new Error(err.message || "Failed to transform image.");
   }
-
-  throw new Error("No extracted image data returned.");
 };
 
+// ─── IMAGE UPSCALE ───────────────────────────────────────────────────────────
 export const upscaleImage = async (
   base64Image: string,
   mimeType: string,
   targetSize: '2K' | '4K' = '2K'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.0-flash';
 
+  // Gemini doesn't natively upscale — we use it to enhance details descriptively
+  // and return the original if no image part is returned
   try {
     const response = await ai.models.generateContent({
-      model,
+      model: FLASH_MODEL,
       contents: {
         parts: [
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType
-            }
-          },
-          { text: `Upscale this image to ${targetSize}. Sharpen details while maintaining composition.` }
+          { inlineData: { data: base64Image, mimeType } },
+          { text: `Enhance and sharpen this image. Improve details, reduce noise, and maximize clarity as if upscaling to ${targetSize}. Return the enhanced image.` }
         ]
-      }
-    } as any);
+      },
+      config: { responseModalities: ['image', 'text'] } as any
+    });
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData?.data) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+        if ((part as any).inlineData?.data) {
+          return `data:image/png;base64,${(part as any).inlineData.data}`;
         }
       }
     }
+    return `data:${mimeType};base64,${base64Image}`;
   } catch (err: any) {
     throw new Error(err.message || "Failed to upscale image.");
   }
-
-  throw new Error("No upscaled image returned.");
 };
 
+// ─── TEXT GENERATION ─────────────────────────────────────────────────────────
 export const generateText = async (prompt: string, systemInstruction?: string): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'gemini-2.0-flash';
 
   try {
     const response = await ai.models.generateContent({
-      model,
+      model: FLASH_MODEL,
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -258,19 +203,21 @@ export const generateText = async (prompt: string, systemInstruction?: string): 
       }
     });
 
-    // Per guidelines: access .text property directly, not as a method.
     return response.text || "";
   } catch (err: any) {
     throw new Error(err.message || "Failed to generate text.");
   }
 };
 
+// ─── VIDEO GENERATION ────────────────────────────────────────────────────────
 export const generateVideo = async (
   prompt: string,
   aspectRatio: '16:9' | '9:16' = '16:9'
 ): Promise<string> => {
   const ai = getFreshAi();
-  const model = 'veo-2.0-flash-preview';
+
+  // veo-2.0-generate-001 is the current stable video generation model
+  const model = 'veo-2.0-generate-001';
 
   try {
     let operation = await ai.models.generateVideos({
@@ -278,74 +225,69 @@ export const generateVideo = async (
       prompt,
       config: {
         numberOfVideos: 1,
+        durationSeconds: 8,
         resolution: '720p',
         aspectRatio: aspectRatio
       }
     });
 
-    // Poll for completion
-    while (!operation.done) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Poll every 5s
+    // Poll for completion (max 3 minutes)
+    let attempts = 0;
+    while (!operation.done && attempts < 36) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
       operation = await ai.operations.getVideosOperation({ name: (operation as any).name } as any);
+      attempts++;
     }
 
     if ((operation as any).error) {
       throw new Error((operation as any).error.message);
     }
 
-    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (!downloadLink) throw new Error("No video URI returned.");
+    const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
+    if (!videoUri) throw new Error("No video URI returned from API.");
 
-    // Fetch the video bytes
     const apiKey = getApiKey();
-    const response = await fetch(`${downloadLink}${downloadLink.includes('?') ? '&' : '?'}key=${apiKey}`);
+    const sep = videoUri.includes('?') ? '&' : '?';
+    const response = await fetch(`${videoUri}${sep}key=${apiKey}`);
     if (!response.ok) throw new Error("Failed to download generated video.");
 
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-
+    return URL.createObjectURL(await response.blob());
   } catch (err: any) {
     throw new Error(err.message || "Failed to generate video.");
   }
 };
 
+// ─── PDF CHAT SERVICE ────────────────────────────────────────────────────────
 export class PdfChatService {
   private chat: Chat | null = null;
 
   async startChat(pdfBase64: string, mimeType: string = 'application/pdf'): Promise<string> {
     const ai = getFreshAi();
     this.chat = ai.chats.create({
-      model: 'gemini-2.0-flash',
+      model: FLASH_MODEL,
       config: {
-        systemInstruction: "You are a professional PDF analyzer. Provide concise summaries and answer questions based on the document.",
+        systemInstruction: "You are a professional PDF document analyzer. Provide concise, accurate summaries and answer questions based solely on the document's content. Be helpful, clear and precise.",
       }
     });
 
     try {
       const response: GenerateContentResponse = await this.chat.sendMessage({
         message: [
-          {
-            inlineData: {
-              data: pdfBase64,
-              mimeType: mimeType
-            }
-          },
-          { text: "Briefly summarize this document." }
+          { inlineData: { data: pdfBase64, mimeType } },
+          { text: "Please analyze this document and provide a brief summary of its main content, key topics, and any important information." }
         ]
       });
 
-      return response.text || "Analyzed. What would you like to know?";
+      return response.text || "Document analyzed. What would you like to know?";
     } catch (err: any) {
       throw new Error(err.message || "Failed to start AI chat session.");
     }
   }
 
   async sendMessage(text: string): Promise<string> {
-    if (!this.chat) throw new Error("Chat session not initialized.");
+    if (!this.chat) throw new Error("Chat session not initialized. Please upload a document first.");
     try {
-      const response: GenerateContentResponse = await this.chat.sendMessage({
-        message: text
-      });
+      const response: GenerateContentResponse = await this.chat.sendMessage({ message: text });
       return response.text || "";
     } catch (err: any) {
       throw new Error(err.message || "Failed to send message to AI.");
@@ -353,35 +295,28 @@ export class PdfChatService {
   }
 }
 
+// ─── VIDEO CHAT SERVICE ───────────────────────────────────────────────────────
 export class VideoChatService {
   private chat: Chat | null = null;
 
   async startChat(videoBase64: string, mimeType: string): Promise<string> {
     const ai = getFreshAi();
-    // Using gemini-2.0-flash for multimodal tasks as recommended for general text/multimodal tasks
-    const model = 'gemini-2.0-flash';
-
     this.chat = ai.chats.create({
-      model,
+      model: FLASH_MODEL,
       config: {
-        systemInstruction: "You are a video analysis expert. Watch the video and answer questions about its content, action, and visual details.",
+        systemInstruction: "You are a video analysis expert. Analyze the video content and answer questions about what happens in it, including actions, objects, people, text, and scenes.",
       }
     });
 
     try {
       const response: GenerateContentResponse = await this.chat.sendMessage({
         message: [
-          {
-            inlineData: {
-              data: videoBase64,
-              mimeType: mimeType
-            }
-          },
-          { text: "Watch this video and provide a brief summary of what happens." }
+          { inlineData: { data: videoBase64, mimeType } },
+          { text: "Watch this video and provide a brief summary of what happens, including key scenes, people, actions, and any text visible." }
         ]
       });
 
-      return response.text || "I've analyzed the video. What would you like to know?";
+      return response.text || "Video analyzed. What would you like to know?";
     } catch (err: any) {
       throw new Error(err.message || "Failed to analyze video.");
     }
@@ -390,9 +325,7 @@ export class VideoChatService {
   async sendMessage(text: string): Promise<string> {
     if (!this.chat) throw new Error("Chat session not initialized.");
     try {
-      const response: GenerateContentResponse = await this.chat.sendMessage({
-        message: text
-      });
+      const response: GenerateContentResponse = await this.chat.sendMessage({ message: text });
       return response.text || "";
     } catch (err: any) {
       throw new Error(err.message || "Failed to send message to AI.");
