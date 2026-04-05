@@ -158,8 +158,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           pageEdits={pageEditsCount}
         />
 
-        {/* Editor Area */}
-        <main className="flex-1 bg-[#f1f5f9] relative overflow-hidden flex flex-col">
+        {/* Editor Area — flex-1 + overflow-hidden so Canvas manages its own scroll */}
+        <main className="flex-1 flex flex-col overflow-hidden relative">
            {successMsg && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-10">
                  <CheckCircle2 size={18} /> {successMsg}
@@ -167,22 +167,19 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               </div>
            )}
 
-           <div className="flex-1 flex items-center justify-center overflow-hidden">
-              <PdfEditorCanvas
-                image={images[activePage]}
-                pageIndex={activePage}
-                initialElements={elements.filter(el => el.pageIndex === activePage)}
-                onSave={(newElements) => {
-                  const otherPages = elements.filter(el => el.pageIndex !== activePage);
-                  setElements([...otherPages, ...newElements]);
-                }}
-                // Aligning 'Apply Changes' to trigger the final bank/download as per Sejda
-                onFinalSave={handleApplyAll} 
-                onCancel={onCancel}
-                isEmbedded={true}
-                textItems={textItems}
-              />
-           </div>
+           <PdfEditorCanvas
+             image={images[activePage]}
+             pageIndex={activePage}
+             initialElements={elements.filter(el => el.pageIndex === activePage)}
+             onSave={(newElements) => {
+               const otherPages = elements.filter(el => el.pageIndex !== activePage);
+               setElements([...otherPages, ...newElements]);
+             }}
+             onFinalSave={handleApplyAll}
+             onCancel={onCancel}
+             isEmbedded={true}
+             textItems={textItems}
+           />
         </main>
       </div>
     </div>
