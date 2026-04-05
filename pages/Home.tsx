@@ -199,20 +199,20 @@ export const Home: React.FC = () => {
                     <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="text-white max-w-xl">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
-                                <Star size={12} className="fill-white" /> Featured Service
+                                <Star size={12} className="fill-white" /> {t('home.featuredService')}
                             </div>
                             <h2 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-                                Get Your Documents Notarized in 10 Minutes. Online.
+                                {t('home.notarizeTitle')}
                             </h2>
                             <p className="text-blue-50 text-lg opacity-90 mb-8 border-l-4 border-blue-300 pl-4">
-                                Secure, legally valid Remote Online Notarization (RON) available 24/7. No office visit required.
+                                {t('home.notarizeSubtitle')}
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <button 
                                     onClick={() => navigate(i18n.language === 'en' ? '/notarize' : `/${i18n.language}/notarize`)}
                                     className="px-8 py-4 bg-white text-[#185FA5] rounded-full font-bold text-lg hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
                                 >
-                                    Start Notarization <ArrowRight size={20} />
+                                    {t('home.startNotarization')} <ArrowRight size={20} />
                                 </button>
                                 <div className="flex -space-x-3 items-center ml-2">
                                     {[1, 2, 3, 4].map(i => (
@@ -221,16 +221,21 @@ export const Home: React.FC = () => {
                                         </div>
                                     ))}
                                     <div className="ml-4 text-sm font-medium text-blue-100">
-                                        <span className="font-bold text-white">5,000+</span> satisfied clients
+                                        <span className="font-bold text-white">5,000+</span> {t('home.satisfiedClients')}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div className="hidden lg:block w-72">
                             <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
-                                <h3 className="font-bold text-white mb-4">Fast & Legal</h3>
+                                <h3 className="font-bold text-white mb-4">{t('home.fastLegal')}</h3>
                                 <ul className="space-y-3">
-                                    {['Licensed US Notaries', 'All 50 States', 'SECURE Notary Act Compliant', '24/7 Availability'].map(item => (
+                                    {[
+                                        t('home.licensedNotaries'),
+                                        t('home.allStates'),
+                                        t('home.compliant'),
+                                        t('home.available247')
+                                    ].map(item => (
                                         <li key={item} className="flex items-center gap-2 text-sm text-blue-50">
                                             <div className="w-5 h-5 rounded-full bg-green-400 flex items-center justify-center">
                                                 <ShieldCheck size={12} className="text-white" />

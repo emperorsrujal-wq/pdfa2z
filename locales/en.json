@@ -21,7 +21,17 @@
         "heroTitle": "Professional PDF & AI Tools",
         "heroSubtitle": "Completely free, client-side, and powered by AI.",
         "startTool": "Start Tool",
-        "popular": "Popular"
+        "popular": "Popular",
+        "notarizeTitle": "Get Your Documents Notarized in 10 Minutes. Online.",
+        "notarizeSubtitle": "Secure, legally valid Remote Online Notarization (RON) available 24/7. No office visit required.",
+        "startNotarization": "Start Notarization",
+        "featuredService": "Featured Service",
+        "fastLegal": "Fast & Legal",
+        "licensedNotaries": "Licensed US Notaries",
+        "allStates": "All 50 States",
+        "compliant": "SECURE Notary Act Compliant",
+        "available247": "24/7 Availability",
+        "satisfiedClients": "satisfied clients"
     },
     "tools": {
         "howTo": "How to use this tool",
