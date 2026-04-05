@@ -273,7 +273,7 @@ export const Home: React.FC = () => {
                                 </div>
                                 <h2 className="text-2xl font-bold text-slate-900">{t('home.popular')}</h2>
                             </div>
-                            {renderToolGrid(allTools.filter(t => ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor'].includes(t.slug)))}
+                            {renderToolGrid(allTools.filter(t => ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor', 'notarize'].includes(t.slug)))}
                         </section>
 
                         {/* PDF Tools */}

@@ -161,7 +161,7 @@ export const UserDashboard: React.FC<DashboardProps> = ({ onNewNotarization, onV
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-900 text-sm truncate">
-                        {sess.document_name || `Document — ${DOCUMENT_TYPE_LABELS[sess.notary_type as any] || sess.notary_type}`}
+                        {sess.document_name || `Notarization Session — ${sess.id.substring(0, 8)}`}
                       </p>
                       <p className="text-xs text-slate-400 mt-0.5">
                         {sess.created_at?.toDate
