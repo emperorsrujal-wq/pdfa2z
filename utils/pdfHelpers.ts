@@ -1,5 +1,6 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 // Use local worker from node_modules via Vite's public directory or import
 // For Vite, it's best to copy the worker to public or use a direct import if configured.
 // Here we will use the CDN as a fallback but prefer a local structure if possible.
@@ -528,7 +529,9 @@ export interface EditElement {
   // Text specific
   text?: string;
   size?: number; // font size in points
-  fontName?: string; // e.g. Helvetica, TimesRoman
+  fontName?: string; // e.g. Times Roman, Arial
+  isBold?: boolean;
+  isItalic?: boolean;
   
   // Path/Line specific
   path?: { x: number, y: number }[]; // Array of points 0-1000
@@ -578,7 +581,29 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
 
     if (el.type === 'text' && el.text) {
       const fontSize = el.size || 24; 
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica); 
+      
+      // Determine font family
+      let fontName = el.fontName || 'Helvetica';
+      let fontToEmbed;
+      
+      if (fontName.includes('Times')) {
+         if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.TimesRomanBoldItalic;
+         else if (el.isBold) fontToEmbed = StandardFonts.TimesRomanBold;
+         else if (el.isItalic) fontToEmbed = StandardFonts.TimesRomanItalic;
+         else fontToEmbed = StandardFonts.TimesRoman;
+      } else if (fontName.includes('Courier')) {
+         if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.CourierBoldOblique;
+         else if (el.isBold) fontToEmbed = StandardFonts.CourierBold;
+         else if (el.isItalic) fontToEmbed = StandardFonts.CourierOblique;
+         else fontToEmbed = StandardFonts.Courier;
+      } else { // Default to Helvetica (Arial style)
+         if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.HelveticaBoldOblique;
+         else if (el.isBold) fontToEmbed = StandardFonts.HelveticaBold;
+         else if (el.isItalic) fontToEmbed = StandardFonts.HelveticaOblique;
+         else fontToEmbed = StandardFonts.Helvetica;
+      }
+
+      const font = await pdfDoc.embedFont(fontToEmbed); 
       page.drawText(el.text, {
         x: actualX,
         y: actualY - fontSize,
@@ -840,3 +865,40 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
 
 // For formats like EPUB, MOBI, AZW3, OUTLOOK - we can't easily parse them in browser without libs.
 // We will throw error for now or generic "text extraction" if possible.
+
+export interface PdfTextItem {
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  fontName: string;
+}
+
+export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTextItem[]> => {
+  const engine = await getPdfEngine();
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
+  const pdf = await loadingTask.promise;
+  const page = await pdf.getPage(pageIndex + 1);
+  const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1.0 });
+
+  return (textContent.items as any[]).map(item => {
+    const tx = item.transform;
+    const x = tx[4];
+    const y = viewport.height - tx[5];
+    const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
+    
+    return {
+      str: item.str || '',
+      x: (x / viewport.width) * 1000,
+      y: (y / viewport.height) * 1000,
+      width: (item.width / viewport.width) * 1000,
+      height: (fontSize / viewport.height) * 1000,
+      fontSize,
+      fontName: item.fontName || 'Helvetica'
+    };
+  });
+};

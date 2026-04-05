@@ -4,7 +4,7 @@ import { Button } from './Button';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
 import { PdfThumbnailSidebar } from './PdfThumbnailSidebar';
 import { SmartRedactButton } from './SmartRedactButton';
-import { pdfToImages, editPdf, EditElement, downloadBlob } from '../utils/pdfHelpers';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem } from '../utils/pdfHelpers';
 
 interface PdfEditorUIProps {
   file: File;
@@ -15,6 +15,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [images, setImages] = React.useState<string[]>([]);
   const [elements, setElements] = React.useState<EditElement[]>([]);
   const [activePage, setActivePage] = React.useState<number>(0);
+  const [textItems, setTextItems] = React.useState<PdfTextItem[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [successMsg, setSuccessMsg] = React.useState('');
@@ -40,12 +41,26 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     return () => { mounted = false; };
   }, [file]);
 
-  const handleApplyAll = async () => {
+  // Fetch text items for the active page to enable 'Direct Edit'
+  React.useEffect(() => {
+    const fetchText = async () => {
+      try {
+        const items = await getTextItems(file, activePage);
+        setTextItems(items);
+      } catch (e) {
+        console.warn("Could not fetch text items", e);
+      }
+    };
+    fetchText();
+  }, [file, activePage]);
+
+  const handleApplyAll = async (latestElements?: EditElement[]) => {
     setIsProcessing(true);
     setSuccessMsg('');
     setErrorMsg('');
     try {
-      const res = await editPdf(file, elements);
+      const elementsToUse = latestElements || elements;
+      const res = await editPdf(file, elementsToUse);
       downloadBlob(res, `edited-${file.name}`);
       setSuccessMsg("PDF Successfully Edited and Downloaded!");
     } catch (err: any) {
@@ -60,8 +75,6 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     // Simulate AI Scan
     setTimeout(() => {
       const newEdits: EditElement[] = [];
-      // Demo: Redact things that look like emails or phone numbers on current page
-      // In a real app, we'd use OCR text layer to find coordinates
       newEdits.push({
         id: `redact-${Date.now()}`,
         type: 'rect',
@@ -95,44 +108,43 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   return (
     <div className="fixed inset-0 bg-slate-100 z-50 flex flex-col overflow-hidden animate-fade-in">
       {/* Premium Header */}
-      <header className="h-20 bg-white border-b flex items-center justify-between px-8 shadow-sm shrink-0">
+      <header className="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm shrink-0">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-             <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg ring-4 ring-indigo-50">
-                <PenTool size={24} />
+             <div className="p-1.5 bg-indigo-600 rounded-lg text-white shadow-md">
+                <PenTool size={20} />
              </div>
              <div>
-                <h1 className="font-black text-slate-800 tracking-tight leading-none text-xl uppercase">PDF Editor Pro</h1>
-                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Enterprise Workstation</p>
+                <h1 className="font-black text-slate-800 tracking-tight leading-none text-lg uppercase">PDF Editor Pro</h1>
              </div>
           </div>
           
-          <div className="h-8 w-px bg-slate-200" />
+          <div className="h-6 w-px bg-slate-200" />
           
           <div className="flex items-center gap-2 text-slate-400 text-sm font-bold">
-             <span className="bg-slate-100 px-3 py-1 rounded-full text-xs">{file.name}</span>
-             <span className="opacity-30">/</span>
-             <span className="text-indigo-600">{images.length} Pages</span>
+             <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-[11px] truncate max-w-[150px]">{file.name}</span>
+             <span className="text-indigo-600 text-xs">{images.length} Pages</span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-           <SmartRedactButton onScan={handleSmartRedact} isScanning={isScanning} />
+           {/* Smart Redact hidden for now to match Sejda simplicity */}
+           {/* <SmartRedactButton onScan={handleSmartRedact} isScanning={isScanning} /> */}
            
-           <div className="h-8 w-px bg-slate-200 mx-2" />
-
-           <Button onClick={onCancel} className="bg-transparent hover:bg-slate-100 text-slate-500 border-none shadow-none">
-              <X size={20} className="mr-2" /> Close
-           </Button>
-           
-           <Button 
-            onClick={handleApplyAll} 
-            isLoading={isProcessing} 
-            className="bg-slate-900 border-none hover:bg-black text-white px-8 py-3 rounded-2xl shadow-xl shadow-slate-900/10 flex items-center gap-2 group"
-           >
-              <Download size={20} className="group-hover:translate-y-0.5 transition-transform" />
-              Download Final PDF
-           </Button>
+           <div className="flex items-center gap-2">
+              <Button onClick={onCancel} className="bg-transparent hover:bg-slate-50 text-slate-500 border-none shadow-none text-xs font-bold">
+                 <X size={16} className="mr-1" /> Close
+              </Button>
+              
+              <Button 
+                onClick={() => handleApplyAll()} 
+                isLoading={isProcessing} 
+                className="bg-emerald-600 border-none hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow-lg shadow-emerald-200 flex items-center gap-2 text-xs font-bold"
+              >
+                 <Download size={16} />
+                 Download
+              </Button>
+           </div>
         </div>
       </header>
 
@@ -147,33 +159,28 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
         />
 
         {/* Editor Area */}
-        <main className="flex-1 bg-slate-200/50 relative overflow-hidden flex flex-col">
+        <main className="flex-1 bg-[#f1f5f9] relative overflow-hidden flex flex-col">
            {successMsg && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-10">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-10">
                  <CheckCircle2 size={18} /> {successMsg}
                  <button onClick={() => setSuccessMsg('')} className="ml-4 opacity-50 hover:opacity-100"><X size={14}/></button>
               </div>
            )}
 
-           {errorMsg && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-10">
-                 <X size={18} /> {errorMsg}
-              </div>
-           )}
-
-           <div className="flex-1 flex items-center justify-center p-8 bg-grid-slate-200">
+           <div className="flex-1 flex items-center justify-center overflow-hidden">
               <PdfEditorCanvas
                 image={images[activePage]}
                 pageIndex={activePage}
                 initialElements={elements.filter(el => el.pageIndex === activePage)}
                 onSave={(newElements) => {
-                  setElements(prev => [
-                    ...prev.filter(el => el.pageIndex !== activePage),
-                    ...newElements
-                  ]);
+                  const otherPages = elements.filter(el => el.pageIndex !== activePage);
+                  setElements([...otherPages, ...newElements]);
                 }}
+                // Aligning 'Apply Changes' to trigger the final bank/download as per Sejda
+                onFinalSave={handleApplyAll} 
                 onCancel={onCancel}
                 isEmbedded={true}
+                textItems={textItems}
               />
            </div>
         </main>

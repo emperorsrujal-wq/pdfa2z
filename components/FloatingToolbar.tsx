@@ -7,12 +7,9 @@ import {
   FileSignature, 
   Eraser, 
   Highlighter, 
-  Strikethrough, 
-  Underline as UnderlineIcon, 
-  Square, 
-  Circle as CircleIcon,
-  ChevronDown,
-  Zap
+  Shapes,
+  Undo2,
+  ChevronDown
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
@@ -20,124 +17,118 @@ interface FloatingToolbarProps {
   mode: string;
   setMode: (mode: any) => void;
   onImageUpload: () => void;
+  undo?: () => void;
 }
 
 export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ 
   mode, 
   setMode,
-  onImageUpload
+  onImageUpload,
+  undo
 }) => {
   return (
-    <div className="sticky top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-1 bg-white/90 backdrop-blur-xl p-1.5 rounded-2xl shadow-2xl border border-slate-200/50 animate-in slide-in-from-top-4 duration-500">
-      <div className="flex bg-slate-100/50 rounded-xl p-1 gap-0.5">
-        <Tooltip content="Direct Text Edit: Click anywhere to edit or add text.">
+    <div className="flex flex-col items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="flex items-center gap-0.5 bg-[#f0f7ff] border border-[#d1e6ff] p-0.5 rounded-md shadow-sm">
+        
+        {/* Text Group */}
+        <div className="flex items-center border-r border-[#d1e6ff] pr-1 mr-1">
           <button 
-            onClick={() => setMode('magic-edit')} 
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${mode === 'magic-edit' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'}`}
+            onClick={() => setMode('magic-edit')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${mode === 'magic-edit' ? 'bg-[#3b82f6] text-white shadow-inner' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
           >
-            <Zap size={14} className={mode === 'magic-edit' ? 'fill-indigo-600' : ''} /> Text
+            <Type size={16} />
+            <span>Text</span>
+            <ChevronDown size={12} className="opacity-50" />
           </button>
-        </Tooltip>
+        </div>
 
-        <Tooltip content="Add external links or internal anchors.">
-          <button 
-            onClick={() => setMode('link')} 
-            className={`p-2 rounded-lg transition-all ${mode === 'link' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-900 hover:bg-white/50'}`}
-          >
-            <LinkIcon size={16} />
-          </button>
-        </Tooltip>
+        {/* Links */}
+        <button 
+          onClick={() => setMode('link')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors border-r border-[#d1e6ff] ${mode === 'link' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
+        >
+          <LinkIcon size={16} />
+          <span>Links</span>
+        </button>
 
-        <Tooltip content="Insert form elements: Checkboxes, Radio buttons, etc.">
+        {/* Forms */}
+        <div className="flex items-center border-r border-[#d1e6ff]">
           <button 
-            onClick={() => setMode('forms')} 
-            className={`p-2 rounded-lg transition-all ${mode === 'forms' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-900 hover:bg-white/50'}`}
+            onClick={() => setMode('forms')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${mode === 'forms' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
           >
             <CheckSquare size={16} />
+            <span>Forms</span>
+            <ChevronDown size={12} className="opacity-50" />
           </button>
-        </Tooltip>
-      </div>
+        </div>
 
-      <div className="w-px h-6 bg-slate-200 mx-1" />
-
-      <div className="flex bg-slate-100/50 rounded-xl p-1 gap-0.5">
-        <Tooltip content="Upload and insert images.">
+        {/* Images */}
+        <div className="flex items-center border-r border-[#d1e6ff]">
           <button 
-            onClick={onImageUpload} 
-            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white/50 rounded-lg transition-all"
+            onClick={onImageUpload}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium text-[#4b5563] hover:bg-[#e0efff] transition-colors"
           >
             <ImageIcon size={16} />
+            <span>Images</span>
+            <ChevronDown size={12} className="opacity-50" />
           </button>
-        </Tooltip>
+        </div>
 
-        <Tooltip content="Sign the document or add initials.">
+        {/* Sign */}
+        <div className="flex items-center border-r border-[#d1e6ff]">
           <button 
-            onClick={() => setMode('sign')} 
-            className={`p-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-900 hover:bg-white/50'}`}
+            onClick={() => setMode('sign')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${mode === 'sign' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
           >
             <FileSignature size={16} />
+            <span>Sign</span>
+            <ChevronDown size={12} className="opacity-50" />
           </button>
-        </Tooltip>
+        </div>
 
-        <Tooltip content="Whiteout: Erase parts of the page with a clean mask.">
+        {/* Whiteout */}
+        <button 
+          onClick={() => setMode('erase')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors border-r border-[#d1e6ff] ${mode === 'erase' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
+        >
+          <Eraser size={16} />
+          <span>Whiteout</span>
+        </button>
+
+        {/* Annotate */}
+        <div className="flex items-center border-r border-[#d1e6ff]">
           <button 
-            onClick={() => setMode('erase')} 
-            className={`p-2 rounded-lg transition-all ${mode === 'erase' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-900 hover:bg-white/50'}`}
-          >
-            <Eraser size={16} />
-          </button>
-        </Tooltip>
-      </div>
-
-      <div className="w-px h-6 bg-slate-200 mx-1" />
-
-      <div className="flex bg-slate-100/50 rounded-xl p-1 gap-0.5">
-        <Tooltip content="Highlight text with semi-transparent colors.">
-          <button 
-            onClick={() => setMode('highlight')} 
-            className={`p-2 rounded-lg transition-all ${mode === 'highlight' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-900 hover:bg-white/50'}`}
+            onClick={() => setMode('highlight')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${mode === 'highlight' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
           >
             <Highlighter size={16} />
+            <span>Annotate</span>
+            <ChevronDown size={12} className="opacity-50" />
           </button>
-        </Tooltip>
+        </div>
 
-        <Tooltip content="Strikeout or Underline content.">
-          <div className="relative group/sub">
-             <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white/50 rounded-lg transition-all flex items-center">
-                <Strikethrough size={16} />
-                <ChevronDown size={10} className="ml-1 opacity-50" />
-             </button>
-             <div className="absolute top-full left-0 mt-1 hidden group-hover/sub:flex flex-col bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[120px] z-[110]">
-                <button onClick={() => setMode('strikeout')} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg">
-                   <Strikethrough size={14} /> Strikeout
-                </button>
-                <button onClick={() => setMode('underline')} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg">
-                   <UnderlineIcon size={14} /> Underline
-                </button>
-             </div>
-          </div>
-        </Tooltip>
-      </div>
+        {/* Shapes */}
+        <div className="flex items-center border-r border-[#d1e6ff]">
+          <button 
+            onClick={() => setMode('rect')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${mode === 'rect' ? 'bg-[#3b82f6] text-white' : 'text-[#4b5563] hover:bg-[#e0efff]'}`}
+          >
+            <Shapes size={16} />
+            <span>Shapes</span>
+            <ChevronDown size={12} className="opacity-50" />
+          </button>
+        </div>
 
-      <div className="w-px h-6 bg-slate-200 mx-1" />
+        {/* Undo */}
+        <button 
+          onClick={undo}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium text-[#4b5563] hover:bg-[#e0efff] transition-colors"
+        >
+          <Undo2 size={16} />
+          <span>Undo</span>
+        </button>
 
-      <div className="flex bg-slate-100/50 rounded-xl p-1 gap-0.5">
-        <Tooltip content="Add geometric shapes (Rect/Circle).">
-          <div className="relative group/sub">
-             <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white/50 rounded-lg transition-all flex items-center">
-                <Square size={16} />
-                <ChevronDown size={10} className="ml-1 opacity-50" />
-             </button>
-             <div className="absolute top-full right-0 mt-1 hidden group-hover/sub:flex flex-col bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[120px] z-[110]">
-                <button onClick={() => setMode('rect')} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg">
-                   <Square size={14} /> Rectangle
-                </button>
-                <button onClick={() => setMode('circle')} className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg">
-                   <CircleIcon size={14} /> Circle
-                </button>
-             </div>
-          </div>
-        </Tooltip>
       </div>
     </div>
   );

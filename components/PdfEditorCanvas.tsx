@@ -15,20 +15,24 @@ import {
   Pipette,
   Mic,
   Volume2,
-  Trash2
+  Trash2,
+  CheckCircle2
 } from 'lucide-react';
-import { EditElement, EditElementType, extractStyleAtPoint } from '../utils/pdfHelpers';
+import { EditElement, EditElementType, extractStyleAtPoint, getTextItems, PdfTextItem } from '../utils/pdfHelpers';
 import { ObjectToolbar } from './ObjectToolbar';
 import { Tooltip } from './Tooltip';
 import { FloatingToolbar } from './FloatingToolbar';
+import { PageControls } from './PageControls';
 
 interface PdfEditorCanvasProps {
   image: string;
   pageIndex: number;
   initialElements: EditElement[];
   onSave: (elements: EditElement[]) => void;
+  onFinalSave?: (elements: EditElement[]) => void;
   onCancel: () => void;
   isEmbedded?: boolean;
+  textItems?: PdfTextItem[];
 }
 
 type EditorMode = 'select' | 'text' | 'draw' | 'erase' | 'rect' | 'circle' | 'line' | 'image' | 'audio' | 'picker' | 'magic-edit' | 'highlight' | 'strikeout' | 'underline' | 'link' | 'forms' | 'sign';
@@ -38,14 +42,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   pageIndex,
   initialElements,
   onSave,
+  onFinalSave,
   onCancel,
-  isEmbedded = false
+  isEmbedded = false,
+  textItems = []
 }) => {
   const [elements, setElements] = React.useState<EditElement[]>(initialElements);
   const [history, setHistory] = React.useState<EditElement[][]>([initialElements]);
   const [historyStep, setHistoryStep] = React.useState(0);
 
-  const [mode, setMode] = React.useState<EditorMode>('select');
+  const [mode, setMode] = React.useState<EditorMode>('magic-edit');
   const [currentColor, setCurrentColor] = React.useState('#000000');
   const [currentSize, setCurrentSize] = React.useState(24);
   const [strokeWidth, setStrokeWidth] = React.useState(5);
@@ -62,6 +68,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     setElements(initialElements);
     setHistory([initialElements]);
     setHistoryStep(0);
+    // Ideally fetch textItems here if we had the File object
+    // For now, we'll assume the parent provides them or we trigger extraction
   }, [initialElements, pageIndex]);
 
   const addToHistory = (newElements: EditElement[]) => {
@@ -101,77 +109,40 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     return { x, y };
   };
 
-  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+  const handlePointerDown = async (e: React.MouseEvent | React.TouchEvent) => {
     const pos = getPos(e);
 
     switch (mode) {
       case 'picker': {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = image;
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          const pixel = ctx?.getImageData((pos.x / 1000) * img.width, (pos.y / 1000) * img.height, 1, 1).data;
-          if (pixel) {
-            const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
-            setCurrentColor(hex);
-            setMode('select');
-          }
-        };
-        break;
+        const style = await extractStyleAtPoint(new File([], "p.pdf"), pageIndex, pos.x, pos.y, image);
+        if (activeElementId) {
+           updateElement(activeElementId, { color: style.backgroundColor });
+           setMode('select');
+        }
+        return;
       }
-      case 'text': {
-        const newEl: EditElement = {
-          id: `txt-${Date.now()}`,
-          type: 'text',
-          pageIndex,
-          x: pos.x,
-          y: pos.y,
-          color: currentColor,
-          text: 'New Text',
-          size: currentSize,
-          opacity: 1,
-          rotation: 0
-        };
-        const next = [...elements, newEl];
-        setElements(next);
-        addToHistory(next);
-        setActiveElementId(newEl.id);
-        setMode('select');
-        break;
-      }
-      case 'rect':
-      case 'circle': {
-        const newEl: EditElement = {
-          id: `${mode}-${Date.now()}`,
-          type: mode,
-          pageIndex,
-          x: pos.x,
-          y: pos.y,
-          width: 100,
-          height: 100,
-          color: currentColor,
-          opacity: 0.5,
-          rotation: 0
-        };
-        const next = [...elements, newEl];
-        setElements(next);
-        addToHistory(next);
-        setActiveElementId(newEl.id);
-        setMode('select');
-        break;
-      }
-      case 'magic-edit':
-      case 'highlight':
-      case 'strikeout':
-      case 'underline': {
+      case 'magic-edit': {
+        // Direct click-to-edit detection
+        const clickedItem = textItems.find(item => 
+          pos.x >= item.x && pos.x <= item.x + item.width &&
+          pos.y >= item.y && pos.y <= item.y + item.height
+        );
+        
+        if (clickedItem) {
+          const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x: clickedItem.x, y: clickedItem.y, width: clickedItem.width, height: clickedItem.height, color: '#FFFFFF', opacity: 1 };
+          const text: EditElement = { id: `magic-txt-${Date.now()}`, type: 'text', pageIndex, x: clickedItem.x, y: clickedItem.y, width: clickedItem.width, height: clickedItem.height, color: '#000000', text: clickedItem.str, size: clickedItem.fontSize, opacity: 1 };
+          const next = [...elements, mask, text]; setElements(next); addToHistory(next); setActiveElementId(text.id);
+          return;
+        }
+        // If no text item clicked, fall back to drag selection
         setIsDrawing(true);
         setDragStart(pos);
         setDragEnd(pos);
+        break;
+      }
+      case 'text': {
+        const newEl: EditElement = { id: `txt-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, color: currentColor, text: '', size: currentSize, opacity: 1, rotation: 0 };
+        const next = [...elements, newEl]; setElements(next); addToHistory(next); setActiveElementId(newEl.id); setMode('select');
         break;
       }
       case 'draw':
@@ -180,29 +151,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         setCurrentPath([pos]);
         break;
       }
-      case 'audio': {
-        const newEl: EditElement = { id: `audio-${Date.now()}`, type: 'audio', pageIndex, x: pos.x, y: pos.y, opacity: 1, audioData: "recording_placeholder" };
-        const next = [...elements, newEl]; setElements(next); addToHistory(next); setMode('select');
-        break;
-      }
-      case 'forms': {
-        const newEl: EditElement = {
-          id: `form-${Date.now()}`,
-          type: 'form-check',
-          pageIndex,
-          x: pos.x,
-          y: pos.y,
-          width: 30,
-          height: 30,
-          isChecked: false,
-          color: '#000000',
-          opacity: 1
-        };
-        const next = [...elements, newEl];
-        setElements(next);
-        addToHistory(next);
-        setActiveElementId(newEl.id);
-        setMode('select');
+      case 'highlight':
+      case 'strikeout':
+      case 'underline': {
+        setIsDrawing(true);
+        setDragStart(pos);
+        setDragEnd(pos);
         break;
       }
       case 'select': {
@@ -215,7 +169,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (isDrawing) {
       const pos = getPos(e);
-      if (['magic-edit', 'highlight', 'strikeout', 'underline'].includes(mode)) {
+      if (['magic-edit', 'highlight', 'strikeout', 'underline', 'rect', 'circle'].includes(mode)) {
         setDragEnd(pos);
       } else if (mode === 'line') {
         setCurrentPath([currentPath[0], pos]);
@@ -226,6 +180,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   const handlePointerUp = async () => {
+    if (mode === 'picker') return;
     if (isDrawing) {
       if (['magic-edit', 'highlight', 'strikeout', 'underline'].includes(mode) && dragStart && dragEnd) {
         const x = Math.min(dragStart.x, dragEnd.x);
@@ -235,15 +190,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
         if (w > 2 && h > 2) {
           if (mode === 'magic-edit') {
-            const file = new File([], "doc.pdf");
-            const style = await extractStyleAtPoint(file, pageIndex, x + w / 2, y + h / 2, image);
-            const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: style.backgroundColor, opacity: 1 };
-            const text: EditElement = { id: `magic-txt-${Date.now()}`, type: 'text', pageIndex, x, y: y + h / 2 - style.fontSize / 16 * 10, width: w, height: h, color: style.color, text: '', size: style.fontSize, opacity: 1 };
-            const next = [...elements, mask, text]; setElements(next); addToHistory(next); setActiveElementId(text.id); setMode('select');
+            const next: EditElement[] = [...elements, 
+              { id: `mask-${Date.now()}`, type: 'rect' as EditElementType, pageIndex, x, y, width: w, height: h, color: '#FFFFFF', opacity: 1 },
+              { id: `magic-txt-${Date.now()}`, type: 'text' as EditElementType, pageIndex, x, y, width: w, height: h, color: '#000000', text: '', size: 14, opacity: 1 }
+            ];
+            setElements(next); addToHistory(next); setMode('select');
           } else {
-            const type = mode as EditElementType;
-            const newEl: EditElement = { id: `${type}-${Date.now()}`, type, pageIndex, x, y, width: w, height: h, color: type === 'highlight' ? '#fbff00' : '#000000', opacity: type === 'highlight' ? 0.35 : 1 };
-            const next = [...elements, newEl]; setElements(next); addToHistory(next); setMode('select');
+            const typeValue = mode as any; // Cast to bypass strict union check if needed, but safer to check
+            if (['highlight', 'strikeout', 'underline'].includes(typeValue)) {
+              const newEl: EditElement = { id: `${typeValue}-${Date.now()}`, type: typeValue as EditElementType, pageIndex, x, y, width: w, height: h, color: typeValue === 'highlight' ? '#fbff00' : '#000000', opacity: typeValue === 'highlight' ? 0.35 : 1 };
+              const next = [...elements, newEl]; setElements(next); addToHistory(next); setMode('select');
+            }
           }
         }
       } else if (currentPath.length > 1) {
@@ -273,34 +230,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     setActiveElementId(null);
   };
 
-  const duplicateElement = (el: EditElement) => {
-    const newEl = { ...el, id: `${el.id}-copy`, x: el.x + 20, y: el.y + 20 };
-    const next = [...elements, newEl];
-    setElements(next);
-    addToHistory(next);
-    setActiveElementId(newEl.id);
-  };
-
-  const bringToFront = (id: string) => {
-     const idx = elements.findIndex(el => el.id === id);
-     if (idx === -1) return;
-     const newElements = [...elements];
-     const [el] = newElements.splice(idx, 1);
-     newElements.push(el);
-     setElements(newElements);
-     addToHistory(newElements);
-  };
-
-  const sendToBack = (id: string) => {
-     const idx = elements.findIndex(el => el.id === id);
-     if (idx === -1) return;
-     const newElements = [...elements];
-     const [el] = newElements.splice(idx, 1);
-     newElements.unshift(el);
-     setElements(newElements);
-     addToHistory(newElements);
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -315,21 +244,42 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-5xl mx-auto bg-slate-50 relative overflow-hidden select-none">
-      <FloatingToolbar 
-        mode={mode} 
-        setMode={setMode} 
-        onImageUpload={() => document.getElementById('img-upload')?.click()} 
-      />
+    <div className="flex flex-col h-full w-full max-w-5xl mx-auto bg-[#f8fafc] relative overflow-hidden select-none items-center pt-8">
+      
+      <div className="flex flex-col items-center w-full sticky top-0 z-[200] pb-4 bg-[#f8fafc]/80 backdrop-blur-sm">
+        <FloatingToolbar 
+          mode={mode} 
+          setMode={setMode} 
+          onImageUpload={() => document.getElementById('img-upload')?.click()} 
+          undo={undo}
+        />
+
+        {mode === 'erase' && (
+          <div className="w-full max-w-lg mt-2 bg-black text-white text-center py-2 px-4 rounded text-xs font-medium shadow-lg animate-in slide-in-from-top-2">
+            Whiteout hides but will not completely remove underlying text or images. Not suitable for redacting sensitive data.
+          </div>
+        )}
+        
+        <PageControls 
+          pageNumber={pageIndex + 1}
+          onDelete={() => {}}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          onUndo={undo}
+          onRedo={redo}
+          onInsertPage={() => {}}
+        />
+      </div>
+
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 
-      <div className="flex-1 flex items-start justify-center min-h-0 p-8 overflow-y-auto">
+      <div className="flex-1 flex items-start justify-center min-h-0 p-4 pb-32 overflow-y-auto w-full">
         <div
           ref={containerRef}
-          className={`relative bg-white shadow-2xl rounded-sm max-h-full aspect-[1/1.414] overflow-hidden select-none touch-none ${
+          className={`relative bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] rounded-sm max-h-full aspect-[1/1.414] overflow-hidden select-none touch-none ${
             mode === 'text' ? 'cursor-text' : 
-            (mode === 'draw' || mode === 'line') ? 'cursor-crosshair' : 
-            mode === 'erase' ? 'cursor-alias' : 'cursor-default'
+            mode === 'picker' ? 'cursor-crosshair' :
+            (mode === 'draw' || mode === 'line') ? 'cursor-crosshair' : 'cursor-default'
           }`}
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}
@@ -339,6 +289,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           onTouchEnd={handlePointerUp}
         >
           <img src={image} className="w-full h-full object-contain pointer-events-none text-transparent" alt="PDF Page" />
+          
+          {mode === 'picker' && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white px-4 py-2 rounded-lg text-xs font-bold shadow-2xl z-[500] pointer-events-none border border-white/20">
+               Select a color from the document
+            </div>
+          )}
           
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
             {elements.map(el => {
@@ -363,18 +319,18 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               )
             )}
 
-            {['magic-edit', 'highlight', 'strikeout', 'underline'].includes(mode) && isDrawing && dragStart && dragEnd && (
-              <rect x={`${Math.min(dragStart.x, dragEnd.x) / 10}%`} y={`${Math.min(dragStart.y, dragEnd.y) / 10}%`} width={`${Math.abs(dragStart.x - dragEnd.x) / 10}%`} height={`${Math.abs(dragStart.y - dragEnd.y) / 10}%`} fill={mode === 'highlight' ? 'rgba(251, 255, 0, 0.3)' : 'rgba(99, 102, 241, 0.2)'} stroke={mode === 'highlight' ? '#fbff00' : '#6366f1'} strokeWidth="1" strokeDasharray="4 4" />
+            {isDrawing && dragStart && dragEnd && (
+              <rect x={`${Math.min(dragStart.x, dragEnd.x) / 10}%`} y={`${Math.min(dragStart.y, dragEnd.y) / 10}%`} width={`${Math.abs(dragStart.x - dragEnd.x) / 10}%`} height={`${Math.abs(dragStart.y - dragEnd.y) / 10}%`} fill={mode === 'highlight' ? 'rgba(251, 255, 0, 0.3)' : 'rgba(59, 130, 246, 0.2)'} stroke={mode === 'highlight' ? '#fbff00' : '#3b82f6'} strokeWidth="1" strokeDasharray="4 4" />
             )}
           </svg>
 
           {elements.map(el => {
-             if (['text', 'rect', 'circle', 'image', 'audio', 'highlight', 'strikeout', 'underline'].includes(el.type)) {
+             if (['text', 'rect', 'circle', 'image', 'audio', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text'].includes(el.type)) {
                const isActive = activeElementId === el.id;
                return (
                  <div
                    key={el.id}
-                   className={`absolute ${isActive ? 'ring-2 ring-indigo-500 z-50 shadow-2xl bg-white/5' : ''} ${mode === 'erase' ? 'hover:bg-red-500/20' : ''}`}
+                   className={`absolute ${isActive ? 'z-50' : ''}`}
                    style={{
                      left: `${el.x / 10}%`,
                      top: `${el.y / 10}%`,
@@ -382,94 +338,104 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                      height: el.height ? `${el.height / 10}%` : 'auto',
                      transform: `rotate(${el.rotation || 0}deg)`,
                      transformOrigin: 'top left',
-                     cursor: mode === 'select' ? 'move' : mode === 'erase' ? 'alias' : 'default',
+                     cursor: mode === 'select' ? 'move' : 'default',
                      opacity: el.opacity,
                      zIndex: isActive ? 100 : undefined
                    }}
                    onPointerDown={(e) => {
-                     if (mode !== 'select' && mode !== 'erase') return;
+                     if (mode !== 'select') return;
                      e.stopPropagation();
-                     if (mode === 'erase') { deleteElement(el.id); return; }
                      setActiveElementId(el.id);
                      const startX = (e as React.MouseEvent).clientX; const startY = (e as React.MouseEvent).clientY;
                      const startElX = el.x; const startElY = el.y;
-                     const onMove = (moveEvent: PointerEvent) => {
+                     const onMove = (me: PointerEvent) => {
                        if (!containerRef.current) return;
-                       const rect = containerRef.current.getBoundingClientRect();
-                       const dx = ((moveEvent.clientX - startX) / rect.width) * 1000;
-                       const dy = ((moveEvent.clientY - startY) / rect.height) * 1000;
-                       updateElement(el.id, { x: Math.max(0, Math.min(1000, startElX + dx)), y: Math.max(0, Math.min(1000, startElY + dy)) });
+                       const r = containerRef.current.getBoundingClientRect();
+                       updateElement(el.id, { x: Math.max(0, Math.min(1000, startElX + ((me.clientX - startX) / r.width) * 1000)), y: Math.max(0, Math.min(1000, startElY + ((me.clientY - startY) / r.height) * 1000)) });
                      };
                      const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); addToHistory([...elements]); };
                      window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                    }}
                  >
                    {isActive && (
-                      <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} />
+                      <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={()=>{}} setMode={setMode} />
+                   )}
+
+                   {isActive && (
+                      <>
+                        <div className="absolute inset-0 border-2 border-dashed border-[#3b82f6] pointer-events-none" />
+                        <div className="absolute -top-1 -left-1 w-2 h-2 bg-white border border-[#3b82f6]" />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-white border border-[#3b82f6]" />
+                        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-white border border-[#3b82f6]" />
+                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-white border border-[#3b82f6]" />
+                      </>
                    )}
 
                    {el.type === 'text' && (
-                     <div className="w-full h-full min-w-[20px] min-h-[20px]">
+                      <div className="w-full h-full min-w-[20px] min-h-[20px] outline-none">
                         {isActive ? (
-                          <input autoFocus type="text" value={el.text || ''} onChange={(e) => updateElement(el.id, { text: e.target.value })} className="bg-transparent border-none outline-none w-full h-full font-bold" style={{ color: el.color, fontSize: `${(el.size || 24)/8}px` }} />
+                          <input 
+                            autoFocus 
+                            type="text" 
+                            value={el.text || ''} 
+                            onChange={(e) => updateElement(el.id, { text: e.target.value })} 
+                            className="bg-transparent border-none outline-none w-full h-full" 
+                            style={{ 
+                              color: el.color, 
+                              fontSize: `${(el.size || 24)/10}vw`,
+                              fontFamily: el.fontName === 'Times-Roman' ? '"Times New Roman", serif' : 
+                                          el.fontName === 'Courier' ? '"Courier New", monospace' : 
+                                          el.fontName === 'Georgia' ? 'Georgia, serif' : 
+                                          el.fontName === 'Verdana' ? 'Verdana, sans-serif' : 
+                                          'Arial, Helvetica, sans-serif',
+                              fontWeight: el.isBold ? 'bold' : 'normal',
+                              fontStyle: el.isItalic ? 'italic' : 'normal'
+                            }} 
+                          />
                         ) : (
-                          <span style={{ color: el.color, fontSize: `${(el.size || 24)/8}px` }} className="font-bold whitespace-nowrap">{el.text}</span>
+                          <span 
+                            style={{ 
+                              color: el.color, 
+                              fontSize: `${(el.size || 24)/10}vw`,
+                              fontFamily: el.fontName === 'Times-Roman' ? '"Times New Roman", serif' : 
+                                          el.fontName === 'Courier' ? '"Courier New", monospace' : 
+                                          el.fontName === 'Georgia' ? 'Georgia, serif' : 
+                                          el.fontName === 'Verdana' ? 'Verdana, sans-serif' : 
+                                          'Arial, Helvetica, sans-serif',
+                              fontWeight: el.isBold ? 'bold' : 'normal',
+                              fontStyle: el.isItalic ? 'italic' : 'normal'
+                            }} 
+                            className="whitespace-nowrap"
+                          >
+                            {el.text}
+                          </span>
                         )}
-                     </div>
+                      </div>
                    )}
 
                    {el.type === 'rect' && <div className="w-full h-full" style={{ backgroundColor: el.color }} />}
                    {el.type === 'highlight' && <div className="w-full h-full" style={{ backgroundColor: el.color, opacity: 0.35 }} />}
                    {el.type === 'strikeout' && <div className="w-full h-[2px] bg-current absolute top-1/2 -translate-y-1/2" style={{ color: el.color }} />}
                    {el.type === 'underline' && <div className="w-full h-[2px] bg-current absolute bottom-0" style={{ color: el.color }} />}
-                   {el.type === 'circle' && <div className="w-full h-full rounded-full" style={{ backgroundColor: el.color }} />}
-                   {el.type === 'form-check' && (
-                      <div 
-                        className={`w-full h-full border-2 border-slate-900 rounded flex items-center justify-center bg-white cursor-pointer hover:bg-slate-50`}
-                        onClick={() => updateElement(el.id, { isChecked: !el.isChecked })}
-                      >
-                         {el.isChecked && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="w-4/5 h-4/5 text-indigo-600">
-                               <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                         )}
-                      </div>
-                   )}
-
-                   {el.type === 'form-text' && (
-                      <textarea 
-                         className="w-full h-full border-2 border-slate-300 rounded p-1 text-[10px] resize-none focus:border-indigo-500 outline-none"
-                         placeholder="Form Text Area..."
-                         value={el.text || ''}
-                         onChange={(e) => updateElement(el.id, { text: e.target.value })}
-                      />
-                   )}
-                   {el.type === 'audio' && <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-xl animate-pulse"><Volume2 size={24} /></div>}
-
-                   {isActive && (el.type !== 'text') && (
-                      <div 
-                        className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-600 border-2 border-white rounded-full cursor-nwse-resize transform translate-x-1/2 translate-y-1/2"
-                        onPointerDown={(e) => {
-                           e.stopPropagation();
-                           const startX = (e as React.MouseEvent).clientX; const startY = (e as React.MouseEvent).clientY;
-                           const startW = el.width || 0; const startH = el.height || 0;
-                           const onMove = (me: PointerEvent) => {
-                             if (!containerRef.current) return;
-                             const rect = containerRef.current.getBoundingClientRect();
-                             const dw = ((me.clientX - startX) / rect.width) * 1000; const dh = ((me.clientY - startY) / rect.height) * 1000;
-                             updateElement(el.id, { width: Math.max(20, startW + dw), height: Math.max(20, startH + dh) });
-                           };
-                           const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); addToHistory([...elements]); };
-                           window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                        }}
-                      />
-                   )}
+                   {el.type === 'form-check' && <div className="w-full h-full border-2 border-slate-900 rounded bg-white" onClick={() => updateElement(el.id, { isChecked: !el.isChecked })}>{el.isChecked && "✓"}</div>}
+                   {el.type === 'image' && el.imageUrl && <img src={el.imageUrl} className="w-full h-full object-cover" alt="overlay" />}
                  </div>
                );
              }
              return null;
           })}
         </div>
+      </div>
+
+      {/* Sejda Style Apply Changes Button */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[250]">
+        <button 
+          onClick={() => onFinalSave ? onFinalSave(elements) : onSave(elements)}
+          className="flex items-center gap-3 px-12 py-4 bg-[#10b981] hover:bg-[#059669] text-white rounded font-bold text-xl transition-all shadow-[0_15px_35px_rgba(16,185,129,0.4)] hover:-translate-y-1 active:translate-y-0"
+        >
+          <span>Apply changes</span>
+          <CheckCircle2 size={24} />
+        </button>
       </div>
     </div>
   );
