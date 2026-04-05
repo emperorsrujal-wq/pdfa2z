@@ -1,7 +1,6 @@
 import * as React from 'react';
-import { Download, Stamp, PenTool, Loader2, CheckCircle2 } from 'lucide-react';
-import { Button } from './Button';
-import { pdfToImages, EditElement, editPdf } from '../utils/pdfHelpers';
+import { PenTool, Loader2, Upload, FileText, ArrowRight, CheckCircle2, X } from 'lucide-react';
+import { pdfToImages, EditElement, editPdf, downloadBlob } from '../utils/pdfHelpers';
 import { PdfSignCanvas } from './PdfSignCanvas';
 import { SignaturePad } from './SignaturePad';
 
@@ -11,183 +10,230 @@ interface PdfSignUIProps {
 
 export const PdfSignUI: React.FC<PdfSignUIProps> = ({ files }) => {
   const [images, setImages] = React.useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = React.useState(false);
-  
-  const [activePageIndex, setActivePageIndex] = React.useState<number | null>(null);
-  const [pageElements, setPageElements] = React.useState<Record<number, EditElement[]>>({});
-  
-  const [savedSignatures, setSavedSignatures] = React.useState<string[]>([]);
-  const [isCreatingSignature, setIsCreatingSignature] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [successMsg, setSuccessMsg] = React.useState('');
+  const [errorMsg, setErrorMsg] = React.useState('');
 
+  // All page elements keyed by page index
+  const [pageElements, setPageElements] = React.useState<Record<number, EditElement[]>>({});
+  // Saved signatures (base64 strings)
+  const [savedSignatures, setSavedSignatures] = React.useState<string[]>([]);
+
+  // Active page in the editor (null = show page thumbnails)
+  const [activePage, setActivePage] = React.useState<number | null>(null);
+  const [showNewSigPad, setShowNewSigPad] = React.useState(false);
+
+  // Load PDF pages
   React.useEffect(() => {
-    const loadImages = async () => {
-      if (files.length > 0) {
-        setIsProcessing(true);
-        try {
-          const imgs = await pdfToImages(files[0]);
-          setImages(imgs);
-          setPageElements({});
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setIsProcessing(false);
-        }
-      }
-    };
-    loadImages();
+    if (!files.length) return;
+    setIsLoading(true);
+    pdfToImages(files[0])
+      .then(imgs => {
+        setImages(imgs);
+        setActivePage(0); // Go straight to editor on first page
+      })
+      .catch(err => setErrorMsg(`Failed to load PDF: ${err.message}`))
+      .finally(() => setIsLoading(false));
   }, [files]);
 
-  const handleSavePageElements = (pageIdx: number, elements: EditElement[]) => {
-    setPageElements(prev => ({
-      ...prev,
-      [pageIdx]: elements
-    }));
-    setActivePageIndex(null);
+  const handlePageSave = (pageIdx: number, els: EditElement[]) => {
+    setPageElements(prev => ({ ...prev, [pageIdx]: els }));
   };
 
-  const handleDownload = async () => {
-    if (files.length === 0) return;
-    setIsProcessing(true);
+  const handleFinish = async () => {
+    if (!files.length) return;
+    setIsDownloading(true);
+    setSuccessMsg('');
+    setErrorMsg('');
     try {
       const allElements = Object.values(pageElements).flat();
-      const signedPdfBytes = await editPdf(files[0], allElements);
-      
-      const blob = new Blob([signedPdfBytes as unknown as BlobPart], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `signed_${files[0].name}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      alert("Error applying signatures.");
+      const bytes = await editPdf(files[0], allElements);
+      downloadBlob(bytes, `signed_${files[0].name}`);
+      setSuccessMsg('✅ Signed PDF downloaded successfully!');
+      setActivePage(null);
+    } catch (err: any) {
+      setErrorMsg(`Failed to apply signatures: ${err.message}`);
     } finally {
-      setIsProcessing(false);
+      setIsDownloading(false);
     }
   };
 
   const totalEdits = Object.values(pageElements).flat().length;
 
-  if (isProcessing && images.length === 0) {
+  // ─── LOADING ──────────────────────────────────────────────────
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-indigo-600 animate-pulse">
-        <Loader2 className="w-12 h-12 animate-spin mb-4" />
-        <h3 className="text-xl font-bold">Loading document...</h3>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6 py-20">
+        <div className="w-16 h-16 bg-[#0061ef] rounded-2xl flex items-center justify-center shadow-xl animate-pulse">
+          <PenTool size={32} className="text-white" />
+        </div>
+        <div className="text-center">
+          <h3 className="text-xl font-black text-slate-800">Loading Document</h3>
+          <p className="text-slate-500 text-sm mt-1">Preparing your document for signing...</p>
+        </div>
+        <Loader2 className="w-8 h-8 text-[#0061ef] animate-spin" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6 animate-fade-in w-full pb-20">
-      
-      {/* Header controls */}
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-3xl border border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm">
-        <div>
-           <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3"><Stamp className="text-indigo-600" /> Sign PDF</h3>
-           <p className="text-slate-600 mt-2 font-medium">Click on any page below to add signatures, dates, and text.</p>
-        </div>
-        <div className="flex gap-4 w-full md:w-auto">
-          <Button 
-            onClick={() => setIsCreatingSignature(true)}
-            className="flex-1 md:flex-none uppercase tracking-wider font-bold shadow-indigo-200"
-          >
-             <PenTool size={18} className="mr-2" /> New Signature
-          </Button>
-          
-          <Button 
-            onClick={handleDownload} 
-            disabled={totalEdits === 0 || isProcessing}
-            isLoading={isProcessing}
-            className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white shadow-xl shadow-green-600/20 uppercase tracking-widest font-black disabled:opacity-50"
-          >
-             <Download size={20} className="mr-2" /> Apply & Download
-          </Button>
-        </div>
-      </div>
+  // ─── SIGNING WORKSTATION ───────────────────────────────────────
+  if (activePage !== null && images[activePage]) {
+    return (
+      <>
+        {showNewSigPad && (
+          <SignaturePad
+            onSave={sig => {
+              setSavedSignatures(prev => [...prev, sig]);
+              setShowNewSigPad(false);
+            }}
+            onCancel={() => setShowNewSigPad(false)}
+          />
+        )}
+        <PdfSignCanvas
+          image={images[activePage]}
+          pageIndex={activePage}
+          totalPages={images.length}
+          initialElements={pageElements[activePage] || []}
+          savedSignatures={savedSignatures}
+          onSave={els => handlePageSave(activePage, els)}
+          onFinish={handleFinish}
+          onCancel={() => setActivePage(null)}
+          onPageChange={delta => {
+            const next = activePage + delta;
+            if (next >= 0 && next < images.length) setActivePage(next);
+          }}
+          onRequestNewSignature={() => {
+            setSavedSignatures(prev => [...prev]); // bubble signal
+            setShowNewSigPad(true);
+          }}
+        />
+      </>
+    );
+  }
 
-      {savedSignatures.length > 0 && (
-          <div className="flex items-center gap-4 bg-white p-4 rounded-xl border overflow-x-auto shadow-sm">
-              <span className="text-xs uppercase font-black text-slate-400 tracking-wider whitespace-nowrap">My Signatures:</span>
-              {savedSignatures.map((sig, idx) => (
-                  <div key={idx} className="h-10 px-2 border rounded-lg bg-slate-50 flex-shrink-0 flex items-center justify-center">
-                      <img src={sig} className="h-full object-contain mix-blend-multiply" alt="Sig" />
-                  </div>
-              ))}
-          </div>
+  // ─── OVERVIEW (after signing or no pages loaded) ───────────────
+  return (
+    <div className="max-w-3xl mx-auto py-10 px-4 space-y-8 animate-in fade-in duration-300">
+
+      {/* Success / Error banners */}
+      {successMsg && (
+        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 px-5 py-3 rounded-xl font-semibold text-sm">
+          <CheckCircle2 size={18} className="shrink-0" />
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg('')} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={16} /></button>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-xl font-semibold text-sm">
+          <X size={18} className="shrink-0" />
+          {errorMsg}
+        </div>
       )}
 
-      {/* Pages Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2">
+      {/* Header */}
+      <div className="text-center">
+        <div className="w-14 h-14 bg-[#0061ef] rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4">
+          <PenTool size={28} className="text-white" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900">
+          {files[0]?.name || 'Your Document'}
+        </h2>
+        <p className="text-slate-500 text-sm mt-2 font-medium">
+          {images.length} page{images.length !== 1 ? 's' : ''} · {totalEdits} signature field{totalEdits !== 1 ? 's' : ''} placed
+        </p>
+      </div>
+
+      {/* Saved signatures row */}
+      {savedSignatures.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Saved Signatures</p>
+          <div className="flex gap-3 flex-wrap">
+            {savedSignatures.map((sig, i) => (
+              <div key={i} className="h-14 px-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center">
+                <img src={sig} className="h-10 object-contain mix-blend-multiply" alt={`Signature ${i + 1}`} />
+              </div>
+            ))}
+            <button
+              onClick={() => setShowNewSigPad(true)}
+              className="h-14 px-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 hover:border-[#0061ef] hover:text-[#0061ef] transition-colors text-sm font-bold flex items-center gap-2"
+            >
+              + New
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pages grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((img, i) => {
           const edits = pageElements[i] || [];
           return (
-            <div 
-               key={i} 
-               className="relative group cursor-pointer"
-               onClick={() => setActivePageIndex(i)}
+            <button
+              key={i}
+              onClick={() => setActivePage(i)}
+              className={`relative group text-left rounded-xl overflow-hidden border-2 transition-all bg-white shadow-sm hover:shadow-lg ${
+                edits.length > 0
+                  ? 'border-[#0061ef] shadow-blue-100'
+                  : 'border-slate-200 hover:border-[#0061ef]/50'
+              }`}
             >
-              <div className={`aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all shadow-md bg-white ${edits.length > 0 ? 'border-indigo-500 shadow-indigo-500/20' : 'border-slate-200 hover:border-indigo-400 hover:shadow-xl'}`}>
-                <img src={img} className="w-full h-full object-contain p-2" />
-                
-                {/* Thumbnails of edits applied */}
-                {edits.map(el => (
-                    <div 
-                        key={el.id} 
-                        className="absolute bg-indigo-500/20 border border-indigo-500/50 rounded-sm pointer-events-none"
-                        style={{
-                            left: `${el.x / 10}%`,
-                            top: `${el.y / 10}%`,
-                            width: el.type === 'image' ? (el.width ? `${el.width/10}%` : '50%') : '30%',
-                            height: '10%'
-                        }}
-                    />
-                ))}
-
-                <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/10 transition-all flex items-center justify-center backdrop-blur-[1px] opacity-0 group-hover:opacity-100">
-                  <div className="bg-white px-6 py-3 rounded-full shadow-2xl font-bold text-indigo-700 flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                    <Stamp size={18} /> Sign Page
+              <div className="aspect-[3/4] relative overflow-hidden bg-slate-50">
+                <img src={img} className="w-full h-full object-contain" alt={`Page ${i + 1}`} />
+                <div className="absolute inset-0 bg-[#0061ef]/0 group-hover:bg-[#0061ef]/8 transition-all flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#0061ef] text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                    <PenTool size={12} /> Sign
                   </div>
                 </div>
-
+              </div>
+              <div className="px-3 py-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">Page {i + 1}</span>
                 {edits.length > 0 && (
-                    <div className="absolute top-2 right-2 bg-indigo-600 text-white p-1 rounded-full shadow-lg">
-                        <CheckCircle2 size={16} />
-                    </div>
+                  <span className="text-[10px] font-black bg-[#0061ef] text-white px-2 py-0.5 rounded-full">
+                    {edits.length}
+                  </span>
                 )}
               </div>
-              <div className="text-center mt-3 font-bold text-slate-500 text-sm flex items-center justify-center gap-2">
-                 Page {i + 1}
-                 {edits.length > 0 && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-xs">{edits.length} stamps</span>}
-              </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {activePageIndex !== null && (
-        <PdfSignCanvas
-          image={images[activePageIndex]}
-          pageIndex={activePageIndex}
-          initialElements={pageElements[activePageIndex] || []}
-          savedSignatures={savedSignatures}
-          onSave={(elements) => handleSavePageElements(activePageIndex, elements)}
-          onCancel={() => setActivePageIndex(null)}
-          onRequestNewSignature={() => {
-              setActivePageIndex(null);
-              setIsCreatingSignature(true);
-          }}
-        />
-      )}
+      {/* CTA */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        {!savedSignatures.length && (
+          <button
+            onClick={() => setShowNewSigPad(true)}
+            className="flex items-center gap-2 px-6 py-3 border-2 border-[#0061ef] text-[#0061ef] rounded-xl font-bold text-sm hover:bg-blue-50 transition-all"
+          >
+            <PenTool size={16} /> Create Signature
+          </button>
+        )}
+        <button
+          onClick={handleFinish}
+          disabled={totalEdits === 0 || isDownloading}
+          className={`flex items-center gap-2 px-8 py-3 rounded-xl font-black text-sm shadow-lg transition-all ${
+            totalEdits > 0 && !isDownloading
+              ? 'bg-[#0061ef] hover:bg-[#0051cc] text-white shadow-blue-500/20'
+              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+          }`}
+        >
+          {isDownloading ? (
+            <><Loader2 size={16} className="animate-spin" /> Processing...</>
+          ) : (
+            <><CheckCircle2 size={16} /> Download Signed PDF</>
+          )}
+        </button>
+      </div>
 
-      {isCreatingSignature && (
-          <SignaturePad
-              onSave={(base64) => {
-                  setSavedSignatures([...savedSignatures, base64]);
-                  setIsCreatingSignature(false);
-              }}
-              onCancel={() => setIsCreatingSignature(false)}
-          />
+      {showNewSigPad && (
+        <SignaturePad
+          onSave={sig => {
+            setSavedSignatures(prev => [...prev, sig]);
+            setShowNewSigPad(false);
+          }}
+          onCancel={() => setShowNewSigPad(false)}
+        />
       )}
     </div>
   );
