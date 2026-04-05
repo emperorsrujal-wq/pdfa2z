@@ -26,6 +26,7 @@ const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ defaul
 import { Breadcrumbs } from './components/Breadcrumbs';
 import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
+const NotarizePage = React.lazy(() => import('./pages/Notarize').then(m => ({ default: m.NotarizePage })));
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -99,6 +100,12 @@ const App: React.FC = () => {
       return;
     }
 
+    // Notarize landing page
+    if (slug === 'notarize') {
+      setActiveTool('NOTARIZE' as ToolType);
+      return;
+    }
+
     // Known info pages
     if (['about', 'contact', 'privacy', 'terms'].includes(slug)) {
       setActiveTool(ToolType.INFO_PAGE);
@@ -121,6 +128,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTool) {
+      case 'NOTARIZE' as ToolType: return <NotarizePage />;
       case ToolType.DASHBOARD: return <Home />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
@@ -162,24 +170,31 @@ const App: React.FC = () => {
         />
       )}
 
-      <Layout currentLang={lang}>
-        <div className={activeTool !== ToolType.DASHBOARD ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" : ""}>
-          {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
-            <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
-          )}
+      {/* Notarize page has its own full-page layout — render outside site shell */}
+      {(activeTool as string) === 'NOTARIZE' ? (
+        <React.Suspense fallback={<ToolLoader />}>
+          <NotarizePage />
+        </React.Suspense>
+      ) : (
+        <Layout currentLang={lang}>
+          <div className={activeTool !== ToolType.DASHBOARD ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" : ""}>
+            {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
+              <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
+            )}
 
-          <React.Suspense fallback={<ToolLoader />}>
-            {renderContent()}
-          </React.Suspense>
+            <React.Suspense fallback={<ToolLoader />}>
+              {renderContent()}
+            </React.Suspense>
 
-          {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
-            <ToolSeoContent tool={seoData} />
-          )}
-        </div>
-      </Layout>
+            {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
+              <ToolSeoContent tool={seoData} />
+            )}
+          </div>
+        </Layout>
+      )}
     </HelmetProvider>
     </ErrorBoundary>
   );
 };
 
-export default App;
+export default App;
