@@ -10,7 +10,7 @@ import { getFunctions } from 'firebase/functions';
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'demo-api-key',
   authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'pdf-tools-6c9d2.firebaseapp.com',
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID         || 'pdf-tools-6c9d2',
+  projectId:         'pdf-tools-6c9d2',
   storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'pdf-tools-6c9d2.appspot.com',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId:             import.meta.env.VITE_FIREBASE_APP_ID             || '',

@@ -6,6 +6,9 @@ import {
   ChevronUp, Star, ArrowRight, FileText, Building2,
   Scale, ClipboardList, Award, Mail, Phone, Globe
 } from 'lucide-react';
+import { Layout } from '../components/Layout';
+import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LANGS } from '../App';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -115,6 +118,9 @@ interface NotarizePageProps {
 }
 
 export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization, onGoToDashboard }) => {
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language.split('-')[0];
+  const displayLang = SUPPORTED_LANGS.includes(currentLang) ? currentLang : 'en';
 
   const handleStart = () => {
     if (onStartNotarization) {
@@ -124,43 +130,18 @@ export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization,
     }
   };
 
-
   return (
-    <>
+    <Layout currentLang={displayLang}>
       <SEO
         title="Online Notarization — Get Documents Notarized in 10 Minutes | pdfa2z"
         description="Legally valid remote online notarization. Available 24/7, from anywhere. Upload your document, verify your identity, and meet with a licensed notary via video call. $45 per document."
         canonical="/notarize"
+        currentLang={i18n.language}
       />
 
-      <div className="font-sans text-slate-900 bg-white overflow-x-hidden">
+      <div className="font-sans text-slate-900 bg-white overflow-x-hidden pt-10">
 
-        {/* ── NAVBAR ──────────────────────────────────────────────── */}
-        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-100 shadow-sm">
-          <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#185FA5] rounded-lg flex items-center justify-center">
-                <FileText size={16} className="text-white" />
-              </div>
-              <div className="leading-none">
-                <span className="text-sm font-black text-slate-900">pdfa2z</span>
-                <span className="block text-[10px] text-[#185FA5] font-bold tracking-wide">NOTARIZE</span>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-500">
-              <a href="#how-it-works" className="hover:text-[#185FA5] transition-colors">How It Works</a>
-              <a href="#documents" className="hover:text-[#185FA5] transition-colors">Documents</a>
-              <a href="#pricing" className="hover:text-[#185FA5] transition-colors">Pricing</a>
-              <a href="#faq" className="hover:text-[#185FA5] transition-colors">FAQ</a>
-            </div>
-            <button
-              onClick={handleStart}
-              className="bg-[#185FA5] hover:bg-[#144e8a] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-all shadow-md shadow-blue-500/20"
-            >
-              Start Notarization
-            </button>
-          </div>
-        </nav>
+
 
         {/* ── HERO ────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white pt-20 pb-24 px-5">
@@ -639,6 +620,6 @@ export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization,
           </div>
         </footer>
       </div>
-    </>
+    </Layout>
   );
 };

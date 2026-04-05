@@ -30,7 +30,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
 
-const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
+export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
 const ToolLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">
@@ -50,13 +50,29 @@ const AppContent: React.FC = () => {
   const [activeVideoMode, setActiveVideoMode] = React.useState<VideoToolMode>('DOWNLOAD');
 
   const pathParts = React.useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
-  const lang = React.useMemo(() => SUPPORTED_LANGS.includes(pathParts[0]) ? pathParts[0] : 'en', [pathParts]);
+  
+  const lang = React.useMemo(() => {
+    const firstPart = pathParts[0];
+    if (SUPPORTED_LANGS.includes(firstPart)) return firstPart;
+    return 'en';
+  }, [pathParts]);
+
   const slug = React.useMemo(() => {
     if (pathParts.length === 0) return '';
-    if (SUPPORTED_LANGS.includes(pathParts[0])) {
+    const firstPart = pathParts[0];
+    
+    // If first part is a supported lang, the second part is the slug
+    if (SUPPORTED_LANGS.includes(firstPart)) {
       return pathParts[1] || '';
     }
-    return pathParts[0] || '';
+    
+    // If first part is 'en' or 'en-US', strip it and look at second part
+    if (['en', 'en-US'].includes(firstPart)) {
+      return pathParts[1] || '';
+    }
+    
+    // Otherwise, the first part is the slug
+    return firstPart || '';
   }, [pathParts]);
 
   const blogSlug = React.useMemo(() => {

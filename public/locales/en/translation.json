@@ -11,13 +11,25 @@
         "privacy": "Privacy Policy",
         "terms": "Terms of Service",
         "rights": "All rights reserved.",
-        "footerDesc": "Free online PDF, Image, Video, and AI tools. No sign-up required. 100% Free suitable for students, professionals and everyone."
+        "footerDesc": "Free online PDF, Image, Video, and AI tools. No sign-up required. 100% Free suitable for students, professionals and everyone.",
+        "onlineNotary": "Online Notary",
+        "tools": "Tools"
     },
     "home": {
         "heroTitle": "Professional PDF & AI Tools",
         "heroSubtitle": "Completely free, client-side, and powered by AI.",
         "startTool": "Start Tool",
-        "popular": "Popular"
+        "popular": "Popular",
+        "featuredService": "Featured Service",
+        "notarizeTitle": "Remote Online Notarization",
+        "notarizeSubtitle": "Get your documents notarized legally in 10 minutes. Available 24/7 from any device.",
+        "startNotarization": "Start Notarization",
+        "satisfiedClients": "Satisfied Clients",
+        "fastLegal": "Fast & Legal",
+        "licensedNotaries": "Licensed Notaries",
+        "allStates": "All 50 States",
+        "compliant": "RON Compliant",
+        "available247": "24/7 Available"
     },
     "tools": {
         "howTo": "How to use this tool",

@@ -5,6 +5,7 @@ import { UserDashboard } from '../components/notarize/UserDashboard';
 import { NotarizePage } from './Notarize';
 import { NotarizationSession } from '../services/notarizeService';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 type View = 'landing' | 'auth' | 'dashboard' | 'wizard' | 'session';
 
@@ -14,14 +15,15 @@ interface NotarizeAppProps {
 }
 
 export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
-  const { user, loading: authChecked, openAuthModal } = useAuth();
+  const { user, loading: isLoading, openAuthModal } = useAuth();
+  const { i18n } = useTranslation();
   const [view, setView]             = React.useState<View>('landing');
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
   const [authIntent, setAuthIntent] = React.useState<'dashboard' | 'wizard'>('dashboard');
 
   // Handle initial sub-path routing
   React.useEffect(() => {
-    if (!authChecked) return;
+    if (isLoading) return;
 
     if (subPath === 'new') {
       if (user) {
@@ -48,7 +50,7 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
         setView('landing');
       }
     }
-  }, [authChecked, subPath, user]);
+  }, [isLoading, subPath, user]);
 
   // Sync view on auth success if there was an intent
   React.useEffect(() => {
@@ -71,7 +73,7 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
 
-  if (!authChecked) {
+  if (isLoading || !i18n.isInitialized) {
     return (
       <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">

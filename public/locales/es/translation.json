@@ -11,13 +11,25 @@
         "privacy": "Política de Privacidad",
         "terms": "Términos de Servicio",
         "rights": "Todos los derechos reservados.",
-        "footerDesc": "Herramientas gratuitas en línea de PDF, Imagen, Video e IA. Sin registro. 100% gratuito para estudiantes, profesionales y todos."
+        "footerDesc": "Herramientas gratuitas en línea de PDF, Imagen, Video e IA. Sin registro. 100% gratuito para estudiantes, profesionales y todos.",
+        "onlineNotary": "Notaría Online",
+        "tools": "Herramientas"
     },
     "home": {
         "heroTitle": "Herramientas Profesionales de PDF e IA",
         "heroSubtitle": "Completamente gratis, ejecución local y potenciado por IA.",
         "startTool": "Iniciar Herramienta",
-        "popular": "Popular"
+        "popular": "Popular",
+        "featuredService": "Servicio Destacado",
+        "notarizeTitle": "Notarización Online Remota",
+        "notarizeSubtitle": "Certifica tus documentos legalmente en 10 minutos. Disponible 24/7 desde cualquier dispositivo.",
+        "startNotarization": "Empezar Notarización",
+        "satisfiedClients": "Clientes Satisfechos",
+        "fastLegal": "Rápido y Legal",
+        "licensedNotaries": "Notarios Licenciados",
+        "allStates": "Los 50 Estados",
+        "compliant": "Cumple con RON",
+        "available247": "24/7 Disponible"
     },
     "tools": {
         "howTo": "Cómo usar esta herramienta",

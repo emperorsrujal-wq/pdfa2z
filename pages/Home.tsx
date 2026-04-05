@@ -6,6 +6,7 @@ import { ToolType } from '../types';
 import { SEO } from '../components/SEO';
 import { TOOLS_REGISTRY } from '../utils/seoData';
 import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LANGS } from '../App';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -24,11 +25,16 @@ export const Home: React.FC = () => {
 
         if (entry) {
             slug = entry.slug;
-            const langPrefix = i18n.language && i18n.language !== 'en' ? `/${i18n.language.split('-')[0]}` : '';
+            const currentLang = i18n.language.split('-')[0];
+            const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
             navigate(`${langPrefix}/${slug}`);
         } else {
             // Manual fallback for tools not fully in registry yet
-            if (tool === ToolType.AI_WRITER) navigate(i18n.language === 'en' ? '/ai-writer' : `/${i18n.language}/ai-writer`);
+            if (tool === ToolType.AI_WRITER) {
+                const currentLang = i18n.language.split('-')[0];
+                const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+                navigate(`${langPrefix}/ai-writer`);
+            }
         }
         window.scrollTo(0, 0);
     };
@@ -209,7 +215,11 @@ export const Home: React.FC = () => {
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <button 
-                                    onClick={() => navigate(i18n.language === 'en' ? '/notarize' : `/${i18n.language}/notarize`)}
+                                    onClick={() => {
+                                        const currentLang = i18n.language.split('-')[0];
+                                        const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+                                        navigate(`${langPrefix}/notarize`);
+                                    }}
                                     className="px-8 py-4 bg-white text-[#185FA5] rounded-full font-bold text-lg hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
                                 >
                                     {t('home.startNotarization')} <ArrowRight size={20} />

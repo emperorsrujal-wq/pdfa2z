@@ -11,13 +11,25 @@
         "privacy": "Politique de Confidentialité",
         "terms": "Conditions d'Utilisation",
         "rights": "Tous droits réservés.",
-        "footerDesc": "Outils en ligne gratuits pour PDF, Image, Vidéo et IA. Sans inscription. 100% Gratuit pour étudiants, professionnels et tous."
+        "footerDesc": "Outils en ligne gratuits pour PDF, Image, Vidéo et IA. Sans inscription. 100% Gratuit pour étudiants, professionnels et tous.",
+        "onlineNotary": "Notaire en ligne",
+        "tools": "Outils"
     },
     "home": {
         "heroTitle": "Outils PDF et IA Professionnels",
         "heroSubtitle": "Entièrement gratuit, côté client et propulsé par l'IA.",
         "startTool": "Démarrer l'outil",
-        "popular": "Populaire"
+        "popular": "Populaire",
+        "featuredService": "Service Vedette",
+        "notarizeTitle": "Notarisation à Distance en Ligne",
+        "notarizeSubtitle": "Faites notarier vos documents légalement en 10 minutes. Disponible 24/7 depuis n'importe quel appareil.",
+        "startNotarization": "Démarrer la Notarisation",
+        "satisfiedClients": "Clients Satisfaits",
+        "fastLegal": "Rapide et Légal",
+        "licensedNotaries": "Notaires Agréés",
+        "allStates": "Les 50 États",
+        "compliant": "Conforme au RON",
+        "available247": "24/7 Disponible"
     },
     "tools": {
         "howTo": "Comment utiliser cet outil",
