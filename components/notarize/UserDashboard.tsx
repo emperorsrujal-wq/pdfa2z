@@ -6,8 +6,8 @@ import {
 import {
   subscribeToUserSessions, NotarizationSession, SessionStatus, STATUS_LABELS, DOCUMENT_TYPE_LABELS,
 } from '../../services/notarizeService';
-import { signOut, getCurrentUser } from '../../services/authService';
 import { DEMO_MODE } from '../../config/firebase';
+import { useAuth } from '../../context/AuthContext';
 
 interface DashboardProps {
   onNewNotarization: () => void;
@@ -24,10 +24,10 @@ const STATUS_BADGE: Record<SessionStatus, { label: string; cls: string; icon: Re
 };
 
 export const UserDashboard: React.FC<DashboardProps> = ({ onNewNotarization, onViewSession, onLogout }) => {
+  const { user, signOut } = useAuth();
   const [sessions, setSessions]   = React.useState<NotarizationSession[]>([]);
   const [loading, setLoading]     = React.useState(true);
   const [loggingOut, setLoggingOut] = React.useState(false);
-  const user = getCurrentUser();
 
   React.useEffect(() => {
     const unsub = subscribeToUserSessions(s => {

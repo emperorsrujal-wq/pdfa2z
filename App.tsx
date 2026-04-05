@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthModal } from './components/AuthModal';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
 import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode } from './types';
@@ -36,7 +38,8 @@ const ToolLoader = () => (
   </div>
 );
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { isAuthModalOpen, authModalTab, closeAuthModal } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
@@ -134,6 +137,14 @@ const App: React.FC = () => {
     return tool;
   }, [slug, lang]);
 
+  const breadcrumbItems = React.useMemo(() => {
+    const items = [];
+    if (slug) {
+      items.push({ label: seoData.title, path: location.pathname });
+    }
+    return items;
+  }, [slug, seoData, location.pathname]);
+
   const renderContent = () => {
     switch (activeTool) {
       case ToolType.NOTARIZE: return <NotarizeApp subPath={notarizeSubPath} />;
@@ -149,60 +160,70 @@ const App: React.FC = () => {
       case ToolType.AI_WRITER:
         return <AiWriter />;
       case ToolType.INFO_PAGE:
+        if (slug === 'about') return <About />;
+        if (slug === 'contact') return <Contact />;
+        if (slug === 'privacy') return <Privacy />;
+        if (slug === 'terms') return <Terms />;
         if (slug === 'blog') {
-          return blogSlug === 'MENU' ? <Blog /> : <BlogPost />;
+          if (blogSlug === 'MENU') return <Blog />;
+          return <BlogPost />;
         }
-        switch (slug) {
-          case 'about': return <About />;
-          case 'contact': return <Contact />;
-          case 'privacy': return <Privacy />;
-          case 'terms': return <Terms />;
-          default: return <Home />;
-        }
+        return <NotFound />;
       default: return <NotFound />;
     }
   };
 
   return (
-    <ErrorBoundary>
-    <HelmetProvider>
-      {activeTool !== ToolType.DASHBOARD && (
-        <SEO
-          title={seoData?.title || 'PDF A2Z'}
-          description={seoData?.description || ''}
-          canonical={seoData?.slug ? `/${seoData.slug}` : ''}
-          schema={seoData ? generateToolSchema(seoData) : undefined}
-          parentSlug={seoData?.parentSlug}
-          currentLang={lang}
-          tool={seoData}
-        />
-      )}
+    <>
+      <SEO
+        title={seoData.title}
+        description={seoData.description}
+        canonical={location.pathname}
+        schema={generateToolSchema(seoData)}
+      />
 
       {/* Notarize page has its own full-page layout — render outside site shell */}
-      {(activeTool as string) === ToolType.NOTARIZE ? (
+      {activeTool === ToolType.NOTARIZE ? (
         <React.Suspense fallback={<ToolLoader />}>
           <NotarizeApp subPath={notarizeSubPath} />
         </React.Suspense>
       ) : (
         <Layout currentLang={lang}>
-          <div className={activeTool !== ToolType.DASHBOARD ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" : ""}>
-            {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
-              <Breadcrumbs items={[{ label: seoData?.h1 || '' }]} />
-            )}
-
-            <React.Suspense fallback={<ToolLoader />}>
-              {renderContent()}
-            </React.Suspense>
-
-            {activeTool !== ToolType.DASHBOARD && seoData && seoData.slug !== '' && (
+          <div className="py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Breadcrumbs items={breadcrumbItems} />
+              <div className="mt-8">
+                <ErrorBoundary>
+                  <React.Suspense fallback={<ToolLoader />}>
+                    {renderContent()}
+                  </React.Suspense>
+                </ErrorBoundary>
+              </div>
               <ToolSeoContent tool={seoData} />
-            )}
+            </div>
           </div>
         </Layout>
       )}
-    </HelmetProvider>
-    </ErrorBoundary>
+
+      {isAuthModalOpen && (
+        <AuthModal
+          defaultTab={authModalTab}
+          onClose={closeAuthModal}
+          onSuccess={closeAuthModal}
+        />
+      )}
+    </>
   );
 };
 
-export default App;
+const App: React.FC = () => {
+  return (
+    <HelmetProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </HelmetProvider>
+  );
+};
+
+export default App;

@@ -73,6 +73,7 @@ export const Home: React.FC = () => {
             case 'ai-writer': return <PenTool />;
             case 'ai-image-generator': return <Wand2 />;
             case 'magic-ai-editor': return <Wand2 />;
+            case 'notarize': return <ShieldCheck />;
             default: return <Zap />;
         }
     };
@@ -117,6 +118,7 @@ export const Home: React.FC = () => {
                 if (tool.slug === 'ai-image-generator') colorClass = "bg-pink-600 text-white";
                 if (tool.slug === 'magic-ai-editor') colorClass = "bg-indigo-600 text-white";
                 if (tool.slug === 'split-pdf') colorClass = "bg-orange-600 text-orange-600";
+                if (tool.slug === 'notarize') colorClass = "bg-[#185FA5] text-white";
 
                 return (
                     <ToolCard
@@ -127,7 +129,7 @@ export const Home: React.FC = () => {
                         colorClass={colorClass}
                         onClick={handleClick}
                         to={`${i18n.language !== 'en' ? `/${i18n.language}` : ''}/${tool.slug}`}
-                        popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator'].includes(tool.slug)}
+                        popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'notarize'].includes(tool.slug)}
                     />
                 );
             })}
@@ -185,6 +187,61 @@ export const Home: React.FC = () => {
                     <span>100% Secure</span>
                     <span>•</span>
                     <span>Cloud-based</span>
+                </div>
+            </div>
+
+            {/* Notarize Hero Promo */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 mb-20 relative z-10">
+                <div className="bg-gradient-to-r from-[#185FA5] to-[#1e78d1] rounded-3xl overflow-hidden shadow-2xl relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <ShieldCheck size={200} className="text-white" />
+                    </div>
+                    <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="text-white max-w-xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
+                                <Star size={12} className="fill-white" /> Featured Service
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+                                Get Your Documents Notarized in 10 Minutes. Online.
+                            </h2>
+                            <p className="text-blue-50 text-lg opacity-90 mb-8 border-l-4 border-blue-300 pl-4">
+                                Secure, legally valid Remote Online Notarization (RON) available 24/7. No office visit required.
+                            </p>
+                            <div className="flex flex-wrap gap-4">
+                                <button 
+                                    onClick={() => navigate(i18n.language === 'en' ? '/notarize' : `/${i18n.language}/notarize`)}
+                                    className="px-8 py-4 bg-white text-[#185FA5] rounded-full font-bold text-lg hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+                                >
+                                    Start Notarization <ArrowRight size={20} />
+                                </button>
+                                <div className="flex -space-x-3 items-center ml-2">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className={`w-10 h-10 rounded-full border-2 border-[#185FA5] bg-slate-200 overflow-hidden`}>
+                                            <img src={`https://i.pravatar.cc/100?u=${i+10}`} alt="user" />
+                                        </div>
+                                    ))}
+                                    <div className="ml-4 text-sm font-medium text-blue-100">
+                                        <span className="font-bold text-white">5,000+</span> satisfied clients
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="hidden lg:block w-72">
+                            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
+                                <h3 className="font-bold text-white mb-4">Fast & Legal</h3>
+                                <ul className="space-y-3">
+                                    {['Licensed US Notaries', 'All 50 States', 'SECURE Notary Act Compliant', '24/7 Availability'].map(item => (
+                                        <li key={item} className="flex items-center gap-2 text-sm text-blue-50">
+                                            <div className="w-5 h-5 rounded-full bg-green-400 flex items-center justify-center">
+                                                <ShieldCheck size={12} className="text-white" />
+                                            </div>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

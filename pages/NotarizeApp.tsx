@@ -1,12 +1,10 @@
 import * as React from 'react';
-import { AuthModal } from '../components/notarize/AuthModal';
 import { NotarizationWizard } from '../components/notarize/NotarizationWizard';
 import { SessionTracker } from '../components/notarize/SessionTracker';
 import { UserDashboard } from '../components/notarize/UserDashboard';
 import { NotarizePage } from './Notarize';
-import { onAuthStateChanged, getCurrentUser } from '../services/authService';
 import { NotarizationSession } from '../services/notarizeService';
-import type { User } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext';
 
 type View = 'landing' | 'auth' | 'dashboard' | 'wizard' | 'session';
 
@@ -16,21 +14,10 @@ interface NotarizeAppProps {
 }
 
 export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
-  const [user, setUser]             = React.useState<User | null>(null);
-  const [authChecked, setAuthChecked] = React.useState(false);
+  const { user, loading: authChecked, openAuthModal } = useAuth();
   const [view, setView]             = React.useState<View>('landing');
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = React.useState(false);
   const [authIntent, setAuthIntent] = React.useState<'dashboard' | 'wizard'>('dashboard');
-
-  // Watch auth state
-  React.useEffect(() => {
-    const unsub = onAuthStateChanged(u => {
-      setUser(u);
-      setAuthChecked(true);
-    });
-    return unsub;
-  }, []);
 
   // Handle initial sub-path routing
   React.useEffect(() => {
@@ -41,7 +28,6 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
         setView('wizard');
       } else {
         setAuthIntent('wizard');
-        setShowAuthModal(true);
         setView('landing');
       }
     } else if (subPath === 'dashboard') {
@@ -49,7 +35,6 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
         setView('dashboard');
       } else {
         setAuthIntent('dashboard');
-        setShowAuthModal(true);
         setView('landing');
       }
     } else if (subPath.startsWith('session/')) {
@@ -60,22 +45,23 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
       } else if (sid) {
         setActiveSessionId(sid);
         setAuthIntent('dashboard');
-        setShowAuthModal(true);
         setView('landing');
       }
     }
   }, [authChecked, subPath, user]);
 
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false);
-    setUser(getCurrentUser());
-    if (authIntent === 'wizard') setView('wizard');
-    else setView('dashboard');
-  };
+  // Sync view on auth success if there was an intent
+  React.useEffect(() => {
+    if (user && authIntent) {
+      if (authIntent === 'wizard') setView('wizard');
+      else setView('dashboard');
+      setAuthIntent('dashboard'); // reset
+    }
+  }, [user, authIntent]);
 
   const requestAuth = (intent: 'dashboard' | 'wizard') => {
     setAuthIntent(intent);
-    setShowAuthModal(true);
+    openAuthModal('login');
   };
 
   const handleSessionComplete = (session: NotarizationSession) => {
@@ -98,13 +84,6 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
 
   return (
     <>
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal
-          onClose={() => setShowAuthModal(false)}
-          onSuccess={handleAuthSuccess}
-        />
-      )}
 
       {/* Views */}
       {view === 'landing' && (
@@ -124,7 +103,7 @@ export const NotarizeApp: React.FC<NotarizeAppProps> = ({ subPath = '' }) => {
         <UserDashboard
           onNewNotarization={() => setView('wizard')}
           onViewSession={id => { setActiveSessionId(id); setView('session'); }}
-          onLogout={() => { setUser(null); setView('landing'); }}
+          onLogout={() => { setView('landing'); }}
         />
       )}
 

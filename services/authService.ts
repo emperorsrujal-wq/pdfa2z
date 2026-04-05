@@ -7,6 +7,7 @@ import {
   signOut as fbSignOut,
   onAuthStateChanged as fbOnAuthStateChanged,
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
   updateProfile,
@@ -93,6 +94,33 @@ export async function signInWithGoogle(): Promise<User> {
       email: cred.user.email,
       first_name: names[0] || '',
       last_name: names.slice(1).join(' ') || '',
+      state_residence: '',
+      user_type: 'individual',
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    });
+  }
+
+  return cred.user;
+}
+
+// ── Apple Sign In ─────────────────────────────────────────────────────────────
+export async function signInWithApple(): Promise<User> {
+  if (DEMO_MODE) {
+    _demoLoggedIn = true;
+    return DEMO_USER;
+  }
+  const provider = new OAuthProvider('apple.com');
+  const cred = await signInWithPopup(auth, provider);
+
+  // Ensure user doc exists
+  const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
+  if (!userDoc.exists()) {
+    const names = (cred.user.displayName || '').split(' ');
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      email: cred.user.email,
+      first_name: names[0] || 'Apple',
+      last_name: names.slice(1).join(' ') || 'User',
       state_residence: '',
       user_type: 'individual',
       created_at: serverTimestamp(),
