@@ -2,6 +2,14 @@
   "projects": {
     "default": "pdf-tools-6c9d2"
   },
-  "targets": {},
+  "targets": {
+    "pdf-tools-6c9d2": {
+      "hosting": {
+        "app": [
+          "pdf-tools-6c9d2"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

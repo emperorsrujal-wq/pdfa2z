@@ -117,7 +117,7 @@ export const Footer: React.FC<FooterProps> = ({ currentLang = 'en' }) => {
                 </div>
 
                 <div className="mt-12 border-t border-slate-100 pt-8 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved.
+                    &copy; {new Date().getFullYear()} PDF A2Z. All rights reserved. <span className="opacity-0">v1.0.1-notary</span>
                 </div>
             </div>
         </footer>
