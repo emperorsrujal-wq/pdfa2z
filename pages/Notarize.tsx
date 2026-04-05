@@ -109,11 +109,21 @@ const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export const NotarizePage: React.FC = () => {
+interface NotarizePageProps {
+  onStartNotarization?: () => void;
+  onGoToDashboard?: () => void;
+}
+
+export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization, onGoToDashboard }) => {
 
   const handleStart = () => {
-    window.alert('Notarization flow coming soon! This feature will be available at notarize.pdfa2z.com');
+    if (onStartNotarization) {
+      onStartNotarization();
+    } else {
+      window.alert('Notarization flow coming soon! This feature will be available at notarize.pdfa2z.com');
+    }
   };
+
 
   return (
     <>

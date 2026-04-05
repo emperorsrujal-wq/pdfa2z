@@ -26,7 +26,7 @@ const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ defaul
 import { Breadcrumbs } from './components/Breadcrumbs';
 import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
-const NotarizePage = React.lazy(() => import('./pages/Notarize').then(m => ({ default: m.NotarizePage })));
+const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -62,6 +62,14 @@ const App: React.FC = () => {
       return pathParts[startIdx + 1] || 'MENU';
     }
     return null;
+  }, [pathParts]);
+
+  const notarizeSubPath = React.useMemo(() => {
+    const startIdx = SUPPORTED_LANGS.includes(pathParts[0]) ? 1 : 0;
+    if (pathParts[startIdx] === 'notarize') {
+      return pathParts.slice(startIdx + 1).join('/');
+    }
+    return '';
   }, [pathParts]);
 
   React.useEffect(() => {
@@ -102,7 +110,7 @@ const App: React.FC = () => {
 
     // Notarize landing page
     if (slug === 'notarize') {
-      setActiveTool('NOTARIZE' as ToolType);
+      setActiveTool(ToolType.NOTARIZE);
       return;
     }
 
@@ -128,7 +136,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTool) {
-      case 'NOTARIZE' as ToolType: return <NotarizePage />;
+      case ToolType.NOTARIZE: return <NotarizeApp subPath={notarizeSubPath} />;
       case ToolType.DASHBOARD: return <Home />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
@@ -171,9 +179,9 @@ const App: React.FC = () => {
       )}
 
       {/* Notarize page has its own full-page layout — render outside site shell */}
-      {(activeTool as string) === 'NOTARIZE' ? (
+      {(activeTool as string) === ToolType.NOTARIZE ? (
         <React.Suspense fallback={<ToolLoader />}>
-          <NotarizePage />
+          <NotarizeApp subPath={notarizeSubPath} />
         </React.Suspense>
       ) : (
         <Layout currentLang={lang}>

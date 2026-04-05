@@ -8,6 +8,7 @@ export enum ToolType {
   AI_VISION = 'AI_VISION',
   VIDEO_SUITE = 'VIDEO_SUITE',
   INFO_PAGE = 'INFO_PAGE',
+  NOTARIZE = 'NOTARIZE',
 }
 
 

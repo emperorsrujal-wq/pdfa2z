@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles, BookOpen, ArrowRight } from 'lucide-react';
+import { Search, Star, Layers, Zap, Edit3, Wand2, FileText, Image as LucideImage, Video, PenTool, Scissors, Sparkles, BookOpen, ArrowRight, ShieldCheck } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
 import { ToolType } from '../types';
 import { SEO } from '../components/SEO';
@@ -239,6 +239,15 @@ export const Home: React.FC = () => {
                                 <h2 className="text-2xl font-bold text-slate-900">{t('common.aiTools')} {t('common.tools')}</h2>
                             </div>
                             {renderToolGrid(allTools.filter(t => t.type === ToolType.AI_WRITER || t.type === ToolType.IMAGE_GENERATOR || t.slug === 'magic-ai-editor' || t.slug === 'video-generator'))}
+                        </section>
+
+                        {/* Notarization Tools */}
+                        <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+                            <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
+                                <ShieldCheck size={24} className="text-[#185FA5]" />
+                                <h2 className="text-2xl font-bold text-slate-900">Notarization Tools</h2>
+                            </div>
+                            {renderToolGrid(allTools.filter(t => t.type === ToolType.NOTARIZE))}
                         </section>
                     </>
                 )}

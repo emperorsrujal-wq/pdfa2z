@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Uploads: users manage their own ────────────────────────────────────
+    match /uploads/{userId}/{allPaths=**} {
+      allow read:   if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.contentType.matches('application/pdf')
+                    && request.resource.size < 10 * 1024 * 1024; // 10 MB max
+      allow update: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Notarized documents: users can only read (backend writes) ──────────
+    match /notarized/{userId}/{allPaths=**} {
+      allow read:  if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Only Firebase Functions (admin SDK) write here
+    }
+
+    // ── Archive: backend only ───────────────────────────────────────────────
+    match /archive/{allPaths=**} {
+      allow read:  if false;
+      allow write: if false;
+    }
+  }
+}

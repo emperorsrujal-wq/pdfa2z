@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users: own data only ────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // ── Documents: own data only ────────────────────────────────────────────
+    match /documents/{documentId} {
+      allow read:   if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.user_id == request.auth.uid
+                    && request.resource.data.mime_type is string
+                    && request.resource.data.file_size < 10485760; // 10 MB
+      allow update: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow delete: if false; // Soft delete only
+    }
+
+    // ── Notarization Sessions: own data only ────────────────────────────────
+    match /notarization_sessions/{sessionId} {
+      allow read:   if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.user_id == request.auth.uid;
+      allow update: if request.auth != null && resource.data.user_id == request.auth.uid
+                    && request.resource.data.status in ['pending', 'cancelled']; // Frontend can only cancel
+      // Backend (admin SDK) bypasses these rules entirely
+    }
+
+    // ── Payments: read own, write from backend only ─────────────────────────
+    match /payments/{paymentId} {
+      allow read:   if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if false; // Only Firebase Functions (admin SDK) can create
+      allow update: if false;
+    }
+
+    // ── Audit logs: backend only ────────────────────────────────────────────
+    match /audit_logs/{logId} {
+      allow read:  if false;
+      allow write: if false;
+    }
+
+    // ── Referral tracking: read own ─────────────────────────────────────────
+    match /referral_tracking/{refId} {
+      allow read: if request.auth != null && resource.data.partner_id == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── White label customers: read own ────────────────────────────────────
+    match /white_label_customers/{customerId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow write: if false;
+    }
+  }
+}

@@ -91,6 +91,33 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     type: ToolType.INFO_PAGE
   },
+  'notarize': {
+    slug: 'notarize',
+    title: 'Online Notary - Remote Online Notarization (RON) in 10 Minutes',
+    description: 'Get your documents notarized online instantly with a licensed notary. Secure, legal, and available 24/7. No office visit required.',
+    h1: 'Remote Online Notarization',
+    intro: 'The fastest way to notarize your documents. Legally valid in all 50 states.',
+    steps: [
+      'Upload your PDF document securely.',
+      'Verify your identity with a valid government ID.',
+      'Connect with a live, licensed notary via video call.',
+      'Download your legally notarized document instantly.'
+    ],
+    faqs: [
+      { q: 'Is it legally valid?', a: 'Yes, Remote Online Notarization (RON) is legally valid across the United States under the SECURE Notary Act and individual state laws.' },
+      { q: 'What do I need?', a: 'You need a valid government-issued ID, a device with a camera and microphone, and your document in PDF format.' },
+      { q: 'How much does it cost?', a: 'Notarization starts at $45 for the first seal and one signer. Additional signers/seals are $35 each.' },
+      { q: 'How long does it take?', a: 'Most sessions are completed in under 15 minutes.' }
+    ],
+    type: ToolType.NOTARIZE,
+    features: [
+      '24/7 Availability',
+      'Licensed US Notaries',
+      'Secure Identity Verification',
+      'All 50 States Supported',
+      'Encrypted Storage'
+    ]
+  },
   'merge-pdf': {
     slug: 'merge-pdf',
     title: 'Merge PDF Online - Combine PDF Files for Free (No. 1 iLovePDF Alternative)',
