@@ -1,6 +1,6 @@
 import https from 'https';
 
-const API_URL = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?strategy=mobile&url=https://pdf-tools-6c9d2.web.app/';
+const API_URL = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?strategy=mobile&url=https://gen-lang-client-0072471951.web.app/';
 
 function runTest(runNumber) {
     return new Promise((resolve) => {
@@ -46,7 +46,7 @@ function runTest(runNumber) {
 }
 
 async function main() {
-    console.log('Starting PageSpeed validation on https://pdf-tools-6c9d2.web.app/ (Mobile)\n');
+    console.log('Starting PageSpeed validation on https://gen-lang-client-0072471951.web.app/ (Mobile)\n');
     await runTest(1);
     await runTest(2);
     await runTest(3);

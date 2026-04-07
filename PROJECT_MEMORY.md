@@ -8,7 +8,7 @@ This file serves as the "Long Term Memory" for the PDFA2Z platform. It should be
 
 - **Frontend:** React (TypeScript) + Vite
 - **Styling:** Vanilla CSS + Tailwind (Legacy support)
-- **Backend:** Firebase (Authentication, Firestore, Storage, Hosting, Functions)
+- **Backend:** Firebase (Authentication, Firestore, Storage, Hosting, Functions) — Project ID: `gen-lang-client-0072471951` (Unified)
 - **Internationalization:** `i18next` with locales in `/locales`
 
 ---

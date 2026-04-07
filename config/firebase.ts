@@ -9,9 +9,9 @@ import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'demo-api-key',
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'pdf-tools-6c9d2.firebaseapp.com',
-  projectId:         'pdf-tools-6c9d2',
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'pdf-tools-6c9d2.appspot.com',
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'gen-lang-client-0072471951.firebaseapp.com',
+  projectId:         'gen-lang-client-0072471951',
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'gen-lang-client-0072471951.firebasestorage.app',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId:             import.meta.env.VITE_FIREBASE_APP_ID             || '',
 };

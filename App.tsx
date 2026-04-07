@@ -29,6 +29,7 @@ import { Breadcrumbs } from './components/Breadcrumbs';
 import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
+const PDFJourneyBuilder = React.lazy(() => import('./components/PDFJourneyBuilder').then(m => ({ default: m.PDFJourneyBuilder })));
 
 export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -133,6 +134,11 @@ const AppContent: React.FC = () => {
       return;
     }
 
+    if (slug === 'journey-builder') {
+      setActiveTool(ToolType.JOURNEY_BUILDER);
+      return;
+    }
+
     // Known info pages
     if (['about', 'contact', 'privacy', 'terms'].includes(slug)) {
       setActiveTool(ToolType.INFO_PAGE);
@@ -175,6 +181,8 @@ const AppContent: React.FC = () => {
         return <VideoSuite initialMode={activeVideoMode} />;
       case ToolType.AI_WRITER:
         return <AiWriter />;
+      case ToolType.JOURNEY_BUILDER:
+        return <PDFJourneyBuilder />;
       case ToolType.INFO_PAGE:
         if (slug === 'about') return <About />;
         if (slug === 'contact') return <Contact />;

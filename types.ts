@@ -9,6 +9,7 @@ export enum ToolType {
   VIDEO_SUITE = 'VIDEO_SUITE',
   INFO_PAGE = 'INFO_PAGE',
   NOTARIZE = 'NOTARIZE',
+  JOURNEY_BUILDER = 'JOURNEY_BUILDER',
 }
 
 

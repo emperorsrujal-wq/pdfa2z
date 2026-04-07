@@ -29,7 +29,7 @@ async function runLighthouse(url, runNumber) {
 }
 
 async function main() {
-    const url = 'https://pdf-tools-6c9d2.web.app/';
+    const url = 'https://gen-lang-client-0072471951.web.app/';
     for (let i = 1; i <= 3; i++) {
         await runLighthouse(url, i);
     }

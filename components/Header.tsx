@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
 
     // Get tools by category
     const pdfTools = Object.values(TOOLS_REGISTRY)
-        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'NOTARIZE') && t.unique !== false)
+        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'NOTARIZE' || t.type === 'JOURNEY_BUILDER') && t.unique !== false)
         .slice(0, 8);
     
     const imageTools = Object.values(TOOLS_REGISTRY)

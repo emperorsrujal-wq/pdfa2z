@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "pdf-tools-6c9d2"
+    "default": "gen-lang-client-0072471951"
   },
   "targets": {
-    "pdf-tools-6c9d2": {
+    "gen-lang-client-0072471951": {
       "hosting": {
         "app": [
-          "pdf-tools-6c9d2"
+          "gen-lang-client-0072471951"
         ]
       }
     }

@@ -188,7 +188,7 @@ app.post('/sessions/create', authenticate, async (req: any, res) => {
     const sessionRef = await db.collection('notarization_sessions').add(sessionData);
 
     // Call OneNotary API (or demo mode)
-    const projectId = process.env.GCLOUD_PROJECT || 'pdf-tools-6c9d2';
+    const projectId = process.env.GCLOUD_PROJECT || 'gen-lang-client-0072471951';
     const oneNotaryResult = await createOneNotarySession({
       documentUrl: document_download_url || '',
       signerEmail: contact_email || req.user.email,

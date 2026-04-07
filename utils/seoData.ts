@@ -177,6 +177,32 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       }
     }
   },
+  'journey-builder': {
+    slug: 'journey-builder',
+    title: 'PDF Journey Builder - Transform PDF into a Step-by-Step Experience',
+    description: 'Convert any static PDF form into a guided, beautiful, and secure step-by-step digital journey. Automatically detect fields and fill them out in minutes.',
+    h1: 'PDF to <em>Digital Journey</em>',
+    intro: 'Stop sending static forms. Turn your PDFs into interactive, wizard-based experiences that your users can complete on any device. 100% Client-Side and secure.',
+    steps: [
+      'Upload your PDF document.',
+      'Allow our AI to automatically detect all fillable fields.',
+      'Review the structured "Journey" created for your document.',
+      'Complete the guided steps and download your perfectly filled PDF.'
+    ],
+    faqs: [
+      { q: 'Does it work with non-fillable PDFs?', a: 'Yes! If no fields are detected, we provide a default "Journey" that allows you to sign and date the document anywhere.' },
+      { q: 'Is it secure?', a: 'Completely. All PDF processing and data extraction happens locally in your browser. Nothing is uploaded to our servers.' },
+      { q: 'What fields are supported?', a: 'We support Text, Checkboxes, Dropdowns, and Digital Signatures.' }
+    ],
+    features: [
+      'Auto-Field Detection',
+      'Wizard-Style Interface',
+      'Interactive Signature Pad',
+      'No Server-Side Storage',
+      'Mobile-First Design'
+    ],
+    type: ToolType.JOURNEY_BUILDER
+  },
   'split-pdf': {
     slug: 'split-pdf',
     title: 'Split PDF - Extract Pages & Separate Documents Online',
