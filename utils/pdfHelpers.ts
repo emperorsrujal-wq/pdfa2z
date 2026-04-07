@@ -1,6 +1,6 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
+// import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import JSZip from 'jszip';
-import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 // Use local worker from node_modules via Vite's public directory or import
 // For Vite, it's best to copy the worker to public or use a direct import if configured.
 // Here we will use the CDN as a fallback but prefer a local structure if possible.
@@ -14,7 +14,7 @@ import type { TextItem } from 'pdfjs-dist/types/src/display/api';
  * Resolves the PDF.js engine and configures the worker.
  */
 const getPdfEngine = async () => {
-  const pdfjsLib = await import('pdfjs-dist/build/pdf');
+  const pdfjsLib = await import('pdfjs-dist');
   const engine: any = (pdfjsLib as any).getDocument ? pdfjsLib : (pdfjsLib as any).default;
   if (!engine || typeof engine.getDocument !== 'function') {
     throw new Error("PDF engine failed to initialize.");
