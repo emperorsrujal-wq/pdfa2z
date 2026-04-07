@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  PROJECT_ID: pdf-tools-6c9d2 # Hardcoded to ensure valid build
+  PROJECT_ID: gen-lang-client-0072471951 # Unified project ID
   SERVICE_NAME: pdfa2z
   REGION: us-west1
 

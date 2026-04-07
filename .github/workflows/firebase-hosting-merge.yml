@@ -13,6 +13,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PDF_TOOLS_6C9D2 }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0072471951 }}'
           channelId: live
-          projectId: pdf-tools-6c9d2
+          projectId: gen-lang-client-0072471951
