@@ -368,15 +368,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         className="flex-1 overflow-auto"
         style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px' }}
       >
-        {/* The PDF page */}
+        {/* The PDF page — width scales naturally so coordinate math stays correct */}
         <div
           style={{
             position: 'relative',
-            width: '794px',         // A4 width in px at 96dpi
+            width: `${794 * zoom}px`,
             flexShrink: 0,
-            transform: `scale(${zoom})`,
-            transformOrigin: 'top center',
-            marginBottom: `${(zoom - 1) * 1123}px`, // compensate scale collapse
           }}
         >
           <div

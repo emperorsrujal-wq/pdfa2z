@@ -15,4 +15,4 @@ declare module 'virtual:pwa-register/react' {
     };
 }
 
-declare module 'pdfjs-dist/build/pdf';
+// pdfjs-dist/build/pdf types are declared in global.d.ts

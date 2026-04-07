@@ -1,35 +1,31 @@
 import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
-// import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import type * as PdfJsType from 'pdfjs-dist';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import JSZip from 'jszip';
-// Use local worker from node_modules via Vite's public directory or import
-// For Vite, it's best to copy the worker to public or use a direct import if configured.
-// Here we will use the CDN as a fallback but prefer a local structure if possible.
-// Ideally, the worker should be copied to the public folder during build.
-// For now, we will stick to a reliable CDN version matching the package.
 
-// We need to use a dynamic import or ensure this doesn't break the build.
-// The previous static import caused issues with Vite/Rollup executing Node-specific code.
+type PdfJsLib = typeof PdfJsType;
 
 /**
  * Resolves the PDF.js engine and configures the worker.
  */
-const getPdfEngine = async () => {
+const getPdfEngine = async (): Promise<PdfJsLib> => {
   const pdfjsLib = await import('pdfjs-dist');
-  const engine: any = (pdfjsLib as any).getDocument ? pdfjsLib : (pdfjsLib as any).default;
+  // Handle both ESM default export and named exports
+  const engine = (pdfjsLib as PdfJsLib & { default?: PdfJsLib }).default?.getDocument
+    ? (pdfjsLib as PdfJsLib & { default: PdfJsLib }).default
+    : pdfjsLib as PdfJsLib;
+
   if (!engine || typeof engine.getDocument !== 'function') {
     throw new Error("PDF engine failed to initialize.");
   }
 
   // Set worker URL to local file copied by vite-plugin-static-copy
-  const PDF_WORKER_URL = `/assets/pdf.worker.min.js`;
+  engine.GlobalWorkerOptions.workerSrc = `/assets/pdf.worker.min.js`;
 
-  if (engine.GlobalWorkerOptions) {
-    engine.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
-  }
   return engine;
 };
 
-const getDocumentParams = (data: Uint8Array, pdfjsLib: any) => ({
+const getDocumentParams = (data: Uint8Array, pdfjsLib: PdfJsLib) => ({
   data,
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
   cMapPacked: true,
@@ -159,7 +155,7 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
     const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
     const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
 
-    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes) as any);
+    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes));
     const newPage = newPdf.addPage([viewport.width, viewport.height]);
     newPage.drawImage(jpgImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
   }
@@ -283,7 +279,7 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += `--- Page ${i} ---\n${content.items.map((item: any) => item.str).join(' ')}\n\n`;
+    text += `--- Page ${i} ---\n${content.items.map((item) => (item as TextItem).str).join(' ')}\n\n`;
   }
   return text;
 };
@@ -328,7 +324,7 @@ export const grayscalePdf = async (file: File): Promise<Uint8Array> => {
     await page.render({ canvasContext: context, viewport }).promise;
     const imgDataUrl = canvas.toDataURL('image/jpeg', 0.8);
     const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
-    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes) as any);
+    const jpgImage = await newPdf.embedJpg(new Uint8Array(imgBytes));
     const newPage = newPdf.addPage([viewport.width, viewport.height]);
     newPage.drawImage(jpgImage, { x: 0, y: 0, width: viewport.width, height: viewport.height });
   }

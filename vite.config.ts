@@ -32,9 +32,24 @@ export default defineConfig({
     target: 'esnext',
     minify: 'esbuild',
     sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Removed manualChunks to resolve React binding issues and simplify deployment
+        manualChunks(id) {
+          // Split Firebase into its own chunk (~520 kB)
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'firebase';
+          }
+          // Split i18next and related locale helpers (~75 kB)
+          if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
+            return 'i18n';
+          }
+          // Split lucide-react icons (~250 kB)
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons';
+          }
+          // React and router stay in the main bundle — splitting React causes useState binding issues
+        },
       }
     }
   },
