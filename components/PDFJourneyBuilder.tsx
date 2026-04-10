@@ -409,7 +409,7 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(() => {
     const saved = loadBrandConfig();
-    return mergeBrandConfig(saved);
+    return mergeBrandConfig(saved || undefined);
   });
   const fileRef = useRef<HTMLInputElement>(null);
 
