@@ -4,6 +4,7 @@ import { validateField, FieldValidationConfig, getFormatHint, getFieldError } fr
 import { getVisibleFields, ConditionGroup } from "../utils/journeyConditionals";
 import { JourneyFileUpload, FileData } from "./JourneyFileUpload";
 import { JourneyReviewStep } from "./JourneyReviewStep";
+import { BrandConfig, DEFAULT_BRAND_CONFIG, mergeBrandConfig, loadBrandConfig, applyBrandConfig } from "../utils/journeyBranding";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -268,13 +269,25 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
-  
+
+  :root {
+    --brand-primary: #f59e0b;
+    --brand-accent: #fbbf24;
+    --brand-success: #10b981;
+    --brand-error: #f87171;
+    --brand-bg: #0f172a;
+    --brand-text: #e2e8f0;
+    --brand-text-secondary: #94a3b8;
+    --brand-font-family: Inter, sans-serif;
+    --brand-heading-font: Bricolage Grotesque, sans-serif;
+  }
+
   .jb-root {
     min-height: 100vh; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    background: #060910;
-    font-family: 'DM Sans', sans-serif;
-    color: #e2e8f0; padding: 24px; position: relative; overflow: hidden;
+    background: var(--brand-bg);
+    font-family: var(--brand-font-family);
+    color: var(--brand-text); padding: 24px; position: relative; overflow: hidden;
     border-radius: 24px;
   }
   .jb-glow-tl {
@@ -291,7 +304,8 @@ const CSS = `
   }
   .jb-card {
     background: rgba(10,15,28,0.95);
-    border: 1px solid rgba(245,158,11,0.13);
+    border: 1px solid var(--brand-primary);
+    border-opacity: 0.13;
     border-radius: 22px;
     padding: 44px 40px;
     max-width: 560px; width: 100%;
@@ -303,16 +317,17 @@ const CSS = `
 
   .jb-brand {
     display: flex; align-items: center; gap: 8px;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--brand-heading-font);
     font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #f59e0b; margin-bottom: 30px;
+    text-transform: uppercase; color: var(--brand-primary); margin-bottom: 30px;
   }
-  .jb-brand-pip { width: 6px; height: 6px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 8px #f59e0b; }
+  .jb-brand-pip { width: 6px; height: 6px; background: var(--brand-primary); border-radius: 50%; box-shadow: 0 0 8px var(--brand-primary); }
+  .jb-brand-logo { height: 32px; margin-right: 8px; }
 
-  .jb-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; line-height: 1.15; color: #f8fafc; margin-bottom: 12px; }
-  .jb-title em { font-style: normal; color: #f59e0b; }
+  .jb-title { font-family: var(--brand-heading-font); font-size: 30px; font-weight: 800; line-height: 1.15; color: var(--brand-text); margin-bottom: 12px; }
+  .jb-title em { font-style: normal; color: var(--brand-primary); }
   .jb-sub { color: #4e6080; font-size: 14px; line-height: 1.65; margin-bottom: 30px; }
-  .jb-sub strong { color: #94a3b8; font-weight: 500; }
+  .jb-sub strong { color: var(--brand-text-secondary); font-weight: 500; }
 
   .jb-dropzone {
     border: 2px dashed rgba(245,158,11,0.22); border-radius: 16px;
@@ -326,15 +341,15 @@ const CSS = `
   .jb-dropzone-label strong { color: #f59e0b; }
   .jb-dropzone-hint { font-size: 12px; color: #374151; margin-top: 6px; }
 
-  .jb-btn { display: block; width: 100%; padding: 14px 28px; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
-  .jb-btn-gold { background: #f59e0b; color: #000; margin-top: 16px; }
-  .jb-btn-gold:hover { background: #fbbf24; box-shadow: 0 4px 20px rgba(245,158,11,0.3); transform: translateY(-1px); }
+  .jb-btn { display: block; width: 100%; padding: 14px 28px; border-radius: 12px; font-family: var(--brand-font-family); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+  .jb-btn-gold { background: var(--brand-primary); color: #000; margin-top: 16px; }
+  .jb-btn-gold:hover { background: var(--brand-accent); box-shadow: 0 4px 20px rgba(245,158,11,0.3); transform: translateY(-1px); }
   .jb-btn-ghost { background: transparent; color: #64748b; border: 1.5px solid rgba(71,85,105,0.35); margin-top: 12px; }
-  .jb-btn-ghost:hover { color: #e2e8f0; border-color: rgba(148,163,184,0.4); }
+  .jb-btn-ghost:hover { color: var(--brand-text); border-color: rgba(148,163,184,0.4); }
 
   .jb-pills { display: flex; gap: 5px; margin-bottom: 28px; }
   .jb-pill { height: 3px; border-radius: 2px; flex: 1; background: rgba(71,85,105,0.3); transition: background 0.35s; }
-  .jb-pill.done { background: #f59e0b; }
+  .jb-pill.done { background: var(--brand-primary); }
   .jb-pill.active { background: rgba(245,158,11,0.45); }
 
   .jb-step-meta { margin-bottom: 26px; }
@@ -392,6 +407,10 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [error, setError] = useState("");
   const [noFields, setNoFields] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [brandConfig, setBrandConfig] = useState<BrandConfig>(() => {
+    const saved = loadBrandConfig();
+    return mergeBrandConfig(saved);
+  });
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load PDF.js + pdf-lib
@@ -409,6 +428,11 @@ export const PDFJourneyBuilder: React.FC = () => {
       }
     })();
   }, []);
+
+  // Apply brand configuration
+  useEffect(() => {
+    applyBrandConfig(brandConfig);
+  }, [brandConfig]);
 
   const processFile = async (file: File) => {
     if (!file) return;
