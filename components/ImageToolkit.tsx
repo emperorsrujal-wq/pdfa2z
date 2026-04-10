@@ -368,7 +368,21 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
         } else if (mode === 'FACE_BLUR') {
           // Use AI to detect and blur faces
           const prompt = `Detect all human faces in this image and return ONLY a JSON array of bounding boxes: [{"x": percentage, "y": percentage, "w": percentage, "h": percentage}]. Coordinates should be 0-100 relative to image size. Example: [{"x": 10, "y": 20, "w": 5, "h": 5}]. If no faces, return [].`;
-          const detectionResult = await generateText(prompt, base64);
+          // Use the image-aware generateText by embedding in prompt (workaround for API limitations)
+          const ai = await import('../services/geminiService').then(m => {
+            const GoogleGenAI = require("@google/genai").GoogleGenAI;
+            return new GoogleGenAI({ apiKey: localStorage.getItem('gemini_api_key') || (import.meta as any).env.VITE_GEMINI_API_KEY });
+          });
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: {
+              parts: [
+                { inlineData: { data: base64.split(',')[1], mimeType: files[0].type } },
+                { text: prompt }
+              ]
+            }
+          });
+          const detectionResult = response.text || "[]";
 
           let boxes = [];
           try {
@@ -482,14 +496,6 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
           const res = await magicTransform(base64, files[0].type, refBase64, refMime, effectivePrompt, magicMode);
           setProcessedUrl(res);
-        }
-        {
-          mode === 'ADD_TEXT' && (
-            <div className="space-y-2">
-              <input type="text" placeholder="Enter Text" value={memeTop} onChange={e => setMemeTop(e.target.value)} className="w-full p-3 border rounded-xl" />
-              <p className="text-xs text-slate-500">Simple center text overlay. Use Meme Maker for top/bottom.</p>
-            </div>
-          )
         }
       }
     } catch (err: any) {

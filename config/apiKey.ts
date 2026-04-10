@@ -1,5 +1,15 @@
-// This file is used to integrate your API key directly into the build.
-// KEEP THIS FILE PRIVATE. DO NOT SHARE IF IT CONTAINS YOUR REAL KEY.
-// The key here will be used if the environment variable is not found.
+// API Key Configuration
+// The key should be provided via environment variables (VITE_GEMINI_API_KEY)
+// or localStorage ('gemini_api_key') for security
 
-export const INTEGRATED_API_KEY = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY";
+export const getApiKey = (): string => {
+  const envKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+  if (envKey && envKey.trim() !== "" && !envKey.includes("PLACEHOLDER")) {
+    return envKey.trim();
+  }
+  try {
+    const localKey = localStorage.getItem('gemini_api_key');
+    if (localKey && localKey.trim() !== "") return localKey.trim();
+  } catch {}
+  return "";
+};

@@ -1,9 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
 const getApiKey = (): string => {
-    const HARDCODED_API_KEY: string = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY";
-    if (HARDCODED_API_KEY && HARDCODED_API_KEY.trim() !== "") return HARDCODED_API_KEY.trim();
-    return (import.meta as any).env.VITE_GEMINI_API_KEY || "";
+    const envKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+    if (envKey && envKey.trim() !== "" && !envKey.includes("PLACEHOLDER")) {
+        return envKey.trim();
+    }
+    try {
+        const localKey = localStorage.getItem('gemini_api_key');
+        if (localKey && localKey.trim() !== "") return localKey.trim();
+    } catch {}
+    return "";
 };
 
 const getFreshAi = () => {
