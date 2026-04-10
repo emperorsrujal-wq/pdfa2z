@@ -1,14 +1,18 @@
 import * as React from 'react';
-import { 
-  Trash2, 
-  Copy, 
+import {
+  Trash2,
+  Copy,
   ChevronDown,
   Pipette,
   Square,
   Circle,
   Bold,
   Italic,
-  Type
+  Type,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Underline
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -30,11 +34,13 @@ const SEJDA_COLORS = [
 ];
 
 const FONTS = [
+  { name: 'Helvetica (Sans)', value: 'Helvetica' },
   { name: 'Times New Roman', value: 'Times-Roman' },
-  { name: 'Arial / Helvetica', value: 'Helvetica' },
   { name: 'Courier New', value: 'Courier' },
   { name: 'Georgia', value: 'Georgia' },
-  { name: 'Verdana', value: 'Verdana' }
+  { name: 'Verdana', value: 'Verdana' },
+  { name: 'Arial Bold', value: 'Helvetica-Bold' },
+  { name: 'Times Bold', value: 'Times-Bold' }
 ];
 
 const SIZES = [8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72];
@@ -61,18 +67,53 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
       {/* TEXT SPECIFIC CONTROLS */}
       {element.type === 'text' && (
         <>
+          {/* Text Formatting Buttons */}
           <div className="flex border-r border-white/5 pr-1 mr-1">
-            <button 
+            <button
               onClick={() => onUpdate(element.id, { isBold: !element.isBold })}
               className={`p-2 rounded-lg transition-all ${element.isBold ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Bold"
             >
               <Bold size={14} />
             </button>
-            <button 
+            <button
               onClick={() => onUpdate(element.id, { isItalic: !element.isItalic })}
               className={`p-2 rounded-lg transition-all ${element.isItalic ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Italic"
             >
               <Italic size={14} />
+            </button>
+            <button
+              onClick={() => onUpdate(element.id, { isUnderline: !element.isUnderline })}
+              className={`p-2 rounded-lg transition-all ${element.isUnderline ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Underline"
+            >
+              <Underline size={14} />
+            </button>
+          </div>
+
+          {/* Text Alignment */}
+          <div className="flex border-r border-white/5 pr-1 mr-1">
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'left' })}
+              className={`p-2 rounded-lg transition-all ${element.textAlign === 'left' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Align Left"
+            >
+              <AlignLeft size={14} />
+            </button>
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'center' })}
+              className={`p-2 rounded-lg transition-all ${element.textAlign === 'center' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Align Center"
+            >
+              <AlignCenter size={14} />
+            </button>
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'right' })}
+              className={`p-2 rounded-lg transition-all ${element.textAlign === 'right' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+              title="Align Right"
+            >
+              <AlignRight size={14} />
             </button>
           </div>
 
@@ -165,13 +206,20 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
         </button>
 
         {showColorPicker && (
-          <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-3 rounded-2xl shadow-2xl z-[400] w-[220px] animate-in fade-in slide-in-from-top-1">
-             <div className="grid grid-cols-7 gap-1.5">
+          <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-4 rounded-2xl shadow-2xl z-[400] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
+             {/* Helper Text */}
+             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
+               Choose Color
+             </div>
+
+             {/* Color Grid */}
+             <div className="grid grid-cols-8 gap-2">
                 {SEJDA_COLORS.map(color => (
                   <button
                     key={color}
-                    className="w-6 h-6 rounded-md border border-white/10 hover:scale-125 hover:z-10 transition-all shadow-lg"
+                    className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${element.color === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
                     style={{ backgroundColor: color }}
+                    title={color}
                     onClick={() => {
                       onUpdate(element.id, { color });
                       setShowColorPicker(false);
@@ -179,32 +227,37 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
                   />
                 ))}
              </div>
-             
-             {/* Eyedropper Row */}
-             <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                <button 
-                  onClick={() => {
-                    setMode?.('picker');
-                    setShowColorPicker(false);
-                  }}
-                  className="flex items-center gap-3 w-full p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
-                >
-                  <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all shadow-inner">
-                    <Pipette size={14} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-200 tracking-tight leading-none">Color Sampler</span>
-                    <span className="text-[9px] font-bold text-slate-500 leading-none mt-1">Pick from document</span>
-                  </div>
-                </button>
 
-                <button 
-                   onClick={() => { onUpdate(element.id, { color: 'transparent' }); setShowColorPicker(false); }}
-                   className="w-full py-2 border border-white/5 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-[9px] font-black text-slate-400 uppercase tracking-widest transition-all"
-                >
-                   NONE / TRANSPARENT
-                </button>
-             </div>
+             {/* Divider */}
+             <div className="border-t border-white/5" />
+
+             {/* Eyedropper Row */}
+             <button
+               onClick={() => {
+                 setMode?.('picker');
+                 setShowColorPicker(false);
+               }}
+               className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
+             >
+               <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all shadow-inner">
+                 <Pipette size={14} />
+               </div>
+               <div className="flex flex-col flex-1">
+                 <span className="text-[10px] font-black text-slate-200 tracking-tight leading-none">Pick from Document</span>
+                 <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">Sample color from PDF</span>
+               </div>
+             </button>
+
+             {/* Transparent Option */}
+             <button
+               onClick={() => {
+                 onUpdate(element.id, { color: 'transparent' });
+                 setShowColorPicker(false);
+               }}
+               className="w-full py-2.5 border border-white/10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-indigo-600/10 text-[9px] font-black text-slate-400 hover:text-indigo-400 uppercase tracking-widest transition-all"
+             >
+               No Color / Transparent
+             </button>
           </div>
         )}
       </div>

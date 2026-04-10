@@ -528,6 +528,8 @@ export interface EditElement {
   fontName?: string; // e.g. Times Roman, Arial
   isBold?: boolean;
   isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right'; // text alignment
   
   // Path/Line specific
   path?: { x: number, y: number }[]; // Array of points 0-1000
