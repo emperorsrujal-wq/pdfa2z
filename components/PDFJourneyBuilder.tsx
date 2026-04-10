@@ -2,6 +2,8 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { validateField, FieldValidationConfig, getFormatHint, getFieldError } from "../utils/journeyFieldValidation";
 import { getVisibleFields, ConditionGroup } from "../utils/journeyConditionals";
+import { JourneyFileUpload, FileData } from "./JourneyFileUpload";
+import { JourneyReviewStep } from "./JourneyReviewStep";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -375,7 +377,7 @@ const CSS = `
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const PDFJourneyBuilder: React.FC = () => {
-  const [stage, setStage] = useState<"upload" | "detecting" | "configure" | "wizard" | "complete">("upload");
+  const [stage, setStage] = useState<"upload" | "detecting" | "configure" | "wizard" | "review" | "complete">("upload");
   const [libsReady, setLibsReady] = useState(false);
   const [libError, setLibError] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
@@ -383,11 +385,13 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [steps, setSteps] = useState<Step[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({});
+  const [fileData, setFileData] = useState<Record<string, FileData[]>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [filledUrl, setFilledUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [noFields, setNoFields] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load PDF.js + pdf-lib
@@ -529,11 +533,13 @@ export const PDFJourneyBuilder: React.FC = () => {
   };
 
   const fillAndDownload = async () => {
-    if (!pdfBytes || noFields) {
-      setStage("complete");
-      return;
-    }
+    setIsProcessing(true);
     try {
+      if (!pdfBytes || noFields) {
+        setStage("complete");
+        setIsProcessing(false);
+        return;
+      }
       const { PDFDocument } = (window as any).PDFLib;
       const doc = await PDFDocument.load(pdfBytes);
       const form = doc.getForm();
@@ -558,11 +564,13 @@ export const PDFJourneyBuilder: React.FC = () => {
       console.error(e);
     }
     setStage("complete");
+    setIsProcessing(false);
   };
 
   const reset = () => {
     setStage("upload");
     setFormData({});
+    setFileData({});
     setFieldErrors({});
     setCurrentStep(0);
     setFilledUrl(null);
@@ -763,18 +771,35 @@ export const PDFJourneyBuilder: React.FC = () => {
             {/* Fields */}
             {visibleFields.map((field) => (
               <div className="jb-field" key={field.id}>
-                {field.type !== "checkbox" && (
-                  <label>
-                    {field.label}
-                    {field.required && <span style={{ color: "#f87171" }}>*</span>}
-                  </label>
+                {field.type === "file" ? (
+                  <JourneyFileUpload
+                    fieldId={field.id}
+                    label={field.label}
+                    acceptedTypes={field.acceptedTypes || [".pdf", ".jpg", ".png", ".doc", ".docx"]}
+                    maxSize={field.maxSize || 10 * 1024 * 1024} // 10MB default
+                    maxFiles={field.maxFiles || 5}
+                    required={field.required}
+                    helpText={field.helpText}
+                    value={fileData[field.id] || []}
+                    onChange={(files) => setFileData((p) => ({ ...p, [field.id]: files }))}
+                    error={fieldErrors[field.id]}
+                  />
+                ) : (
+                  <>
+                    {field.type !== "checkbox" && (
+                      <label>
+                        {field.label}
+                        {field.required && <span style={{ color: "#f87171" }}>*</span>}
+                      </label>
+                    )}
+                    <FieldInput
+                      field={field}
+                      value={formData[field.id]}
+                      onChange={(v) => setField(field.id, v)}
+                      error={fieldErrors[field.id]}
+                    />
+                  </>
                 )}
-                <FieldInput
-                  field={field}
-                  value={formData[field.id]}
-                  onChange={(v) => setField(field.id, v)}
-                  error={fieldErrors[field.id]}
-                />
               </div>
             ))}
 
@@ -791,11 +816,11 @@ export const PDFJourneyBuilder: React.FC = () => {
                   style={{ flex: isFirst ? 1 : 2 }}
                   onClick={() => {
                     if (validateCurrentStep()) {
-                      fillAndDownload();
+                      setStage("review");
                     }
                   }}
                 >
-                  Complete & Download PDF ✓
+                  Review & Continue →
                 </button>
               ) : (
                 <button
@@ -823,6 +848,33 @@ export const PDFJourneyBuilder: React.FC = () => {
       </>
     );
   }
+
+  // ─── Review Stage ──────────────────────────────────────────────────────────
+  if (stage === "review")
+    return (
+      <>
+        <style>{CSS}</style>
+        <div className="jb-root">
+          <div className="jb-glow-tl" />
+          <div className="jb-glow-br" />
+          <JourneyReviewStep
+            steps={steps}
+            formData={formData}
+            fileData={fileData}
+            onEdit={(stepIndex) => {
+              setCurrentStep(stepIndex);
+              setStage("wizard");
+            }}
+            onConfirm={(consent) => {
+              if (consent) {
+                fillAndDownload();
+              }
+            }}
+            isProcessing={isProcessing}
+          />
+        </div>
+      </>
+    );
 
   // ─── Complete Stage ────────────────────────────────────────────────────────
   if (stage === "complete")
