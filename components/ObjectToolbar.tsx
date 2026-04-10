@@ -39,6 +39,11 @@ const FONTS = [
 
 const SIZES = [8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72];
 
+// Bounds checking helpers
+const clampSize = (size: number): number => Math.max(8, Math.min(96, Math.round(size)));
+const clampStrokeWidth = (width: number): number => Math.max(1, Math.min(20, Math.round(width)));
+const clampOpacity = (opacity: number): number => Math.max(0, Math.min(1, opacity));
+
 export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   element,
   onUpdate,
@@ -119,7 +124,8 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
                     key={size}
                     className={`px-2 py-1.5 text-[10px] font-black rounded-lg hover:bg-indigo-600/20 transition-all ${element.size === size ? 'text-white bg-indigo-600 shadow-lg' : 'text-slate-400 hover:text-white'}`}
                     onClick={() => {
-                      onUpdate(element.id, { size });
+                      const clampedSize = clampSize(size);
+                      onUpdate(element.id, { size: clampedSize });
                       setShowSizePicker(false);
                     }}
                   >

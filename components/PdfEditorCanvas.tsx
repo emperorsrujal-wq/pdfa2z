@@ -149,6 +149,20 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     setActiveElementId(null);
   };
 
+  const duplicateElement = (element: EditElement) => {
+    const newId = `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const duplicated: EditElement = {
+      ...element,
+      id: newId,
+      // Offset by 10px (relative to 1000-unit canvas)
+      x: Math.min(element.x + 10, 990),
+      y: Math.min(element.y + 10, 990),
+    };
+    const next = [...elements, duplicated];
+    commit(next);
+    setActiveElementId(newId);
+  };
+
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const rect = containerRef.current.getBoundingClientRect();
@@ -513,7 +527,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 >
                   {/* Object property bar */}
                   {isActive && (
-                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={() => {}} setMode={setMode} />
+                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} setMode={setMode} />
                   )}
 
                   {/* Selection handles */}

@@ -71,21 +71,12 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   };
 
   const handleSmartRedact = () => {
+    // Smart Redact Guide - shows user tips for manually redacting sensitive content
     setIsScanning(true);
-    // Simulate AI Scan
     setTimeout(() => {
-      const newEdits: EditElement[] = [];
-      newEdits.push({
-        id: `redact-${Date.now()}`,
-        type: 'rect',
-        pageIndex: activePage,
-        x: 100, y: 150, width: 200, height: 20,
-        color: '#000000', opacity: 1
-      });
-      setElements([...elements, ...newEdits]);
+      setSuccessMsg("💡 Redaction Tips:\n1. Use Whiteout tool for quick coverage\n2. Select areas containing SSN, credit cards, addresses\n3. Remember: Redaction should be permanent (black boxes work best)\n4. Use Rectangle tool for precise redaction");
       setIsScanning(false);
-      setSuccessMsg("AI Privacy Scan Complete! Sensitive areas redacted.");
-    }, 1500);
+    }, 800);
   };
 
   if (images.length === 0 && isProcessing) {
