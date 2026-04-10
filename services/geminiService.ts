@@ -3,18 +3,16 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
 
-const HARDCODED_API_KEY: string = "AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY";
-
 /**
- * Retrieves the Gemini API key from various sources.
+ * Retrieves the Gemini API key from environment or local storage.
  */
 const getApiKey = (): string => {
-  if (HARDCODED_API_KEY && HARDCODED_API_KEY.trim() !== "") {
-    return HARDCODED_API_KEY.trim();
+  // Check environment variable (for production builds with proper secrets)
+  const envKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+  if (envKey && envKey.trim() !== "" && !envKey.includes("PLACEHOLDER")) {
+    return envKey.trim();
   }
-  if ((import.meta as any).env.VITE_GEMINI_API_KEY) {
-    return (import.meta as any).env.VITE_GEMINI_API_KEY;
-  }
+  // Check localStorage (for user-provided keys)
   try {
     const localKey = localStorage.getItem('gemini_api_key');
     if (localKey && localKey.trim() !== "") return localKey.trim();
@@ -24,7 +22,16 @@ const getApiKey = (): string => {
 
 const getFreshAi = () => {
   const apiKey = getApiKey();
-  if (!apiKey) throw new Error("API Key not found. Please configure a Gemini API key.");
+  if (!apiKey) {
+    throw new Error(
+      "Gemini API key not configured. Please:\n" +
+      "1. Get a free API key from https://ai.google.dev/gemini-api\n" +
+      "2. Add it to .env.local as VITE_GEMINI_API_KEY=your_key_here\n" +
+      "3. Rebuild the application\n\n" +
+      "Or paste your API key in the browser console:\n" +
+      "localStorage.setItem('gemini_api_key', 'your_key_here')"
+    );
+  }
   return new GoogleGenAI({ apiKey });
 };
 

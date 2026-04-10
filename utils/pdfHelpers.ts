@@ -279,7 +279,7 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += `--- Page ${i} ---\n${content.items.map((item) => (item as TextItem).str).join(' ')}\n\n`;
+    text += `--- Page ${i} ---\n${content.items.map((item: any) => (item as TextItem).str).join(' ')}\n\n`;
   }
   return text;
 };
@@ -786,7 +786,7 @@ export const detectSigningLines = async (file: File, pageIndex: number): Promise
   const keywords = ['Signature', 'Sign Here', 'Date', 'X _', 'Initial'];
   const suggestedAreas: RedactionArea[] = [];
 
-  for (const item of textContent.items as any[]) {
+  for (const item of textContent.items as TextItem[]) {
     const text = item.str || '';
     const hasKeyword = keywords.some(k => text.toLowerCase().includes(k.toLowerCase()));
     
@@ -824,7 +824,7 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
   let bestMatch = { color: '#000000', fontSize: 12, fontName: 'Helvetica', backgroundColor: '#FFFFFF' };
   let minDistance = Infinity;
 
-  for (const item of textContent.items as any[]) {
+  for (const item of textContent.items as TextItem[]) {
     const tx = item.transform[4];
     const ty = viewport.height - item.transform[5];
     const dist = Math.sqrt(Math.pow(tx - targetX, 2) + Math.pow(ty - targetY, 2));
@@ -832,7 +832,7 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
     if (dist < minDistance && dist < 50) {
       minDistance = dist;
       bestMatch.fontSize = Math.round(item.transform[0]);
-      bestMatch.fontName = item.fontName || 'Helvetica';
+      bestMatch.fontName = (item as any).fontName || 'Helvetica';
     }
   }
 
@@ -881,7 +881,7 @@ export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTe
   const textContent = await page.getTextContent();
   const viewport = page.getViewport({ scale: 1.0 });
 
-  return (textContent.items as any[]).map(item => {
+  return (textContent.items as TextItem[]).map(item => {
     const tx = item.transform;
     const x = tx[4];
     const y = viewport.height - tx[5];
@@ -894,7 +894,7 @@ export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTe
       width: (item.width / viewport.width) * 1000,
       height: (fontSize / viewport.height) * 1000,
       fontSize,
-      fontName: item.fontName || 'Helvetica'
+      fontName: (item as any).fontName || 'Helvetica'
     };
   });
 };

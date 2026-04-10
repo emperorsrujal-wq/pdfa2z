@@ -106,44 +106,44 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   }, {} as Record<number, number>);
 
   return (
-    <div className="fixed inset-0 bg-slate-100 z-50 flex flex-col overflow-hidden animate-fade-in">
-      {/* Premium Header */}
-      <header className="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm shrink-0">
+    <div className="fixed inset-0 bg-[#060910] z-50 flex flex-col overflow-hidden animate-fade-in font-sans">
+      {/* Premium Dark Header */}
+      <header className="h-16 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 shadow-2xl shrink-0 z-50">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-             <div className="p-1.5 bg-indigo-600 rounded-lg text-white shadow-md">
-                <PenTool size={20} />
+             <div className="p-2 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                <PenTool size={18} />
              </div>
              <div>
-                <h1 className="font-black text-slate-800 tracking-tight leading-none text-lg uppercase">PDF Editor Pro</h1>
+                <h1 className="font-black text-white tracking-tight leading-none text-lg">PDF EDITOR <span className="text-indigo-400">PRO</span></h1>
              </div>
           </div>
           
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="h-6 w-px bg-white/10" />
           
-          <div className="flex items-center gap-2 text-slate-400 text-sm font-bold">
-             <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-[11px] truncate max-w-[150px]">{file.name}</span>
-             <span className="text-indigo-600 text-xs">{images.length} Pages</span>
+          <div className="flex items-center gap-3">
+             <span className="bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 text-[11px] font-bold text-slate-300 truncate max-w-[150px] shadow-inner">{file.name}</span>
+             <span className="text-indigo-400 text-[11px] font-black uppercase tracking-widest">{images.length} Pages</span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-           {/* Smart Redact hidden for now to match Sejda simplicity */}
-           {/* <SmartRedactButton onScan={handleSmartRedact} isScanning={isScanning} /> */}
-           
            <div className="flex items-center gap-2">
-              <Button onClick={onCancel} className="bg-transparent hover:bg-slate-50 text-slate-500 border-none shadow-none text-xs font-bold">
-                 <X size={16} className="mr-1" /> Close
-              </Button>
-              
-              <Button 
-                onClick={() => handleApplyAll()} 
-                isLoading={isProcessing} 
-                className="bg-emerald-600 border-none hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow-lg shadow-emerald-200 flex items-center gap-2 text-xs font-bold"
+              <button 
+                onClick={onCancel} 
+                className="px-4 py-2 hover:bg-white/5 text-slate-400 hover:text-white rounded-lg transition-all text-xs font-bold flex items-center gap-2"
               >
-                 <Download size={16} />
-                 Download
-              </Button>
+                 <X size={16} /> Close
+              </button>
+              
+              <button 
+                onClick={() => handleApplyAll()} 
+                disabled={isProcessing}
+                className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-[#060910] px-6 py-2 rounded-lg shadow-lg shadow-emerald-500/20 flex items-center gap-2 text-xs font-black transition-all active:scale-95"
+              >
+                 {isProcessing ? <div className="w-4 h-4 border-2 border-[#060910]/30 border-t-[#060910] rounded-full animate-spin" /> : <Download size={16} />}
+                 DOWNLOAD PDF
+              </button>
            </div>
         </div>
       </header>

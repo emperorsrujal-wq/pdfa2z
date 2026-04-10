@@ -24,6 +24,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, defaul
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [showPass, setShowPass] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Login form
   const [email, setEmail] = React.useState('');
@@ -118,7 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, defaul
 
         <div className="p-6">
           {/* Demo mode banner */}
-          {DEMO_MODE && (
+          {mounted && DEMO_MODE && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
               <span className="text-lg">🚀</span>
               <div>

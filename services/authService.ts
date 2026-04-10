@@ -27,6 +27,12 @@ const DEMO_USER: User = {
 } as any;
 
 let _demoLoggedIn = false;
+const _demoListeners: ((user: User | null) => void)[] = [];
+
+const _notifyDemoListeners = () => {
+  const u = _demoLoggedIn ? DEMO_USER : null;
+  _demoListeners.forEach(cb => cb(u));
+};
 
 export interface UserProfile {
   uid: string;
@@ -48,6 +54,7 @@ export async function signUp(
 ): Promise<User> {
   if (DEMO_MODE) {
     _demoLoggedIn = true;
+    _notifyDemoListeners();
     return DEMO_USER;
   }
 
@@ -71,6 +78,7 @@ export async function signUp(
 export async function signIn(email: string, password: string): Promise<User> {
   if (DEMO_MODE) {
     _demoLoggedIn = true;
+    _notifyDemoListeners();
     return DEMO_USER;
   }
   const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -81,6 +89,7 @@ export async function signIn(email: string, password: string): Promise<User> {
 export async function signInWithGoogle(): Promise<User> {
   if (DEMO_MODE) {
     _demoLoggedIn = true;
+    _notifyDemoListeners();
     return DEMO_USER;
   }
   const provider = new GoogleAuthProvider();
@@ -108,6 +117,7 @@ export async function signInWithGoogle(): Promise<User> {
 export async function signInWithApple(): Promise<User> {
   if (DEMO_MODE) {
     _demoLoggedIn = true;
+    _notifyDemoListeners();
     return DEMO_USER;
   }
   const provider = new OAuthProvider('apple.com');
@@ -135,6 +145,7 @@ export async function signInWithApple(): Promise<User> {
 export async function signOut(): Promise<void> {
   if (DEMO_MODE) {
     _demoLoggedIn = false;
+    _notifyDemoListeners();
     return;
   }
   return fbSignOut(auth);
@@ -143,8 +154,12 @@ export async function signOut(): Promise<void> {
 // ── Auth State Listener ───────────────────────────────────────────────────────
 export function onAuthStateChanged(callback: (user: User | null) => void): () => void {
   if (DEMO_MODE) {
+    _demoListeners.push(callback);
     callback(_demoLoggedIn ? DEMO_USER : null);
-    return () => {};
+    return () => {
+      const idx = _demoListeners.indexOf(callback);
+      if (idx > -1) _demoListeners.splice(idx, 1);
+    };
   }
   return fbOnAuthStateChanged(auth, callback);
 }

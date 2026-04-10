@@ -68,10 +68,11 @@ const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: 
 
 function getFontFamily(fontName?: string) {
   if (fontName === 'Times-Roman') return '"Times New Roman", Times, serif';
-  if (fontName === 'Courier') return '"Courier New", Courier, monospace';
+  if (fontName === 'Helvetica') return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
+  if (fontName === 'Courier') return '"JetBrains Mono", "Courier New", Courier, monospace';
   if (fontName === 'Georgia') return 'Georgia, serif';
   if (fontName === 'Verdana') return 'Verdana, Geneva, sans-serif';
-  return 'Arial, Helvetica, sans-serif';
+  return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
 }
 
 export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
@@ -180,16 +181,29 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       const clicked = textItems.find(
         item => pos.x >= item.x && pos.x <= item.x + item.width && pos.y >= item.y && pos.y <= item.y + item.height
       );
+      
+      // Auto-sample color logic for better masking
+      let bgColor = '#FFFFFF';
+      let fontColor = currentColor;
+      
+      try {
+        const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
+        bgColor = style.backgroundColor || '#FFFFFF';
+        fontColor = style.color || currentColor;
+      } catch (e) {
+        console.warn("Color sampling failed, using defaults", e);
+      }
+
       if (clicked) {
-        const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: '#FFFFFF', opacity: 1 };
-        const text: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: '#000000', text: clicked.str, size: clicked.fontSize, opacity: 1 };
+        const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: bgColor, opacity: 1 };
+        const text: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: fontColor, text: clicked.str, size: clicked.fontSize, opacity: 1 };
         const next = [...elements, mask, text];
         commit(next);
         setActiveElementId(text.id);
         return;
       }
       // Fall through: add blank text
-      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: currentColor, text: '', size: currentSize, opacity: 1 };
+      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: fontColor, text: '', size: currentSize, opacity: 1 };
       commit([...elements, newEl]);
       setActiveElementId(newEl.id);
       return;
@@ -297,66 +311,65 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f1f5f9] overflow-hidden" onClick={() => setActiveElementId(null)}>
+    <div className="flex flex-col h-full w-full bg-[#060910] overflow-hidden select-none" onClick={() => setActiveElementId(null)}>
 
-      {/* ─── TOP TOOLBAR ─────────────────────────────────── */}
-      <div className="shrink-0 flex flex-col items-center gap-2 py-3 bg-white border-b border-slate-200 shadow-sm z-[100]">
+      {/* ─── TOP TOOLBAR (Premium Dark) ─────────────────── */}
+      <div className="shrink-0 flex flex-col items-center gap-2 py-4 bg-[#0f172a]/40 backdrop-blur-xl border-b border-white/5 shadow-2xl z-[100]">
 
         {/* Main tool bar */}
-        <div className="flex items-center gap-0.5 bg-[#f0f7ff] border border-[#c7dff7] px-1 py-0.5 rounded-lg shadow-sm">
+        <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl shadow-inner">
           {TOOLS.map(t => (
             <Tooltip key={t.mode} content={t.tooltip}>
               <button
                 onClick={(e) => { e.stopPropagation(); if (t.mode === 'image') { document.getElementById('img-upload')?.click(); } else { setMode(t.mode); } }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold transition-all duration-300 ${
                   mode === t.mode
-                    ? 'bg-[#0061ef] text-white shadow-md'
-                    : 'text-[#374151] hover:bg-[#dbeafe] hover:text-[#1d4ed8]'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/40 scale-105'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 {t.icon}
-                <span className="hidden sm:inline">{t.label}</span>
+                <span className="hidden lg:inline">{t.label}</span>
               </button>
             </Tooltip>
           ))}
         </div>
 
-        {/* Whiteout warning */}
+        {/* Whiteout / Mode Warnings */}
         {mode === 'erase' && (
-          <div className="text-[11px] font-medium text-white bg-slate-800 rounded px-4 py-1.5 shadow-md animate-in fade-in duration-200">
-            Whiteout hides but will <strong>not</strong> completely remove underlying text. Not suitable for secure redaction.
+          <div className="text-[11px] font-bold text-amber-200 bg-amber-900/30 border border-amber-500/20 rounded-full px-5 py-1.5 shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            ✨ Whiteout hides content but does not securely redact.
           </div>
         )}
 
         {/* Page / zoom controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm divide-x divide-slate-200">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-inner divide-x divide-white/5">
             <Tooltip content="Undo last action">
-              <button onClick={(e) => { e.stopPropagation(); undo(); }} className="px-3 py-1.5 hover:bg-slate-50 text-slate-600 transition-colors flex items-center gap-1 text-[12px] font-medium">
+              <button onClick={(e) => { e.stopPropagation(); undo(); }} className="px-3 py-2 hover:bg-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-[11px] font-black uppercase tracking-tight">
                 <Undo2 size={14} /> Undo
               </button>
             </Tooltip>
             <Tooltip content="Redo action">
-              <button onClick={(e) => { e.stopPropagation(); redo(); }} className="px-3 py-1.5 hover:bg-slate-50 text-slate-600 transition-colors flex items-center gap-1 text-[12px] font-medium">
+              <button onClick={(e) => { e.stopPropagation(); redo(); }} className="px-3 py-2 hover:bg-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-[11px] font-black uppercase tracking-tight">
                 <Redo2 size={14} /> Redo
               </button>
             </Tooltip>
-            <Tooltip content="Zoom out">
-              <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="px-3 py-1.5 hover:bg-slate-50 text-slate-600 transition-colors">
+            
+            <div className="flex items-center px-1">
+              <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 hover:bg-white/5 text-slate-400 hover:text-white transition-all">
                 <ZoomOut size={16} />
               </button>
-            </Tooltip>
-            <span className="px-3 py-1.5 text-[12px] font-bold text-slate-700 min-w-[50px] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-            <Tooltip content="Zoom in">
-              <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="px-3 py-1.5 hover:bg-slate-50 text-slate-600 transition-colors">
+              <span className="px-2 text-[11px] font-black text-indigo-400 min-w-[50px] text-center tabular-nums">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 hover:bg-white/5 text-slate-400 hover:text-white transition-all">
                 <ZoomIn size={16} />
               </button>
-            </Tooltip>
+            </div>
           </div>
 
-          <div className="text-[11px] font-bold text-slate-400 bg-white border border-slate-100 px-3 py-1.5 rounded-lg">
+          <div className="text-[11px] font-black text-slate-500 bg-white/5 border border-white/5 px-4 py-2 rounded-xl uppercase tracking-widest">
             Page {pageIndex + 1}
           </div>
         </div>
@@ -365,8 +378,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto"
-        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px' }}
+        className="flex-1 overflow-auto custom-scrollbar"
+        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
       >
         {/* The PDF page — width scales naturally so coordinate math stays correct */}
         <div
@@ -374,6 +387,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             position: 'relative',
             width: `${794 * zoom}px`,
             flexShrink: 0,
+            boxShadow: '0 30px 60px -12px rgba(0,0,0,0.5), 0 18px 36px -18px rgba(0,0,0,0.5)',
+            borderRadius: '4px',
+            overflow: 'hidden'
           }}
         >
           <div
@@ -574,13 +590,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 
       {/* ─── APPLY CHANGES BUTTON ────────────────────────── */}
-      <div className="shrink-0 flex justify-center py-4 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <div className="shrink-0 flex justify-center py-6 bg-[#0f172a]/80 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.4)] z-[200]">
         <button
           onClick={() => (onFinalSave ? onFinalSave(elements) : onSave(elements))}
-          className="flex items-center gap-3 px-14 py-3.5 bg-[#10b981] hover:bg-[#059669] active:scale-95 text-white rounded-lg font-bold text-base transition-all shadow-lg shadow-emerald-500/30"
+          className="group relative flex items-center gap-3 px-20 py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-[#060910] rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/20"
         >
-          <CheckCircle2 size={20} />
-          Apply changes
+          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <CheckCircle2 size={20} className="relative z-10" />
+          <span className="relative z-10">Save & Apply Changes</span>
         </button>
       </div>
     </div>
