@@ -163,6 +163,79 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     setActiveElementId(newId);
   };
 
+  // Layer ordering functions
+  const bringToFront = (id: string) => {
+    const element = elements.find(el => el.id === id);
+    if (!element) return;
+    const others = elements.filter(el => el.id !== id);
+    const next = [...others, element]; // Move to end (front)
+    commit(next);
+  };
+
+  const sendToBack = (id: string) => {
+    const element = elements.find(el => el.id === id);
+    if (!element) return;
+    const others = elements.filter(el => el.id !== id);
+    const next = [element, ...others]; // Move to start (back)
+    commit(next);
+  };
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Z / Cmd+Z: Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      // Ctrl+Shift+Z / Cmd+Shift+Z: Redo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      // Ctrl+D / Cmd+D: Duplicate
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeElementId) {
+        e.preventDefault();
+        const element = elements.find(el => el.id === activeElementId);
+        if (element) duplicateElement(element);
+        return;
+      }
+      // Delete: Delete selected element
+      if (e.key === 'Delete' && activeElementId) {
+        e.preventDefault();
+        deleteElement(activeElementId);
+        return;
+      }
+      // Escape: Deselect
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setActiveElementId(null);
+        return;
+      }
+      // Arrow keys: Move selected element (5px increments)
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && activeElementId) {
+        e.preventDefault();
+        const element = elements.find(el => el.id === activeElementId);
+        if (element) {
+          let newX = element.x;
+          let newY = element.y;
+          const step = e.shiftKey ? 20 : 5; // Shift for larger moves
+          if (e.key === 'ArrowUp') newY = Math.max(0, newY - step);
+          if (e.key === 'ArrowDown') newY = Math.min(1000, newY + step);
+          if (e.key === 'ArrowLeft') newX = Math.max(0, newX - step);
+          if (e.key === 'ArrowRight') newX = Math.min(1000, newX + step);
+          updateElement(activeElementId, { x: newX, y: newY });
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeElementId, elements, historyStep]);
+
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const rect = containerRef.current.getBoundingClientRect();
@@ -527,7 +600,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 >
                   {/* Object property bar */}
                   {isActive && (
-                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} setMode={setMode} />
+                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
                   )}
 
                   {/* Selection handles */}

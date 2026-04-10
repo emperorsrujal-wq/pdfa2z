@@ -13,7 +13,9 @@ import {
   AlignCenter,
   AlignRight,
   Underline,
-  Minus
+  Minus,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -23,6 +25,8 @@ interface ObjectToolbarProps {
   onUpdate: (id: string, updates: Partial<EditElement>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (element: EditElement) => void;
+  onBringToFront?: (id: string) => void;
+  onSendToBack?: (id: string) => void;
   setMode?: (mode: any) => void;
 }
 
@@ -56,6 +60,8 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   onUpdate,
   onDelete,
   onDuplicate,
+  onBringToFront,
+  onSendToBack,
   setMode
 }) => {
   const [showColorPicker, setShowColorPicker] = React.useState(false);
@@ -285,14 +291,32 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
       {/* Action Group */}
       <div className="flex items-center gap-0.5">
-        <button 
+        {onSendToBack && (
+          <button
+            onClick={() => onSendToBack(element.id)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
+            title="Send to Back (Ctrl+Shift+B)"
+          >
+            <ArrowDown size={14} />
+          </button>
+        )}
+        {onBringToFront && (
+          <button
+            onClick={() => onBringToFront(element.id)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
+            title="Bring to Front (Ctrl+Shift+F)"
+          >
+            <ArrowUp size={14} />
+          </button>
+        )}
+        <button
           onClick={() => onDuplicate(element)}
           className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
           title="Duplicate"
         >
           <Copy size={14} />
         </button>
-        <button 
+        <button
           onClick={() => onDelete(element.id)}
           className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-all"
           title="Delete"
