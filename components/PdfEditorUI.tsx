@@ -127,13 +127,28 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                  <X size={16} /> Close
               </button>
               
-              <button 
-                onClick={() => handleApplyAll()} 
+              <button
+                onClick={() => handleApplyAll()}
                 disabled={isProcessing}
-                className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-[#060910] px-6 py-2 rounded-lg shadow-lg shadow-emerald-500/20 flex items-center gap-2 text-xs font-black transition-all active:scale-95"
+                className="group bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-[#060910] px-8 py-2.5 rounded-lg shadow-lg shadow-emerald-500/30 flex items-center gap-2 text-xs font-black transition-all active:scale-95 relative overflow-hidden"
+                title="Save and download your edited PDF"
               >
-                 {isProcessing ? <div className="w-4 h-4 border-2 border-[#060910]/30 border-t-[#060910] rounded-full animate-spin" /> : <Download size={16} />}
-                 DOWNLOAD PDF
+                 {/* Glossy Overlay */}
+                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                 <div className="relative flex items-center gap-2">
+                   {isProcessing ? (
+                     <>
+                       <div className="w-4 h-4 border-2 border-[#060910]/30 border-t-[#060910] rounded-full animate-spin" />
+                       <span>SAVING...</span>
+                     </>
+                   ) : (
+                     <>
+                       <Download size={18} className="group-hover:scale-110 transition-transform" />
+                       <span>SAVE & DOWNLOAD</span>
+                     </>
+                   )}
+                 </div>
               </button>
            </div>
         </div>

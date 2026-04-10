@@ -12,7 +12,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Underline
+  Underline,
+  Minus
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -180,13 +181,33 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
       )}
 
       {/* SHAPE/WHITE OUT SPECIFIC */}
-      {(element.type === 'rect' || element.type === 'circle') && (
+      {(element.type === 'rect' || element.type === 'circle' || element.type === 'line') && (
         <div className="flex border-r border-white/5 pr-1 mr-1">
-          <button 
+          <button
             className="p-2 bg-white/5 rounded-lg text-indigo-400"
+            title={element.type === 'circle' ? 'Circle' : element.type === 'line' ? 'Line' : 'Rectangle'}
           >
-            {element.type === 'circle' ? <Circle size={14} /> : <Square size={14} />}
+            {element.type === 'circle' ? <Circle size={14} /> : element.type === 'line' ? <Minus size={14} /> : <Square size={14} />}
           </button>
+        </div>
+      )}
+
+      {/* STROKE WIDTH (for shapes and lines) */}
+      {(element.type === 'rect' || element.type === 'circle' || element.type === 'line') && (
+        <div className="relative flex items-center border-r border-white/5 pr-1 mr-1">
+          <div className="flex items-center gap-2 px-2">
+            <span className="text-[10px] font-bold text-slate-400">Border:</span>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={element.strokeWidth || 3}
+              onChange={(e) => onUpdate(element.id, { strokeWidth: clampStrokeWidth(parseInt(e.target.value)) })}
+              className="w-16 h-1 bg-white/10 rounded-lg cursor-pointer accent-indigo-500"
+              title="Stroke Width"
+            />
+            <span className="text-[10px] font-bold text-slate-300 w-6 text-right">{element.strokeWidth || 3}px</span>
+          </div>
         </div>
       )}
 
