@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { validateField, FieldValidationConfig, getFormatHint, getFieldError } from "../utils/journeyFieldValidation";
+import { getVisibleFields, ConditionGroup } from "../utils/journeyConditionals";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ interface Field {
   maxLength?: number;
   helpText?: string;
   example?: string;
+  conditions?: ConditionGroup[];  // Conditions for showing this field
 }
 
 interface Step {
@@ -493,10 +495,21 @@ export const PDFJourneyBuilder: React.FC = () => {
     if (stage !== "wizard" || currentStep >= steps.length) return true;
 
     const step = steps[currentStep];
+
+    // Get visible fields based on conditions
+    const fieldConditions: Record<string, ConditionGroup[]> = {};
+    step.fields.forEach((field) => {
+      if (field.conditions) {
+        fieldConditions[field.id] = field.conditions;
+      }
+    });
+    const visibleFields = getVisibleFields(step.fields, formData, fieldConditions);
+
     const errors: Record<string, string> = {};
     let hasErrors = false;
 
-    step.fields.forEach((field) => {
+    // Only validate visible fields
+    visibleFields.forEach((field) => {
       const config: FieldValidationConfig = {
         required: field.required || false,
         type: field.validationType as any,
@@ -707,6 +720,16 @@ export const PDFJourneyBuilder: React.FC = () => {
   // ─── Wizard Stage ──────────────────────────────────────────────────────────
   if (stage === "wizard") {
     const step = steps[currentStep];
+
+    // Get visible fields based on conditions
+    const fieldConditions: Record<string, ConditionGroup[]> = {};
+    step.fields.forEach((field) => {
+      if (field.conditions) {
+        fieldConditions[field.id] = field.conditions;
+      }
+    });
+    const visibleFields = getVisibleFields(step.fields, formData, fieldConditions);
+
     const isFirst = currentStep === 0;
     const isLast = currentStep === steps.length - 1;
 
@@ -738,7 +761,7 @@ export const PDFJourneyBuilder: React.FC = () => {
             </div>
 
             {/* Fields */}
-            {step.fields.map((field) => (
+            {visibleFields.map((field) => (
               <div className="jb-field" key={field.id}>
                 {field.type !== "checkbox" && (
                   <label>
