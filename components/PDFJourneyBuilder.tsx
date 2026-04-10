@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
+import { validateField, FieldValidationConfig, getFormatHint, getFieldError } from "../utils/journeyFieldValidation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -9,6 +10,12 @@ interface Field {
   label: string;
   type: string;
   options: string[];
+  required?: boolean;
+  validationType?: 'email' | 'phone' | 'ssn' | 'zip' | 'date' | 'url' | 'currency' | 'text' | 'number';
+  minLength?: number;
+  maxLength?: number;
+  helpText?: string;
+  example?: string;
 }
 
 interface Step {
@@ -178,30 +185,36 @@ function SignaturePad({ onChange }: { onChange: (val: string) => void }) {
 
 // ─── Field Renderer ───────────────────────────────────────────────────────────
 
-function FieldInput({ field, value, onChange }: { field: Field; value: any; onChange: (v: any) => void }) {
+function FieldInput({ field, value, onChange, error }: { field: Field; value: any; onChange: (v: any) => void; error?: string | null }) {
   const base: React.CSSProperties = {
     width: "100%",
     background: "rgba(15,23,42,0.9)",
-    border: "1.5px solid rgba(71,85,105,0.45)",
+    border: error ? "1.5px solid #f87171" : "1.5px solid rgba(71,85,105,0.45)",
     borderRadius: 10,
     padding: "12px 16px",
     color: "#e2e8f0",
     fontFamily: "inherit",
     fontSize: 15,
     outline: "none",
+    boxShadow: error ? "0 0 0 3px rgba(248, 113, 113, 0.1)" : "none",
   };
 
   if (field.type === "checkbox") {
     return (
-      <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: "#cbd5e1", fontSize: 15 }}>
-        <input
-          type="checkbox"
-          checked={!!value}
-          onChange={(e) => onChange(e.target.checked)}
-          style={{ width: 18, height: 18, accentColor: "#f59e0b", cursor: "pointer", flexShrink: 0 }}
-        />
-        {field.label}
-      </label>
+      <div>
+        <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: "#cbd5e1", fontSize: 15 }}>
+          <input
+            type="checkbox"
+            checked={!!value}
+            onChange={(e) => onChange(e.target.checked)}
+            style={{ width: 18, height: 18, accentColor: "#f59e0b", cursor: "pointer", flexShrink: 0 }}
+          />
+          {field.label}
+          {field.required && <span style={{ color: "#f87171" }}>*</span>}
+        </label>
+        {field.helpText && <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{field.helpText}</p>}
+        {error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>⚠ {error}</p>}
+      </div>
     );
   }
   if (field.type === "select") {
@@ -230,13 +243,20 @@ function FieldInput({ field, value, onChange }: { field: Field; value: any; onCh
       />
     );
   return (
-    <input
-      type="text"
-      value={value || ""}
-      placeholder={`Enter ${field.label.toLowerCase()}`}
-      onChange={(e) => onChange(e.target.value)}
-      style={base}
-    />
+    <div>
+      <input
+        type="text"
+        value={value || ""}
+        placeholder={`Enter ${field.label.toLowerCase()}`}
+        onChange={(e) => onChange(e.target.value)}
+        style={base}
+        maxLength={field.maxLength}
+      />
+      {field.helpText && <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{field.helpText}</p>}
+      {field.example && <p style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Example: {field.example}</p>}
+      {field.validationType && <p style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Format: {getFormatHint(field.validationType)}</p>}
+      {error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>⚠ {error}</p>}
+    </div>
   );
 }
 
@@ -361,6 +381,7 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [steps, setSteps] = useState<Step[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [filledUrl, setFilledUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
@@ -456,7 +477,43 @@ export const PDFJourneyBuilder: React.FC = () => {
     }
   };
 
-  const setField = (id: string, val: any) => setFormData((p) => ({ ...p, [id]: val }));
+  const setField = (id: string, val: any) => {
+    setFormData((p) => ({ ...p, [id]: val }));
+    // Clear error for this field when user starts typing
+    if (fieldErrors[id]) {
+      setFieldErrors((p) => {
+        const next = { ...p };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
+  const validateCurrentStep = (): boolean => {
+    if (stage !== "wizard" || currentStep >= steps.length) return true;
+
+    const step = steps[currentStep];
+    const errors: Record<string, string> = {};
+    let hasErrors = false;
+
+    step.fields.forEach((field) => {
+      const config: FieldValidationConfig = {
+        required: field.required || false,
+        type: field.validationType as any,
+        minLength: field.minLength,
+        maxLength: field.maxLength,
+      };
+
+      const error = validateField(formData[field.id], config, field.label);
+      if (error) {
+        errors[field.id] = error.message;
+        hasErrors = true;
+      }
+    });
+
+    setFieldErrors(errors);
+    return !hasErrors;
+  };
 
   const fillAndDownload = async () => {
     if (!pdfBytes || noFields) {
@@ -493,6 +550,7 @@ export const PDFJourneyBuilder: React.FC = () => {
   const reset = () => {
     setStage("upload");
     setFormData({});
+    setFieldErrors({});
     setCurrentStep(0);
     setFilledUrl(null);
     setPdfBytes(null);
@@ -682,8 +740,18 @@ export const PDFJourneyBuilder: React.FC = () => {
             {/* Fields */}
             {step.fields.map((field) => (
               <div className="jb-field" key={field.id}>
-                {field.type !== "checkbox" && <label>{field.label}</label>}
-                <FieldInput field={field} value={formData[field.id]} onChange={(v) => setField(field.id, v)} />
+                {field.type !== "checkbox" && (
+                  <label>
+                    {field.label}
+                    {field.required && <span style={{ color: "#f87171" }}>*</span>}
+                  </label>
+                )}
+                <FieldInput
+                  field={field}
+                  value={formData[field.id]}
+                  onChange={(v) => setField(field.id, v)}
+                  error={fieldErrors[field.id]}
+                />
               </div>
             ))}
 
@@ -695,19 +763,38 @@ export const PDFJourneyBuilder: React.FC = () => {
                 </button>
               )}
               {isLast ? (
-                <button className="jb-btn jb-btn-gold" style={{ flex: isFirst ? 1 : 2 }} onClick={fillAndDownload}>
+                <button
+                  className="jb-btn jb-btn-gold"
+                  style={{ flex: isFirst ? 1 : 2 }}
+                  onClick={() => {
+                    if (validateCurrentStep()) {
+                      fillAndDownload();
+                    }
+                  }}
+                >
                   Complete & Download PDF ✓
                 </button>
               ) : (
                 <button
                   className="jb-btn jb-btn-gold"
                   style={{ flex: isFirst ? 1 : 2 }}
-                  onClick={() => setCurrentStep((c) => c + 1)}
+                  onClick={() => {
+                    if (validateCurrentStep()) {
+                      setCurrentStep((c) => c + 1);
+                    }
+                  }}
                 >
                   Continue →
                 </button>
               )}
             </div>
+            {Object.keys(fieldErrors).length > 0 && (
+              <div style={{ marginTop: 16, padding: 12, background: "rgba(248, 113, 113, 0.1)", borderRadius: 10, borderLeft: "3px solid #f87171" }}>
+                <p style={{ fontSize: 12, color: "#f87171", fontWeight: 600, margin: 0 }}>
+                  ⚠ Please fix {Object.keys(fieldErrors).length} error{Object.keys(fieldErrors).length === 1 ? "" : "s"} before continuing
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </>
