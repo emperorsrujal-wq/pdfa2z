@@ -41,3 +41,19 @@ export interface ImageConfig {
   aspectRatio: AspectRatio;
   highQuality: boolean; // Triggers Pro model
 }
+
+export type ToolCategory = 'PDF' | 'IMAGE' | 'VIDEO' | 'AI' | 'NOTARIZE' | 'OTHER';
+
+export interface UserDocument {
+  id: string;
+  userId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string; // mime type
+  category: ToolCategory;
+  downloadUrl: string;
+  storagePath: string;
+  metadata?: Record<string, any>;
+  createdAt: any;
+  isDeleted: boolean;
+}

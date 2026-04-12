@@ -11,6 +11,9 @@ import { generatePassportSheet, PASSPORT_STANDARDS, PRINT_SIZES, addWatermark, g
 import { ImageToolMode } from '../types.ts';
 import JSZip from 'jszip';
 import { Base64Converter } from './Base64Converter';
+import { uploadToLibrary } from '../services/documentService';
+import { useAuth } from '../context/AuthContext';
+import { ToolCategory } from '../types';
 
 interface ImageToolkitProps {
   initialMode?: ImageToolMode;
@@ -24,6 +27,9 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [processedUrl, setProcessedUrl] = React.useState<string | null>(null);
   const [ocrResult, setOcrResult] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
+  const { user } = useAuth();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   // New input states
   const [resizeW, setResizeW] = React.useState('');
@@ -89,6 +95,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setMagicInstructions('');
     setProcessedUrls([]);
     setSplitGrid({ rows: 2, cols: 2 });
+    setSuccessMsg(null);
   };
 
 
@@ -271,6 +278,29 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       a.href = url;
       a.download = `ocr-result-${Date.now()}.txt`;
       a.click();
+    }
+  };
+
+  const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+    const res = await fetch(dataUrl);
+    return res.blob();
+  };
+
+  const handleSaveToLibrary = async (targetUrl?: string) => {
+    const url = targetUrl || processedUrl;
+    if (!url) return;
+    setIsSaving(true);
+    setSuccessMsg(null);
+    try {
+      const blob = await dataUrlToBlob(url);
+      const ext = blob.type.split('/')[1] || 'png';
+      const fileName = `processed-${Date.now()}.${ext}`;
+      await uploadToLibrary(blob, fileName, 'IMAGE');
+      setSuccessMsg("Saved to library!");
+    } catch (e: any) {
+      setError(e.message || "Failed to save.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -927,6 +957,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
             {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT', 'SPLIT_IMAGE'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
+          {successMsg && <p className="text-green-600 text-sm font-bold text-center animate-fade-in flex items-center justify-center gap-2"><CheckCircle size={16} /> {successMsg}</p>}
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
         </div>
         <div className="flex-1 bg-slate-50 rounded-3xl p-6 min-h-[300px] flex items-center justify-center border border-slate-100 overflow-hidden relative group">
@@ -1013,6 +1044,13 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
               >
                 <Download size={24} />
               </a>
+              <button 
+                onClick={() => handleSaveToLibrary()} 
+                disabled={isSaving}
+                className="absolute bottom-4 left-4 p-3 bg-white text-indigo-600 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 font-bold px-6"
+              >
+                {isSaving ? 'Saving...' : <><ImageIcon size={20} /> Save to Profile</>}
+              </button>
             </>
           ) :
             ocrResult ? (

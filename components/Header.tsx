@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                                     <p className="text-sm font-medium text-slate-700 truncate">{user.email}</p>
                                 </div>
                                 <Link 
-                                    to={getLocalizedPath('/notarize/dashboard')}
+                                    to={getLocalizedPath('/dashboard')}
                                     className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                 >
                                     <LayoutDashboard size={16} />
@@ -227,19 +227,19 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                                     <p className="text-sm font-medium text-slate-700 truncate">{user.email}</p>
                                 </div>
                                 <Link
-                                    to={getLocalizedPath('/notarize/dashboard')}
+                                    to={getLocalizedPath('/dashboard')}
                                     className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-semibold"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     <LayoutDashboard size={20} />
-                                    Notary Dashboard
+                                    {t('common.dashboard')}
                                 </Link>
                                 <button
                                     onClick={() => { signOut(); setIsMenuOpen(false); }}
                                     className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50"
                                 >
                                     <LogOut size={20} />
-                                    Sign Out
+                                    {t('common.signOut')}
                                 </button>
                             </div>
                         ) : (

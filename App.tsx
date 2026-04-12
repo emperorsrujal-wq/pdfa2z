@@ -30,6 +30,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 import { NotarizeApp } from './pages/NotarizeApp';
 import { PDFJourneyBuilder } from './components/PDFJourneyBuilder';
+import { Dashboard } from './pages/Dashboard';
 
 export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -131,7 +132,11 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    // Notarize landing page
+    if (slug === 'dashboard') {
+      setActiveTool(ToolType.DASHBOARD);
+      return;
+    }
+
     if (slug === 'notarize') {
       setActiveTool(ToolType.NOTARIZE);
       return;
@@ -182,7 +187,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTool) {
       case ToolType.NOTARIZE: return <NotarizeApp subPath={notarizeSubPath} />;
-      case ToolType.DASHBOARD: return <Home />;
+      case ToolType.DASHBOARD: return <Dashboard />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
       case ToolType.PDF_SUITE:

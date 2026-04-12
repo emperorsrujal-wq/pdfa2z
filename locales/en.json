@@ -17,6 +17,25 @@
         "rights": "All rights reserved.",
         "footerDesc": "Free online PDF, Image, Video, and AI tools. No sign-up required. 100% Free suitable for students, professionals and everyone."
     },
+    "dashboard": {
+        "title": "User Dashboard",
+        "subtitle": "Manage your files, notarizations, and account settings.",
+        "newTool": "New Tool",
+        "totalFiles": "Total Files",
+        "notarized": "Notarized",
+        "recent": "Recent",
+        "myDocuments": "My Documents",
+        "notarizations": "Notarizations",
+        "searchPlaceholder": "Search files...",
+        "noDocsTitle": "No documents yet",
+        "noDocsDesc": "Processed files from PDF tools and Image tools will appear here.",
+        "noNotaryTitle": "No notarizations found",
+        "noNotaryDesc": "Start your first legal notarization and track its progress here.",
+        "loading": "Loading files...",
+        "accessDenied": "Access Denied",
+        "accessDeniedDesc": "Please sign in to access your personal dashboard.",
+        "returnHome": "Return Home"
+    },
     "home": {
         "heroTitle": "Professional PDF & AI Tools",
         "heroSubtitle": "Completely free, client-side, and powered by AI.",

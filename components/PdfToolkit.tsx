@@ -11,6 +11,9 @@ import { PdfSignerWorkstation } from './PdfSignerWorkstation';
 import { Redactor } from './Redactor';
 import { PdfEditorUI } from './PdfEditorUI';
 import { BatchProcessor } from './BatchProcessor';
+import { uploadToLibrary } from '../services/documentService';
+import { useAuth } from '../context/AuthContext';
+import { ToolCategory } from '../types';
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -23,6 +26,9 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
 
   const [resultImages, setResultImages] = React.useState<string[]>([]);
   const [resultText, setResultText] = React.useState<string>('');
+  const [resultBlob, setResultBlob] = React.useState<{ blob: Blob, fileName: string } | null>(null);
+  const { user, openAuthModal } = useAuth();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const [signingPage, setSigningPage] = React.useState<{ index: number, image: string } | null>(null);
 
@@ -90,6 +96,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setOrganizedPages([]);
     setRedactionAreas([]);
     setActiveRedactPage(null);
+    setResultBlob(null);
   };
 
   const removeFile = (index: number) => {
@@ -105,12 +112,16 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     try {
       if (mode === 'MERGE') {
         const res = await mergePdfs(files);
-        downloadBlob(res, 'merged.pdf');
+        const blob = new Blob([res as any], { type: 'application/pdf' });
+        downloadBlob(blob, 'merged.pdf');
+        setResultBlob({ blob, fileName: 'merged.pdf' });
         setSuccessMsg("Merged successfully!");
       }
       else if (mode === 'SPLIT') {
         const res = await splitPdf(files[0], inputValue);
-        downloadBlob(res, `split-${files[0].name}`);
+        const blob = new Blob([res as any], { type: 'application/pdf' });
+        downloadBlob(blob, `split-${files[0].name}`);
+        setResultBlob({ blob, fileName: `split-${files[0].name}` });
         setSuccessMsg("Split successfully!");
       }
       else if (mode === 'SIGN') {
@@ -296,6 +307,20 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       setError(err.message || "An error occurred.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleSaveToLibrary = async () => {
+    if (!resultBlob) return;
+    setIsSaving(true);
+    try {
+      await uploadToLibrary(resultBlob.blob, resultBlob.fileName, 'PDF');
+      setSuccessMsg("File saved to your library!");
+      setResultBlob(null); // Clear to prevent double saving
+    } catch (e: any) {
+      setError(e.message || "Failed to save file.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -793,7 +818,31 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
               </>
             )}
 
-            {successMsg && <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-center animate-fade-in flex items-center justify-center gap-2"><CheckCircle2 size={20} /> {successMsg}</div>}
+            {successMsg && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-center flex items-center justify-center gap-2">
+                  <CheckCircle2 size={20} /> {successMsg}
+                </div>
+                {resultBlob && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button 
+                      onClick={() => downloadBlob(resultBlob.blob, resultBlob.fileName)} 
+                      variant="outline"
+                      className="flex-1 py-4 border-green-200 text-green-700 hover:bg-green-50"
+                    >
+                      <Download size={18} className="mr-2" /> Download Again
+                    </Button>
+                    <Button 
+                      onClick={handleSaveToLibrary} 
+                      isLoading={isSaving}
+                      className="flex-1 py-4 bg-green-600 hover:bg-green-700 shadow-green-100"
+                    >
+                      <FileIcon size={18} className="mr-2" /> Save to My Library
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
             {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl font-bold text-center animate-fade-in">{error}</div>}
 
             {resultText && (
