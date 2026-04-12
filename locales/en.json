@@ -62,5 +62,10 @@
         "openTool": "OPEN TOOL",
         "upload": "Upload your file",
         "processing": "Processing..."
+    },
+    "writer": {
+        "saveToLibrary": "Save to Profile",
+        "saving": "Saving...",
+        "saved": "Saved to Library!"
     }
 }

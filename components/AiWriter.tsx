@@ -3,6 +3,8 @@ import * as React from 'react';
 import { PenTool, Check, Copy, Wand2, RefreshCw, FileText, AlignLeft, Mail } from 'lucide-react';
 import { Button } from './Button.tsx';
 import { generateText } from '../services/geminiService.ts';
+import { uploadToLibrary } from '../services/documentService.ts';
+import { useTranslation } from 'react-i18next';
 
 type WriterMode = 'GRAMMAR' | 'SUMMARIZE' | 'PARAPHRASE' | 'EMAIL';
 
@@ -20,6 +22,9 @@ export const AiWriter: React.FC<AiWriterProps> = ({ initialMode = 'GRAMMAR' }) =
   const [outputText, setOutputText] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const { t } = useTranslation();
 
   const tools = [
     { id: 'GRAMMAR', label: 'Grammar Fixer', icon: <Check />, prompt: 'Fix grammar, spelling, and punctuation in the following text. Keep the original meaning but make it flawless:' },
@@ -50,6 +55,22 @@ export const AiWriter: React.FC<AiWriterProps> = ({ initialMode = 'GRAMMAR' }) =
     navigator.clipboard.writeText(outputText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveToLibrary = async () => {
+    if (!outputText || isSaving) return;
+    setIsSaving(true);
+    try {
+      const blob = new Blob([outputText], { type: 'text/plain' });
+      const filename = `${mode.toLowerCase()}-${Date.now()}.txt`;
+      await uploadToLibrary(blob, filename, 'AI');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save AI output:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -109,13 +130,23 @@ export const AiWriter: React.FC<AiWriterProps> = ({ initialMode = 'GRAMMAR' }) =
           <label className="text-sm font-medium text-slate-500 mb-2 flex items-center justify-between">
             <span>Result</span>
             {outputText && (
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1 text-teal-600 hover:text-teal-700 text-xs transition-colors font-semibold"
-              >
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleSaveToLibrary}
+                  disabled={isSaving}
+                  className={`flex items-center gap-1 text-xs transition-all font-semibold ${saved ? 'text-green-600' : 'text-teal-600 hover:text-teal-700'}`}
+                >
+                  {saved ? <Check className="w-3 h-3" /> : (isSaving ? <RefreshCw className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />)}
+                  {saved ? t('writer.saved') : (isSaving ? t('writer.saving') : t('writer.saveToLibrary'))}
+                </button>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 text-teal-600 hover:text-teal-700 text-xs transition-colors font-semibold"
+                >
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             )}
           </label>
           <div className={`flex-1 w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 overflow-y-auto whitespace-pre-wrap ${!outputText ? 'flex items-center justify-center' : ''}`}>
