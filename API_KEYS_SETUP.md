@@ -186,8 +186,8 @@ VITE_FIREBASE_* = [Already in code, from .env.local]
 gh run list --repo emperorsrujal-wq/pdfa2z
 
 # Check Cloud Run
-gcloud run services describe pdfa2z \
-  --region us-central1 \
+gcloud run services describe easytools \
+  --region us-west1 \
   --project gen-lang-client-0072471951
 
 # View Firebase logs

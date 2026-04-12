@@ -18,6 +18,7 @@
     "home": {
         "heroTitle": "Professional PDF & AI Tools",
         "heroSubtitle": "Completely free, client-side, and powered by AI.",
+        "searchPlaceholder": "Search for any tool (e.g. Merge, Redact, Sign)...",
         "startTool": "Start Tool",
         "popular": "Popular",
         "featuredService": "Featured Service",

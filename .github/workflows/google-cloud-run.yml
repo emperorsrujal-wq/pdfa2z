@@ -6,7 +6,7 @@ on:
 
 env:
   PROJECT_ID: gen-lang-client-0072471951 # Unified project ID
-  SERVICE_NAME: pdfa2z
+  SERVICE_NAME: easytools
   REGION: us-west1
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
       - name: 'Docker Auth'
         run: |-
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+          gcloud auth configure-docker us-west1-docker.pkg.dev
 
       - name: 'Deploy to Cloud Run'
         uses: 'google-github-actions/deploy-cloudrun@v2'

@@ -185,6 +185,13 @@ export const Home: React.FC = () => {
                         placeholder={t('home.searchPlaceholder') || "Search for tools..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && filteredTools.length > 0) {
+                                const tool = filteredTools[0];
+                                navigate(`${i18n.language !== 'en' ? `/${i18n.language}` : ''}/${tool.slug}`);
+                                window.scrollTo(0, 0);
+                            }
+                        }}
                     />
                 </div>
 

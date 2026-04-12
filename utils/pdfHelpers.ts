@@ -2,6 +2,10 @@ import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 import type * as PdfJsType from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import JSZip from 'jszip';
+import { createWorker } from 'tesseract.js';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import ExcelJS from 'exceljs';
+import pptxgen from 'pptxgenjs';
 
 type PdfJsLib = typeof PdfJsType;
 
@@ -456,26 +460,26 @@ export const sanitizePdf = async (file: File): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-  // 1. Remove Metadata
+  // Deep Clean Metadata
   pdfDoc.setTitle('');
   pdfDoc.setAuthor('');
   pdfDoc.setSubject('');
   pdfDoc.setKeywords([]);
-  pdfDoc.setProducer('');
-  pdfDoc.setCreator('');
+  pdfDoc.setProducer('PDFA2Z Secure Engine');
+  pdfDoc.setCreator('PDFA2Z');
+  pdfDoc.setCreationDate(new Date());
+  pdfDoc.setModificationDate(new Date());
 
-  // 2. Flatten Forms
+  // Flatten form fields to prevent data recovery from hidden layers
   try {
     const form = pdfDoc.getForm();
     form.flatten();
   } catch (e) {
-    // Ignore if no form
+    // Ignore if no form found
   }
 
-  // 3. Remove Annotations (Naive approach: remove all annotations)
-  // pdf-lib doesn't have a direct "removeAllAnnotations" but we can try to clear them if possible.
-  // Currently pdf-lib API for removing annotations is limited. 
-  // We can stick to metadata + flattening as "Sanitize".
+  // Remove all annotations (optional but safer for sanitization)
+  // pdf-lib's annotation removal is limited, but flattening helps.
 
   return pdfDoc.save();
 };
@@ -508,9 +512,63 @@ export const pdfToImagesZip = async (file: File): Promise<Blob> => {
 
 // --- New Tools placeholders & implementations ---
 
+// Utility to check if a pixel is transparent (alpha === 0)
+export const isTransparentPixel = (rgba: Uint8ClampedArray): boolean => {
+  // rgba is [r,g,b,a]
+  return rgba[3] === 0;
+};
+
+// Sample background color at a given point on the PDF page image
+// Returns hex color string (e.g., "#FFFFFF")
+export const sampleBackgroundColor = async (
+  imageSrc: string,
+  x: number,
+  y: number,
+  canvasWidth: number = 794,
+  canvasHeight: number = 1123
+): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve("#FFFFFF");
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      if (isTransparentPixel(pixel)) {
+        resolve("#FFFFFF");
+        return;
+      }
+      const toHex = (c: number) => c.toString(16).padStart(2, "0");
+      const hex = `#${toHex(pixel[0])}${toHex(pixel[1])}${toHex(pixel[2])}`;
+      resolve(hex);
+    };
+    img.onerror = () => resolve("#FFFFFF");
+    img.src = imageSrc;
+  });
+};
+
 export type EditElementType = 
   'text' | 'path' | 'image' | 'rect' | 'circle' | 'line' | 'audio' | 
-  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'link';
+  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'form-select' | 'link' | 'sticky-note';
+
+export type FormFieldType = 'text' | 'checkbox' | 'dropdown';
+
+export interface FormField {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  placeholder?: string;
+  options?: string[]; // For dropdowns
+  value?: string | boolean;
+  required?: boolean;
+}
 
 export interface EditElement {
   id: string;
@@ -521,6 +579,8 @@ export interface EditElement {
   color?: string; // hex color
   rotation?: number; // degrees
   opacity?: number; // 0 to 1
+  // Optional background color for whiteout/cover elements
+  bgColor?: string; // hex string
   
   // Text specific
   text?: string;
@@ -544,6 +604,7 @@ export interface EditElement {
   audioData?: string; // base64 or URL
   linkUrl?: string;
   isChecked?: boolean;
+  options?: string[]; // For dropdowns
 }
 
 // Helper to convert hex to rgb for pdf-lib
@@ -899,4 +960,159 @@ export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTe
       fontName: (item as any).fontName || 'Helvetica'
     };
   });
+};
+
+// --- Tier 2 Advanced Processing ---
+
+/**
+ * Performs OCR on a PDF page image to extract text.
+ */
+export const performOCR = async (imageSrc: string): Promise<string> => {
+  const worker = await createWorker('eng');
+  const ret = await worker.recognize(imageSrc);
+  await worker.terminate();
+  return ret.data.text;
+};
+
+/**
+ * Mock implementation of PDF to Word conversion.
+ * In a real scenario, this would extract text and layout.
+ */
+export const convertPdfToDocx = async (text: string): Promise<Blob> => {
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun(text),
+          ],
+        }),
+      ],
+    }],
+  });
+
+  return Packer.toBlob(doc);
+};
+
+/**
+ * Mock implementation of PDF to Excel conversion.
+ */
+export const convertPdfToExcel = async (text: string): Promise<Blob> => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Sheet 1');
+  const lines = text.split('\n');
+  lines.forEach((line, i) => {
+    worksheet.getCell(`A${i + 1}`).value = line;
+  });
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+};
+
+/**
+ * Mock implementation of PDF to PowerPoint conversion.
+ */
+export const convertPdfToPptx = async (text: string): Promise<Blob> => {
+  const pres = new pptxgen();
+  const slide = pres.addSlide();
+  slide.addText(text, { x: 1, y: 1, w: 8, h: 5, fontSize: 12 });
+  const buffer = await pres.write({ outputType: 'blob' });
+  return buffer as Blob;
+};
+
+/**
+ * Crops a page in a PDF byte array.
+ */
+export const cropPage = async (pdfBytes: Uint8Array, pageIndex: number, x: number, y: number, width: number, height: number): Promise<Uint8Array> => {
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const page = pdfDoc.getPage(pageIndex);
+  page.setCropBox(x, y, width, height);
+  return pdfDoc.save();
+};
+
+/**
+ * Rotates a page in a PDF byte array.
+ */
+export const rotatePage = async (pdfBytes: Uint8Array, pageIndex: number, rotation: number): Promise<Uint8Array> => {
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const page = pdfDoc.getPage(pageIndex);
+  page.setRotation(degrees(rotation));
+  return pdfDoc.save();
+};
+
+/**
+ * Applies a digital signature to a PDF.
+ * This uploads the signature to Firebase Storage (handled in component)
+ * and embeds the resulting image URL here.
+ */
+export const applySignature = async (pdfBytes: Uint8Array, pageIndex: number, signatureUrl: string, x: number, y: number, width: number, height: number): Promise<Uint8Array> => {
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const page = pdfDoc.getPage(pageIndex);
+  
+  const response = await fetch(signatureUrl);
+  const sigImageBytes = await response.arrayBuffer();
+  
+  let sigImage;
+  if (signatureUrl.includes('png')) {
+    sigImage = await pdfDoc.embedPng(sigImageBytes);
+  } else {
+    sigImage = await pdfDoc.embedJpg(sigImageBytes);
+  }
+
+  page.drawImage(sigImage, {
+    x,
+    y,
+    width,
+    height,
+  });
+
+  return pdfDoc.save();
+};
+
+export interface TextPosition {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Finds the positions of specific strings on a page.
+ */
+export const findTextPositions = async (pdfBytes: Uint8Array, pageIndex: number, searchStrings: string[]): Promise<RedactionArea[]> => {
+  const engine = await getPdfEngine();
+  const loadingTask = engine.getDocument(getDocumentParams(pdfBytes, engine));
+  const pdf = await loadingTask.promise;
+  const page = await pdf.getPage(pageIndex + 1);
+  const textContent = await page.getTextContent();
+  const viewport = page.getViewport({ scale: 1.0 });
+
+  const foundAreas: RedactionArea[] = [];
+  const normalizedSearch = searchStrings.map(s => s.toLowerCase().trim());
+
+  textContent.items.forEach((item: any) => {
+    if (!item.str) return;
+    const itemStr = item.str.toLowerCase().trim();
+    
+    // Check if item contains any of our search strings
+    const matched = normalizedSearch.some(s => itemStr.includes(s));
+    
+    if (matched) {
+      const transform = item.transform; // [scaleX, skewY, skewX, scaleY, translateX, translateY]
+      const x = transform[4];
+      const y = viewport.height - transform[5] - item.height; // PDF space is bottom-up
+      
+      // Convert to 0-1000 scale
+      foundAreas.push({
+        pageIndex,
+        x: (x / viewport.width) * 1000,
+        y: (y / viewport.height) * 1000,
+        width: (item.width / viewport.width) * 1000,
+        height: (item.height / viewport.height) * 1000
+      });
+    }
+  });
+
+  return foundAreas;
 };

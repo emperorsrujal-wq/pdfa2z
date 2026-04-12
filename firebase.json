@@ -23,7 +23,6 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "site": "gen-lang-client-0072471951",
     "public": "dist",
     "ignore": [
       "firebase.json",

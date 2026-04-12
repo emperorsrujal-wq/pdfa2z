@@ -18,6 +18,7 @@
     "home": {
         "heroTitle": "Herramientas Profesionales de PDF e IA",
         "heroSubtitle": "Completamente gratis, ejecución local y potenciado por IA.",
+        "searchPlaceholder": "Buscar cualquier herramienta (ej. Combinar, Redactar, Firmar)...",
         "startTool": "Iniciar Herramienta",
         "popular": "Popular",
         "featuredService": "Servicio Destacado",

@@ -58,20 +58,30 @@ export async function signUp(
     return DEMO_USER;
   }
 
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(cred.user, { displayName: `${firstName} ${lastName}` });
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: `${firstName} ${lastName}` });
 
-  await setDoc(doc(db, 'users', cred.user.uid), {
-    email,
-    first_name: firstName,
-    last_name: lastName,
-    state_residence: state,
-    user_type: 'individual',
-    created_at: serverTimestamp(),
-    updated_at: serverTimestamp(),
-  });
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      state_residence: state,
+      user_type: 'individual',
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    });
 
-  return cred.user;
+    return cred.user;
+  } catch (err: any) {
+    if (err.code === 'auth/configuration-not-found' || err.code === 'auth/invalid-api-key') {
+      console.warn('Firebase Auth unconfigured. Falling back to Demo Mode.');
+      _demoLoggedIn = true;
+      _notifyDemoListeners();
+      return DEMO_USER;
+    }
+    throw err;
+  }
 }
 
 // ── Sign In ──────────────────────────────────────────────────────────────────
@@ -81,8 +91,19 @@ export async function signIn(email: string, password: string): Promise<User> {
     _notifyDemoListeners();
     return DEMO_USER;
   }
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  return cred.user;
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  } catch (err: any) {
+    // If auth is unconfigured in Firebase Console, fallback to Demo Mode for testing
+    if (err.code === 'auth/configuration-not-found' || err.code === 'auth/invalid-api-key') {
+      console.warn('Firebase Auth unconfigured. Falling back to Demo Mode.');
+      _demoLoggedIn = true;
+      _notifyDemoListeners();
+      return DEMO_USER;
+    }
+    throw err;
+  }
 }
 
 // ── Google Sign In ────────────────────────────────────────────────────────────
@@ -153,20 +174,33 @@ export async function signOut(): Promise<void> {
 
 // ── Auth State Listener ───────────────────────────────────────────────────────
 export function onAuthStateChanged(callback: (user: User | null) => void): () => void {
-  if (DEMO_MODE) {
-    _demoListeners.push(callback);
-    callback(_demoLoggedIn ? DEMO_USER : null);
-    return () => {
-      const idx = _demoListeners.indexOf(callback);
-      if (idx > -1) _demoListeners.splice(idx, 1);
-    };
-  }
-  return fbOnAuthStateChanged(auth, callback);
+  // Always listen to demo state changes for fallback support
+  _demoListeners.push(callback);
+  
+  // Also initialize with current demo state if mode matches
+  if (_demoLoggedIn) callback(DEMO_USER);
+
+  // Also listen to real Firebase state changes
+  const fbUnsubscribe = fbOnAuthStateChanged(auth, (u) => {
+    // If we have a real user, it takes precedence. 
+    // If not, we still might have a demo user from the fallback.
+    if (u) {
+      callback(u);
+    } else {
+      callback(_demoLoggedIn ? DEMO_USER : null);
+    }
+  });
+  
+  return () => {
+    const idx = _demoListeners.indexOf(callback);
+    if (idx > -1) _demoListeners.splice(idx, 1);
+    fbUnsubscribe();
+  };
 }
 
 // ── Get current user ────────────────────────────────────────────────────────
 export function getCurrentUser(): User | null {
-  if (DEMO_MODE) return _demoLoggedIn ? DEMO_USER : null;
+  if (_demoLoggedIn) return DEMO_USER;
   return auth.currentUser;
 }
 

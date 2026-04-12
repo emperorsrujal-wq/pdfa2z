@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { X, Check, Trash2, MousePointer2 } from 'lucide-react';
-import { RedactionArea } from '../utils/pdfHelpers';
+import { X, Check, Trash2, MousePointer2, Sparkles, Loader2 } from 'lucide-react';
+import { RedactionArea, extractTextFromPdf, findTextPositions } from '../utils/pdfHelpers';
+import { scanForPII } from '../services/geminiService';
 
 interface RedactorProps {
     image: string;
@@ -8,10 +9,12 @@ interface RedactorProps {
     existingAreas: RedactionArea[];
     onSave: (areas: RedactionArea[]) => void;
     onCancel: () => void;
+    file: File;
 }
 
-export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAreas, onSave, onCancel }) => {
+export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAreas, onSave, onCancel, file }) => {
     const [areas, setAreas] = React.useState<RedactionArea[]>(existingAreas);
+    const [isScanning, setIsScanning] = React.useState(false);
     const [isDrawing, setIsDrawing] = React.useState(false);
     const [startPos, setStartPos] = React.useState({ x: 0, y: 0 });
     const [currentArea, setCurrentArea] = React.useState<RedactionArea | null>(null);
@@ -66,6 +69,27 @@ export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAr
         setAreas(areas.filter((_, i) => i !== idx));
     };
 
+    const handleMagicScan = async () => {
+        setIsScanning(true);
+        try {
+            const pdfBytes = new Uint8Array(await file.arrayBuffer());
+            const text = await extractTextFromPdf(file);
+            const piiList = await scanForPII(text);
+            
+            if (piiList.length === 0) {
+                console.log("No PII detected on this page.");
+                return;
+            }
+
+            const foundAreas = await findTextPositions(pdfBytes, pageIndex, piiList);
+            setAreas([...areas, ...foundAreas]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex flex-col p-4 md:p-8 animate-fade-in">
             <div className="flex items-center justify-between mb-6 text-white max-w-5xl mx-auto w-full">
@@ -77,6 +101,16 @@ export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAr
                     <p className="text-slate-400 text-sm font-medium">Click and drag to select areas to black out</p>
                 </div>
                 <div className="flex gap-3">
+                    <button 
+                        onClick={handleMagicScan} 
+                        disabled={isScanning}
+                        className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-[#060910] rounded-xl font-black shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 group relative overflow-hidden"
+                    >
+                        {isScanning ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} className="group-hover:animate-pulse" />}
+                        <span className="relative z-10">Magic AI Scan</span>
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                    </button>
+
                     <button onClick={onCancel} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition-all flex items-center gap-2">
                         <X size={18} /> Cancel
                     </button>
@@ -135,8 +169,16 @@ export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAr
                 </div>
             </div>
 
-            <div className="mt-6 text-center text-slate-500 text-xs font-medium uppercase tracking-widest">
-                {areas.length} area(s) marked for redaction
+            <div className="mt-6 flex items-center justify-center gap-6">
+                <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                    {areas.length} area(s) marked for redaction
+                </div>
+                {isScanning && (
+                    <div className="flex items-center gap-2 text-amber-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                        <Loader2 size={12} className="animate-spin" />
+                        AI Scan in progress...
+                    </div>
+                )}
             </div>
         </div>
     );

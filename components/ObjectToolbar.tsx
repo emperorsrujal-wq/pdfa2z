@@ -15,7 +15,10 @@ import {
   Underline,
   Minus,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  CheckSquare,
+  StickyNote,
+  List,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -184,6 +187,48 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
             )}
           </div>
         </>
+      )}
+
+      {/* STICKY NOTE SPECIFIC */}
+      {element.type === 'sticky-note' && (
+        <div className="flex border-r border-white/5 pr-1 mr-1">
+          <button
+            className="p-2 bg-white/5 rounded-lg text-amber-400"
+            title="Sticky Note"
+          >
+            <StickyNote size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* FORM ELEMENT SPECIFIC */}
+      {element.type === 'form-check' && (
+        <div className="flex border-r border-white/5 pr-1 mr-1">
+          <button
+            onClick={() => onUpdate(element.id, { isChecked: !element.isChecked })}
+            className={`p-2 rounded-lg transition-all ${element.isChecked ? 'bg-indigo-600 text-white' : 'hover:bg-white/5 text-slate-400'}`}
+            title="Toggle Checkbox"
+          >
+            <CheckSquare size={14} />
+          </button>
+        </div>
+      )}
+
+      {element.type === 'form-select' && (
+        <div className="flex border-r border-white/5 pr-1 mr-1">
+          <button
+            onClick={() => {
+              const options = prompt('Enter options separated by commas:', element.options?.join(', ') || '');
+              if (options !== null) {
+                onUpdate(element.id, { options: options.split(',').map(o => o.trim()) });
+              }
+            }}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400"
+            title="Edit Dropdown Options"
+          >
+            <List size={14} />
+          </button>
+        </div>
       )}
 
       {/* SHAPE/WHITE OUT SPECIFIC */}

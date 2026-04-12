@@ -23,6 +23,7 @@ interface PdfSignerWorkstationProps {
   image: string;
   pageIndex: number;
   totalPages: number;
+  file: File;
   onSave: (elements: EditElement[]) => void;
   onCancel: () => void;
   onNextPage: () => void;
@@ -33,6 +34,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
   image,
   pageIndex,
   totalPages,
+  file,
   onSave,
   onCancel,
   onNextPage,
@@ -86,11 +88,8 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
   const handleAiSmartFind = async () => {
     setIsScanning(true);
     try {
-      // We need the actual file. Assuming it's passed or available. 
-      // For this demo/workstation, we'll simulate the detection if file is missing,
-      // but the logic is there in pdfHelpers.
-      const simulatedFile = new File([], "document.pdf"); 
-      const found = await detectSigningLines(simulatedFile, pageIndex);
+      // Use actual document file for AI detection
+      const found = await detectSigningLines(file, pageIndex);
       
       const newFields: EditElement[] = found.map((area, i) => ({
         id: `ai-field-${i}-${Date.now()}`,
@@ -105,7 +104,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
       }));
 
       setElements([...elements, ...newFields]);
-      alert(`AI detected ${found.length} possible signing areas!`);
+      // alert(`AI detected ${found.length} possible signing areas!`);
     } catch (e) {
       console.error(e);
     } finally {
@@ -241,6 +240,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
                    onSave={(els) => setElements(els)}
                    onCancel={() => {}} // Internal cancel handled differently
                    isEmbedded={true}
+                   file={file}
                  />
               </div>
 

@@ -18,6 +18,7 @@
     "home": {
         "heroTitle": "Outils PDF et IA Professionnels",
         "heroSubtitle": "Entièrement gratuit, côté client et propulsé par l'IA.",
+        "searchPlaceholder": "Rechercher n'importe quel outil (ex: Fusionner, Rédiger, Signer)...",
         "startTool": "Démarrer l'outil",
         "popular": "Populaire",
         "featuredService": "Service Vedette",

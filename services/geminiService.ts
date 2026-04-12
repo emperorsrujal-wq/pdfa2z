@@ -216,6 +216,60 @@ export const generateText = async (prompt: string, systemInstruction?: string): 
   }
 };
 
+/**
+ * Suggests values for form fields based on document context.
+ */
+export const suggestFormValues = async (
+  docText: string,
+  fields: { id: string; label: string; type: string }[]
+): Promise<Record<string, string>> => {
+  const ai = getFreshAi();
+  const prompt = `Based on the following document content, suggest logical values for these form fields:
+Fields: ${JSON.stringify(fields)}
+Document Content: ${docText.substring(0, 10000)}
+
+Return ONLY a JSON object mapping field IDs to suggested values.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: FLASH_MODEL,
+      contents: prompt,
+      config: { responseMimeType: 'application/json' } as any
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (err: any) {
+    console.error("AI Form Suggestion Error:", err);
+    return {};
+  }
+};
+
+/**
+ * Scans document text for PII (Personally Identifiable Information).
+ */
+export const scanForPII = async (docText: string): Promise<string[]> => {
+  const ai = getFreshAi();
+  const prompt = `Analyze the following document text and identify all instances of Personally Identifiable Information (PII).
+Include: Full Names, Social Security Numbers (SSN), Credit Card Numbers, Physical Addresses, Phone Numbers, and Email Addresses.
+
+Document Content: ${docText.substring(0, 5000)}
+
+Return ONLY a JSON array of strings found in the text that should be redacted.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: FLASH_MODEL,
+      contents: prompt,
+      config: { responseMimeType: 'application/json' } as any
+    });
+
+    return JSON.parse(response.text || "[]");
+  } catch (err: any) {
+    console.error("PII Scan Error:", err);
+    return [];
+  }
+};
+
 // ─── VIDEO GENERATION ────────────────────────────────────────────────────────
 export const generateVideo = async (
   prompt: string,

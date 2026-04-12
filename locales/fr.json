@@ -20,6 +20,7 @@
     "home": {
         "heroTitle": "Outils PDF et IA Professionnels",
         "heroSubtitle": "Entièrement gratuit, côté client et propulsé par l'IA.",
+        "searchPlaceholder": "Rechercher un outil (ex: Fusionner, Rédiger, Signer)...",
         "startTool": "Démarrer l'outil",
         "popular": "Populaire",
         "notarizeTitle": "Faites notariser vos documents en 10 minutes. En ligne.",

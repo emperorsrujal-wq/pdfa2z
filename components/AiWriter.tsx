@@ -6,8 +6,16 @@ import { generateText } from '../services/geminiService.ts';
 
 type WriterMode = 'GRAMMAR' | 'SUMMARIZE' | 'PARAPHRASE' | 'EMAIL';
 
-export const AiWriter: React.FC = () => {
-  const [mode, setMode] = React.useState<WriterMode>('GRAMMAR');
+interface AiWriterProps {
+  initialMode?: WriterMode;
+}
+
+export const AiWriter: React.FC<AiWriterProps> = ({ initialMode = 'GRAMMAR' }) => {
+  const [mode, setMode] = React.useState<WriterMode>(initialMode);
+
+  React.useEffect(() => {
+    if (initialMode) setMode(initialMode);
+  }, [initialMode]);
   const [inputText, setInputText] = React.useState('');
   const [outputText, setOutputText] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -30,8 +38,9 @@ export const AiWriter: React.FC = () => {
       const fullPrompt = `${activeTool.prompt}\n\n"${inputText}"`;
       const result = await generateText(fullPrompt, "You are a professional writing assistant.");
       setOutputText(result);
-    } catch (err) {
-      setOutputText("Error generating text. Please try again.");
+    } catch (err: any) {
+      console.error('AI Processing Error:', err);
+      setOutputText("Error generating text: " + (err.message || "Please check your network or try again later."));
     } finally {
       setIsProcessing(false);
     }

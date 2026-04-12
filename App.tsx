@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import { HelmetProvider } from 'react-helmet-async';
 import { Layout } from './components/Layout';
-import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode } from './types';
+import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode, AiWriterMode } from './types';
 import { SEO, generateToolSchema } from './components/SEO';
 import { TOOLS_REGISTRY } from './utils/seoData';
 import { useTranslation } from 'react-i18next';
@@ -17,19 +17,19 @@ const About = React.lazy(() => import('./pages/About').then(m => ({ default: m.A
 const Contact = React.lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
 const Privacy = React.lazy(() => import('./pages/Privacy').then(m => ({ default: m.Privacy })));
 const Terms = React.lazy(() => import('./pages/Terms').then(m => ({ default: m.Terms })));
-const ImageGenerator = React.lazy(() => import('./components/ImageGenerator').then(m => ({ default: m.ImageGenerator })));
-const ImageEditor = React.lazy(() => import('./components/ImageEditor').then(m => ({ default: m.ImageEditor })));
-const PdfSuite = React.lazy(() => import('./components/PdfSuite').then(m => ({ default: m.PdfSuite })));
-const ImageToolkit = React.lazy(() => import('./components/ImageToolkit').then(m => ({ default: m.ImageToolkit })));
-const AiWriter = React.lazy(() => import('./components/AiWriter').then(m => ({ default: m.AiWriter })));
-const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => ({ default: m.VideoSuite })));
+import { ImageGenerator } from './components/ImageGenerator';
+import { ImageEditor } from './components/ImageEditor';
+import { PdfSuite } from './components/PdfSuite';
+import { ImageToolkit } from './components/ImageToolkit';
+import { AiWriter } from './components/AiWriter';
+import { VideoSuite } from './components/VideoSuite';
 const Blog = React.lazy(() => import('./pages/Blog').then(m => ({ default: m.Blog })));
 const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ default: m.BlogPost })));
 import { Breadcrumbs } from './components/Breadcrumbs';
 import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
-const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
-const PDFJourneyBuilder = React.lazy(() => import('./components/PDFJourneyBuilder').then(m => ({ default: m.PDFJourneyBuilder })));
+import { NotarizeApp } from './pages/NotarizeApp';
+import { PDFJourneyBuilder } from './components/PDFJourneyBuilder';
 
 export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -49,6 +49,7 @@ const AppContent: React.FC = () => {
   const [activePdfMode, setActivePdfMode] = React.useState<PdfToolMode>('MENU');
   const [activeImageMode, setActiveImageMode] = React.useState<ImageToolMode>('MENU');
   const [activeVideoMode, setActiveVideoMode] = React.useState<VideoToolMode>('DOWNLOAD');
+  const [activeAiMode, setActiveAiMode] = React.useState<AiWriterMode>('GRAMMAR');
 
   const pathParts = React.useMemo(() => location.pathname.split('/').filter(Boolean), [location.pathname]);
   
@@ -114,6 +115,8 @@ const AppContent: React.FC = () => {
         setActiveImageMode(toolEntry.mode as ImageToolMode);
       } else if (toolEntry.type === ToolType.VIDEO_SUITE && toolEntry.mode) {
         setActiveVideoMode(toolEntry.mode as VideoToolMode);
+      } else if (toolEntry.type === ToolType.AI_WRITER && toolEntry.mode) {
+        setActiveAiMode(toolEntry.mode as AiWriterMode);
       }
       return;
     }
@@ -132,6 +135,15 @@ const AppContent: React.FC = () => {
     if (slug === 'notarize') {
       setActiveTool(ToolType.NOTARIZE);
       return;
+    }
+
+    if (slug === 'meme-generator') {
+      const entry = TOOLS_REGISTRY['meme-maker'];
+      if (entry) {
+        setActiveTool(entry.type);
+        setActiveImageMode('MEME');
+        return;
+      }
     }
 
     if (slug === 'journey-builder') {
@@ -180,7 +192,7 @@ const AppContent: React.FC = () => {
       case ToolType.VIDEO_SUITE:
         return <VideoSuite initialMode={activeVideoMode} />;
       case ToolType.AI_WRITER:
-        return <AiWriter />;
+        return <AiWriter initialMode={activeAiMode} />;
       case ToolType.JOURNEY_BUILDER:
         return <PDFJourneyBuilder />;
       case ToolType.INFO_PAGE:
@@ -208,9 +220,7 @@ const AppContent: React.FC = () => {
 
       {/* Notarize page has its own full-page layout — render outside site shell */}
       {activeTool === ToolType.NOTARIZE ? (
-        <React.Suspense fallback={<ToolLoader />}>
-          <NotarizeApp subPath={notarizeSubPath} />
-        </React.Suspense>
+        <NotarizeApp subPath={notarizeSubPath} />
       ) : (
         <Layout currentLang={lang}>
           <div className="py-8">

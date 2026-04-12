@@ -1,16 +1,16 @@
 import * as React from 'react';
 
-import { Layers, Scissors, Image as ImageIcon, Upload, Download, File as FileIcon, Trash2, ArrowRight, CheckCircle2, ArrowLeft, Zap, FileImage, RotateCw, FileX, FileText, Hash, Lock, Unlock, FileJson, FileType, Code, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, FileSpreadsheet, FileCode, Sliders, Target, PenTool, GripVertical, ChevronLeft, ChevronRight, RotateCcw, ShieldAlert, Link, Book, Mail } from 'lucide-react';
+import { Upload, Download, ArrowRight, ArrowLeft, File as FileIcon, Scissors, Layers, PenTool, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, Hash, FileSpreadsheet, FileCode, RotateCw, FileX, FileText, FileImage, Lock, Unlock, Mail, Trash2, Sliders, Target, CheckCircle2, Copy, Download as DownloadIcon, FileType, Book, Link, Package, Printer, Globe, Info, ChevronLeft, ChevronRight, Zap, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
 import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea } from '../utils/pdfHelpers.ts';
 import { performOcrOnImages } from '../services/ocrService.ts';
-import { Copy, Download as DownloadIcon } from 'lucide-react';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
-import { PdfSignUI } from './PdfSignUI.tsx';
-import { Redactor } from './Redactor.tsx';
-import { PdfEditorUI } from './PdfEditorUI.tsx';
+import { PdfSignerWorkstation } from './PdfSignerWorkstation';
+import { Redactor } from './Redactor';
+import { PdfEditorUI } from './PdfEditorUI';
+import { BatchProcessor } from './BatchProcessor';
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -288,7 +288,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       } else if (mode === 'URL_TO_PDF') {
         // This is handled in UI (print instructions), no process needed really
         setSuccessMsg("Use Print > Save as PDF in your browser.");
-      } else if (mode === 'PPT_TO_PDF' || mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF' || mode === 'OUTLOOK_TO_PDF') {
+      } else if (mode === 'PPT_TO_PDF' || mode === 'WORD_TO_PDF' || mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF' || mode === 'OUTLOOK_TO_PDF') {
         // Placeholder for client-side limitations
         setError("This conversion requires a backend server. We are working on it!");
       }
@@ -420,6 +420,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="EPUB to PDF" description="Convert EPUB ebooks to PDF format." icon={<Book />} onClick={() => setMode('EPUB_TO_PDF')} colorClass="bg-yellow-600 text-yellow-600" />
           <ToolCard title="MOBI to PDF" description="Convert MOBI ebooks to PDF format." icon={<Book />} onClick={() => setMode('MOBI_TO_PDF')} colorClass="bg-yellow-500 text-yellow-500" />
           <ToolCard title="Outlook to PDF" description="Convert MSG/EML email files to PDF." icon={<Mail />} onClick={() => setMode('OUTLOOK_TO_PDF')} colorClass="bg-cyan-500 text-cyan-500" />
+          <ToolCard title="Batch Process" description="Bulk merge, split, and compress files." icon={<Package />} onClick={() => setMode('BATCH')} colorClass="bg-indigo-600 border-2 border-indigo-400 shadow-indigo-100 shadow-xl" />
         </div>
       </div>
     );
@@ -448,6 +449,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'REVERSE': return { icon: <ArrowLeft />, title: 'Reverse PDF' };
       case 'EXTRACT_IMAGES': return { icon: <FileImage />, title: 'Extract Images' };
       case 'REDACT': return { icon: <EyeOff />, title: 'Redact PDF' };
+      case 'BATCH': return { icon: <Package />, title: 'Batch Workspace' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
@@ -492,6 +494,33 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   />
                   <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4">Convert to PDF</Button>
                 </div>
+              </div>
+            )}
+
+            {['PPT_TO_PDF', 'EPUB_TO_PDF', 'MOBI_TO_PDF', 'OUTLOOK_TO_PDF', 'AZW3_TO_PDF'].includes(mode) && files.length > 0 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-blue-900">
+                  <h3 className="font-bold mb-2 flex items-center gap-2">
+                    <Info size={18} /> Direct Conversion Limited
+                  </h3>
+                  <p className="text-sm opacity-90 leading-relaxed">
+                    Converting <strong>{mode.split('_')[0]}</strong> files permanently to PDF locally in the browser is challenging. We are building a secure server-side engine for this.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-blue-100">
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Pro Tip:</p>
+                    <p className="text-sm">Open your file and use <strong>File {" > "} Print {" > "} Save as PDF</strong> for a high-quality result right now.</p>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border flex justify-between items-center shadow-sm opacity-50">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><FileIcon size={20} /></div>
+                    <span className="font-bold text-sm truncate text-slate-700">{files[0].name}</span>
+                  </div>
+                  <button onClick={reset}><Trash2 size={18} className="text-slate-300" /></button>
+                </div>
+                <Button disabled className="w-full py-6 bg-slate-400 opacity-50 cursor-not-allowed uppercase font-black tracking-widest">
+                  Server Enging Coming Soon
+                </Button>
               </div>
             )}
 
@@ -593,7 +622,16 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 </div>
               </div>
             ) : mode === 'SIGN' ? (
-              <PdfSignUI files={files} />
+              <PdfSignerWorkstation 
+                file={files[0]} 
+                image={resultImages[0] || ''} 
+                pageIndex={0} 
+                totalPages={resultImages.length} 
+                onSave={() => {}} 
+                onCancel={reset}
+                onNextPage={() => {}}
+                onPrevPage={() => {}}
+              />
             ) : mode === 'REDACT' ? (
               <div className="space-y-6 animate-fade-in w-full">
                 {resultImages.length === 0 ? (
@@ -646,6 +684,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     existingAreas={redactionAreas.filter(a => a.pageIndex === activeRedactPage)}
                     onSave={(areas) => handleSaveRedactions(activeRedactPage, areas)}
                     onCancel={() => setActiveRedactPage(null)}
+                    file={files[0]}
                   />
                 )}
               </div>
@@ -709,6 +748,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
               </div>
             ) : mode === 'EDIT' ? (
               <PdfEditorUI file={files[0]} onCancel={reset} />
+            ) : mode === 'BATCH' ? (
+              <BatchProcessor onCancel={reset} />
             ) : (
               <>
                 {/* GENERIC UI FOR OTHER TOOLS */}

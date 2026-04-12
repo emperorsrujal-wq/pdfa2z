@@ -28,5 +28,5 @@ export const FUNCTIONS_BASE_URL =
   import.meta.env.VITE_FUNCTIONS_URL ||
   `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net/api`;
 
-// Demo mode: active when no real Firebase API key is provided
-export const DEMO_MODE = !import.meta.env.VITE_FIREBASE_API_KEY;
+// Demo mode: active when no real Firebase API key is provided or it's a placeholder
+export const DEMO_MODE = !import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY.includes('PLACEHOLDER');

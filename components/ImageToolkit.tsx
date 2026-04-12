@@ -63,6 +63,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [referencePreview, setReferencePreview] = React.useState<string | null>(null);
   const [magicInstructions, setMagicInstructions] = React.useState('');
   const [magicMode, setMagicMode] = React.useState<'GENERAL' | 'FACE_SWAP' | 'ID_EDIT'>('GENERAL');
+  const [splitGrid, setSplitGrid] = React.useState({ rows: 2, cols: 2 });
+  const [processedUrls, setProcessedUrls] = React.useState<string[]>([]);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -85,6 +87,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setReferenceFile(null);
     setReferencePreview(null);
     setMagicInstructions('');
+    setProcessedUrls([]);
+    setSplitGrid({ rows: 2, cols: 2 });
   };
 
 
@@ -123,8 +127,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           canvas.width = w;
           canvas.height = h;
           ctx.drawImage(img, 0, 0, w, h);
-        }
-        else if (mode === 'ROTATE') {
+        } else if (mode === 'ROTATE') {
           if (rotateAngle % 180 !== 0) {
             canvas.width = h;
             canvas.height = w;
@@ -271,14 +274,44 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     }
   };
 
+  const splitImageLogic = async () => {
+    return new Promise<string[]>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const results: string[] = [];
+        const pieceWidth = img.width / splitGrid.cols;
+        const pieceHeight = img.height / splitGrid.rows;
+
+        for (let r = 0; r < splitGrid.rows; r++) {
+          for (let c = 0; c < splitGrid.cols; c++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = pieceWidth;
+            canvas.height = pieceHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, c * pieceWidth, r * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
+              results.push(canvas.toDataURL(files[0].type || 'image/png'));
+            }
+          }
+        }
+        resolve(results);
+      };
+      img.onerror = reject;
+      img.src = previews[0];
+    });
+  };
+
   const handleProcess = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
     setError(null);
     try {
-      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT'].includes(mode)) {
+      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT', 'BLUR_IMG', 'SHARPEN', 'BLACK_WHITE'].includes(mode)) {
         const res = await processClientSide();
         setProcessedUrl(res);
+      } else if (mode === 'SPLIT_IMAGE') {
+        const results = await splitImageLogic();
+        setProcessedUrls(results);
       } else {
         // AI Modes
         const base64 = await fileToBase64(files[0]);
@@ -529,8 +562,6 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <ToolCard title="Image Comparison" description="Compare two images side-by-side with slider." icon={<ArrowRight />} onClick={() => setMode('COMPARE')} colorClass="bg-sky-600 text-sky-600" />
           <ToolCard title="Face Blur" description="Automatically detect and blur faces for privacy." icon={<UserSquare2 />} onClick={() => setMode('FACE_BLUR')} colorClass="bg-gray-700 text-gray-700" />
 
-          <ToolCard title="Face Blur" description="Automatically detect and blur faces for privacy." icon={<UserSquare2 />} onClick={() => setMode('FACE_BLUR')} colorClass="bg-gray-700 text-gray-700" />
-
           <ToolCard title="Flip Image" description="Mirror images horizontally or vertically." icon={<FlipHorizontal />} onClick={() => setMode('FLIP')} colorClass="bg-indigo-700 text-indigo-700" />
           <ToolCard title="Pixelate Image" description="Add pixelation effect to anonymize images." icon={<Grid />} onClick={() => setMode('PIXELATE')} colorClass="bg-lime-700 text-lime-700" />
           <ToolCard title="Invert Colors" description="Create negative effect by inverting colors." icon={<Droplet />} onClick={() => setMode('INVERT')} colorClass="bg-fuchsia-700 text-fuchsia-700" />
@@ -559,16 +590,9 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
           <h1 className="text-2xl font-black flex items-center gap-3">Base64 Converter</h1>
         </div>
-        {/* We need to import Base64Converter or inline it. Since we created a file, let's use it. 
-                But wait, I need to add the import to the top of the file first. 
-                For now, I'll assume I'll add the import in a separate `replace_file_content` call or 
-                I'll leave this as a placeholder to prompt me to add the import.
-            */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200">
-          <Base64Converter />
-        </div>
+        <Base64Converter />
       </div>
-    )
+    );
   }
 
   return (
@@ -796,6 +820,23 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             <p className="text-sm text-slate-600">Click process to invert colors.</p>
           )}
 
+          {/* Split Image Controls */}
+          {mode === 'SPLIT_IMAGE' && (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">Split your image into several pieces (grid).</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-bold">Rows</label>
+                  <input type="number" min="1" max="10" value={splitGrid.rows} onChange={e => setSplitGrid({ ...splitGrid, rows: parseInt(e.target.value) || 1 })} className="w-full p-3 border rounded-xl" />
+                </div>
+                <div>
+                  <label className="text-sm font-bold">Columns</label>
+                  <input type="number" min="1" max="10" value={splitGrid.cols} onChange={e => setSplitGrid({ ...splitGrid, cols: parseInt(e.target.value) || 1 })} className="w-full p-3 border rounded-xl" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* QR Code and YT Inputs */}
 
           {/* QR Code and YT Inputs */}
@@ -884,7 +925,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           )}
 
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
-            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
+            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT', 'SPLIT_IMAGE'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
         </div>
@@ -921,6 +962,38 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
                   </div>
                 </div>
               </div>
+            </div>
+          ) : processedUrls.length > 0 ? (
+            <div className="flex flex-col h-full w-full">
+              <div className="grid grid-cols-3 gap-4 overflow-y-auto flex-1 p-2">
+                {processedUrls.map((url, i) => (
+                  <div key={i} className="aspect-square relative group bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                    <img src={url} className="w-full h-full object-contain" />
+                    <a href={url} download={`split-${i + 1}.png`} className="absolute bottom-1 right-1 p-1 bg-blue-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Download size={14} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+              <Button
+                onClick={async () => {
+                  const zip = new JSZip();
+                  processedUrls.forEach((url, i) => {
+                    const base64Data = url.split(',')[1];
+                    zip.file(`image-part-${i + 1}.png`, base64Data, { base64: true });
+                  });
+                  const content = await zip.generateAsync({ type: 'blob' });
+                  const zipUrl = URL.createObjectURL(content);
+                  const a = document.createElement('a');
+                  a.href = zipUrl;
+                  a.download = `split-images-${Date.now()}.zip`;
+                  a.click();
+                }}
+                className="mt-4 bg-blue-600"
+                icon={<Download size={18} />}
+              >
+                Download All (ZIP)
+              </Button>
             </div>
           ) : processedUrl ? (
             <>

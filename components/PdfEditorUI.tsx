@@ -185,6 +185,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
              onCancel={onCancel}
              isEmbedded={true}
              textItems={textItems}
+             file={file}
            />
         </main>
       </div>
