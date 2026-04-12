@@ -6,7 +6,9 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { subscribeToUserSessions, NotarizationSession } from '../services/notarizeService';
-import { getUserDocuments, UserDocument } from '../services/documentService';
+import { getUserDocuments as getNotaryDocs } from '../services/notarizeService';
+import { getLibraryDocuments } from '../services/documentService';
+import { UserDocument } from '../types';
 import { DEMO_MODE } from '../config/firebase';
 import { formatFileSize } from '../services/notarizeService';
 import { Link } from 'react-router-dom';
@@ -27,7 +29,7 @@ export const Dashboard: React.FC = () => {
 
     // Load generic Documents
     const loadDocs = async () => {
-      const userDocs = await getUserDocuments();
+      const userDocs = await getLibraryDocuments();
       setDocs(userDocs);
       setLoading(false);
     };

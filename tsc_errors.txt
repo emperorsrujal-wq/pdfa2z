@@ -1,0 +1,1 @@
+pages/Dashboard.tsx(9,28): error TS2724: '"../services/documentService"' has no exported member named 'UserDocument'. Did you mean 'getUserDocuments'?

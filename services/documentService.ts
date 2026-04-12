@@ -98,7 +98,7 @@ export async function uploadToLibrary(
   };
 }
 
-export async function getUserDocuments(): Promise<UserDocument[]> {
+export async function getLibraryDocuments(): Promise<UserDocument[]> {
   const user = getCurrentUser();
   if (DEMO_MODE) return getDemoDocs();
   if (!user) return [];

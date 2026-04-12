@@ -46,7 +46,7 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
-  const [activeTool, setActiveTool] = React.useState<ToolType>(ToolType.DASHBOARD);
+  const [activeTool, setActiveTool] = React.useState<ToolType>(ToolType.HOME);
   const [activePdfMode, setActivePdfMode] = React.useState<PdfToolMode>('MENU');
   const [activeImageMode, setActiveImageMode] = React.useState<ImageToolMode>('MENU');
   const [activeVideoMode, setActiveVideoMode] = React.useState<VideoToolMode>('DOWNLOAD');
@@ -102,7 +102,7 @@ const AppContent: React.FC = () => {
 
   React.useEffect(() => {
     if (slug === '') {
-      setActiveTool(ToolType.DASHBOARD);
+      setActiveTool(ToolType.HOME);
       return;
     }
 
@@ -186,6 +186,7 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTool) {
+      case ToolType.HOME: return <Home />;
       case ToolType.NOTARIZE: return <NotarizeApp subPath={notarizeSubPath} />;
       case ToolType.DASHBOARD: return <Dashboard />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
