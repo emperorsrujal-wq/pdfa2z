@@ -5,6 +5,9 @@ import { getVisibleFields, ConditionGroup } from "../utils/journeyConditionals";
 import { JourneyFileUpload, FileData } from "./JourneyFileUpload";
 import { JourneyReviewStep } from "./JourneyReviewStep";
 import { BrandConfig, DEFAULT_BRAND_CONFIG, mergeBrandConfig, loadBrandConfig, applyBrandConfig } from "../utils/journeyBranding";
+import { generateJourneyWorkflow } from "../services/geminiService";
+import { extractTextFromPdf } from "../utils/pdfHelpers";
+import { Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, Layout as LayoutIcon, Type, CheckCircle } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +29,7 @@ interface Field {
 interface Step {
   id: string;
   title: string;
+  description?: string; // Optional intro text for the step
   fields: Field[];
 }
 
@@ -387,6 +391,65 @@ const CSS = `
     border-color: rgba(245,158,11,0.5) !important;
     box-shadow: 0 0 0 3px rgba(245,158,11,0.08) !important;
   }
+
+  /* ─── DESIGNER STYLES ───────────────────────────────── */
+  .jb-editor-layout {
+    display: flex; gap: 24px; width: 100%; max-width: 1400px; height: calc(100vh - 120px);
+    animation: jb-fadeIn 0.5s ease;
+  }
+  @keyframes jb-fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .jb-sidebar {
+    width: 320px; background: rgba(10,15,28,0.9); border: 1px solid rgba(245,158,11,0.1);
+    border-radius: 20px; display: flex; flex-direction: column; overflow: hidden;
+    backdrop-blur: 10px;
+  }
+  .jb-sidebar-header {
+    padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .jb-sidebar-content { flex: 1; overflow-y: auto; padding: 12px; }
+  .jb-sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.05); }
+
+  .jb-side-item {
+    width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent;
+    border: 1px solid transparent; color: #94a3b8; text-align: left;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s;
+    margin-bottom: 4px;
+  }
+  .jb-side-item:hover { background: rgba(255,255,255,0.03); color: #e2e8f0; }
+  .jb-side-item.active { 
+    background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #f59e0b;
+    box-shadow: inset 0 0 12px rgba(245,158,11,0.03);
+  }
+
+  .jb-preview-pane {
+    flex: 1; display: flex; flex-direction: column; gap: 20px;
+  }
+  .jb-toolbar {
+    background: rgba(10,15,28,0.8); backdrop-blur: 12px; padding: 12px 24px;
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .jb-canvas {
+    flex: 1; background: rgba(10,15,28,0.5); border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.03); overflow-y: auto;
+    display: flex; justify-content: center; padding: 40px;
+  }
+
+  .jb-field-edit-card {
+    background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px; padding: 20px; margin-top: 12px;
+  }
+
+  .jb-toggle-group {
+    display: flex; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 10px;
+  }
+  .jb-toggle-btn {
+    padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; border: none; background: transparent; color: #64748b;
+  }
+  .jb-toggle-btn.active { background: #f59e0b; color: #000; }
 `;
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -411,6 +474,11 @@ export const PDFJourneyBuilder: React.FC = () => {
     const saved = loadBrandConfig();
     return mergeBrandConfig(saved || undefined);
   });
+  const [isEditorMode, setIsEditorMode] = useState(true);
+  const [editorTab, setEditorTab] = useState<'steps' | 'settings'>('steps');
+  const [activeStepId, setActiveStepId] = useState<string | null>(null);
+  const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const [isAutoBuilding, setIsAutoBuilding] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load PDF.js + pdf-lib
@@ -496,6 +564,29 @@ export const PDFJourneyBuilder: React.FC = () => {
       console.error(e);
       setError("Could not parse this PDF. Try a different file.");
       setStage("upload");
+    }
+  };
+
+  const handleMagicBuild = async () => {
+    if (!pdfBytes) return;
+    setIsAutoBuilding(true);
+    setError("");
+
+    try {
+      const docText = await extractTextFromPdf(new File([pdfBytes], fileName));
+      const allFields = steps.flatMap(s => s.fields);
+      const result = await generateJourneyWorkflow(docText, allFields);
+      
+      if (result && result.steps && result.steps.length > 0) {
+        setSteps(result.steps);
+        setCurrentStep(0);
+        setActiveStepId(result.steps[0].id);
+      }
+    } catch (e) {
+      console.error(e);
+      setError("AI was unable to re-organize this document. Please try manual editing.");
+    } finally {
+      setIsAutoBuilding(false);
     }
   };
 
@@ -604,6 +695,58 @@ export const PDFJourneyBuilder: React.FC = () => {
     setNoFields(false);
   };
 
+  const removeFieldFromStep = (stepId: string, fieldId: string) => {
+    setSteps(p => p.map(s => {
+      if (s.id !== stepId) return s;
+      return { ...s, fields: s.fields.filter(f => f.id !== fieldId) };
+    }));
+  };
+
+  const updateStep = (id: string, updates: Partial<Step>) => {
+    setSteps(p => p.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const removeStep = (id: string) => {
+    setSteps(p => p.filter(s => s.id !== id));
+    if (activeStepId === id) setActiveStepId(null);
+  };
+
+  const addStep = () => {
+    const id = `s${Date.now()}`;
+    const newStep: Step = { id, title: "New Step", fields: [] };
+    setSteps(p => [...p, newStep]);
+    setActiveStepId(id);
+  };
+
+  const updateField = (stepId: string, fieldId: string, updates: Partial<Field>) => {
+    setSteps(p => p.map(s => {
+      if (s.id !== stepId) return s;
+      return {
+        ...s,
+        fields: s.fields.map(f => f.id === fieldId ? { ...f, ...updates } : f)
+      };
+    }));
+  };
+
+  const moveField = (fromStepId: string, toStepId: string, fieldId: string) => {
+    setSteps(p => {
+      const fromStep = p.find(s => s.id === fromStepId);
+      const toStep = p.find(s => s.id === toStepId);
+      const field = fromStep?.fields.find(f => f.id === fieldId);
+      if (!fromStep || !toStep || !field) return p;
+
+      return p.map(s => {
+        if (s.id === fromStepId) {
+          return { ...s, fields: s.fields.filter(f => f.id !== fieldId) };
+        }
+        if (s.id === toStepId) {
+          return { ...s, fields: [...s.fields, field] };
+        }
+        return s;
+      });
+    });
+  };
+
   const totalFields = steps.reduce((a, s) => a + s.fields.length, 0);
 
   // ─── Upload Stage ──────────────────────────────────────────────────────────
@@ -688,66 +831,219 @@ export const PDFJourneyBuilder: React.FC = () => {
       </>
     );
 
-  // ─── Configure Stage ───────────────────────────────────────────────────────
-  if (stage === "configure")
+  // ─── Designer Stage ───────────────────────────────────────────────────────
+  if (stage === "configure") {
+    const activeStep = steps.find(s => s.id === activeStepId) || steps[0];
+    
     return (
       <>
         <style>{CSS}</style>
-        <div className="jb-root">
+        <div className="jb-root" style={{ padding: 40 }}>
           <div className="jb-glow-tl" />
           <div className="jb-glow-br" />
-          <div className="jb-card">
-            <div className="jb-brand">
-              <span className="jb-brand-pip" />
-              pdfa2z · Journey Builder
-            </div>
-            <h1 className="jb-title">
-              Journey <em>Ready</em>
-            </h1>
-            <p className="jb-sub">
-              {noFields ? (
-                <>
-                  No fillable fields detected in <strong>{fileName}</strong>. Using a default signature journey.
-                </>
-              ) : (
-                <>
-                  Detected <strong>{totalFields} fields</strong> in <strong>{fileName}</strong> — organized into{" "}
-                  <strong>
-                    {steps.length} step{steps.length !== 1 ? "s" : ""}.
-                  </strong>
-                </>
-              )}
-            </p>
-            <div className="jb-summary-list">
-              {steps.map((s, i) => (
-                <div className="jb-summary-row" key={s.id}>
-                  <div className="jb-summary-row-top">
-                    <span className="jb-summary-step-num">Step {i + 1}</span>
-                    <span className="jb-summary-step-name">{s.title}</span>
-                    <span className="jb-badge">
-                      {s.fields.length} {s.fields.length === 1 ? "field" : "fields"}
-                    </span>
-                  </div>
-                  <div className="jb-summary-fields">{s.fields.map((f) => f.label).join(" · ")}</div>
+          
+          <div className="jb-editor-layout">
+            {/* Sidebar */}
+            <div className="jb-sidebar">
+              <div className="jb-sidebar-header" style={{ padding: '12px 16px' }}>
+                <div className="jb-toggle-group" style={{ width: '100%' }}>
+                  <button 
+                    className={`jb-toggle-btn${editorTab === 'steps' ? " active" : ""}`} 
+                    onClick={() => setEditorTab('steps')}
+                    style={{ flex: 1 }}
+                  >
+                    Steps
+                  </button>
+                  <button 
+                    className={`jb-toggle-btn${editorTab === 'settings' ? " active" : ""}`} 
+                    onClick={() => setEditorTab('settings')}
+                    style={{ flex: 1 }}
+                  >
+                    Branding
+                  </button>
                 </div>
-              ))}
+              </div>
+              
+              <div className="jb-sidebar-content">
+                {editorTab === 'steps' ? (
+                  <>
+                    <div style={{ padding: '8px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>WORKFLOW STEPS</span>
+                      <button onClick={addStep} style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer' }}>
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {steps.map((s, idx) => (
+                      <button 
+                        key={s.id} 
+                        className={`jb-side-item${activeStepId === s.id || (!activeStepId && idx === 0) ? " active" : ""}`}
+                        onClick={() => setActiveStepId(s.id)}
+                      >
+                        <LayoutIcon size={16} />
+                        <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                        <span style={{ fontSize: 10, opacity: 0.5 }}>{s.fields.length}</span>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ padding: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: 'block', marginBottom: 12 }}>IDENTITY & STYLE</span>
+                    
+                    <div className="jb-field">
+                      <label style={{ fontSize: 11 }}>Company Name</label>
+                      <input 
+                        type="text" 
+                        value={brandConfig.companyName || ""} 
+                        onChange={(e) => setBrandConfig(p => ({ ...p, companyName: e.target.value }))}
+                        className="brand-input" 
+                        style={{ fontSize: 13, padding: '8px 12px' }}
+                      />
+                    </div>
+
+                    <div className="jb-field">
+                      <label style={{ fontSize: 11 }}>Primary Color</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input 
+                          type="color" 
+                          value={brandConfig.primaryColor || "#f59e0b"} 
+                          onChange={(e) => setBrandConfig(p => ({ ...p, primaryColor: e.target.value }))}
+                          style={{ width: 32, height: 32, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                        />
+                        <input 
+                          type="text" 
+                          value={brandConfig.primaryColor || ""} 
+                          onChange={(e) => setBrandConfig(p => ({ ...p, primaryColor: e.target.value }))}
+                          className="brand-input" 
+                          style={{ fontSize: 12, padding: '4px 8px', flex: 1 }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="jb-field">
+                      <label style={{ fontSize: 11 }}>Logo URL</label>
+                      <input 
+                        type="text" 
+                        value={brandConfig.logoUrl || ""} 
+                        onChange={(e) => setBrandConfig(p => ({ ...p, logoUrl: e.target.value }))}
+                        className="brand-input" 
+                        style={{ fontSize: 13, padding: '8px 12px' }}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="jb-sidebar-footer">
+                <button onClick={handleMagicBuild} disabled={isAutoBuilding} className="jb-btn jb-btn-ghost" style={{ fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <Sparkles size={14} />
+                  {isAutoBuilding ? "Analyzing..." : "AI Magic Build"}
+                </button>
+              </div>
             </div>
-            <button
-              className="jb-btn jb-btn-gold"
-              onClick={() => {
-                setCurrentStep(0);
-                setStage("wizard");
-              }}
-            >
-              Start Journey →
-            </button>
-            <button className="jb-btn jb-btn-ghost" onClick={reset}>
-              ← Upload Different PDF
-            </button>
+
+            {/* Preview/Canvas Pane */}
+            <div className="jb-preview-pane">
+              <div className="jb-toolbar">
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div className="jb-toggle-group">
+                    <button className={`jb-toggle-btn${isEditorMode ? " active" : ""}`} onClick={() => setIsEditorMode(true)}>Design</button>
+                    <button className={`jb-toggle-btn${!isEditorMode ? " active" : ""}`} onClick={() => setIsEditorMode(false)}>Preview</button>
+                  </div>
+                  <span style={{ color: "#475569", fontSize: 13 }}>Editing: <strong>{activeStep?.title}</strong></span>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="jb-btn jb-btn-ghost" onClick={reset} style={{ padding: "8px 16px", fontSize: 13 }}>Reset</button>
+                  <button className="jb-btn jb-btn-gold" onClick={() => { setCurrentStep(0); setStage("wizard"); }} style={{ padding: "8px 24px", fontSize: 13 }}>Go Live →</button>
+                </div>
+              </div>
+
+              <div className="jb-canvas">
+                <div className="jb-card" style={{ maxWidth: 640, margin: 0, animation: "none" }}>
+                  {isEditorMode ? (
+                    <div>
+                      <div style={{ marginBottom: 24 }}>
+                        <label className="jb-step-num">Step Title</label>
+                        <input 
+                          type="text" 
+                          value={activeStep?.title || ""} 
+                          onChange={(e) => updateStep(activeStep!.id, { title: e.target.value })}
+                          className="jb-title-input"
+                          style={{ background: "transparent", border: "none", borderBottom: "2px solid rgba(245,158,11,0.2)", width: "100%", fontSize: 24, fontWeight: 800, color: "#fff", padding: "8px 0", outline: "none" }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: 24 }}>
+                        <label className="jb-step-num">Step Description (Explainer Intro)</label>
+                        <textarea 
+                          value={activeStep?.description || ""} 
+                          onChange={(e) => updateStep(activeStep!.id, { description: e.target.value })}
+                          style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px", width: "100%", color: "#94a3b8", fontSize: 13, minHeight: 80, outline: "none" }}
+                          placeholder="Guide your clients with a warm introduction for this step..."
+                        />
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {activeStep?.fields.map((f) => (
+                          <div key={f.id} className="jb-field-edit-card" style={{ borderLeft: activeFieldId === f.id ? "3px solid #f59e0b" : "1px solid rgba(255,255,255,0.05)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <Type size={14} style={{ color: "#64748b" }} />
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>{f.name}</span>
+                              </div>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <button className="jb-btn-icon" onClick={() => removeFieldFromStep(activeStep.id, f.id)}><Trash2 size={14} /></button>
+                              </div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={f.label} 
+                              onChange={(e) => updateField(activeStep.id, f.id, { label: e.target.value })}
+                              style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 12px", width: "100%", color: "#fff", marginBottom: 8 }}
+                              placeholder="Display Label"
+                            />
+                            <textarea 
+                              value={f.helpText || ""} 
+                              onChange={(e) => updateField(activeStep.id, f.id, { helpText: e.target.value })}
+                              style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 12px", width: "100%", color: "#94a3b8", fontSize: 12, minHeight: 60 }}
+                              placeholder="Help text for client..."
+                            />
+                          </div>
+                        ))}
+                        {activeStep?.fields.length === 0 && (
+                          <div style={{ padding: 40, textAlign: "center", border: "2px dashed rgba(255,255,255,0.05)", borderRadius: 16, color: "#475569" }}>
+                            No fields in this step. Drag fields here or add from the list.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ animation: "jb-fadeIn 0.3s ease" }}>
+                      <div className="jb-pills">
+                        {steps.map((_, i) => (
+                          <div key={i} className={`jb-pill${i === steps.indexOf(activeStep!) ? " active" : ""}`} />
+                        ))}
+                      </div>
+                      <div className="jb-step-meta">
+                        <div className="jb-step-num">Step {steps.indexOf(activeStep!) + 1} of {steps.length}</div>
+                        <div className="jb-step-title">{activeStep?.title}</div>
+                      </div>
+                      {activeStep?.fields.map((field) => (
+                        <div className="jb-field" key={field.id}>
+                          <label>{field.label} {field.required && "*"}</label>
+                          <FieldInput field={field} value={formData[field.id]} onChange={() => {}} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </>
     );
+  }
 
   // ─── Wizard Stage ──────────────────────────────────────────────────────────
   if (stage === "wizard") {
@@ -772,13 +1068,28 @@ export const PDFJourneyBuilder: React.FC = () => {
           <div className="jb-glow-tl" />
           <div className="jb-glow-br" />
           <div className="jb-card">
-            <div className="jb-brand">
-              <span className="jb-brand-pip" />
-              pdfa2z · Journey Builder
+            {/* Progress Bar */}
+            <div className="jb-progress-bar-wrap">
+              <div 
+                className="jb-progress-bar-fill" 
+                style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }} 
+              />
             </div>
 
-            {/* Step progress pills */}
-            <div className="jb-pills">
+            <div className="jb-brand">
+              <span className="jb-brand-pip" />
+              {brandConfig.companyName || "pdfa2z"} · Journey
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <div className="jb-step-num" style={{ margin: 0 }}>Step {currentStep + 1} of {steps.length}</div>
+              <div style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
+                ⌛ ~{Math.max(1, Math.ceil((steps.length - currentStep) * 0.5))} min left
+              </div>
+            </div>
+
+            {/* Step progress pills - keeping them as secondary subtle indicators */}
+            <div className="jb-pills" style={{ marginBottom: 20 }}>
               {steps.map((_, i) => (
                 <div key={i} className={`jb-pill${i < currentStep ? " done" : i === currentStep ? " active" : ""}`} />
               ))}
@@ -790,6 +1101,11 @@ export const PDFJourneyBuilder: React.FC = () => {
                 Step {currentStep + 1} of {steps.length}
               </div>
               <div className="jb-step-title">{step.title}</div>
+              {step.description && (
+                <p className="jb-sub" style={{ marginTop: 12, marginBottom: 0, fontSize: 14, opacity: 0.8, lineHeight: 1.5 }}>
+                  {step.description}
+                </p>
+              )}
             </div>
 
             {/* Fields */}

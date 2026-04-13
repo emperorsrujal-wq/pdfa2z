@@ -2,6 +2,7 @@
 // @google/genai guidelines: Use GoogleGenAI from @google/genai
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AspectRatio } from "../types.ts";
+import { JOURNEY_WORKFLOW_PROMPT } from "../utils/JourneyAIPrompt";
 
 /**
  * Retrieves the Gemini API key from environment or local storage.
@@ -355,6 +356,35 @@ export class PdfChatService {
     }
   }
 }
+
+// ─── JOURNEY WORKFLOW GENERATION ─────────────────────────────────────────────
+export const generateJourneyWorkflow = async (
+  docText: string,
+  fields: { id: string; label: string; type: string }[]
+): Promise<{ steps: any[] }> => {
+  const ai = getFreshAi();
+  
+  const prompt = JOURNEY_WORKFLOW_PROMPT
+    .replace('{{FIELDS_JSON}}', JSON.stringify(fields))
+    .replace('{{DOC_TEXT}}', docText.substring(0, 8000));
+
+  try {
+    const response = await ai.models.generateContent({
+      model: FLASH_MODEL,
+      contents: prompt,
+      config: { 
+        responseMimeType: 'application/json',
+        temperature: 0.2
+      } as any
+    });
+
+    const result = JSON.parse(response.text || '{"steps": []}');
+    return result;
+  } catch (err: any) {
+    console.error("AI Journey Workflow Error:", err);
+    return { steps: [] };
+  }
+};
 
 // ─── VIDEO CHAT SERVICE ───────────────────────────────────────────────────────
 export class VideoChatService {
