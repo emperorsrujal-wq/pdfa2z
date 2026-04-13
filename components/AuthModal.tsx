@@ -122,8 +122,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess, defaul
         </div>
 
         <div className="p-6">
-          {/* Demo mode banner - Always visible for quick testing */}
-          {mounted && (
+          {/* Demo mode banner - Only visible if real Firebase keys are missing */}
+          {DEMO_MODE && mounted && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
               <span className="text-lg">🚀</span>
               <div>

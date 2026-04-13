@@ -892,14 +892,30 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
     const ty = viewport.height - item.transform[5];
     const dist = Math.sqrt(Math.pow(tx - targetX, 2) + Math.pow(ty - targetY, 2));
 
-    if (dist < minDistance && dist < 50) {
+    if (dist < minDistance && dist < 100) {
       minDistance = dist;
       bestMatch.fontSize = Math.round(item.transform[0]);
-      bestMatch.fontName = (item as any).fontName || 'Helvetica';
+      
+      // Clean up font name (remove PDF prefixes like AAAAAA+)
+      let rawFont = (item as any).fontName || 'Helvetica';
+      if (rawFont.includes('+')) rawFont = rawFont.split('+')[1];
+      
+      // Map to standard fonts
+      if (rawFont.toLowerCase().includes('bold')) {
+        if (rawFont.toLowerCase().includes('italic') || rawFont.toLowerCase().includes('oblique')) {
+           bestMatch.fontName = rawFont.toLowerCase().includes('times') ? 'Times-BoldItalic' : 'Helvetica-BoldOblique';
+        } else {
+           bestMatch.fontName = rawFont.toLowerCase().includes('times') ? 'Times-Bold' : 'Helvetica-Bold';
+        }
+      } else if (rawFont.toLowerCase().includes('italic') || rawFont.toLowerCase().includes('oblique')) {
+        bestMatch.fontName = rawFont.toLowerCase().includes('times') ? 'Times-Italic' : 'Helvetica-Oblique';
+      } else {
+        bestMatch.fontName = rawFont.toLowerCase().includes('courier') ? 'Courier' : (rawFont.toLowerCase().includes('times') ? 'Times-Roman' : 'Helvetica');
+      }
     }
   }
 
-  // Sample background color from the provided image/canvas if available
+  // Sample colors from the provided image/canvas
   if (image) {
     try {
       const canvas = document.createElement('canvas');
@@ -910,12 +926,20 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
       canvas.width = img.width;
       canvas.height = img.height;
       ctx?.drawImage(img, 0, 0);
-      const pixel = ctx?.getImageData((px / 1000) * img.width, (py / 1000) * img.height, 1, 1).data;
+      
+      const sampleX = Math.round((px / 1000) * img.width);
+      const sampleY = Math.round((py / 1000) * img.height);
+      const pixel = ctx?.getImageData(sampleX, sampleY, 1, 1).data;
+      
       if (pixel) {
-        bestMatch.backgroundColor = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
+        const toHex = (c: number) => c.toString(16).padStart(2, '0');
+        const hex = `#${toHex(pixel[0])}${toHex(pixel[1])}${toHex(pixel[2])}`;
+        bestMatch.backgroundColor = hex;
+        // Also use this as the foreground color if we're picking for text
+        bestMatch.color = hex;
       }
     } catch (e) {
-      console.warn("Could not sample BG color", e);
+      console.warn("Could not sample colors", e);
     }
   }
 

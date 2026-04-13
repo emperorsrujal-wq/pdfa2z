@@ -44,7 +44,6 @@ export interface UserProfile {
   created_at?: any;
 }
 
-// ── Sign Up ─────────────────────────────────────────────────────────────────
 export async function signUp(
   email: string,
   password: string,
@@ -52,7 +51,8 @@ export async function signUp(
   lastName: string,
   state: string
 ): Promise<User> {
-  if (DEMO_MODE) {
+  // Manual demo trigger for "Enter as Demo User" button
+  if (email === 'demo@pdfa2z.com' && password === 'demo') {
     _demoLoggedIn = true;
     _notifyDemoListeners();
     return DEMO_USER;
@@ -86,7 +86,8 @@ export async function signUp(
 
 // ── Sign In ──────────────────────────────────────────────────────────────────
 export async function signIn(email: string, password: string): Promise<User> {
-  if (DEMO_MODE) {
+  // Manual demo trigger
+  if (email === 'demo@pdfa2z.com' && password === 'demo') {
     _demoLoggedIn = true;
     _notifyDemoListeners();
     return DEMO_USER;
@@ -108,11 +109,6 @@ export async function signIn(email: string, password: string): Promise<User> {
 
 // ── Google Sign In ────────────────────────────────────────────────────────────
 export async function signInWithGoogle(): Promise<User> {
-  if (DEMO_MODE) {
-    _demoLoggedIn = true;
-    _notifyDemoListeners();
-    return DEMO_USER;
-  }
   const provider = new GoogleAuthProvider();
   const cred = await signInWithPopup(auth, provider);
 
@@ -136,11 +132,6 @@ export async function signInWithGoogle(): Promise<User> {
 
 // ── Apple Sign In ─────────────────────────────────────────────────────────────
 export async function signInWithApple(): Promise<User> {
-  if (DEMO_MODE) {
-    _demoLoggedIn = true;
-    _notifyDemoListeners();
-    return DEMO_USER;
-  }
   const provider = new OAuthProvider('apple.com');
   const cred = await signInWithPopup(auth, provider);
 

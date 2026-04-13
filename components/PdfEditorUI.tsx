@@ -98,59 +98,49 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-[#060910] z-50 flex flex-col overflow-hidden animate-fade-in font-sans">
-      {/* Premium Dark Header */}
-      <header className="h-16 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-8 shadow-2xl shrink-0 z-50">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
-                <PenTool size={18} />
+      {/* Premium Slim Header */}
+      <header className="h-14 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 shadow-2xl shrink-0 z-50">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2.5">
+             <div className="p-1.5 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+                <PenTool size={16} />
              </div>
-             <div>
-                <h1 className="font-black text-white tracking-tight leading-none text-lg">PDF EDITOR <span className="text-indigo-400">PRO</span></h1>
-             </div>
+             <h1 className="font-black text-white tracking-tighter text-base">PDF EDITOR <span className="text-indigo-400">PRO</span></h1>
           </div>
           
-          <div className="h-6 w-px bg-white/10" />
+          <div className="h-4 w-px bg-white/10" />
           
-          <div className="flex items-center gap-3">
-             <span className="bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 text-[11px] font-bold text-slate-300 truncate max-w-[150px] shadow-inner">{file.name}</span>
-             <span className="text-indigo-400 text-[11px] font-black uppercase tracking-widest">{images.length} Pages</span>
+          <div className="flex items-center gap-2.5">
+             <span className="bg-white/5 px-2 py-0.5 rounded-lg border border-white/10 text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{file.name}</span>
+             <span className="text-indigo-500/80 text-[10px] font-black uppercase tracking-widest">{images.length} Pages</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2">
-              <button 
-                onClick={onCancel} 
-                className="px-4 py-2 hover:bg-white/5 text-slate-400 hover:text-white rounded-lg transition-all text-xs font-bold flex items-center gap-2"
-              >
-                 <X size={16} /> Close
-              </button>
-              
-              <button
-                onClick={() => handleApplyAll()}
-                disabled={isProcessing}
-                className="group bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-[#060910] px-8 py-2.5 rounded-lg shadow-lg shadow-emerald-500/30 flex items-center gap-2 text-xs font-black transition-all active:scale-95 relative overflow-hidden"
-                title="Save and download your edited PDF"
-              >
-                 {/* Glossy Overlay */}
-                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
-                 <div className="relative flex items-center gap-2">
-                   {isProcessing ? (
-                     <>
-                       <div className="w-4 h-4 border-2 border-[#060910]/30 border-t-[#060910] rounded-full animate-spin" />
-                       <span>SAVING...</span>
-                     </>
-                   ) : (
-                     <>
-                       <Download size={18} className="group-hover:scale-110 transition-transform" />
-                       <span>SAVE & DOWNLOAD</span>
-                     </>
-                   )}
-                 </div>
-              </button>
-           </div>
+        <div className="flex items-center gap-3">
+            <button 
+              onClick={onCancel} 
+              className="px-3 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white rounded-lg transition-all text-[11px] font-bold flex items-center gap-2"
+            >
+               <X size={14} /> Close
+            </button>
+            
+            <button
+              onClick={() => handleApplyAll()}
+              disabled={isProcessing}
+              className="group bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg shadow-lg shadow-indigo-600/20 flex items-center gap-2 text-[11px] font-black transition-all active:scale-95"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>SAVING...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>SAVE & DOWNLOAD</span>
+                </>
+              )}
+            </button>
         </div>
       </header>
 

@@ -82,7 +82,8 @@ type EditorMode =
   | 'form-check'
   | 'form-text'
   | 'form-select'
-  | 'comment';
+  | 'comment'
+  | 'font-picker';
 
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
   { mode: 'select',     label: 'Select',    icon: <MousePointer2 size={16} />, tooltip: 'Select and move elements' },
@@ -384,10 +385,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       setMode('select');
       return;
     }
-    if (mode === 'picker') {
+    if (mode === 'picker' || mode === 'font-picker') {
       const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
       if (activeElementId) {
-        updateElement(activeElementId, { color: style.backgroundColor });
+        if (mode === 'picker') {
+          updateElement(activeElementId, { color: style.backgroundColor });
+        } else {
+          updateElement(activeElementId, { 
+            fontName: style.fontName, 
+            size: style.fontSize 
+          });
+        }
         setMode('select');
       }
       return;
@@ -594,83 +602,128 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         </div>
       )}
 
-      {/* ─── TOP TOOLBAR (Premium Dark) ─────────────────── */}
-      <div className="shrink-0 flex flex-col items-center gap-2 py-4 bg-[#0f172a]/40 backdrop-blur-xl border-b border-white/5 shadow-2xl z-[100]">
+      {/* ─── SLIM CATEGORIZED TOOLBAR (Premium) ─────────────────── */}
+      <div className="shrink-0 flex flex-col bg-[#0f172a]/95 backdrop-blur-2xl border-b border-white/5 shadow-2xl z-[150]">
+        
+        {/* Main Workspace Bar */}
+        <div className="flex items-center justify-between px-6 py-2.5">
+          
+          {/* Left: Tool Categories */}
+          <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
+            {/* Tool Categorization Groups */}
+            <div className="flex items-center gap-1 pr-3 border-r border-white/10 ml-1">
+              {[
+                { mode: 'select', icon: <MousePointer2 size={15} /> },
+                { mode: 'magic-edit', icon: <Type size={15} /> },
+              ].map(t => (
+                <button
+                  key={t.mode}
+                  onClick={() => setMode(t.mode as EditorMode)}
+                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                  title={t.mode}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
 
-        {/* Main tool bar */}
-        <div className="flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl shadow-inner">
-          {TOOLS.map(t => (
-            <Tooltip key={t.mode} content={t.tooltip}>
+            <div className="flex items-center gap-1.5 px-2">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-2">Draw:</span>
+              {[
+                { mode: 'erase', icon: <Eraser size={15} /> },
+                { mode: 'highlight', icon: <Highlighter size={15} /> },
+                { mode: 'draw', icon: <PenTool size={15} /> },
+              ].map(t => (
+                <button
+                  key={t.mode}
+                  onClick={() => setMode(t.mode as EditorMode)}
+                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                  title={t.mode}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 px-2 border-l border-white/10">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-2">Insert:</span>
+              {[
+                { mode: 'rect', icon: <Square size={15} /> },
+                { mode: 'circle', icon: <CircleIcon size={15} /> },
+                { mode: 'image', icon: <ImageIcon size={15} /> },
+                { mode: 'sticky-note', icon: <StickyNote size={15} /> },
+              ].map(t => (
+                <button
+                  key={t.mode}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (t.mode === 'image') document.getElementById('img-upload')?.click(); 
+                    else setMode(t.mode as EditorMode); 
+                  }}
+                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                  title={t.mode}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 px-2 border-l border-white/10">
               <button
-                onClick={(e) => { e.stopPropagation(); if (t.mode === 'image') { document.getElementById('img-upload')?.click(); } else { setMode(t.mode); } }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold transition-all duration-300 ${
-                  mode === t.mode
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/40 scale-105'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
+                onClick={() => setMode('ocr')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
               >
-                {t.icon}
-                <span className="hidden lg:inline">{t.label}</span>
+                <FileSearch size={14} /> OCR
               </button>
-            </Tooltip>
-          ))}
+              <button
+                onClick={() => setMode('form-builder')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${mode === 'form-builder' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <CheckSquare size={14} /> FORMS
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Controls & Zoom */}
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Undo">
+                  <Undo2 size={15} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Redo">
+                  <Redo2 size={15} />
+                </button>
+                <div className="w-[1px] h-4 bg-white/10 mx-1" />
+                <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                  <ZoomOut size={15} />
+                </button>
+                <span className="text-[11px] font-black text-indigo-400 min-w-[45px] text-center tabular-nums">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                  <ZoomIn size={15} />
+                </button>
+             </div>
+             
+             <div className="px-3 py-1.5 bg-indigo-600/10 border border-indigo-500/20 rounded-xl">
+               <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
+             </div>
+          </div>
         </div>
 
-        {/* Whiteout / Mode Warnings */}
+        {/* Dynamic Context Hint (Conditional) */}
         {mode === 'erase' && (
-          <div className="text-[11px] font-bold text-amber-200 bg-amber-900/30 border border-amber-500/20 rounded-full px-5 py-1.5 shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
-            ✨ Whiteout hides content but does not securely redact.
+          <div className="px-6 py-1.5 bg-amber-500/10 border-t border-amber-500/10 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300">
+             <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+             <span className="text-[10px] font-bold text-amber-200/80 uppercase tracking-tight">Whiteout covers content but does NOT permanently redact underlying data.</span>
           </div>
         )}
-
-        {/* Page / zoom controls */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-inner divide-x divide-white/5">
-            <Tooltip content="Undo last action">
-              <button onClick={(e) => { e.stopPropagation(); undo(); }} className="px-3 py-2 hover:bg-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-[11px] font-black uppercase tracking-tight">
-                <Undo2 size={14} /> Undo
-              </button>
-            </Tooltip>
-            <Tooltip content="Redo action">
-              <button onClick={(e) => { e.stopPropagation(); redo(); }} className="px-3 py-2 hover:bg-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-[11px] font-black uppercase tracking-tight">
-                <Redo2 size={14} /> Redo
-              </button>
-            </Tooltip>
-            
-            <div className="flex items-center px-1 border-r border-white/5">
-              <Tooltip content="Document Audit Log">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowAudit(!showAudit); }} 
-                  className={`p-2 rounded-lg transition-all ${showAudit ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-                >
-                  <HistoryIcon size={16} />
-                </button>
-              </Tooltip>
-            </div>
-
-            <div className="flex items-center px-1">
-              <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 hover:bg-white/5 text-slate-400 hover:text-white transition-all">
-                <ZoomOut size={16} />
-              </button>
-              <span className="px-2 text-[11px] font-black text-indigo-400 min-w-[50px] text-center tabular-nums">
-                {Math.round(zoom * 100)}%
-              </span>
-              <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 hover:bg-white/5 text-slate-400 hover:text-white transition-all">
-                <ZoomIn size={16} />
-              </button>
-            </div>
-          </div>
-
-          <div className="text-[11px] font-black text-slate-500 bg-white/5 border border-white/5 px-4 py-2 rounded-xl uppercase tracking-widest">
-            Page {pageIndex + 1}
-          </div>
-        </div>
       </div>
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-auto custom-scrollbar"
+      <div 
+        className={`flex-1 overflow-auto bg-[#1e293b] p-12 scrollbar-none custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
+        ref={containerRef}
         style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
       >
         {/* The PDF page — width scales naturally so coordinate math stays correct */}

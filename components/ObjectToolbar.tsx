@@ -67,9 +67,51 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   onSendToBack,
   setMode
 }) => {
-  const [showColorPicker, setShowColorPicker] = React.useState(false);
+  const [showColorPicker, setShowColorPicker] = React.useState<null | 'color' | 'bg'>(null);
   const [showFontPicker, setShowFontPicker] = React.useState(false);
   const [showSizePicker, setShowSizePicker] = React.useState(false);
+
+  // Reusable Color Dropdown Component
+  const ColorDropdown = ({ selected, onSelect, title }: { selected?: string, onSelect: (color: string) => void, title: string }) => (
+    <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-4 rounded-2xl shadow-2xl z-[400] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
+      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
+        {title}
+      </div>
+      <div className="grid grid-cols-8 gap-2">
+        {SEJDA_COLORS.map(color => (
+          <button
+            key={color}
+            className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${selected === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
+            style={{ backgroundColor: color }}
+            title={color}
+            onClick={() => onSelect(color)}
+          />
+        ))}
+      </div>
+      <div className="border-t border-white/5" />
+      <button
+        onClick={() => {
+          setMode?.('picker');
+          setShowColorPicker(null);
+        }}
+        className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
+      >
+        <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all shadow-inner">
+          <Pipette size={14} />
+        </div>
+        <div className="flex flex-col flex-1">
+          <span className="text-[10px] font-black text-slate-200 tracking-tight leading-none">Pick from Document</span>
+          <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">Sample color from PDF</span>
+        </div>
+      </button>
+      <button
+        onClick={() => onSelect('transparent')}
+        className="w-full py-2.5 border border-white/10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-indigo-600/10 text-[9px] font-black text-slate-400 hover:text-indigo-400 uppercase tracking-widest transition-all"
+      >
+        No Color / Transparent
+      </button>
+    </div>
+  );
 
   return (
     <div className="absolute -top-14 left-0 flex items-center gap-1 bg-[#0f172a]/95 backdrop-blur-xl border border-white/10 p-1 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[300] animate-in fade-in zoom-in-95 duration-200">
@@ -140,7 +182,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
             </button>
             
             {showFontPicker && (
-              <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-1.5 rounded-xl shadow-2xl z-[400] w-52 animate-in fade-in slide-in-from-top-1">
+              <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-2 rounded-xl shadow-2xl z-[400] w-52 animate-in fade-in slide-in-from-top-1 space-y-1">
                 {FONTS.map(font => (
                   <button
                     key={font.value}
@@ -154,6 +196,17 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
                     {font.name}
                   </button>
                 ))}
+                <div className="border-t border-white/5 my-1" />
+                <button
+                  onClick={() => {
+                    setMode?.('font-picker');
+                    setShowFontPicker(false);
+                  }}
+                  className="w-full flex items-center gap-3 p-2 hover:bg-indigo-600/20 rounded-lg text-left group transition-all"
+                >
+                   <Pipette size={14} className="text-indigo-400" />
+                   <span className="text-[10px] font-black text-slate-200 uppercase tracking-tighter">Match from PDF</span>
+                </button>
               </div>
             )}
           </div>
@@ -189,19 +242,15 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
         </>
       )}
 
-      {/* STICKY NOTE SPECIFIC */}
+      {/* ─── STICKY NOTE / FORM FIELDS SPECIFIC ─────────────────── */}
       {element.type === 'sticky-note' && (
         <div className="flex border-r border-white/5 pr-1 mr-1">
-          <button
-            className="p-2 bg-white/5 rounded-lg text-amber-400"
-            title="Sticky Note"
-          >
+          <button className="p-2 bg-white/5 rounded-lg text-amber-400" title="Sticky Note">
             <StickyNote size={14} />
           </button>
         </div>
       )}
 
-      {/* FORM ELEMENT SPECIFIC */}
       {element.type === 'form-check' && (
         <div className="flex border-r border-white/5 pr-1 mr-1">
           <button
@@ -231,143 +280,83 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
         </div>
       )}
 
-      {/* SHAPE/WHITE OUT SPECIFIC */}
+      {/* ─── SHAPES SPECIFIC ─────────────────── */}
       {(element.type === 'rect' || element.type === 'circle' || element.type === 'line') && (
-        <div className="flex border-r border-white/5 pr-1 mr-1">
-          <button
-            className="p-2 bg-white/5 rounded-lg text-indigo-400"
-            title={element.type === 'circle' ? 'Circle' : element.type === 'line' ? 'Line' : 'Rectangle'}
-          >
-            {element.type === 'circle' ? <Circle size={14} /> : element.type === 'line' ? <Minus size={14} /> : <Square size={14} />}
-          </button>
-        </div>
+        <>
+          <div className="flex border-r border-white/5 pr-1 mr-1">
+            <button className="p-2 bg-white/5 rounded-lg text-indigo-400" title={element.type}>
+              {element.type === 'circle' ? <Circle size={14} /> : element.type === 'line' ? <Minus size={14} /> : <Square size={14} />}
+            </button>
+          </div>
+          <div className="relative flex items-center border-r border-white/5 pr-1 mr-1">
+            <div className="flex items-center gap-2 px-2">
+              <span className="text-[10px] font-bold text-slate-400">Border:</span>
+              <input
+                type="range" min="1" max="20"
+                value={element.strokeWidth || 3}
+                onChange={(e) => onUpdate(element.id, { strokeWidth: clampStrokeWidth(parseInt(e.target.value)) })}
+                className="w-16 h-1 bg-white/10 rounded-lg cursor-pointer accent-indigo-500"
+              />
+              <span className="text-[10px] font-bold text-slate-300 w-6 text-right">{element.strokeWidth || 3}px</span>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* STROKE WIDTH (for shapes and lines) */}
-      {(element.type === 'rect' || element.type === 'circle' || element.type === 'line') && (
-        <div className="relative flex items-center border-r border-white/5 pr-1 mr-1">
-          <div className="flex items-center gap-2 px-2">
-            <span className="text-[10px] font-bold text-slate-400">Border:</span>
-            <input
-              type="range"
-              min="1"
-              max="20"
-              value={element.strokeWidth || 3}
-              onChange={(e) => onUpdate(element.id, { strokeWidth: clampStrokeWidth(parseInt(e.target.value)) })}
-              className="w-16 h-1 bg-white/10 rounded-lg cursor-pointer accent-indigo-500"
-              title="Stroke Width"
-            />
-            <span className="text-[10px] font-bold text-slate-300 w-6 text-right">{element.strokeWidth || 3}px</span>
-          </div>
+      {/* ─── COLOR PICKERS (Foreground & Background) ─────────────────── */}
+      <div className="flex items-center gap-1 border-r border-white/5 pr-1 mr-1">
+        
+        {/* Foreground Color */}
+        <div className="relative flex items-center">
+          <Tooltip content="Foreground / Text Color">
+            <button 
+              onClick={() => { setShowColorPicker(showColorPicker === 'color' ? null : 'color'); }}
+              className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-all ${showColorPicker === 'color' ? 'bg-indigo-600/20 border border-indigo-500/30' : 'hover:bg-white/5'}`}
+            >
+              <div className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ backgroundColor: element.color === 'transparent' ? 'transparent' : (element.color || '#000000') }} />
+              <ChevronDown size={10} className="text-slate-500" />
+            </button>
+          </Tooltip>
+
+          {showColorPicker === 'color' && (
+             <ColorDropdown 
+               selected={element.color} 
+               onSelect={(color) => { onUpdate(element.id, { color }); setShowColorPicker(null); }} 
+               title="Text / Stroke Color"
+             />
+          )}
         </div>
-      )}
 
-      {/* Color Picker Grid (Standard for most objects) */}
-      <div className="relative flex items-center border-r border-white/5 pr-1 mr-1">
-        <button 
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all"
-        >
-          <div 
-            className="w-4 h-4 rounded-full border border-white/20 shadow-inner" 
-            style={{ backgroundColor: element.color === 'transparent' ? 'transparent' : (element.color || '#000000') }}
-          >
-             {element.color === 'transparent' && <div className="w-full h-full border-t border-red-500 rotate-45" />}
-          </div>
-          <ChevronDown size={10} className="text-slate-500" />
-        </button>
+        {/* Background Color (Fill) */}
+        {['rect', 'circle', 'sticky-note', 'highlight', 'text'].includes(element.type) && (
+          <div className="relative flex items-center">
+            <Tooltip content="Background / Fill Color">
+              <button 
+                onClick={() => { setShowColorPicker(showColorPicker === 'bg' ? null : 'bg'); }}
+                className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-all ${showColorPicker === 'bg' ? 'bg-indigo-600/20 border border-indigo-500/30' : 'hover:bg-white/5'}`}
+              >
+                <div className="w-3.5 h-3.5 rounded-md border border-white/20 relative overflow-hidden" style={{ backgroundColor: element.bgColor || 'transparent' }}>
+                   {!element.bgColor || element.bgColor === 'transparent' ? <div className="absolute inset-0 border-t border-red-500/50 rotate-45" /> : null}
+                </div>
+                <ChevronDown size={10} className="text-slate-500" />
+              </button>
+            </Tooltip>
 
-        {showColorPicker && (
-          <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-4 rounded-2xl shadow-2xl z-[400] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
-             {/* Helper Text */}
-             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
-               Choose Color
-             </div>
-
-             {/* Color Grid */}
-             <div className="grid grid-cols-8 gap-2">
-                {SEJDA_COLORS.map(color => (
-                  <button
-                    key={color}
-                    className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${element.color === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                    onClick={() => {
-                      onUpdate(element.id, { color });
-                      setShowColorPicker(false);
-                    }}
-                  />
-                ))}
-             </div>
-
-             {/* Divider */}
-             <div className="border-t border-white/5" />
-
-             {/* Eyedropper Row */}
-             <button
-               onClick={() => {
-                 setMode?.('picker');
-                 setShowColorPicker(false);
-               }}
-               className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
-             >
-               <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all shadow-inner">
-                 <Pipette size={14} />
-               </div>
-               <div className="flex flex-col flex-1">
-                 <span className="text-[10px] font-black text-slate-200 tracking-tight leading-none">Pick from Document</span>
-                 <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">Sample color from PDF</span>
-               </div>
-             </button>
-
-             {/* Transparent Option */}
-             <button
-               onClick={() => {
-                 onUpdate(element.id, { color: 'transparent' });
-                 setShowColorPicker(false);
-               }}
-               className="w-full py-2.5 border border-white/10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-indigo-600/10 text-[9px] font-black text-slate-400 hover:text-indigo-400 uppercase tracking-widest transition-all"
-             >
-               No Color / Transparent
-             </button>
+            {showColorPicker === 'bg' && (
+              <ColorDropdown 
+                selected={element.bgColor} 
+                onSelect={(bgColor) => { onUpdate(element.id, { bgColor }); setShowColorPicker(null); }} 
+                title="Background / Fill Color"
+              />
+            )}
           </div>
         )}
       </div>
 
       {/* Action Group */}
       <div className="flex items-center gap-0.5">
-        {onSendToBack && (
-          <button
-            onClick={() => onSendToBack(element.id)}
-            className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
-            title="Send to Back (Ctrl+Shift+B)"
-          >
-            <ArrowDown size={14} />
-          </button>
-        )}
-        {onBringToFront && (
-          <button
-            onClick={() => onBringToFront(element.id)}
-            className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
-            title="Bring to Front (Ctrl+Shift+F)"
-          >
-            <ArrowUp size={14} />
-          </button>
-        )}
-        <button
-          onClick={() => onDuplicate(element)}
-          className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
-          title="Duplicate"
-        >
-          <Copy size={14} />
-        </button>
-        <button
-          onClick={() => onDelete(element.id)}
-          className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-all"
-          title="Delete"
-        >
-          <Trash2 size={14} />
-        </button>
+        <button onClick={() => onDuplicate(element)} className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all" title="Duplicate"><Copy size={14} /></button>
+        <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-all" title="Delete"><Trash2 size={14} /></button>
       </div>
 
     </div>
