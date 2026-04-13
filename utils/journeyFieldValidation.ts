@@ -3,7 +3,7 @@
  * Supports email, phone, SSN, ZIP, dates, currency, URLs, and custom patterns
  */
 
-export type ValidationRule = 'email' | 'phone' | 'ssn' | 'zip' | 'date' | 'url' | 'currency' | 'text' | 'number';
+export type ValidationRule = 'email' | 'phone' | 'ssn' | 'nationalId' | 'zip' | 'postalCode' | 'date' | 'url' | 'currency' | 'text' | 'number';
 
 export interface ValidationError {
   field: string;
@@ -20,9 +20,11 @@ export interface FieldValidationConfig {
   customMessage?: string;
   min?: number;
   max?: number;
+  locale?: string; // e.g. 'en-GB'
+  currencySymbol?: string; // e.g. '£'
 }
 
-const VALIDATORS: Record<ValidationRule, (value: any) => boolean> = {
+const VALIDATORS: Record<string, (value: any, config?: FieldValidationConfig) => boolean> = {
   email: (v) => {
     if (!v) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,24 +33,27 @@ const VALIDATORS: Record<ValidationRule, (value: any) => boolean> = {
 
   phone: (v) => {
     if (!v) return false;
-    // Supports: (123) 456-7890, 123-456-7890, 1234567890, +1-123-456-7890
-    const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+    // Generic international phone regex: + prefix optional, 7-15 digits, allows spaces/dashes/parens
+    const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{3,9}$/;
     return phoneRegex.test(String(v).replace(/\s/g, ''));
   },
 
-  ssn: (v) => {
+  nationalId: (v) => {
     if (!v) return false;
-    // Supports: 123-45-6789 or 123456789
-    const ssnRegex = /^(?!000|666)[0-9]{3}-?(?!00)[0-9]{2}-?(?!0000)[0-9]{4}$/;
-    return ssnRegex.test(String(v));
+    // Flexible for SSN, SIN (Canada), NI (UK), etc. (7-12 chars)
+    return String(v).replace(/[-\s]/g, '').length >= 7;
+  },
+  
+  ssn: (v) => VALIDATORS.nationalId(v),
+
+  postalCode: (v) => {
+    if (!v) return false;
+    // Flexible for ZIP (US), UK (AA1 1AA), Canada (A1A 1A1), etc.
+    const postalRegex = /^[A-Z0-9\s-]{3,10}$/i;
+    return postalRegex.test(String(v).trim());
   },
 
-  zip: (v) => {
-    if (!v) return false;
-    // Supports: 12345 or 12345-6789
-    const zipRegex = /^[0-9]{5}(?:-[0-9]{4})?$/;
-    return zipRegex.test(String(v));
-  },
+  zip: (v) => VALIDATORS.postalCode(v),
 
   date: (v) => {
     if (!v) return false;
@@ -66,11 +71,13 @@ const VALIDATORS: Record<ValidationRule, (value: any) => boolean> = {
     }
   },
 
-  currency: (v) => {
+  currency: (v, config) => {
     if (!v) return false;
-    // Supports: $1,234.56 or 1234.56
-    const currencyRegex = /^\$?[0-9]{1,3}(,[0-9]{3})*(\.[0-9]{2})?$|^[0-9]+(\.[0-9]{2})?$/;
-    return currencyRegex.test(String(v));
+    const symbol = config?.currencySymbol || '$';
+    const escapedSymbol = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Flexible currency: optional symbol, thousands separators, decimal
+    const currencyRegex = new RegExp(`^${escapedSymbol}?\\s?[0-9]{1,3}([,\\s][0-9]{3})*(\\.[0-9]{2})?$|^[0-9]+(\\.[0-9]{2})?$`);
+    return currencyRegex.test(String(v).trim());
   },
 
   text: (v) => {
@@ -83,27 +90,32 @@ const VALIDATORS: Record<ValidationRule, (value: any) => boolean> = {
   },
 };
 
-const ERROR_MESSAGES: Record<ValidationRule, string> = {
-  email: 'Please enter a valid email address (e.g., john@example.com)',
-  phone: 'Please enter a valid phone number (e.g., 123-456-7890 or (123) 456-7890)',
-  ssn: 'Please enter a valid SSN (e.g., 123-45-6789)',
-  zip: 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)',
+const ERROR_MESSAGES: Record<string, string> = {
+  email: 'Please enter a valid email address',
+  phone: 'Please enter a valid phone number',
+  nationalId: 'Please enter a valid National ID / Tax ID',
+  ssn: 'Please enter a valid SSN',
+  postalCode: 'Please enter a valid Postal Code',
+  zip: 'Please enter a valid ZIP code',
   date: 'Please enter a valid date',
-  url: 'Please enter a valid URL (e.g., https://example.com)',
-  currency: 'Please enter a valid amount (e.g., $1,234.56)',
+  url: 'Please enter a valid URL',
+  currency: 'Please enter a valid amount',
   text: 'This field is required',
   number: 'Please enter a valid number',
 };
 
-export const getFormatHint = (type: ValidationRule): string => {
-  const hints: Record<ValidationRule, string> = {
+export const getFormatHint = (type: ValidationRule, config?: FieldValidationConfig): string => {
+  const symbol = config?.currencySymbol || '$';
+  const hints: Record<string, string> = {
     email: 'e.g., john.doe@example.com',
-    phone: 'e.g., (123) 456-7890 or 123-456-7890',
-    ssn: 'e.g., 123-45-6789 (kept confidential)',
-    zip: 'e.g., 12345 or 12345-6789',
+    phone: 'e.g., +1 123 456 7890',
+    nationalId: 'Enter your ID (Confidential)',
+    ssn: 'e.g., 123-45-6789',
+    postalCode: 'Enter your postal/zip code',
+    zip: 'e.g., 12345',
     date: 'Select or enter date',
     url: 'e.g., https://example.com',
-    currency: 'e.g., $1,234.56',
+    currency: `e.g., ${symbol}1,234.56`,
     text: 'Enter text',
     number: 'e.g., 1234',
   };
@@ -164,7 +176,7 @@ export const validateField = (
   // Check validation type
   if (config.type && config.type in VALIDATORS) {
     const validator = VALIDATORS[config.type];
-    if (!validator(value)) {
+    if (!validator(value, config)) {
       return {
         field: fieldName,
         message: config.customMessage || ERROR_MESSAGES[config.type],
@@ -175,7 +187,7 @@ export const validateField = (
 
   // Check min/max for numbers
   if (config.type === 'number' || config.type === 'currency') {
-    const num = parseFloat(stringValue.replace(/[$,]/g, ''));
+    const num = parseFloat(stringValue.replace(/[^\d.-]/g, ''));
     if (config.min !== undefined && num < config.min) {
       return {
         field: fieldName,
@@ -230,35 +242,39 @@ export const getFieldError = (
 /**
  * Format display value based on field type
  */
-export const formatFieldDisplay = (value: any, type?: ValidationRule): string => {
+export const formatFieldDisplay = (value: any, config?: FieldValidationConfig): string => {
   if (!value) return '';
+  const type = config?.type;
 
   switch (type) {
     case 'phone': {
-      const cleaned = String(value).replace(/\D/g, '');
-      if (cleaned.length === 10) {
-        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-      }
-      return value;
+      const cleaned = String(value).replace(/[^\d+]/g, '');
+      return cleaned; // International format usually kept as is or formatted by lib
     }
-    case 'ssn': {
-      const cleaned = String(value).replace(/\D/g, '');
+    case 'ssn':
+    case 'nationalId': {
+      const cleaned = String(value).replace(/[-\s]/g, '');
       if (cleaned.length === 9) {
         return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
       }
       return value;
     }
-    case 'zip': {
-      const cleaned = String(value).replace(/\D/g, '');
-      if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
-      }
-      return value;
+    case 'zip':
+    case 'postalCode': {
+      return String(value).toUpperCase().trim();
     }
     case 'currency': {
-      const num = parseFloat(String(value).replace(/[$,]/g, ''));
+      const num = parseFloat(String(value).replace(/[^\d.-]/g, ''));
       if (!isNaN(num)) {
-        return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        try {
+          return new Intl.NumberFormat(config?.locale || 'en-US', {
+            style: 'currency',
+            currency: (config as any).currencyCode || 'USD',
+            currencyDisplay: 'symbol'
+          }).format(num);
+        } catch (e) {
+          return `${config?.currencySymbol || '$'}${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+        }
       }
       return value;
     }

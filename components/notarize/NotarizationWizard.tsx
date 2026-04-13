@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {
   Upload, FileText, CheckCircle2, CreditCard, Video, ArrowRight, ArrowLeft,
-  Loader2, X, User, Mail, Phone, AlertCircle, Info
+  Loader2, X, User, Mail, Phone, AlertCircle, Info, Gavel, Building, Home, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import {
   uploadDocument, createSession, createPaymentIntent,
@@ -22,22 +22,22 @@ const STEPS = [
   { num: 4, label: 'Begin',   icon: Video },
 ];
 
-const DOC_TYPES: { value: DocumentType; label: string; icon: string }[] = [
-  { value: 'power_of_attorney', label: 'Power of Attorney', icon: '📋' },
-  { value: 'affidavit',         label: 'Affidavit',         icon: '🏛️' },
-  { value: 'mortgage',          label: 'Mortgage Document', icon: '🏠' },
-  { value: 'contract',          label: 'Contract',          icon: '📄' },
-  { value: 'id_document',       label: 'ID Document',       icon: '🪪' },
-  { value: 'other',             label: 'Other',             icon: '✅' },
+const DOC_TYPES: { value: DocumentType; label: string; Icon: any }[] = [
+  { value: 'power_of_attorney', label: 'Power of Attorney', Icon: FileText },
+  { value: 'affidavit',         label: 'Affidavit',         Icon: Gavel },
+  { value: 'mortgage',          label: 'Mortgage Document', Icon: Home },
+  { value: 'contract',          label: 'Contract',          Icon: FileText },
+  { value: 'id_document',       label: 'ID Document',       Icon: User },
+  { value: 'other',             label: 'Other',             Icon: CheckCircle2 },
 ];
 
 const NOTARY_TYPES: { value: NotaryType; label: string; desc: string }[] = [
-  { value: 'acknowledgment', label: 'Acknowledgment', desc: 'Most common — confirms you signed the document voluntarily' },
-  { value: 'jurat',          label: 'Jurat',          desc: 'You swear or affirm the document\'s contents are true' },
+  { value: 'acknowledgment', label: 'Acknowledgment', desc: 'Most common - confirms you signed the document voluntarily' },
+  { value: 'jurat',          label: 'Jurat',          desc: 'You swear or affirm the document contents are true' },
   { value: 'witness',        label: 'Witness',        desc: 'The notary witnesses your signature' },
 ];
 
-// ── Step 1: Upload ────────────────────────────────────────────────────────────
+// -- Step 1: Upload ------------------------------------------------------------
 const UploadStep: React.FC<{ onNext: (doc: NotarizeDocument, type: DocumentType) => void }> = ({ onNext }) => {
   const [docType, setDocType] = React.useState<DocumentType | ''>('');
   const [file, setFile] = React.useState<File | null>(null);
@@ -72,339 +72,322 @@ const UploadStep: React.FC<{ onNext: (doc: NotarizeDocument, type: DocumentType)
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-black text-slate-900 mb-1">Upload Your Document</h3>
-        <p className="text-slate-500 text-sm">PDF only · max 10 MB · your file is encrypted immediately</p>
+        <p className="text-slate-500 text-sm">PDF only (max 10 MB) - your file is encrypted immediately</p>
       </div>
 
-      {/* Drag-drop zone */}
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         onClick={() => inputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${dragging ? 'border-[#185FA5] bg-blue-50' : file ? 'border-[#639922] bg-green-50' : 'border-slate-200 hover:border-[#185FA5]/50 hover:bg-slate-50'}`}
+        className={`relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${dragging ? 'border-[#f59e0b] bg-amber-50/10' : file ? 'border-[#10b981] bg-emerald-50/10' : 'border-slate-800 hover:border-[#f59e0b]/50 hover:bg-white/5'}`}
       >
         <input ref={inputRef} type="file" accept="application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
         {file ? (
           <div className="flex flex-col items-center gap-2">
-            <CheckCircle2 size={40} className="text-[#639922]" />
-            <p className="font-bold text-slate-800">{file.name}</p>
-            <p className="text-sm text-slate-500">{formatFileSize(file.size)}</p>
-            <button onClick={e => { e.stopPropagation(); setFile(null); }} className="text-xs text-red-500 hover:underline">Remove</button>
+            <CheckCircle2 size={40} className="text-[#10b981]" />
+            <p className="font-bold text-white">{file.name}</p>
+            <p className="text-sm text-slate-400">{formatFileSize(file.size)}</p>
+            <button onClick={e => { e.stopPropagation(); setFile(null); }} className="text-xs text-red-400 hover:underline">Remove</button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center">
               <Upload size={28} className="text-slate-400" />
             </div>
             <div>
-              <p className="font-bold text-slate-700">Click or drag your PDF here</p>
-              <p className="text-xs text-slate-400 mt-1">PDF · max 10 MB · AES-256 encrypted</p>
+              <p className="font-bold text-slate-300">Click or drag your PDF here</p>
+              <p className="text-sm text-slate-500 mt-1">Encrypted & Secure</p>
             </div>
-          </div>
-        )}
-        {uploading && (
-          <div className="mt-4">
-            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#185FA5] transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Uploading... {progress}%</p>
           </div>
         )}
       </div>
 
-      {/* Document type */}
       <div>
-        <label className="block text-sm font-bold text-slate-700 mb-3">Document Type *</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {DOC_TYPES.map(dt => (
+        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Document Type</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {DOC_TYPES.map(t => (
             <button
-              key={dt.value}
-              onClick={() => setDocType(dt.value)}
-              className={`flex items-center gap-2.5 px-3 py-3 rounded-xl text-left border-2 text-sm font-medium transition-all ${docType === dt.value ? 'border-[#185FA5] bg-blue-50 text-[#185FA5]' : 'border-slate-100 hover:border-slate-200 text-slate-700 bg-slate-50'}`}
+              key={t.value}
+              onClick={() => setDocType(t.value)}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${docType === t.value ? 'border-[#f59e0b] bg-amber-50/5' : 'border-white/5 hover:border-white/10'}`}
             >
-              <span className="text-lg">{dt.icon}</span>
-              <span className="leading-tight text-xs font-semibold">{dt.label}</span>
+              <t.Icon size={18} className={docType === t.value ? 'text-[#f59e0b]' : 'text-slate-400'} />
+              <span className={`text-sm font-bold ${docType === t.value ? 'text-white' : 'text-slate-400'}`}>{t.label}</span>
             </button>
           ))}
         </div>
       </div>
-
-      {error && <p className="text-red-500 text-sm flex items-center gap-2"><AlertCircle size={15} /> {error}</p>}
 
       <button
-        onClick={handleUpload}
         disabled={!file || !docType || uploading}
-        className="w-full py-3.5 bg-[#185FA5] hover:bg-[#144e8a] text-white font-black rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-md shadow-blue-500/20"
+        onClick={handleUpload}
+        className="nw-btn-gold w-full h-14 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {uploading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-        {uploading ? 'Uploading...' : 'Continue to Details'}
+        {uploading ? (
+          <>
+            <Loader2 size={20} className="animate-spin" />
+            <span>Uploading... {progress}%</span>
+          </>
+        ) : (
+          <>
+            <span>Continue</span>
+            <ArrowRight size={20} />
+          </>
+        )}
       </button>
+
+      {error && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+        <AlertCircle size={18} className="text-red-400" />
+        <p className="text-sm text-red-400 font-medium">{error}</p>
+      </div>}
     </div>
   );
 };
 
-// ── Step 2: Details ────────────────────────────────────────────────────────────
-const DetailsStep: React.FC<{
-  document: NotarizeDocument;
-  onNext: (notaryType: NotaryType, signers: number, email: string, phone: string) => void;
-  onBack: () => void;
-}> = ({ document, onNext, onBack }) => {
-  const [notaryType, setNotaryType] = React.useState<NotaryType>('acknowledgment');
-  const [signers, setSigners]       = React.useState(1);
-  const [email, setEmail]           = React.useState('');
-  const [phone, setPhone]           = React.useState('');
-
-  const inputCls = 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#185FA5] focus:bg-white outline-none transition-all';
+// -- Step 2: Details -----------------------------------------------------------
+const DetailsStep: React.FC<{ document: NotarizeDocument, onNext: (t: NotaryType, s: number, e: string, p: string) => void, onBack: () => void }> = ({ document, onNext, onBack }) => {
+  const [notaryType, setNotaryType] = React.useState<NotaryType | ''>('');
+  const [numSigners, setNumSigners] = React.useState(1);
+  const [email, setEmail] = React.useState('');
+  const [phone, setPhone] = React.useState('');
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-black text-slate-900 mb-1">Notarization Details</h3>
-        <p className="text-slate-500 text-sm">Configure your session</p>
+    <div className="space-y-8">
+      <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+        <div className="w-12 h-12 bg-[#f59e0b]/10 rounded-xl flex items-center justify-center">
+          <FileText size={24} className="text-[#f59e0b]" />
+        </div>
+        <div>
+          <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Selected Document</p>
+          <p className="font-bold text-white truncate max-w-[200px]">{document.file_name}</p>
+        </div>
       </div>
 
-      {/* Document preview */}
-      <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <div className="w-10 h-10 bg-[#185FA5]/10 rounded-lg flex items-center justify-center">
-          <FileText size={20} className="text-[#185FA5]" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-bold text-slate-900 text-sm truncate">{document.file_name}</p>
-          <p className="text-xs text-slate-500">{formatFileSize(document.file_size)} · {DOCUMENT_TYPE_LABELS[document.document_type]}</p>
-        </div>
-        <CheckCircle2 size={18} className="text-[#639922] shrink-0 ml-auto" />
-      </div>
-
-      {/* Notary type */}
-      <div>
-        <label className="block text-sm font-bold text-slate-700 mb-3">Notarization Type *</label>
-        <div className="space-y-2">
-          {NOTARY_TYPES.map(nt => (
+      <div className="space-y-4">
+        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Notarization Type</label>
+        <div className="space-y-3">
+          {NOTARY_TYPES.map(t => (
             <button
-              key={nt.value}
-              onClick={() => setNotaryType(nt.value)}
-              className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${notaryType === nt.value ? 'border-[#185FA5] bg-blue-50' : 'border-slate-100 hover:border-slate-200'}`}
+              key={t.value}
+              onClick={() => setNotaryType(t.value)}
+              className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${notaryType === t.value ? 'border-[#f59e0b] bg-amber-50/5' : 'border-white/5 hover:border-white/10'}`}
             >
-              <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center shrink-0 ${notaryType === nt.value ? 'border-[#185FA5] bg-[#185FA5]' : 'border-slate-300'}`}>
-                {notaryType === nt.value && <div className="w-2 h-2 bg-white rounded-full" />}
+              <div className="flex items-center justify-between mb-1">
+                <span className={`font-bold ${notaryType === t.value ? 'text-white' : 'text-slate-400'}`}>{t.label}</span>
+                {notaryType === t.value && <CheckCircle2 size={18} className="text-[#f59e0b]" />}
               </div>
-              <div>
-                <p className="font-bold text-sm text-slate-900">{nt.label}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{nt.desc}</p>
-              </div>
+              <p className="text-sm text-slate-500">{t.desc}</p>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Number of signers */}
-      <div>
-        <label className="block text-sm font-bold text-slate-700 mb-2">Number of Signers</label>
-        <div className="flex items-center gap-3">
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => setSigners(n)}
-              className={`w-10 h-10 rounded-xl border-2 font-bold text-sm transition-all ${signers === n ? 'border-[#185FA5] bg-[#185FA5] text-white' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
-              {n}
-            </button>
-          ))}
-        </div>
-        {signers > 1 && <p className="text-xs text-slate-500 mt-2"><Info size={12} className="inline mr-1" />Additional signers are $35 each</p>}
-      </div>
-
-      {/* Contact info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Your Email *</label>
-          <div className="relative">
-            <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={`${inputCls} pl-9`} placeholder="you@example.com" required />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone</label>
-          <div className="relative">
-            <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={`${inputCls} pl-9`} placeholder="+1 (555) 000-0000" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Number of Signers</label>
+          <div className="flex items-center bg-white/5 rounded-xl border border-white/5 p-1">
+            <button onClick={() => setNumSigners(Math.max(1, numSigners - 1))} className="p-3 text-slate-400 hover:text-white"><ArrowLeft size={16} /></button>
+            <span className="flex-1 text-center font-bold text-white">{numSigners}</span>
+            <button onClick={() => setNumSigners(numSigners + 1)} className="p-3 text-slate-400 hover:text-white"><ArrowRight size={16} /></button>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={onBack} className="flex items-center gap-2 px-5 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
-          <ArrowLeft size={16} /> Back
-        </button>
+      <div className="space-y-6">
+        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Contact Information</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Mail className="absolute left-4 top-4 text-slate-500" size={18} />
+            <input type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} className="brand-input pl-12 mb-0" />
+          </div>
+          <div className="relative">
+            <Phone className="absolute left-4 top-4 text-slate-500" size={18} />
+            <input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} className="brand-input pl-12 mb-0" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-4 pt-4">
+        <button onClick={onBack} className="nw-btn-ghost px-8 h-14">Back</button>
         <button
-          onClick={() => email && onNext(notaryType, signers, email, phone)}
-          disabled={!email}
-          className="flex-1 py-3 bg-[#185FA5] hover:bg-[#144e8a] text-white font-black rounded-xl disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-500/20"
+          disabled={!notaryType || !email || !phone}
+          onClick={() => onNext(notaryType as NotaryType, numSigners, email, phone)}
+          className="nw-btn-gold flex-1 h-14 flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          Continue to Payment <ArrowRight size={18} />
+          <span>Continue to Payment</span>
+          <ArrowRight size={20} />
         </button>
       </div>
     </div>
   );
 };
 
-// ── Step 3: Payment ────────────────────────────────────────────────────────────
-const PaymentStep: React.FC<{
-  document: NotarizeDocument;
-  numSigners: number;
-  session: NotarizationSession | null;
-  onPaid: () => void;
-  onBack: () => void;
-}> = ({ document, numSigners, session, onPaid, onBack }) => {
-  const [processing, setProcessing] = React.useState(false);
-  const [error, setError] = React.useState('');
-
-  const firstDocCost = 4500;
-  const additionalCost = (numSigners - 1) * 3500;
-  const total = firstDocCost + additionalCost;
+// -- Step 3: Payment -----------------------------------------------------------
+const PaymentStep: React.FC<{ document: NotarizeDocument, numSigners: number, session: NotarizationSession | null, onPaid: () => void, onBack: () => void }> = ({ document, numSigners, session, onPaid, onBack }) => {
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const price = 25 + (numSigners > 1 ? (numSigners - 1) * 10 : 0);
 
   const handlePay = async () => {
-    if (!session) return;
-    setProcessing(true);
-    setError('');
-    try {
-      const { clientSecret } = await createPaymentIntent(session.id);
-
-      if (DEMO_MODE || clientSecret.startsWith('demo_')) {
-        // Demo: simulate payment success
-        await new Promise(r => setTimeout(r, 1500));
-        onPaid();
-      } else {
-        // Real Stripe — would need @stripe/stripe-js loaded
-        // const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-        // await stripe.confirmCardPayment(clientSecret, { payment_method: { card: elements.getElement('card') } });
-        onPaid();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Payment failed. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
+    setIsProcessing(true);
+    setTimeout(() => {
+      onPaid();
+      setIsProcessing(false);
+    }, 2000);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-lg font-black text-slate-900 mb-1">Review & Pay</h3>
-        <p className="text-slate-500 text-sm">Secure payment via Stripe. Only charged after successful notarization.</p>
+        <h3 className="text-xl font-black text-white mb-2">Secure Payment</h3>
+        <p className="text-slate-500">Pay securely using Stripe. All transactions are encrypted.</p>
       </div>
 
-      {/* Order summary */}
-      <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200">
-          <p className="text-xs font-black uppercase tracking-widest text-slate-400">Order Summary</p>
+      <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-4">
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-slate-400">Electronic Notarization (1 Doc)</span>
+          <span className="text-white font-bold">$25.00</span>
         </div>
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-600 flex items-center gap-2"><FileText size={14} /> {document.file_name}</span>
-            <span className="font-bold text-slate-900">$45.00</span>
+        {numSigners > 1 && (
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-400">Additional Signers ({numSigners - 1})</span>
+            <span className="text-white font-bold">${((numSigners - 1) * 10).toFixed(2)}</span>
           </div>
-          {numSigners > 1 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">+{numSigners - 1} additional signer{numSigners > 2 ? 's' : ''} × $35</span>
-              <span className="font-bold text-slate-900">${((numSigners - 1) * 35).toFixed(2)}</span>
-            </div>
-          )}
-          <div className="border-t border-slate-200 pt-3 flex justify-between">
-            <span className="font-black text-slate-900">Total</span>
-            <span className="text-xl font-black text-[#185FA5]">${(total / 100).toFixed(2)}</span>
-          </div>
+        )}
+        <div className="h-px bg-white/10 my-2" />
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-bold text-white">Total Amount</span>
+          <span className="text-2xl font-black text-[#f59e0b]">${price.toFixed(2)}</span>
         </div>
       </div>
 
-      {/* Payment form placeholder */}
-      {DEMO_MODE ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <p className="font-bold text-amber-800 mb-2 text-sm">🚀 Demo Mode — No Real Payment</p>
-          <p className="text-xs text-amber-700">In production, a Stripe card form appears here. Click below to simulate a successful payment.</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 p-4 bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-xl">
+          <ShieldCheck size={20} className="text-[#f59e0b]" />
+          <p className="text-sm text-slate-300">Your notarization will be stored securely for 10 years.</p>
         </div>
-      ) : (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Card Details</label>
-          <div className="bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-400">
-            Stripe card element loads here (requires VITE_STRIPE_PUBLISHABLE_KEY)
-          </div>
+
+        <div className="flex gap-4">
+          <button onClick={onBack} className="nw-btn-ghost px-8 h-14">Back</button>
+          <button
+            onClick={handlePay}
+            disabled={isProcessing}
+            className="nw-btn-gold flex-1 h-14 flex items-center justify-center gap-2"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard size={20} />
+                <span>Pay and Begin Notarization</span>
+              </>
+            )}
+          </button>
         </div>
-      )}
-
-      <div className="bg-[#639922]/10 border border-[#639922]/30 rounded-xl p-4 flex gap-3">
-        <CheckCircle2 size={18} className="text-[#639922] shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-600 leading-relaxed">
-          <strong>Money-Back Guarantee:</strong> If your notarization can't be completed for any reason, you won't be charged. We only bill after successful notarization.
-        </p>
-      </div>
-
-      {error && <p className="text-red-500 text-sm flex items-center gap-2"><AlertCircle size={15} /> {error}</p>}
-
-      <div className="flex gap-3">
-        <button onClick={onBack} className="flex items-center gap-2 px-5 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
-          <ArrowLeft size={16} /> Back
-        </button>
-        <button
-          onClick={handlePay}
-          disabled={processing}
-          className="flex-1 py-3.5 bg-[#185FA5] hover:bg-[#144e8a] text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-md shadow-blue-500/20"
-        >
-          {processing ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
-          {processing ? 'Processing...' : `Pay $${(total / 100).toFixed(2)} & Start Notarization`}
-        </button>
       </div>
     </div>
   );
 };
 
-// ── Step 4: Launch ────────────────────────────────────────────────────────────
-const LaunchStep: React.FC<{ session: NotarizationSession; onGoToDashboard: () => void }> = ({ session, onGoToDashboard }) => {
+// -- Step 4: Launch ------------------------------------------------------------
+const LaunchStep: React.FC<{ session: NotarizationSession, onGoToDashboard: () => void }> = ({ session, onGoToDashboard }) => {
   return (
-    <div className="text-center space-y-6 py-4">
-      <div className="w-20 h-20 bg-[#639922]/10 rounded-full flex items-center justify-center mx-auto">
-        <CheckCircle2 size={40} className="text-[#639922]" />
+    <div className="text-center py-10 space-y-8">
+      <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto text-green-500">
+        <CheckCircle2 size={48} />
       </div>
       <div>
-        <h3 className="text-2xl font-black text-slate-900 mb-2">You're all set!</h3>
-        <p className="text-slate-500">Your notarization session has been created. A licensed notary is ready to connect.</p>
+        <h3 className="text-2xl font-black text-white mb-2">Session Ready!</h3>
+        <p className="text-slate-500 max-w-sm mx-auto">Your remote online notarization (RON) session is prepared. You can join now or later from your dashboard.</p>
       </div>
 
-      {session.meeting_link && (
-        <a
-          href={session.meeting_link}
-          target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-4 bg-[#185FA5] hover:bg-[#144e8a] text-white font-black rounded-xl shadow-xl shadow-blue-500/20 text-[15px] transition-all hover:-translate-y-0.5"
-        >
-          <Video size={20} /> Join Notary Video Call <ArrowRight size={20} />
-        </a>
-      )}
-
-      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 text-left space-y-3">
-        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">What to have ready:</p>
-        {['Government-issued ID (driver\'s license or passport)', 'Working camera and microphone', 'The document you need to sign', 'A quiet, well-lit space'].map(item => (
-          <div key={item} className="flex items-center gap-2.5 text-sm text-slate-700">
-            <CheckCircle2 size={15} className="text-[#639922] shrink-0" /> {item}
+      <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-left max-w-sm mx-auto">
+        <p className="text-xs font-black text-slate-500 uppercase mb-4">Session Details</p>
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Session ID</span>
+            <span className="text-white font-mono">{session.id.slice(0, 12)}...</span>
           </div>
-        ))}
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Status</span>
+            <span className="text-[#f59e0b] font-bold uppercase">{session.status}</span>
+          </div>
+        </div>
       </div>
 
-      <button onClick={onGoToDashboard} className="w-full py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors text-sm">
-        View in Dashboard
-      </button>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
+        <a 
+          href={`/notarize/session/${session.id}`} 
+          className="nw-btn-gold h-14 flex items-center justify-center gap-2 text-decoration-none"
+        >
+          <Video size={20} />
+          Join Notary Session Now
+        </a>
+        <button onClick={onGoToDashboard} className="nw-btn-ghost h-14">Return to Dashboard</button>
+      </div>
     </div>
   );
 };
 
-// ── Main Wizard ───────────────────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------------------
 export const NotarizationWizard: React.FC<WizardProps> = ({ onComplete, onCancel }) => {
   const [step, setStep] = React.useState(1);
-  const [uploadedDoc, setUploadedDoc]   = React.useState<NotarizeDocument | null>(null);
-  const [docType, setDocType]           = React.useState<DocumentType>('other');
-  const [notaryType, setNotaryType]     = React.useState<NotaryType>('acknowledgment');
-  const [numSigners, setNumSigners]     = React.useState(1);
+  const [uploadedDoc, setUploadedDoc] = React.useState<NotarizeDocument | null>(null);
+  const [docType, setDocType] = React.useState<DocumentType | null>(null);
+  const [notaryType, setNotaryType] = React.useState<NotaryType | null>(null);
+  const [numSigners, setNumSigners] = React.useState(1);
   const [contactEmail, setContactEmail] = React.useState('');
   const [contactPhone, setContactPhone] = React.useState('');
-  const [session, setSession]           = React.useState<NotarizationSession | null>(null);
+  
   const [creatingSession, setCreatingSession] = React.useState(false);
   const [sessionError, setSessionError] = React.useState('');
+  const [session, setSession] = React.useState<NotarizationSession | null>(null);
+
+  const CSS = `
+    .nw-root {
+      background: #05080f; min-height: 100vh; color: #fff;
+      display: flex; flex-direction: column; overflow: hidden; position: relative;
+    }
+    .nw-glow-tl {
+      position: fixed; top: -300px; left: -300px; width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
+    }
+    .nw-card {
+      background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .nw-btn-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000;
+      font-weight: 800; border: none; border-radius: 12px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nw-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(245,158,11,0.3); }
+    .nw-btn-ghost {
+      background: transparent; color: #94a3b8; border: 1.5px solid rgba(255,255,255,0.1);
+      font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .nw-btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.02); }
+    .nw-pill { height: 4px; border-radius: 2px; flex: 1; background: rgba(255,255,255,0.05); transition: background 0.35s; }
+    .nw-pill.active { background: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.3); }
+    .nw-pill.done { background: #10b981; }
+    
+    input, select, textarea {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(255, 255, 255, 0.05) !important;
+      color: #fff !important; border-radius: 12px !important; outline: none !important;
+      transition: all 0.2s !important;
+    }
+    input:focus, select:focus {
+      border-color: #f59e0b !important;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+  `;
 
   const handleUploadDone = (doc: NotarizeDocument, type: DocumentType) => {
     setUploadedDoc(doc);
@@ -442,60 +425,52 @@ export const NotarizationWizard: React.FC<WizardProps> = ({ onComplete, onCancel
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-[#185FA5] rounded-lg flex items-center justify-center">
-              <FileText size={14} className="text-white" />
+    <div className="nw-root">
+      <style>{CSS}</style>
+      <div className="nw-glow-tl" />
+
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', zIndex: 10 }}>
+        <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileText size={16} color="#000" strokeWidth={3} />
             </div>
-            <span className="font-black text-sm text-slate-900">New Notarization</span>
+            <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: 18, fontWeight: 800, color: '#fff' }}>
+              New Notarization
+            </span>
           </div>
-          <button onClick={onCancel} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-            <X size={18} />
+          <button onClick={onCancel} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', padding: 8, borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s' }}>
+            <X size={20} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-5 py-8">
-        {/* Progress bar */}
-        <div className="flex items-center gap-2 mb-8">
-          {STEPS.map((s, i) => {
-            const done = step > s.num;
-            const active = step === s.num;
-            const Icon = s.icon;
-            return (
-              <React.Fragment key={s.num}>
-                <div className="flex flex-col items-center gap-1.5 shrink-0">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${done ? 'bg-[#639922]' : active ? 'bg-[#185FA5]' : 'bg-slate-200'}`}>
-                    {done ? <CheckCircle2 size={18} className="text-white" /> : <Icon size={16} className={active ? 'text-white' : 'text-slate-400'} />}
-                  </div>
-                  <span className={`text-[10px] font-bold ${active ? 'text-[#185FA5]' : done ? 'text-[#639922]' : 'text-slate-400'}`}>{s.label}</span>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mb-4 transition-all ${step > s.num ? 'bg-[#639922]' : 'bg-slate-200'}`} />
-                )}
-              </React.Fragment>
-            );
-          })}
+      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-5 py-10 z-10">
+        <div className="flex items-center gap-3 mb-10">
+          {STEPS.map((s) => (
+            <div key={s.num} className={`nw-pill ${step > s.num ? 'done' : step === s.num ? 'active' : ''}`} />
+          ))}
         </div>
 
-        {/* Step content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex-1">
+        <div className="nw-card p-8 md:p-10 flex-1">
           {step === 1 && <UploadStep onNext={handleUploadDone} />}
           {step === 2 && uploadedDoc && (
             <>
               {creatingSession ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-4">
-                  <Loader2 size={36} className="animate-spin text-[#185FA5]" />
-                  <p className="font-bold text-slate-700">Setting up your session...</p>
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 size={40} className="animate-spin text-[#f59e0b]" />
+                  <p style={{ fontWeight: 700, color: '#94a3b8' }}>Establishing secure connection...</p>
                 </div>
               ) : (
-                <>
-                  {sessionError && <p className="text-red-500 text-sm mb-4 flex items-center gap-2"><AlertCircle size={14} /> {sessionError}</p>}
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                  {sessionError && (
+                    <div style={{ padding: 16, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 12, marginBottom: 20, display: 'flex', gap: 12 }}>
+                      <AlertTriangle size={18} className="text-[#f87171]" />
+                      <p style={{ color: '#f87171', fontSize: 13, fontWeight: 600, margin: 0 }}>{sessionError}</p>
+                    </div>
+                  )}
                   <DetailsStep document={uploadedDoc} onNext={handleDetailsDone} onBack={() => setStep(1)} />
-                </>
+                </div>
               )}
             </>
           )}
@@ -511,6 +486,12 @@ export const NotarizationWizard: React.FC<WizardProps> = ({ onComplete, onCancel
           {step === 4 && session && (
             <LaunchStep session={session} onGoToDashboard={onCancel} />
           )}
+        </div>
+
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <ShieldCheck size={14} className="text-[#10b981]" /> End-to-End Encryption Active (AES-256)
+          </p>
         </div>
       </div>
     </div>

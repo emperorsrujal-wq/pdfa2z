@@ -311,6 +311,31 @@ interface Field {
 
 ---
 
+## Phase 7: Lead Routing & Professional Ecosystem (Week 6+)
+
+### 7.1 Cloud Lead Management
+**Files**: Create `services/leadService.ts`, Update `PDFJourneyBuilder.tsx`
+
+**Features**:
+- [ ] **Firestore Persistence**: Securely save all journey submissions (CSV data + original PDF link) to Firestore.
+- [ ] **Admin Leads View**: A dedicated dashboard for journey owners to view, filter, and export their leads.
+- [ ] **Client Access Control**: Ensure only the journey creator can see the submitted data.
+- [ ] **Automated PDF Storage**: Move generated PDFs to Firebase Storage with access-controlled links.
+
+### 7.2 Professional Webhooks & Integrations
+**Features**:
+- [ ] **Post-Completion Webhooks**: Trigger an external POST request (to Zapier, Make, or custom CRM) when a journey is completed.
+- [ ] **Email Alerts (Pro)**: Send real-time email notifications to the business owner with a summary of the new lead.
+- [ ] **CRM Auto-Mapping**: Intelligent mapping of journey fields to common CRM objects.
+
+### 7.3 Distribution & Reach
+**Features**:
+- [ ] **Professional QR Code Generator**: Generate high-resolution, branded QR codes for physical signage (e.g., Real Estate 'For Sale' signs).
+- [ ] **Custom CNAME / Domains**: Host journeys on `apply.businessname.com` (Enterprise Tier).
+- [ ] **A/B Testing**: Support multiple versions of the same PDF journey to optimize conversion rates.
+
+---
+
 ## Implementation Priority Matrix
 
 | Feature | Impact | Effort | Priority |

@@ -47,7 +47,47 @@ export interface BrandConfig {
   // Additional Customization
   customCss?: string;         // Custom CSS for advanced styling
   customScriptUrl?: string;   // Custom tracking/analytics script
+  isFocusedMode?: boolean;    // Single field per screen mode (default: false)
+
+  // Regional Settings (Auto-detected if null)
+  locale?: string;            // e.g., 'en-US', 'en-GB'
+  currencyCode?: string;      // e.g., 'USD', 'GBP'
+  currencySymbol?: string;    // e.g., '$', '£'
+  dateFormat?: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+
+  // Integration Settings
+  webhookUrl?: string;        // External endpoint for automated delivery
+  webhookSecret?: string;     // Secret key for payload signing
+
+  // Account Tier
+  isPro?: boolean;            // Whether the account has Pro/Enterprise features
 }
+
+/**
+ * Detect regional settings based on browser defaults
+ */
+export const autoDetectRegionalSettings = (): Partial<BrandConfig> => {
+  try {
+    const locale = navigator.language || 'en-US';
+    const currency = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' })
+      .resolvedOptions().currency || 'USD';
+    
+    // Simple symbol detection
+    const symbol = new Intl.NumberFormat(locale, { style: 'currency', currency })
+      .formatToParts(1)
+      .find(p => p.type === 'currency')?.value || '$';
+
+    // Date format detection (rough)
+    let dateFormat: BrandConfig['dateFormat'] = 'MM/DD/YYYY';
+    const dateStr = new Intl.DateTimeFormat(locale).format(new Date(2022, 11, 31));
+    if (dateStr.startsWith('31')) dateFormat = 'DD/MM/YYYY';
+    else if (dateStr.startsWith('2022')) dateFormat = 'YYYY-MM-DD';
+
+    return { locale, currencyCode: currency, currencySymbol: symbol, dateFormat };
+  } catch (e) {
+    return { locale: 'en-US', currencyCode: 'USD', currencySymbol: '$', dateFormat: 'MM/DD/YYYY' };
+  }
+};
 
 /**
  * Default branding configuration
@@ -69,6 +109,9 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   showPdfa2zBranding: true,
   showPdfa2zLogo: true,
   brandingPosition: 'top',
+  webhookUrl: '',
+  webhookSecret: '',
+  ...autoDetectRegionalSettings(),
 };
 
 /**
