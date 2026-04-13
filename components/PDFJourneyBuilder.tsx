@@ -7,7 +7,8 @@ import { JourneyReviewStep } from "./JourneyReviewStep";
 import { BrandConfig, DEFAULT_BRAND_CONFIG, mergeBrandConfig, loadBrandConfig, applyBrandConfig } from "../utils/journeyBranding";
 import { generateJourneyWorkflow } from "../services/geminiService";
 import { extractTextFromPdf } from "../utils/pdfHelpers";
-import { Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, Layout as LayoutIcon, Type, CheckCircle } from "lucide-react";
+import { Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, Layout as LayoutIcon, Type, CheckCircle, BarChart2, Share2, Globe, Copy, Check } from "lucide-react";
+import { JOURNEY_TRANSLATIONS, Language } from "../utils/journeyTranslations";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -475,10 +476,12 @@ export const PDFJourneyBuilder: React.FC = () => {
     return mergeBrandConfig(saved || undefined);
   });
   const [isEditorMode, setIsEditorMode] = useState(true);
-  const [editorTab, setEditorTab] = useState<'steps' | 'settings'>('steps');
+  const [editorTab, setEditorTab] = useState<'steps' | 'settings' | 'insights'>('steps');
+  const [language, setLanguage] = useState<Language>('en');
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [isAutoBuilding, setIsAutoBuilding] = useState(false);
+  const [draft, setDraft] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load PDF.js + pdf-lib
@@ -498,9 +501,57 @@ export const PDFJourneyBuilder: React.FC = () => {
   }, []);
 
   // Apply brand configuration
+  // Check for drafts on mount
+  useEffect(() => {
+    const keys = Object.keys(localStorage);
+    const draftKey = keys.find(k => k.startsWith('jb_draft_'));
+    if (draftKey) {
+      try {
+        const d = JSON.parse(localStorage.getItem(draftKey)!);
+        setDraft(d);
+      } catch (e) {
+        console.error("Draft error:", e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     applyBrandConfig(brandConfig);
   }, [brandConfig]);
+
+  // ─── Phase 3: Auto-Save Drafts ─────────────────────────────────────────────
+  useEffect(() => {
+    if (stage === "wizard" || stage === "configure") {
+      const draft = {
+        formData,
+        steps,
+        currentStep,
+        brandConfig,
+        fileName
+      };
+      localStorage.setItem(`jb_draft_${fileName || 'last'}`, JSON.stringify(draft));
+    }
+  }, [formData, steps, currentStep, brandConfig, stage, fileName]);
+
+  // ─── Phase 3: URL Pre-filling ──────────────────────────────────────────────
+  useEffect(() => {
+    if (stage === "wizard") {
+      const params = new URLSearchParams(window.location.search);
+      const prefilled: FormData = { ...formData };
+      let matched = false;
+      
+      params.forEach((val, key) => {
+        // Try to match key with a field ID
+        const allFields = steps.flatMap(s => s.fields);
+        if (allFields.some(f => f.id === key || f.name === key)) {
+          prefilled[key] = val;
+          matched = true;
+        }
+      });
+
+      if (matched) setFormData(prefilled);
+    }
+  }, [stage]);
 
   const processFile = async (file: File) => {
     if (!file) return;
@@ -675,6 +726,12 @@ export const PDFJourneyBuilder: React.FC = () => {
       const filled = await doc.save();
       const blob = new Blob([filled], { type: "application/pdf" });
       setFilledUrl(URL.createObjectURL(blob));
+      
+      // Phase 4: Basic Analytics
+      const statsKey = `jb_stats_${fileName || 'global'}`;
+      const stats = JSON.parse(localStorage.getItem(statsKey) || '{"starts":0, "completes":0}');
+      stats.completes++;
+      localStorage.setItem(statsKey, JSON.stringify(stats));
     } catch (e) {
       console.error(e);
     }
@@ -693,6 +750,18 @@ export const PDFJourneyBuilder: React.FC = () => {
     setFileName("");
     setSteps([]);
     setNoFields(false);
+    setDraft(null);
+  };
+
+  const restoreDraft = () => {
+    if (!draft) return;
+    setSteps(draft.steps);
+    setFormData(draft.formData);
+    setCurrentStep(draft.currentStep);
+    setBrandConfig(draft.brandConfig);
+    setFileName(draft.fileName);
+    setStage("configure");
+    setDraft(null);
   };
 
   const removeFieldFromStep = (stepId: string, fieldId: string) => {
@@ -799,6 +868,17 @@ export const PDFJourneyBuilder: React.FC = () => {
             {error && <p className="jb-err">{error}</p>}
             {libError && <p className="jb-err">Failed to load PDF engine. Please refresh.</p>}
             {!libsReady && !libError && <p className="jb-notice">⏳ Loading PDF engine…</p>}
+
+            {draft && (
+              <div style={{ marginTop: 32, padding: '16px 20px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 16, animation: 'jb-fadeIn 0.5s ease' }}>
+                <div style={{ fontSize: 24 }}>🔄</div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>Continue where you left off?</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>Draft found for: <strong>{draft.fileName}</strong></p>
+                </div>
+                <button className="jb-btn jb-btn-gold" onClick={restoreDraft} style={{ margin: 0, padding: '8px 16px', fontSize: 12 }}>Restore →</button>
+              </div>
+            )}
           </div>
         </div>
       </>
@@ -859,7 +939,14 @@ export const PDFJourneyBuilder: React.FC = () => {
                     onClick={() => setEditorTab('settings')}
                     style={{ flex: 1 }}
                   >
-                    Branding
+                    Style
+                  </button>
+                  <button 
+                    className={`jb-toggle-btn${editorTab === 'insights' ? " active" : ""}`} 
+                    onClick={() => setEditorTab('insights')}
+                    style={{ flex: 1 }}
+                  >
+                    Stats
                   </button>
                 </div>
               </div>
@@ -931,6 +1018,32 @@ export const PDFJourneyBuilder: React.FC = () => {
                       />
                     </div>
                   </div>
+                ) : (
+                  <div style={{ padding: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: 'block', marginBottom: 12 }}>PERFORMANCE INSIGHTS</span>
+                    {(() => {
+                      const stats = JSON.parse(localStorage.getItem(`jb_stats_${fileName || 'global'}`) || '{"starts":0, "completes":0}');
+                      const rate = stats.starts > 0 ? Math.round((stats.completes / stats.starts) * 100) : 0;
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          <div style={{ padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>Completion Rate</div>
+                            <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>{rate}%</div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div style={{ padding: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
+                              <div style={{ fontSize: 10, color: '#64748b' }}>Starts</div>
+                              <div style={{ fontSize: 18, fontWeight: 700 }}>{stats.starts}</div>
+                            </div>
+                            <div style={{ padding: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
+                              <div style={{ fontSize: 10, color: '#64748b' }}>Completes</div>
+                              <div style={{ fontSize: 18, fontWeight: 700 }}>{stats.completes}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 )}
               </div>
               
@@ -953,8 +1066,23 @@ export const PDFJourneyBuilder: React.FC = () => {
                   <span style={{ color: "#475569", fontSize: 13 }}>Editing: <strong>{activeStep?.title}</strong></span>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button className="jb-btn jb-btn-ghost" onClick={reset} style={{ padding: "8px 16px", fontSize: 13 }}>Reset</button>
-                  <button className="jb-btn jb-btn-gold" onClick={() => { setCurrentStep(0); setStage("wizard"); }} style={{ padding: "8px 24px", fontSize: 13 }}>Go Live →</button>
+                  <button className="jb-btn jb-btn-ghost" onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('brand', brandConfig.companyName || '');
+                    navigator.clipboard.writeText(url.toString());
+                    alert("Shareable link copied!");
+                  }} style={{ padding: "8px 16px", fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Share2 size={14} /> Share
+                  </button>
+                  <button className="jb-btn jb-btn-gold" onClick={() => { 
+                    setCurrentStep(0); 
+                    setStage("wizard"); 
+                    // Track analytics start
+                    const statsKey = `jb_stats_${fileName || 'global'}`;
+                    const stats = JSON.parse(localStorage.getItem(statsKey) || '{"starts":0, "completes":0}');
+                    stats.starts++;
+                    localStorage.setItem(statsKey, JSON.stringify(stats));
+                  }} style={{ padding: "8px 24px", fontSize: 13 }}>Go Live →</button>
                 </div>
               </div>
 
@@ -1077,14 +1205,34 @@ export const PDFJourneyBuilder: React.FC = () => {
             </div>
 
             <div className="jb-brand">
-              <span className="jb-brand-pip" />
-              {brandConfig.companyName || "pdfa2z"} · Journey
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="jb-brand-pip" />
+                <span>{brandConfig.companyName || "pdfa2z"} · Journey</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+                <select 
+                  value={language} 
+                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', outline: 'none' }}
+                >
+                  <option value="en">EN</option>
+                  <option value="es">ES</option>
+                  <option value="fr">FR</option>
+                  <option value="hi">HI</option>
+                </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#059669', background: 'rgba(5, 150, 105, 0.1)', padding: '2px 8px', borderRadius: 20 }}>
+                  <CheckCircle size={10} />
+                  {JOURNEY_TRANSLATIONS[language].secure}
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <div className="jb-step-num" style={{ margin: 0 }}>Step {currentStep + 1} of {steps.length}</div>
+              <div className="jb-step-num" style={{ margin: 0 }}>
+                {JOURNEY_TRANSLATIONS[language].step} {currentStep + 1} {JOURNEY_TRANSLATIONS[language].of} {steps.length}
+              </div>
               <div style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
-                ⌛ ~{Math.max(1, Math.ceil((steps.length - currentStep) * 0.5))} min left
+                ⌛ ~{Math.max(1, Math.ceil((steps.length - currentStep) * 0.5))} {JOURNEY_TRANSLATIONS[language].minLeft}
               </div>
             </div>
 
@@ -1147,7 +1295,7 @@ export const PDFJourneyBuilder: React.FC = () => {
             <div className="jb-btn-row">
               {!isFirst && (
                 <button className="jb-btn jb-btn-ghost" onClick={() => setCurrentStep((c) => c - 1)}>
-                  ← Back
+                  ← {JOURNEY_TRANSLATIONS[language].back}
                 </button>
               )}
               {isLast ? (
@@ -1160,7 +1308,7 @@ export const PDFJourneyBuilder: React.FC = () => {
                     }
                   }}
                 >
-                  Review & Continue →
+                  {JOURNEY_TRANSLATIONS[language].review} →
                 </button>
               ) : (
                 <button
@@ -1172,7 +1320,7 @@ export const PDFJourneyBuilder: React.FC = () => {
                     }
                   }}
                 >
-                  Continue →
+                  {JOURNEY_TRANSLATIONS[language].continue} →
                 </button>
               )}
             </div>
@@ -1225,14 +1373,10 @@ export const PDFJourneyBuilder: React.FC = () => {
           <div className="jb-glow-tl" />
           <div className="jb-glow-br" />
           <div className="jb-card">
-            <div className="jb-brand">
-              <span className="jb-brand-pip" />
-              pdfa2z · Journey Builder
-            </div>
             <div className="jb-success-wrap">
               <div className="jb-success-icon">✅</div>
               <h1 className="jb-title">
-                Journey <em>Complete</em>
+                {JOURNEY_TRANSLATIONS[language].complete}
               </h1>
               <p className="jb-sub" style={{ marginBottom: 0 }}>
                 {filledUrl
@@ -1242,12 +1386,17 @@ export const PDFJourneyBuilder: React.FC = () => {
             </div>
             {filledUrl && (
               <a href={filledUrl} download={`filled_${fileName}`} style={{ textDecoration: "none" }}>
-                <button className="jb-btn jb-btn-gold">⬇ Download Filled PDF</button>
+                <button className="jb-btn jb-btn-gold">{JOURNEY_TRANSLATIONS[language].download}</button>
               </a>
-            )}
+            ) }
             <button className="jb-btn jb-btn-ghost" onClick={reset}>
-              Start New Journey
+              {JOURNEY_TRANSLATIONS[language].startNew}
             </button>
+            <div style={{ marginTop: 24, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 16, textAlign: 'center' }}>
+              <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>
+                🔒 <strong>Privacy First</strong>: {JOURNEY_TRANSLATIONS[language].privacyNote}
+              </p>
+            </div>
           </div>
         </div>
       </>

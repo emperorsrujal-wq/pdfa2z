@@ -1,0 +1,77 @@
+
+export type Language = 'en' | 'es' | 'fr' | 'hi';
+
+export const JOURNEY_TRANSLATIONS: Record<Language, any> = {
+  en: {
+    back: "Back",
+    continue: "Continue",
+    review: "Review & Continue",
+    step: "Step",
+    of: "of",
+    minLeft: "min left",
+    secure: "Secure & Encrypted",
+    privacyNote: "All calculations performed locally. No data was stored on our servers.",
+    complete: "Journey Complete",
+    download: "Download Filled PDF",
+    startNew: "Start New Journey",
+    helpExample: "e.g.",
+    required: "required",
+    errorRequired: "is required",
+    reviewTitle: "Review your information",
+    confirmSubmit: "I confirm that all information provided is accurate."
+  },
+  es: {
+    back: "Volver",
+    continue: "Continuar",
+    review: "Revisar y Continuar",
+    step: "Paso",
+    of: "de",
+    minLeft: "min restantes",
+    secure: "Seguro y Encriptado",
+    privacyNote: "Cálculos realizados localmente. No se almacenaron datos en servidores.",
+    complete: "Viaje Completado",
+    download: "Descargar PDF Lleno",
+    startNew: "Iniciar Nuevo Viaje",
+    helpExample: "p. ej.",
+    required: "obligatorio",
+    errorRequired: "es obligatorio",
+    reviewTitle: "Revise su información",
+    confirmSubmit: "Confirmo que toda la información es precisa."
+  },
+  fr: {
+    back: "Retour",
+    continue: "Continuer",
+    review: "Réviser et Continuer",
+    step: "Étape",
+    of: "sur",
+    minLeft: "min restantes",
+    secure: "Sécurisé et Chiffré",
+    privacyNote: "Calculs effectués localement. Aucune donnée stockée sur nos serveurs.",
+    complete: "Parcours Terminé",
+    download: "Télécharger le PDF Rempli",
+    startNew: "Nouveau Parcours",
+    helpExample: "ex.",
+    required: "requis",
+    errorRequired: "est requis",
+    reviewTitle: "Vérifiez vos informations",
+    confirmSubmit: "Je confirme que toutes les informations sont exactes."
+  },
+  hi: {
+    back: "पीछे",
+    continue: "जारी रखें",
+    review: "समीक्षा और जारी रखें",
+    step: "चरण",
+    of: "का",
+    minLeft: "मिनट शेष",
+    secure: "सुरक्षित और एन्क्रिप्टेड",
+    privacyNote: "सभी गणनाएँ स्थानीय रूप से की गईं। कोई डेटा संग्रहीत नहीं किया गया।",
+    complete: "यात्रा पूर्ण",
+    download: "भरा हुआ PDF डाउनलोड करें",
+    startNew: "नई यात्रा शुरू करें",
+    helpExample: "जैसे",
+    required: "आवश्यक",
+    errorRequired: "अनिवार्य है",
+    reviewTitle: "अपनी जानकारी की समीक्षा करें",
+    confirmSubmit: "मैं पुष्टि करता हूँ कि दी गई जानकारी सटीक है।"
+  }
+};
