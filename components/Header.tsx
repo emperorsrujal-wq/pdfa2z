@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
 import { TOOLS_REGISTRY } from '../utils/seoData';
 import { useAuth } from '../context/AuthContext';
-import { User as UserIcon, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { User as UserIcon, LogOut, LayoutDashboard, ShieldCheck, Home as HomeIcon } from 'lucide-react';
+import { MegaMenu } from './MegaMenu';
+import { ToolType } from '../types';
 
 interface HeaderProps {
     currentLang?: string;
@@ -17,6 +19,16 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     const { t } = useTranslation();
     const location = useLocation();
     const { user, openAuthModal, signOut } = useAuth();
+    const [megaMenuInfo, setMegaMenuInfo] = React.useState<{ category: 'pdf' | 'image' | 'ai' | null; isOpen: boolean }>({
+        category: null,
+        isOpen: false
+    });
+
+    const openMegaMenu = (cat: 'pdf' | 'image' | 'ai') => {
+        setMegaMenuInfo({ category: cat, isOpen: true });
+    };
+
+    const closeMegaMenu = () => setMegaMenuInfo({ ...megaMenuInfo, isOpen: false });
 
     // Helper to generate localized paths
     const getLocalizedPath = (path: string) => {
@@ -52,34 +64,51 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     ];
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm">
-            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
+            <div className="glass-panel rounded-full px-6 h-14 md:h-16 flex items-center justify-between w-full max-w-7xl">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-                            <FileText className="h-5 w-5" />
+                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600 group">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                            <FileText className="h-6 w-6" />
                         </div>
-                        <span>PDF A2Z</span>
+                        <div className="flex flex-col">
+                            <span className="leading-none text-slate-900 tracking-tighter">PDF <span className="text-blue-600">A2Z</span></span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400 group-hover:text-blue-600 transition-colors">Return Home</span>
+                        </div>
                     </Link>
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-4">
-                    {navigation.map((item) => (
+                <nav className="hidden md:flex items-center gap-2">
+                    {navigation.filter(item => item.id !== 'notarize').map((item) => (
                         <div key={item.id} className="relative group">
-                            <Link
-                                to={getLocalizedPath(item.href)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    isPathActive(item.href)
-                                        ? 'text-blue-600 bg-blue-50 border-b-2 border-blue-600'
-                                        : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
-                                }`}
-                            >
-                                <item.icon className="h-4 w-4" />
-                                {item.name}
-                                {item.tools.length > 0 && <ChevronDown className="h-3 w-3 opacity-60" />}
-                            </Link>
+                            {item.id === 'pdf' || item.id === 'image' || item.id === 'ai' ? (
+                                <button
+                                    onClick={() => openMegaMenu(item.id as any)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                        megaMenuInfo.isOpen && megaMenuInfo.category === item.id
+                                            ? 'text-blue-600 bg-blue-50/50 scale-105'
+                                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <item.icon className="h-3.5 w-3.5" />
+                                    {item.name}
+                                    <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${megaMenuInfo.isOpen && megaMenuInfo.category === item.id ? 'rotate-180' : ''}`} />
+                                </button>
+                            ) : (
+                                <Link
+                                    to={getLocalizedPath(item.href)}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                        isPathActive(item.href)
+                                            ? 'text-blue-600 bg-blue-50/50'
+                                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <item.icon className="h-3.5 w-3.5" />
+                                    {item.name}
+                                </Link>
+                            )}
 
                             {/* Dropdown Menu */}
                             {item.tools.length > 0 && (
@@ -107,8 +136,20 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     ))}
                 </nav>
 
-                {/* Desktop Auth & Language */}
-                <div className="hidden md:flex items-center gap-4">
+                {/* Desktop Auth & Notary */}
+                <div className="hidden md:flex items-center gap-3">
+                    <Link 
+                        to={getLocalizedPath('/notarize')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                            isPathActive('/notarize')
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                        }`}
+                    >
+                        <ShieldCheck size={12} />
+                        VERIFIED NOTARY
+                    </Link>
+                    <div className="h-4 w-[1px] bg-slate-200 mx-1" />
                     <LanguageSelector />
                     
                     {user ? (
@@ -253,6 +294,18 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     </div>
                 </div>
             )}
+            {/* Mega Menu Overlay */}
+            <MegaMenu 
+                isOpen={megaMenuInfo.isOpen}
+                onClose={closeMegaMenu}
+                category={megaMenuInfo.category}
+                tools={
+                    megaMenuInfo.category === 'pdf' ? pdfTools :
+                    megaMenuInfo.category === 'image' ? imageTools :
+                    megaMenuInfo.category === 'ai' ? aiTools : []
+                }
+                currentLang={currentLang}
+            />
         </header>
     );
 };

@@ -18,6 +18,7 @@ interface JourneyBrandConfigProps {
   onConfigChange?: (config: BrandConfig) => void;
   onSave?: (config: BrandConfig) => void;
   initialConfig?: BrandConfig;
+  availableFields?: { id: string; label: string }[];
 }
 
 const GOOGLE_FONTS = [
@@ -37,12 +38,13 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
   onConfigChange,
   onSave,
   initialConfig,
+  availableFields = [],
 }) => {
   const [config, setConfig] = useState<BrandConfig>(
     initialConfig || loadBrandConfig() || DEFAULT_BRAND_CONFIG
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'legal'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'legal' | 'integrations' | 'advanced' | 'layout'>('colors');
   const [saved, setSaved] = useState(false);
 
   const handleConfigChange = (field: keyof BrandConfig, value: any) => {
@@ -50,6 +52,22 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
     setConfig(updated);
     onConfigChange?.(updated);
     setSaved(false);
+  };
+
+  const updateMapping = (fieldId: string, alias: string) => {
+    const mappings = { ...(config.fieldMappings || {}) };
+    if (alias) mappings[fieldId] = alias;
+    else delete mappings[fieldId];
+    handleConfigChange('fieldMappings', mappings);
+  };
+
+  const handleTestWebhook = async () => {
+    if (!config.webhookUrl) {
+      alert('Please provide a Webhook URL first');
+      return;
+    }
+    console.log('Testing webhook with dummy payload...');
+    alert(`Mock test sent to ${config.webhookUrl}. Check console for details.`);
   };
 
   const handleSave = () => {
@@ -69,6 +87,25 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
     setConfig(DEFAULT_BRAND_CONFIG);
     setErrors([]);
     setSaved(false);
+  };
+
+  const loadDefaultEmailTemplate = () => {
+    const defaultTemplate = `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; border-radius: 20px; overflow: hidden;">
+  <div style="padding: 40px; background: #f59e0b; text-align: center; color: #000;">
+    <h1>New Lead!</h1>
+  </div>
+  <div style="padding: 40px;">
+    <p>A new lead has been captured from your journey.</p>
+    <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+      {{lead_data}}
+    </div>
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{pdf_url}}" style="background: #f59e0b; color: #000; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">View PDF</a>
+    </div>
+  </div>
+</div>`.trim();
+    handleConfigChange('emailTemplate', defaultTemplate);
   };
 
   return (
@@ -341,6 +378,37 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
           font-size: 12px;
           color: #94a3b8;
         }
+
+        .brand-textarea {
+          width: 100%;
+          min-height: 120px;
+          padding: 12px;
+          background: rgba(15, 23, 42, 0.5);
+          border: 1px solid rgba(148, 163, 184, 0.3);
+          border-radius: 8px;
+          color: #e2e8f0;
+          font-size: 13px;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+          resize: vertical;
+          margin-bottom: 8px;
+        }
+
+        .brand-helper-btn {
+          background: rgba(245,158,11,0.1);
+          color: #f59e0b;
+          border: 1px solid rgba(245,158,11,0.2);
+          padding: 4px 12px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          margin-bottom: 16px;
+          transition: all 0.2s;
+        }
+
+        .brand-helper-btn:hover {
+          background: rgba(245,158,11,0.2);
+        }
       `}</style>
 
       <div className="brand-config-container">
@@ -388,7 +456,25 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
             className={`brand-tab ${activeTab === 'legal' ? 'active' : ''}`}
             onClick={() => setActiveTab('legal')}
           >
-            Legal & Links
+            Legal
+          </button>
+          <button
+            className={`brand-tab ${activeTab === 'layout' ? 'active' : ''}`}
+            onClick={() => setActiveTab('layout')}
+          >
+            Layout
+          </button>
+          <button
+            className={`brand-tab ${activeTab === 'integrations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('integrations')}
+          >
+            Integrations
+          </button>
+          <button
+            className={`brand-tab ${activeTab === 'advanced' ? 'active' : ''}`}
+            onClick={() => setActiveTab('advanced')}
+          >
+            Advanced
           </button>
         </div>
 
@@ -655,16 +741,193 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
                 placeholder="support@example.com"
               />
             </div>
+          </>
+        )}
+
+        {/* LAYOUT TAB */}
+        {activeTab === 'layout' && (
+          <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Journey Mode</label>
+              <div className="brand-checkbox" style={{ marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  id="focused-mode"
+                  checked={config.isFocusedMode || false}
+                  onChange={(e) => handleConfigChange('isFocusedMode', e.target.checked)}
+                />
+                <label htmlFor="focused-mode" className="brand-checkbox-label">
+                  <strong>Focused Mode (Typeform style)</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Shows one field at a time for higher mobile conversion rates.
+                  </div>
+                </label>
+              </div>
+            </div>
 
             <div className="brand-form-group">
-              <label className="brand-form-label">Support URL</label>
+              <label className="brand-form-label">Logo Height</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <input
+                  type="range"
+                  min="16"
+                  max="120"
+                  value={config.logoHeight || 32}
+                  onChange={(e) => handleConfigChange('logoHeight', parseInt(e.target.value))}
+                  style={{ flex: 1, accentColor: '#f59e0b' }}
+                />
+                <span style={{ fontSize: 13, color: '#cbd5e1', width: 40 }}>{config.logoHeight || 32}px</span>
+              </div>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.05)', margin: '20px 0' }} />
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Digital Trust & Signing</label>
+              <div className="brand-checkbox" style={{ marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  id="audit-trail"
+                  checked={config.includeAuditTrail !== false}
+                  onChange={(e) => handleConfigChange('includeAuditTrail', e.target.checked)}
+                />
+                <label htmlFor="audit-trail" className="brand-checkbox-label">
+                  <strong>Include Completion Certificate</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Appends a professional audit trail with timestamps and IDs to the final PDF.
+                  </div>
+                </label>
+              </div>
+
+              <div className="brand-checkbox">
+                <input
+                  type="checkbox"
+                  id="allow-type"
+                  checked={config.allowTypeSignature !== false}
+                  onChange={(e) => handleConfigChange('allowTypeSignature', e.target.checked)}
+                />
+                <label htmlFor="allow-type" className="brand-checkbox-label">
+                  <strong>Allow Type-to-Sign</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Enable users to sign using professional cursive fonts.
+                  </div>
+                </label>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* INTEGRATIONS TAB */}
+        {activeTab === 'integrations' && (
+          <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Webhook URL</label>
               <input
                 type="text"
                 className="brand-input"
-                value={config.supportUrl || ''}
-                onChange={(e) => handleConfigChange('supportUrl', e.target.value)}
-                placeholder="https://example.com/support"
+                value={config.webhookUrl || ''}
+                onChange={(e) => handleConfigChange('webhookUrl', e.target.value)}
+                placeholder="https://your-crm.com/webhooks/pdfa2z"
               />
+              <p className="brand-form-description">
+                POST request sent when a journey is completed
+              </p>
+            </div>
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Webhook Secret</label>
+              <input
+                type="password"
+                className="brand-input"
+                value={config.webhookSecret || ''}
+                onChange={(e) => handleConfigChange('webhookSecret', e.target.value)}
+                placeholder="Optional signing secret"
+              />
+            </div>
+
+            {availableFields.length > 0 && (
+              <div className="brand-form-group" style={{ marginTop: 24, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <label className="brand-form-label" style={{ color: '#f59e0b', fontSize: 13, marginBottom: 12, display: 'block' }}>
+                  CRM Field Aliases (Zapier / Webhook Mapping)
+                </label>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {availableFields.map(f => (
+                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ flex: 1, fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {f.label}
+                      </div>
+                      <input
+                        type="text"
+                        className="brand-input"
+                        style={{ flex: 1, marginBottom: 0, height: 32, fontSize: 12 }}
+                        value={config.fieldMappings?.[f.id] || ''}
+                        onChange={(e) => updateMapping(f.id, e.target.value)}
+                        placeholder={f.id}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="brand-form-description" style={{ marginTop: 12 }}>
+                  Map journey fields to specific keys in your CRM payload.
+                </p>
+              </div>
+            )}
+
+            <button 
+              className="brand-helper-btn" 
+              style={{ marginTop: 10, width: '100%', height: 40 }}
+              onClick={handleTestWebhook}
+            >
+              Send Test Webhook →
+            </button>
+          </>
+        )}
+
+        {/* ADVANCED TAB */}
+        {activeTab === 'advanced' && (
+          <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Custom CSS</label>
+              <textarea
+                className="brand-textarea"
+                value={config.customCss || ''}
+                onChange={(e) => handleConfigChange('customCss', e.target.value)}
+                placeholder=".jb-title { font-size: 40px; }"
+              />
+              <p className="brand-form-description">
+                Inject custom styles into your journey builder
+              </p>
+            </div>
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Custom Script (Tracking)</label>
+              <input
+                type="text"
+                className="brand-input"
+                value={config.customScriptUrl || ''}
+                onChange={(e) => handleConfigChange('customScriptUrl', e.target.value)}
+                placeholder="https://example.com/analytics.js"
+              />
+              <p className="brand-form-description">
+                URL of external script (GTM, Meta Pixel, etc.)
+              </p>
+            </div>
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Email Template (HTML)</label>
+              <button className="brand-helper-btn" onClick={loadDefaultEmailTemplate}>
+                Reset to Default Template
+              </button>
+              <textarea
+                className="brand-textarea"
+                style={{ minHeight: 200 }}
+                value={config.emailTemplate || ''}
+                onChange={(e) => handleConfigChange('emailTemplate', e.target.value)}
+                placeholder="<html>...{{lead_data}}...</html>"
+              />
+              <p className="brand-form-description">
+                Use {"{{lead_data}}"} and {"{{pdf_url}}"} as placeholders
+              </p>
             </div>
           </>
         )}

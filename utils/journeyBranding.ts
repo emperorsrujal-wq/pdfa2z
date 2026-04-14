@@ -58,6 +58,15 @@ export interface BrandConfig {
   // Integration Settings
   webhookUrl?: string;        // External endpoint for automated delivery
   webhookSecret?: string;     // Secret key for payload signing
+  webhookVersion?: string;    // API version (default: '1.0')
+  fieldMappings?: Record<string, string>; // CRM Field Aliases
+
+  // Identity & Trust
+  includeAuditTrail?: boolean; // Append certificate of completion
+  allowTypeSignature?: boolean; // Allow cursive font signatures
+
+  // Localization
+  localizedContent?: Record<string, any[]>; // languageCode -> steps[]
 
   // Account Tier
   isPro?: boolean;            // Whether the account has Pro/Enterprise features
@@ -111,6 +120,11 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   brandingPosition: 'top',
   webhookUrl: '',
   webhookSecret: '',
+  webhookVersion: '1.0',
+  fieldMappings: {},
+  includeAuditTrail: true,
+  allowTypeSignature: true,
+  localizedContent: {},
   ...autoDetectRegionalSettings(),
 };
 
@@ -201,15 +215,17 @@ export const clearBrandConfig = (): void => {
  * Apply brand config styles to document
  */
 export const applyBrandConfig = (config: BrandConfig): void => {
+  if (typeof document === 'undefined') return;
+
   const variables = getBrandCssVariables(config);
   const root = document.documentElement;
 
-  // Apply CSS variables
+  // 1. Apply CSS variables
   Object.entries(variables).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
 
-  // Apply Google Fonts if specified
+  // 2. Apply Google Fonts
   if (config.fontFamily || config.headingFontFamily) {
     const fontUrl = getGoogleFontsUrl(config.fontFamily, config.headingFontFamily);
     if (fontUrl && !document.querySelector(`link[href="${fontUrl}"]`)) {
@@ -220,22 +236,29 @@ export const applyBrandConfig = (config: BrandConfig): void => {
     }
   }
 
-  // Apply custom CSS if provided
+  // 3. Apply Custom CSS
+  let styleEl = document.getElementById('pdfa2z-custom-brand-css');
   if (config.customCss) {
-    let styleEl = document.getElementById('pdfa2z-custom-css');
     if (!styleEl) {
       styleEl = document.createElement('style');
-      styleEl.id = 'pdfa2z-custom-css';
+      styleEl.id = 'pdfa2z-custom-brand-css';
       document.head.appendChild(styleEl);
     }
     styleEl.textContent = config.customCss;
+  } else if (styleEl) {
+    styleEl.textContent = '';
   }
 
-  // Load custom tracking script if provided
-  if (config.customScriptUrl && !document.querySelector(`script[src="${config.customScriptUrl}"]`)) {
-    const script = document.createElement('script');
-    script.src = config.customScriptUrl;
-    document.head.appendChild(script);
+  // 4. Load Custom Script (Tracking/Pixels)
+  if (config.customScriptUrl) {
+    const existing = document.querySelector(`script[src="${config.customScriptUrl}"]`);
+    if (!existing) {
+      const script = document.createElement('script');
+      script.src = config.customScriptUrl;
+      script.async = true;
+      script.setAttribute('data-pdfa2z-custom', 'true');
+      document.head.appendChild(script);
+    }
   }
 };
 

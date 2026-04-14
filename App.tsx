@@ -8,6 +8,7 @@ import { ToolType, PdfToolMode, ImageToolMode, VideoToolMode, AiWriterMode } fro
 import { SEO, generateToolSchema } from './components/SEO';
 import { TOOLS_REGISTRY } from './utils/seoData';
 import { useTranslation } from 'react-i18next';
+import { EliteBackground } from './components/EliteBackground';
 
 // ── Imports (Non-lazy for emergency stability) ───────────────────────────────
 import { Home } from './pages/Home';
@@ -260,7 +261,9 @@ const App: React.FC = () => {
   return (
     <HelmetProvider>
       <AuthProvider>
-        <AppContent />
+        <EliteBackground>
+          <AppContent />
+        </EliteBackground>
       </AuthProvider>
     </HelmetProvider>
   );

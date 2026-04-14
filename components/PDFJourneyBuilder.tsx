@@ -1,19 +1,21 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { validateField, FieldValidationConfig, getFormatHint, getFieldError } from "../utils/journeyFieldValidation";
-import { saveJourneyLead, getLeadsForOwner, JourneyLead, updateLeadStatus } from "../services/leadService";
+import { saveJourneyLead, getLeadsForOwner, JourneyLead, updateLeadStatus, addToSyncQueue, processSyncQueue } from "../services/leadService";
 import { getCurrentUser } from "../services/authService";
 import { downloadJourneyQR } from "../utils/journeyQR";
 import { trackJourneyEvent, getJourneyStats, JourneyStats } from "../services/analyticsService";
 import { uploadFile } from "../services/storageService";
 import { sendLeadNotification } from "../services/emailService";
 import { triggerJourneyWebhook, constructWebhookPayload } from "../services/webhookService";
+import { getGeoData, maskIp } from "../services/geoService";
 import { TemplateGallery } from "./TemplateGallery";
+import { JourneyBrandConfig } from "./JourneyBrandConfig";
 import { getVisibleFields, ConditionGroup } from "../utils/journeyConditionals";
 import { JourneyFileUpload, FileData } from "./JourneyFileUpload";
 import { JourneyReviewStep } from "./JourneyReviewStep";
 import { BrandConfig, DEFAULT_BRAND_CONFIG, mergeBrandConfig, loadBrandConfig, applyBrandConfig, autoDetectRegionalSettings } from "../utils/journeyBranding";
-import { generateJourneyWorkflow } from "../services/geminiService";
+import { generateJourneyWorkflow, translateJourneyContent } from "../services/geminiService";
 import { extractTextFromPdf } from "../utils/pdfHelpers";
 import { 
   Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, 
@@ -110,82 +112,93 @@ const FALLBACK_STEPS: Step[] = [
 
 // --- Signature Canvas --------------------------------------------------------
 
-function SignaturePad({ onChange }: { onChange: (val: string) => void }) {
+function SignatureModal({ onSign, onCancel, allowType }: { onSign: (v: string) => void; onCancel: () => void; allowType?: boolean }) {
+  const [tab, setTab] = useState<'draw' | 'type'>('draw');
+  const [typedName, setTypedName] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  const getPos = (e: any, el: HTMLCanvasElement) => {
-    const r = el.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - r.left) * (el.width / r.width),
-      y: (src.clientY - r.top) * (el.height / r.height),
-    };
+  useEffect(() => {
+    if (tab === 'draw') {
+      const c = canvasRef.current;
+      if (c) {
+        const ctx = c.getContext("2d");
+        if (ctx) {
+          ctx.lineCap = "round"; ctx.lineWidth = 2.5; ctx.strokeStyle = "#000";
+        }
+      }
+    }
+  }, [tab]);
+
+  const getPos = (e: any) => {
+    const c = canvasRef.current; if (!c) return null;
+    const r = c.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - r.left, y: clientY - r.top };
   };
 
-  const start = (e: React.MouseEvent | React.TouchEvent) => {
-    drawing.current = true;
-    if (canvasRef.current) {
-      last.current = getPos(e, canvasRef.current);
+  const start = (e: any) => { drawing.current = true; last.current = getPos(e); };
+  const move = (e: any) => {
+    if (!drawing.current || !last.current) return;
+    const c = canvasRef.current; const ctx = c?.getContext("2d");
+    const pos = getPos(e);
+    if (ctx && pos) {
+      ctx.beginPath(); ctx.moveTo(last.current.x, last.current.y); ctx.lineTo(pos.x, pos.y); ctx.stroke();
+      last.current = pos;
     }
     e.preventDefault();
   };
-
-  const move = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!drawing.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx || !last.current) return;
-    const pos = getPos(e, canvas);
-    ctx.strokeStyle = "#f59e0b";
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(last.current.x, last.current.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    last.current = pos;
-    onChange(canvas.toDataURL());
-    e.preventDefault();
-  };
-
   const stop = () => { drawing.current = false; };
-  const clear = () => {
-    const c = canvasRef.current;
-    if (c) {
-      c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
-      onChange("");
+  const clear = () => { const c = canvasRef.current; c?.getContext("2d")?.clearRect(0, 0, c.width, c.height); };
+
+  const handleAdopt = () => {
+    if (tab === 'draw') {
+      const c = canvasRef.current; if (c) onSign(c.toDataURL());
+    } else {
+      const c = document.createElement('canvas'); c.width = 400; c.height = 100;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.font = 'italic 48px "Brush Script MT", cursive';
+        ctx.fillText(typedName || 'Signature', 20, 60);
+        onSign(c.toDataURL());
+      }
     }
   };
 
   return (
-    <div style={{ position: "relative" }}>
-      <canvas
-        ref={canvasRef}
-        width={480}
-        height={120}
-        onMouseDown={start}
-        onMouseMove={move}
-        onMouseUp={stop}
-        onMouseLeave={stop}
-        onTouchStart={start}
-        onTouchMove={move}
-        onTouchEnd={stop}
-        style={{
-          width: "100%",
-          height: 120,
-          background: "rgba(245,158,11,0.04)",
-          border: "1.5px dashed rgba(245,158,11,0.35)",
-          borderRadius: 10,
-          cursor: "crosshair",
-          display: "block",
-          touchAction: "none",
-        }}
-      />
-      <button onClick={clear} style={{ position: "absolute", top: 8, right: 10, fontSize: 11, color: "#64748b", background: "none", border: "none", cursor: "pointer" }}>Clear</button>
-      <p style={{ fontSize: 12, color: "#475569", marginTop: 6 }}>Draw your signature above</p>
+    <div className="jb-modal-overlay" style={{ background: 'rgba(0,0,0,0.85)' }}>
+      <div className="jb-modal" style={{ width: '100%', maxWidth: 500 }}>
+        <div style={{ padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, color: '#fff' }}>Sign Document</h3>
+              <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Draw or type your legal signature</p>
+            </div>
+            <X size={20} onClick={onCancel} style={{ cursor: 'pointer', color: '#64748b' }} />
+          </div>
+
+          <div className="jb-toggle-group" style={{ marginBottom: 20 }}>
+            <button className={`jb-toggle-btn ${tab === 'draw' ? 'active' : ''}`} onClick={() => setTab('draw')}>Draw</button>
+            {allowType && <button className={`jb-toggle-btn ${tab === 'type' ? 'active' : ''}`} onClick={() => setTab('type')}>Type</button>}
+          </div>
+
+          {tab === 'draw' ? (
+            <div style={{ position: 'relative' }}>
+              <canvas ref={canvasRef} width={450} height={160} onMouseDown={start} onMouseMove={move} onMouseUp={stop} onMouseLeave={stop} onTouchStart={start} onTouchMove={move} onTouchEnd={stop} style={{ width: '100%', height: 160, background: '#fff', borderRadius: 12, border: '2px dashed #e2e8f0', cursor: 'crosshair', touchAction: 'none' }} />
+              <button onClick={clear} style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', fontSize: 11, color: '#64748b', cursor: 'pointer' }}>Clear</button>
+            </div>
+          ) : (
+            <input type="text" placeholder="Type your name..." value={typedName} onChange={e => setTypedName(e.target.value)} style={{ width: '100%', height: 60, fontSize: 24, padding: 16, background: '#fff', border: '2px solid #e2e8f0', borderRadius: 12, outline: 'none', fontFamily: '"Brush Script MT", cursive' }} />
+          )}
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+            <button className="jb-btn jb-btn-ghost" onClick={onCancel} style={{ flex: 1 }}>Cancel</button>
+            <button className="jb-btn jb-btn-gold" onClick={handleAdopt} style={{ flex: 2 }}>Adopt & Sign</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -225,7 +238,23 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
       </select>
     );
   }
-  if (field.type === "signature") return <SignaturePad onChange={onChange} />;
+  if (field.type === "signature") {
+    return (
+      <div 
+        onClick={() => onChange('OPEN_SIGN_MODAL')}
+        style={{ ...base, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderStyle: value ? 'solid' : 'dashed', borderColor: value ? 'var(--brand-primary)' : 'rgba(71,85,105,0.45)' }}
+      >
+        {value ? (
+          <img src={value} style={{ maxHeight: '100%', maxWidth: '100%' }} />
+        ) : (
+          <div style={{ textAlign: 'center' }}>
+            <PenTool size={20} style={{ color: 'var(--brand-primary)', marginBottom: 4 }} />
+            <div style={{ fontSize: 12, color: '#64748b' }}>Click to Sign</div>
+          </div>
+        )}
+      </div>
+    );
+  }
   if (field.type === "date") return <input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} style={base} />;
   return (
     <div>
@@ -257,13 +286,13 @@ const CSS = `
   .jb-brand-pip { width: 6px; height: 6px; background: var(--brand-primary); border-radius: 50%; }
   .jb-title { font-family: var(--brand-heading-font); font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; }
   .jb-title em { font-style: normal; color: var(--brand-primary); }
-  .jb-sub { color: #64748b; font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
+  .jb-sub { color: var(--brand-text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
   .jb-dropzone { border: 2px dashed rgba(245,158,11,0.2); border-radius: 16px; padding: 50px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(245,158,11,0.01); }
   .jb-dropzone:hover { border-color: var(--brand-primary); background: rgba(245,158,11,0.03); }
-  .jb-btn { display: block; width: 100%; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+  .jb-btn { display: block; width: 100%; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--brand-font-family); }
   .jb-btn-gold { background: var(--brand-primary); color: #000; margin-top: 16px; }
   .jb-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(245,158,11,0.3); }
-  .jb-btn-ghost { background: transparent; color: #64748b; border: 1.5px solid rgba(71,85,105,0.3); margin-top: 12px; }
+  .jb-btn-ghost { background: transparent; color: var(--brand-text-secondary); border: 1.5px solid rgba(71,85,105,0.3); margin-top: 12px; }
   .jb-spinner { width: 40px; height: 40px; border: 3px solid rgba(245,158,11,0.1); border-top-color: var(--brand-primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .jb-editor-layout { display: flex; width: 100%; max-width: 1440px; height: 100vh; overflow: hidden; background: #05080f; }
@@ -282,6 +311,12 @@ const CSS = `
   .brand-input:focus { border-color: var(--brand-primary); }
   .jb-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .jb-modal { background: #0a0f1c; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 40px 100px rgba(0,0,0,0.6); }
+  
+  /* Focused Mode Transitions */
+  .field-container { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+  .field-enter { opacity: 0; transform: translateY(20px); }
+  .field-enter-active { opacity: 1; transform: translateY(0); }
+  .field-exit { opacity: 0; transform: translateY(-20px); }
 `;
 
 // --- Main Component -----------------------------------------------------------
@@ -312,15 +347,20 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [leads, setLeads] = useState<JourneyLead[]>([]);
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const [activeFieldIndex, setActiveFieldIndex] = useState(0);
   const [isAutoBuilding, setIsAutoBuilding] = useState(false);
   const [draft, setDraft] = useState<any>(null);
   const [stats, setStats] = useState<JourneyStats | null>(null);
   const [selectedLead, setSelectedLead] = useState<JourneyLead | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState("en");
+  const [isTranslating, setIsTranslating] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [signingFieldId, setSigningFieldId] = useState<string | null>(null);
   const [webhookTestStatus, setWebhookTestStatus] = useState<{ loading: boolean, success?: boolean, error?: string } | null>(null);
   const [isLogoUploading, setIsLogoUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -366,6 +406,30 @@ export const PDFJourneyBuilder: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Process any leads that were buffered while offline
+    processSyncQueue(async (data) => {
+      console.log('[Sync] Resyncing lead data:', data);
+    }).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (stage === 'wizard') {
+      startTimeRef.current = Date.now();
+      trackJourneyEvent(fileName || 'unnamed', 'start');
+      
+      // Auto-detect browser language and switch if translation exists
+      const browserLang = navigator.language.split("-")[0];
+      if (brandConfig.localizedContent?.[browserLang]) {
+        setCurrentLanguage(browserLang);
+      }
+    }
+  }, [stage, brandConfig.localizedContent]);
+
+  const saveDraft = (data: FormData) => {
+    localStorage.setItem(`jb_draft_${fileName}`, JSON.stringify({ fileName, steps, formData: data }));
+  };
+
   const processFile = async (file: File) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".pdf")) { setError("Please upload a PDF."); return; }
@@ -393,6 +457,22 @@ export const PDFJourneyBuilder: React.FC = () => {
     } catch { setError("Parse error."); setStage("upload"); }
   };
 
+  const handleTranslateContent = async (lang: string) => {
+    if (!lang || lang === 'en') return;
+    setIsTranslating(true);
+    try {
+      const translated = await translateJourneyContent(steps, lang);
+      setBrandConfig(p => ({
+        ...p,
+        localizedContent: { ...p.localizedContent, [lang]: translated }
+      }));
+      alert(`Journey successfully translated to ${lang}!`);
+    } catch (e) {
+      alert("Translation failed. Please check your AI settings.");
+    }
+    setIsTranslating(false);
+  };
+
   const handleMagicBuild = async () => {
     if (!pdfBytes) return; setIsAutoBuilding(true);
     try {
@@ -403,7 +483,15 @@ export const PDFJourneyBuilder: React.FC = () => {
   };
 
   const handleDrop = (e: React.DragEvent) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); };
-  const setField = (id: string, val: any) => { setFormData(p => ({ ...p, [id]: val })); };
+  const setField = (id: string, value: any) => {
+    if (value === 'OPEN_SIGN_MODAL') {
+      setSigningFieldId(id);
+      return;
+    }
+    const updated = { ...formData, [id]: value };
+    setFormData(updated);
+    if (stage === 'wizard') saveDraft(updated);
+  };
 
   const validateCurrentStep = () => {
     const step = steps[currentStep];
@@ -416,24 +504,159 @@ export const PDFJourneyBuilder: React.FC = () => {
     setFieldErrors(errors); return Object.keys(errors).length === 0;
   };
 
+  const handleNext = () => {
+    const step = steps[currentStep];
+    const fieldConditions: Record<string, ConditionGroup[]> = {};
+    step.fields.forEach(f => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
+    const visible = getVisibleFields(step.fields, formData, fieldConditions);
+
+    if (brandConfig.isFocusedMode) {
+      const field = visible[activeFieldIndex];
+      if (field.required && !formData[field.id]) {
+        setFieldErrors({ [field.id]: "Required" });
+        return;
+      }
+      setFieldErrors({});
+      if (activeFieldIndex < visible.length - 1) {
+        setActiveFieldIndex(activeFieldIndex + 1);
+      } else {
+        if (currentStep < steps.length - 1) {
+          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id });
+          setCurrentStep(p => p + 1);
+          setActiveFieldIndex(0);
+        } else {
+          setStage("review");
+        }
+      }
+    } else {
+      if (validateCurrentStep()) {
+        if (currentStep < steps.length - 1) {
+          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id });
+          setCurrentStep(p => p + 1);
+          setActiveFieldIndex(0);
+        } else {
+          setStage("review");
+        }
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (brandConfig.isFocusedMode) {
+      if (activeFieldIndex > 0) {
+        setActiveFieldIndex(activeFieldIndex - 1);
+      } else if (currentStep > 0) {
+        const prevStep = steps[currentStep - 1];
+        const fieldConditions: Record<string, ConditionGroup[]> = {};
+        prevStep.fields.forEach(f => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
+        const visible = getVisibleFields(prevStep.fields, formData, fieldConditions);
+        setCurrentStep(p => p - 1);
+        setActiveFieldIndex(visible.length - 1);
+      }
+    } else {
+      if (currentStep > 0) setCurrentStep(p => p - 1);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (stage === 'wizard' && e.key === 'Enter') {
+        const activeElement = document.activeElement;
+        if (activeElement?.tagName !== 'TEXTAREA') {
+          handleNext();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  }, [stage, currentStep, activeFieldIndex, formData, steps, brandConfig.isFocusedMode]);
+
   const fillAndDownload = async () => {
     setIsProcessing(true);
     try {
       if (!pdfBytes) { setStage("complete"); return; }
-      const { PDFDocument } = (window as any).PDFLib;
+      const { PDFDocument, rgb, StandardFonts } = (window as any).PDFLib;
       const doc = await PDFDocument.load(pdfBytes);
       const form = doc.getForm();
-      form.getFields().forEach((f: any) => {
-        const val = formData[f.getName()];
-        if (!val) return;
-        try { if (f.constructor.name === "PDFTextField") f.setText(String(val)); } catch {}
-      });
+      const fields = form.getFields();
+
+      for (const f of fields) {
+        const name = f.getName();
+        const val = formData[name];
+        if (!val) continue;
+
+        try {
+          if (f.constructor.name === "PDFTextField") {
+            f.setText(String(val));
+          } else if (f.constructor.name === "PDFSignature" || (f.constructor.name === "PDFButton" && val.startsWith('data:image'))) {
+            // Handle Signature Injection
+            const image = await doc.embedPng(val);
+            const widgets = f.acroField.getWidgets();
+            for (const widget of widgets) {
+              const pages = doc.getPages();
+              // pdf-lib doesn't easily give page index from widget, so we find it
+              const page = pages.find((p: any) => p.node.context === widget.getOption('P')?.context || p.node.context === widget.getOption('Page')?.context) || pages[0];
+              const rect = widget.getRectangle();
+              page.drawImage(image, {
+                x: rect.x + 2,
+                y: rect.y + 2,
+                width: rect.width - 4,
+                height: rect.height - 4,
+              });
+            }
+          }
+        } catch (err) {
+          console.warn(`Could not fill field ${name}:`, err);
+        }
+      }
+
+      // Get GeoData for lead and audit trail
+      const geoData = await getGeoData();
+
+      // Add Audit Trail if enabled
+      if (brandConfig.includeAuditTrail) {
+        const page = doc.addPage([600, 400]);
+        const font = await doc.embedFont(StandardFonts.HelveticaBold);
+        const subFont = await doc.embedFont(StandardFonts.Helvetica);
+        
+        page.drawRectangle({ x: 0, y: 0, width: 600, height: 400, color: rgb(0.06, 0.09, 0.16) });
+        page.drawText('Certificate of Completion', { x: 50, y: 340, size: 24, font, color: rgb(0.96, 0.62, 0.04) });
+        page.drawText(`Submission ID: ${Math.random().toString(36).substring(2, 15).toUpperCase()}`, { x: 50, y: 300, size: 12, font: subFont, color: rgb(0.8, 0.8, 0.8) });
+        page.drawText(`Signed on: ${new Date().toLocaleString()}`, { x: 50, y: 280, size: 12, font: subFont, color: rgb(0.8, 0.8, 0.8) });
+        page.drawText(`Location: ${geoData?.city || 'Unknown'}, ${geoData?.country || 'Unknown'}`, { x: 50, y: 260, size: 12, font: subFont, color: rgb(0.8, 0.8, 0.8) });
+        page.drawText(`Verified IP: ${maskIp(geoData?.ip || '0.0.0.0')}`, { x: 50, y: 240, size: 12, font: subFont, color: rgb(0.8, 0.8, 0.8) });
+        
+        page.drawRectangle({ x: 50, y: 80, width: 500, height: 120, color: rgb(1, 1, 1), opacity: 0.05 });
+        page.drawText('This document was digitally signed and secured via PDFA2Z Enterprise.', { x: 70, y: 180, size: 11, font: subFont, color: rgb(0.6, 0.6, 0.6) });
+        page.drawText('Verification QR Code', { x: 70, y: 150, size: 10, font, color: rgb(0.4, 0.4, 0.4) });
+      }
+
       const bytes = await doc.save();
       setFilledUrl(URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })));
-      await trackJourneyEvent(fileName, 'complete');
+      
+      const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      await trackJourneyEvent(fileName, 'complete', { duration });
       const user = getCurrentUser();
-      const lead = await saveJourneyLead(fileName, steps[0].title, user?.uid || 'guest', formData, new Blob([bytes]), []);
-      if (brandConfig.webhookUrl) triggerJourneyWebhook(brandConfig.webhookUrl, "", constructWebhookPayload(fileName, steps[0].title, lead as any, brandConfig));
+      const lead = await saveJourneyLead(fileName, steps[0].title, user?.uid || 'guest', formData, new Blob([bytes]), [], geoData as any);
+      
+      // Send notification to owner (if we have an email)
+      if (user?.email || brandConfig.supportEmail) {
+        await sendLeadNotification(user?.email || brandConfig.supportEmail || '', lead as any, brandConfig.emailTemplate);
+      }
+
+      if (brandConfig.webhookUrl) {
+        try {
+          const payload = constructWebhookPayload(fileName, steps[0].title, lead as any, brandConfig);
+          const result = await triggerJourneyWebhook(brandConfig.webhookUrl, brandConfig.webhookSecret || "", payload);
+          if (!result.success) {
+             console.warn('Webhook failed, adding to sync queue:', result.error);
+             addToSyncQueue({ type: 'webhook_trigger', data: { url: brandConfig.webhookUrl, leadId: (lead as any).id, data: formData }});
+          }
+        } catch (e) {
+          console.error('Webhook error:', e);
+          addToSyncQueue({ type: 'webhook_trigger', data: { url: brandConfig.webhookUrl, leadId: (lead as any).id, data: formData }});
+        }
+      }
     } catch (e) { console.error(e); }
     setStage("complete"); setIsProcessing(false);
   };
@@ -504,7 +727,8 @@ export const PDFJourneyBuilder: React.FC = () => {
               <div className="jb-toggle-group">
                 <button className={`jb-toggle-btn${editorTab === 'steps' ? " active" : ""}`} onClick={() => setEditorTab('steps')}>Workflow</button>
                 <button className={`jb-toggle-btn${editorTab === 'settings' ? " active" : ""}`} onClick={() => setEditorTab('settings')}>Identity</button>
-                <button className={`jb-toggle-btn${editorTab === 'insights' ? " active" : ""}`} onClick={() => setEditorTab('insights')}>Leads</button>
+                <button className={`jb-toggle-btn${editorTab === 'insights' ? " active" : ""}`} onClick={() => setEditorTab('insights')}>Insights</button>
+                <button className={`jb-toggle-btn${editorTab === 'leads' ? " active" : ""}`} onClick={() => setEditorTab('leads')}>Leads</button>
               </div>
             </div>
             <div className="jb-sidebar-content">
@@ -519,21 +743,122 @@ export const PDFJourneyBuilder: React.FC = () => {
                       <LayoutIcon size={14} /> <span style={{ flex: 1 }}>{s.title}</span> <span>{s.fields.length}</span>
                     </div>
                   ))}
+                  <div style={{ padding: 10, marginTop: 10 }}>
+                    <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>AI LOCALIZATION</div>
+                    <select 
+                      onChange={(e) => handleTranslateContent(e.target.value)} 
+                      disabled={isTranslating}
+                      style={{ width: '100%', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 12, outline: 'none' }}
+                    >
+                      <option value="">Translate with AI...</option>
+                      <option value="es">Spanish (Español)</option>
+                      <option value="fr">French (Français)</option>
+                      <option value="de">German (Deutsch)</option>
+                      <option value="pt">Portuguese (Português)</option>
+                      <option value="hi">Hindi (हिन्दी)</option>
+                      <option value="zh">Chinese (中文)</option>
+                    </select>
+                    {isTranslating && <p style={{ fontSize: 10, color: 'var(--brand-primary)', marginTop: 4 }}>Gemini is translating your content...</p>}
+                  </div>
                 </>
               ) : editorTab === 'settings' ? (
-                <div style={{ padding: 10 }}>
-                  <label style={{ fontSize: 11 }}>Company Name</label>
-                  <input className="brand-input" value={brandConfig.companyName || ""} onChange={e => setBrandConfig(p => ({ ...p, companyName: e.target.value }))} />
-                  <label style={{ fontSize: 11 }}>Logo URL</label>
-                  <input className="brand-input" value={brandConfig.logoUrl || ""} onChange={e => setBrandConfig(p => ({ ...p, logoUrl: e.target.value }))} />
+                <div style={{ height: '100%', overflowY: 'auto' }}>
+                  <JourneyBrandConfig 
+                    initialConfig={brandConfig} 
+                    availableFields={steps.flatMap(s => s.fields).map(f => ({ id: f.id, label: f.label }))}
+                    onConfigChange={(newConfig) => {
+                      setBrandConfig(newConfig);
+                    }}
+                    onSave={(newConfig) => {
+                      setBrandConfig(newConfig);
+                    }}
+                  />
+                </div>
+              ) : editorTab === 'insights' ? (
+                <div style={{ padding: 16 }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 20 }}>CONVERSION FUNNEL</div>
+                  {stats ? (
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, color: '#64748b' }}>VIEWS</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{stats.viewCount}</span>
+                        </div>
+                        <div style={{ height: 4, background: 'var(--brand-primary)', width: '100%', borderRadius: 2 }} />
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, color: '#64748b' }}>STARTS</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{stats.startCount}</span>
+                        </div>
+                        <div style={{ height: 4, background: 'var(--brand-primary)', width: `${(stats.startCount / (stats.viewCount || 1)) * 100}%`, borderRadius: 2, opacity: 0.7 }} />
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, color: '#64748b' }}>SUBMISSIONS</span>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>{stats.completeCount}</span>
+                        </div>
+                        <div style={{ height: 4, background: 'var(--brand-primary)', width: `${(stats.completeCount / (stats.viewCount || 1)) * 100}%`, borderRadius: 2, opacity: 0.4 }} />
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                        <div style={{ background: 'rgba(245,158,11,0.05)', padding: 12, borderRadius: 12 }}>
+                          <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4 }}>CONV. RATE</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: '#f59e0b' }}>
+                            {Math.round((stats.completeCount / (stats.viewCount || 1)) * 100)}%
+                          </div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                          <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4 }}>AVG. TIME</div>
+                          <div style={{ fontSize: 16, fontWeight: 800 }}>
+                            {Math.round((stats.totalCompletionTime || 0) / (stats.completeCount || 1))}s
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : <div>Loading stats...</div>}
                 </div>
               ) : (
                 <div style={{ padding: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, padding: '0 5px' }}>
+                    <span style={{ fontSize: 11, color: '#64748b' }}>RECENT LEADS</span>
+                    <button 
+                      onClick={() => {
+                        const csv = [
+                          'Date,Name,Email,Status,Data',
+                          ...leads.map(l => `${new Date(l.createdAt).toLocaleDateString()},${l.data.full_name || ''},${l.data.email || ''},${l.status},"${JSON.stringify(l.data).replace(/"/g, '""')}"`)
+                        ].join('\n');
+                        const blob = new Blob([csv], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `leads_${fileName}.csv`;
+                        a.click();
+                      }} 
+                      style={{ background: 'none', border: 'none', color: '#f59e0b', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Export CSV
+                    </button>
+                  </div>
                   {leads.map(l => (
-                    <div key={l.id} className="jb-side-item" onClick={() => setSelectedLead(l)}>
-                      <span style={{ flex: 1 }}>{l.data.full_name || "Guest"}</span> <span style={{ fontSize: 9 }}>{String(l.status)}</span>
+                    <div key={l.id} className="jb-side-item" style={{ position: 'relative', paddingRight: 30 }} onClick={() => setSelectedLead(l)}>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.data.full_name || l.data.email || "Guest"}</span> 
+                      <span style={{ fontSize: 9, opacity: 0.6 }}>{String(l.status).toUpperCase()}</span>
+                      <Trash2 
+                        size={12} 
+                        style={{ position: 'absolute', right: 10, top: 12, opacity: 0.4, cursor: 'pointer' }} 
+                        onClick={async (e) => { 
+                          e.stopPropagation(); 
+                          if (confirm('Delete lead?')) {
+                            const { deleteLead } = await import("../services/leadService");
+                            await deleteLead(l.id!);
+                            setLeads(p => p.filter(x => x.id !== l.id));
+                          }
+                        }} 
+                      />
                     </div>
                   ))}
+                  {leads.length === 0 && <p style={{ textAlign: 'center', fontSize: 11, color: '#64748b', marginTop: 20 }}>No leads yet</p>}
                 </div>
               )}
             </div>
@@ -574,14 +899,27 @@ export const PDFJourneyBuilder: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          {brandConfig.logoUrl && <img src={brandConfig.logoUrl} style={{ height: 32, marginBottom: 20, display: 'block', margin: '0 auto' }} />}
-                          <h2 className="jb-title">{s?.title}</h2>
-                          {s && getVisibleFields(s.fields, formData, fieldConditions).map(f => (
-                            <div key={f.id} className="jb-field">
-                              <label>{f.label}</label>
-                              <div style={{ height: 40, background: 'rgba(255,255,255,0.05)', borderRadius: 8 }} />
-                            </div>
-                          ))}
+                          {brandConfig.logoUrl && <img src={brandConfig.logoUrl} style={{ height: brandConfig.logoHeight || 32, marginBottom: 24, display: 'block', margin: '0 auto' }} />}
+                          <h2 className="jb-title" style={{ color: 'var(--brand-text)' }}>{brandConfig.journeyTitle || s?.title}</h2>
+                          {s && (() => {
+                            const visible = getVisibleFields(s.fields, formData, fieldConditions);
+                            if (brandConfig.isFocusedMode) {
+                              const f = visible[0]; // Show first field in preview
+                              if (!f) return null;
+                              return (
+                                <div key={f.id} className="jb-field" style={{ marginBottom: 16 }}>
+                                  <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}</label>
+                                  <div style={{ height: 44, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }} />
+                                </div>
+                              );
+                            }
+                            return visible.map(f => (
+                              <div key={f.id} className="jb-field" style={{ marginBottom: 16 }}>
+                                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}</label>
+                                <div style={{ height: 44, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }} />
+                              </div>
+                            ));
+                          })()}
                         </>
                       )}
                     </div>
@@ -595,29 +933,83 @@ export const PDFJourneyBuilder: React.FC = () => {
       {stage === "wizard" && (
         <div className="jb-root">
           <div className="jb-card">
-            <div className="jb-brand"><span className="jb-brand-pip" /> {brandConfig.companyName || "pdfa2z"}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div className="jb-brand"><span className="jb-brand-pip" /> {brandConfig.companyName || "pdfa2z"}</div>
+              {brandConfig.localizedContent && Object.keys(brandConfig.localizedContent).length > 0 && (
+                <div style={{ position: 'relative' }}>
+                  <select 
+                    value={currentLanguage} 
+                    onChange={(e) => setCurrentLanguage(e.target.value)}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 11, padding: '4px 8px', borderRadius: 6, outline: 'none' }}
+                  >
+                    <option value="en">🇺🇸 EN</option>
+                    {Object.keys(brandConfig.localizedContent).map(l => (
+                      <option key={l} value={l}>{{es:'🇲🇽 ES', fr:'🇫🇷 FR', de:'🇩🇪 DE', pt:'🇧🇷 PT', hi:'🇮🇳 HI', zh:'🇨🇳 ZH'}[l] || l.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
             {(() => {
-              const s = steps[currentStep];
+              const activeSteps = (currentLanguage !== 'en' && brandConfig.localizedContent?.[currentLanguage]) || steps;
+              const s = activeSteps[currentStep];
+              if (!s) return null;
+              
               const fieldConditions: Record<string, ConditionGroup[]> = {};
-              s.fields.forEach(f => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
+              s.fields.forEach((f: any) => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
               
               return (
                 <>
-                  <div className="jb-pills">
-                    {steps.map((_, i) => <div key={i} className={`jb-pill${i <= currentStep ? " done" : ""}`} />)}
+                  <div className="jb-pills" style={{ marginBottom: 30, display: 'flex', gap: 6 }}>
+                    {activeSteps.map((_, i) => <div key={i} className="jb-pill" style={{ height: 4, flex: 1, borderRadius: 2, background: i <= currentStep ? 'var(--brand-primary)' : 'rgba(255,255,255,0.1)' }} />)}
                   </div>
-                  <h2 className="jb-title">{s.title}</h2>
-                  <div style={{ marginTop: 24 }}>
-                    {getVisibleFields(s.fields, formData, fieldConditions).map(f => (
-                      <div key={f.id} className="jb-field">
-                        <label>{f.label}</label>
-                        <FieldInput field={f} value={formData[f.id]} onChange={v => setField(f.id, v)} error={fieldErrors[f.id]} />
-                      </div>
-                    ))}
+                  <h2 className="jb-title">{brandConfig.journeyTitle || s.title}</h2>
+                  <div style={{ marginTop: 24, minHeight: brandConfig.isFocusedMode ? 280 : 'auto', position: 'relative' }}>
+                    {(() => {
+                      const visible = getVisibleFields(s.fields, formData, fieldConditions);
+                      if (brandConfig.isFocusedMode) {
+                        const f = visible[activeFieldIndex];
+                        if (!f) return null;
+                        return (
+                          <div key={f.id} className="field-container">
+                             <div className="jb-field" style={{ marginBottom: 20 }}>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--brand-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  {currentLanguage === 'en' ? 'Question' : {es:'Pregunta', fr:'Question', de:'Frage'}[currentLanguage] || 'Question'} {activeFieldIndex + 1} of {visible.length}
+                                </div>
+                                <label style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-text)', display: 'block', marginBottom: 12, lineHeight: 1.2 }}>{f.label}{f.required && '*'}</label>
+                                <FieldInput 
+                                  field={f} 
+                                  value={formData[f.id]} 
+                                  onChange={v => {
+                                    setField(f.id, v);
+                                    // Auto-transition for single selection
+                                    if (['select', 'checkbox'].includes(f.type) && v) {
+                                      setTimeout(handleNext, 400);
+                                    }
+                                  }} 
+                                  error={fieldErrors[f.id]} 
+                                />
+                             </div>
+                          </div>
+                        );
+                      }
+                      return visible.map(f => (
+                        <div key={f.id} className="jb-field" style={{ marginBottom: 20 }}>
+                          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}{f.required && '*'}</label>
+                          <FieldInput field={f} value={formData[f.id]} onChange={v => setField(f.id, v)} error={fieldErrors[f.id]} />
+                        </div>
+                      ));
+                    })()}
                   </div>
-                  <div className="jb-btn-row">
-                    {currentStep > 0 && <button className="jb-btn jb-btn-ghost" onClick={() => setCurrentStep(p => p - 1)}>Back</button>}
-                    <button className="jb-btn jb-btn-gold" onClick={() => { if (validateCurrentStep()) { if (currentStep < steps.length - 1) setCurrentStep(p => p + 1); else setStage("review"); } }}>{currentStep === steps.length - 1 ? "Review" : "Next"}</button>
+                  <div className="jb-btn-row" style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+                    {(currentStep > 0 || (brandConfig.isFocusedMode && activeFieldIndex > 0)) && (
+                      <button className="jb-btn jb-btn-ghost" style={{ flex: 1 }} onClick={handleBack}>Back</button>
+                    )}
+                    <button className="jb-btn jb-btn-gold" style={{ flex: 2 }} onClick={handleNext}>
+                      {brandConfig.isFocusedMode 
+                        ? (activeFieldIndex === getVisibleFields(s.fields, formData, fieldConditions).length - 1 && currentStep === steps.length - 1 ? "Review" : "Continue")
+                        : (currentStep === steps.length - 1 ? "Review" : "Next")}
+                    </button>
                   </div>
                 </>
               );

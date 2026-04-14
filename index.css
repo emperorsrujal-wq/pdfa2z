@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --premium-blue: #2563eb;
+    --premium-indigo: #4338ca;
+    --mesh-glow: rgba(37, 99, 235, 0.05);
+  }
+
   @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -12,11 +20,53 @@
   }
 
   body {
-    @apply bg-white text-slate-900 font-sans antialiased;
+    @apply bg-[#fcfcfd] text-slate-900 font-sans antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, var(--mesh-glow) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.05) 0, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.05) 0, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
-/* Custom Utilities */
+/* World-Class Utilities */
+.glass-panel {
+  @apply backdrop-blur-xl border border-white/40 shadow-2xl shadow-blue-900/5;
+  background: var(--glass-bg);
+}
+
+.premium-card {
+  @apply bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500;
+}
+
+.mesh-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mesh-blob {
+  position: absolute;
+  filter: blur(80px);
+  opacity: 0.3;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  animation: meshFloat 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+@keyframes meshFloat {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(100px, 50px) scale(1.1); }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -27,5 +77,29 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-alive-1 {
+  transform: translate(calc(var(--mouse-x) * 30px), calc(var(--mouse-y) * 30px));
+  transition: transform 0.3s ease-out;
+}
+
+.animate-alive-2 {
+  transform: translate(calc(var(--mouse-x) * -40px), calc(var(--mouse-y) * 20px)) scale(1.1);
+  transition: transform 0.4s ease-out;
+}
+
+.animate-alive-3 {
+  transform: translate(calc(var(--mouse-x) * 20px), calc(var(--mouse-y) * -30px)) rotate(5deg);
+  transition: transform 0.5s ease-out;
 }

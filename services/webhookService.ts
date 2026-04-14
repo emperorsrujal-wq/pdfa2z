@@ -23,6 +23,7 @@ export interface WebhookPayload {
     currencySymbol?: string;
     origin: string;
   };
+  mapped_data?: Record<string, any>;
 }
 
 /**
@@ -103,5 +104,14 @@ export function constructWebhookPayload(
       currencySymbol: brandConfig.currencySymbol,
       origin: window.location.origin,
     },
+    mapped_data: (() => {
+      const mapped: Record<string, any> = {};
+      const mappings = brandConfig.fieldMappings || {};
+      Object.entries(lead.data).forEach(([key, value]) => {
+        const alias = mappings[key] || key;
+        mapped[alias] = value;
+      });
+      return mapped;
+    })(),
   };
 }

@@ -357,6 +357,44 @@ export class PdfChatService {
   }
 }
 
+/**
+ * Translates an entire journey workflow into a target language/dialect.
+ */
+export const translateJourneyContent = async (
+  steps: any[],
+  targetLanguage: string
+): Promise<any[]> => {
+  const ai = getFreshAi();
+  
+  const prompt = `Translate the following form/survey workflow into ${targetLanguage}.
+- Translate all Step titles and descriptions.
+- Translate all Field labels, help texts, and option values.
+- IMPORTANT: Keep all "id", "name", and "type" values EXACTLY the same.
+- IMPORTANT: Preserve the JSON structure.
+- Adapt the tone and dialect to be natural for ${targetLanguage}.
+
+Workflow Content:
+${JSON.stringify(steps)}
+
+Return ONLY the translated JSON array of steps.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: FLASH_MODEL,
+      contents: prompt,
+      config: { 
+        responseMimeType: 'application/json',
+        temperature: 0.1
+      } as any
+    });
+
+    return JSON.parse(response.text || '[]');
+  } catch (err: any) {
+    console.error("AI Translation Error:", err);
+    throw err;
+  }
+};
+
 // ─── JOURNEY WORKFLOW GENERATION ─────────────────────────────────────────────
 export const generateJourneyWorkflow = async (
   docText: string,

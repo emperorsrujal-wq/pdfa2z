@@ -166,103 +166,87 @@ export const Home: React.FC = () => {
             />
 
             {/* Hero Section */}
-            <div className="bg-gradient-to-b from-blue-50/50 to-white pt-24 pb-16 px-4 text-center">
-                <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight leading-tight">
-                    {t('home.heroTitle').split('PDF & AI Tools')[0]}
-                    <span className="text-blue-600">PDF & AI Tools</span>
-                </h1>
-                <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto font-medium">
-                    {t('home.heroSubtitle')}
-                </p>
-
-                <div className="max-w-xl mx-auto relative group mb-8">
-                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                        <Search size={22} />
-                    </div>
-                    <input
-                        type="text"
-                        className="block w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-full text-lg shadow-xl shadow-blue-900/5 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400"
-                        placeholder={t('home.searchPlaceholder') || "Search for tools..."}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && filteredTools.length > 0) {
-                                const tool = filteredTools[0];
-                                navigate(`${i18n.language !== 'en' ? `/${i18n.language}` : ''}/${tool.slug}`);
-                                window.scrollTo(0, 0);
-                            }
-                        }}
-                    />
+            <div className="relative pt-32 pb-24 px-4 overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <div className="mesh-blob bg-blue-400 -top-20 -left-20" />
+                    <div className="mesh-blob bg-indigo-400 top-40 right-0" style={{ animationDelay: '-5s' }} />
                 </div>
+                
+                <div className="relative z-10 max-w-5xl mx-auto text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/50 border border-blue-100/50 text-blue-600 text-xs font-bold uppercase tracking-widest mb-8 animate-float">
+                        <Sparkles size={14} /> The Next-Gen Document Workstation
+                    </div>
+                    <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 tracking-tighter leading-[0.9] text-gradient">
+                        Empowering your<br />
+                        <span className="text-blue-600">Digital Identity.</span>
+                    </h1>
+                    <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                        The world’s most advanced PDF & AI suite. Securely sign, edit, and automate your documents with professional precision.
+                    </p>
 
-                <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold text-slate-500">
-                    <span className="flex items-center gap-1"><Star size={14} className="text-yellow-400 fill-yellow-400" /> 4.9/5 Rating</span>
-                    <span>•</span>
-                    <span>100% Secure</span>
-                    <span>•</span>
-                    <span>Cloud-based</span>
+                    <div className="max-w-2xl mx-auto relative group mb-12">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur opacity-25 group-focus-within:opacity-100 transition duration-1000 group-focus-within:duration-200" />
+                        <div className="relative flex items-center bg-white rounded-full p-2 border border-slate-200">
+                            <div className="pl-6 text-slate-400">
+                                <Search size={24} />
+                            </div>
+                            <input
+                                type="text"
+                                className="block w-full pl-4 pr-6 py-4 bg-transparent text-xl outline-none placeholder:text-slate-400 font-medium"
+                                placeholder={t('home.searchPlaceholder') || "What can we help you with?"}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button className="px-8 py-4 bg-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold text-slate-500">
+                        <span className="flex items-center gap-1"><Star size={14} className="text-yellow-400 fill-yellow-400" /> 4.9/5 Rating</span>
+                        <span>•</span>
+                        <span>100% Secure</span>
+                        <span>•</span>
+                        <span>Cloud-based</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Notarize Hero Promo */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 mb-20 relative z-10">
-                <div className="bg-gradient-to-r from-[#185FA5] to-[#1e78d1] rounded-3xl overflow-hidden shadow-2xl relative">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <ShieldCheck size={200} className="text-white" />
-                    </div>
-                    <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="text-white max-w-xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
-                                <Star size={12} className="fill-white" /> {t('home.featuredService')}
+            {/* Notarize Elite Strip */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
+                <div className="glass-panel overflow-hidden p-1 rounded-3xl shadow-2xl">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 md:p-10">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                <ShieldCheck size={32} />
                             </div>
-                            <h2 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-                                {t('home.notarizeTitle')}
-                            </h2>
-                            <p className="text-blue-50 text-lg opacity-90 mb-8 border-l-4 border-blue-300 pl-4">
-                                {t('home.notarizeSubtitle')}
-                            </p>
-                            <div className="flex flex-wrap gap-4">
-                                <button 
-                                    onClick={() => {
-                                        const currentLang = i18n.language.split('-')[0];
-                                        const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-                                        navigate(`${langPrefix}/notarize`);
-                                    }}
-                                    className="px-8 py-4 bg-white text-[#185FA5] rounded-full font-bold text-lg hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
-                                >
-                                    {t('home.startNotarization')} <ArrowRight size={20} />
-                                </button>
-                                <div className="flex -space-x-3 items-center ml-2">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className={`w-10 h-10 rounded-full border-2 border-[#185FA5] bg-slate-200 overflow-hidden`}>
-                                            <img src={`https://i.pravatar.cc/100?u=${i+10}`} alt="user" />
-                                        </div>
-                                    ))}
-                                    <div className="ml-4 text-sm font-medium text-blue-100">
-                                        <span className="font-bold text-white">5,000+</span> {t('home.satisfiedClients')}
-                                    </div>
-                                </div>
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 leading-tight">Elite Online Notarization</h3>
+                                <p className="text-slate-500 text-sm mt-1">Legally compliant signatures from any device, 24/7.</p>
                             </div>
                         </div>
-                        <div className="hidden lg:block w-72">
-                            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
-                                <h3 className="font-bold text-white mb-4">{t('home.fastLegal')}</h3>
-                                <ul className="space-y-3">
-                                    {[
-                                        t('home.licensedNotaries'),
-                                        t('home.allStates'),
-                                        t('home.compliant'),
-                                        t('home.available247')
-                                    ].map(item => (
-                                        <li key={item} className="flex items-center gap-2 text-sm text-blue-50">
-                                            <div className="w-5 h-5 rounded-full bg-green-400 flex items-center justify-center">
-                                                <ShieldCheck size={12} className="text-white" />
-                                            </div>
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden md:flex -space-x-3 items-center mr-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className={`w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden`}>
+                                        <img src={`https://i.pravatar.cc/100?u=${i+20}`} alt="user" />
+                                    </div>
+                                ))}
+                                <div className="ml-5 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                    Trusted by <span className="text-blue-600">5k+ Pros</span>
+                                </div>
                             </div>
+                            <button 
+                                onClick={() => {
+                                    const currentLang = i18n.language.split('-')[0];
+                                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+                                    navigate(`${langPrefix}/notarize`);
+                                }}
+                                className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-xl shadow-blue-200 active:scale-95"
+                            >
+                                Get Started <ArrowRight size={20} />
+                            </button>
                         </div>
                     </div>
                 </div>
