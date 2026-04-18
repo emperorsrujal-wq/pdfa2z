@@ -6,6 +6,8 @@
   :root {
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-bg-dark: rgba(15, 23, 42, 0.5);
+    --glass-border-dark: rgba(71, 85, 105, 0.3);
     --premium-blue: #2563eb;
     --premium-indigo: #4338ca;
     --mesh-glow: rgba(37, 99, 235, 0.05);
@@ -20,24 +22,41 @@
   }
 
   body {
-    @apply bg-[#fcfcfd] text-slate-900 font-sans antialiased;
-    background-image: 
+    @apply bg-[#fcfcfd] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors;
+    background-image:
       radial-gradient(at 0% 0%, var(--mesh-glow) 0, transparent 50%),
       radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0, transparent 50%),
       radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.05) 0, transparent 50%),
       radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.05) 0, transparent 50%);
     background-attachment: fixed;
   }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-image:
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.03) 0, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.03) 0, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.03) 0, transparent 50%);
+    }
+  }
 }
 
 /* World-Class Utilities */
 .glass-panel {
-  @apply backdrop-blur-xl border border-white/40 shadow-2xl shadow-blue-900/5;
+  @apply backdrop-blur-xl border shadow-2xl shadow-blue-900/5 transition-all duration-300;
   background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+.dark .glass-panel {
+  background: var(--glass-bg-dark);
+  border-color: var(--glass-border-dark);
+  @apply shadow-2xl shadow-black/20;
 }
 
 .premium-card {
-  @apply bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500;
+  @apply bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-900/20 transition-all duration-500;
 }
 
 .mesh-bg {

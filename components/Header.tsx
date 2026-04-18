@@ -63,16 +63,16 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
 
     return (
         <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
-            <div className="glass-panel rounded-full px-6 h-14 md:h-16 flex items-center justify-between w-full max-w-7xl">
+            <div className="glass-panel dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-full px-6 h-14 md:h-16 flex items-center justify-between w-full max-w-7xl">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600 group">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600 dark:text-blue-400 group">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/30 group-hover:scale-110 transition-transform">
                             <FileText className="h-6 w-6" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="leading-none text-slate-900 tracking-tighter">PDF <span className="text-blue-600">A2Z</span></span>
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400 group-hover:text-blue-600 transition-colors">Return Home</span>
+                            <span className="leading-none text-slate-900 dark:text-slate-100 tracking-tighter">PDF <span className="text-blue-600 dark:text-blue-400">A2Z</span></span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400 dark:text-blue-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Return Home</span>
                         </div>
                     </Link>
                 </div>
