@@ -660,7 +660,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <div className="flex items-center gap-1 p-1">
               {[
                 { mode: 'select', icon: <MousePointer2 size={15} />, label: 'Select' },
-                { mode: 'magic-edit', icon: <Type size={15} />, label: 'Text' },
+                { mode: 'magic-edit', icon: <Type size={15} />, label: 'Edit Text' },
+                { mode: 'text', icon: <PenLine size={15} />, label: 'Add Text' },
               ].map(t => (
                 <button
                   key={t.mode}
@@ -669,7 +670,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   title={t.label}
                 >
                   {t.icon}
-                  <span className="text-[11px] font-bold">{t.label}</span>
+                  <span className="text-[11px] font-black">{t.label}</span>
                 </button>
               ))}
             </div>
@@ -680,8 +681,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <div className="flex items-center gap-1">
               {[
                 { mode: 'erase', icon: <Eraser size={15} />, label: 'Whiteout' },
-                { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Annotate' },
-                { mode: 'draw', icon: <PenTool size={15} />, label: 'Draw' },
+                { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Highlight' },
+                { mode: 'draw', icon: <Pen size={15} />, label: 'Draw' },
               ].map(t => (
                 <button
                   key={t.mode}
@@ -690,7 +691,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   title={t.label}
                 >
                   {t.icon}
-                  <span className="text-[11px] font-bold">{t.label}</span>
+                  <span className="text-[11px] font-black">{t.label}</span>
                 </button>
               ))}
             </div>
@@ -702,16 +703,33 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               <button
                 onClick={(e) => { e.stopPropagation(); setMode('rect'); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="Rectangle"
               >
-                <Shapes size={15} />
-                <span className="text-[11px] font-bold">Shapes</span>
+                <Square size={15} />
+                <span className="text-[11px] font-black">Rect</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMode('circle'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'circle' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="Circle/Ellipse"
+              >
+                <Circle size={15} />
+                <span className="text-[11px] font-black">Circle</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMode('link'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'link' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="Add External Link"
+              >
+                <Link2 size={15} />
+                <span className="text-[11px] font-black">Link</span>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setMode('sign'); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
               >
                 <FileSignature size={15} />
-                <span className="text-[11px] font-bold">Sign</span>
+                <span className="text-[11px] font-black">Sign</span>
               </button>
               {[
                 { mode: 'image', icon: <ImageIcon size={15} />, label: 'Image' },
@@ -727,7 +745,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   title={t.label}
                 >
                   {t.icon}
-                  <span className="text-[11px] font-bold">{t.label}</span>
+                  <span className="text-[11px] font-black">{t.label}</span>
                 </button>
               ))}
             </div>

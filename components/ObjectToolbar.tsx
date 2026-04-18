@@ -22,6 +22,7 @@ import {
   MoreVertical,
   RotateCw,
   ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -251,10 +252,22 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
       <div className="flex items-center gap-1 px-1">
         <button onClick={() => onUpdate(element.id, { rotation: ((element.rotation || 0) + 90) % 360 })} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Rotate 90°"><RotateCw size={14} /></button>
         <button onClick={() => onDuplicate(element)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Duplicate"><Copy size={14} /></button>
-        <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-all" title="Delete"><Trash2 size={14} /></button>
+        <Tooltip content="Delete Object">
+          <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-all">
+            <Trash2 size={14} />
+          </button>
+        </Tooltip>
         <div className="w-px h-6 bg-slate-200 mx-1" />
-        <button onClick={() => onBringToFront?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Bring to Front"><ArrowUp size={14} /></button>
-        <button onClick={() => onSendToBack?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Send to Back"><ArrowDown size={14} /></button>
+        <Tooltip content="Move Forward">
+          <button onClick={() => onBringToFront?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all">
+            <Layers size={14} className="scale-y-[-1]" />
+          </button>
+        </Tooltip>
+        <Tooltip content="Move Backward">
+          <button onClick={() => onSendToBack?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all">
+            <Layers size={14} />
+          </button>
+        </Tooltip>
       </div>
 
       {showSizePicker && (
