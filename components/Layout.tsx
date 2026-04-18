@@ -21,10 +21,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentLang = 'en' }) 
     };
 
     return (
-        <div 
+        <div
             ref={containerRef}
             onMouseMove={handleMouseMove}
-            className="relative min-h-screen flex flex-col font-sans text-slate-900 overflow-x-hidden"
+            className="relative min-h-screen flex flex-col font-sans text-slate-900 dark:text-slate-100 overflow-x-hidden transition-colors"
         >
 
             <Header currentLang={currentLang} />
