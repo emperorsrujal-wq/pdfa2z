@@ -33,8 +33,11 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           setDimensions(dims);
           setActivePage(0);
         }
-      } catch (err: any) {
-        if (mounted) setErrorMsg(`Failed to render PDF: ${err.message}`);
+      } catch (error: unknown) {
+        if (mounted) {
+          const message = error instanceof Error ? error.message : 'Unknown error occurred';
+          setErrorMsg(`Failed to render PDF: ${message}`);
+        }
       } finally {
         if (mounted) setIsProcessing(false);
       }
@@ -65,8 +68,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
       const res = await editPdf(file, elementsToUse);
       downloadBlob(res, `edited-${file.name}`);
       setSuccessMsg("PDF Successfully Edited and Downloaded!");
-    } catch (err: any) {
-      setErrorMsg(`Failed to save edits: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      setErrorMsg(`Failed to save edits: ${message}`);
     } finally {
       setIsProcessing(false);
     }

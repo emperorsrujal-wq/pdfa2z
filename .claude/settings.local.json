@@ -4,7 +4,8 @@
       "mcp__Desktop_Commander__list_directory",
       "Bash(git add *)",
       "Bash(git commit -m 'refactor: add foundation for dark mode and create form component library *)",
-      "Bash(git commit -m 'feat: add dark mode to critical layout components *)"
+      "Bash(git commit -m 'feat: add dark mode to critical layout components *)",
+      "Bash(git commit -m 'fix: improve TypeScript type safety in PDF Editor utilities *)"
     ]
   }
 }

@@ -19,6 +19,10 @@ export interface PdfProcessingResult {
   dimensions: PageDimensions[];
 }
 
+export interface ExtendedTextItem extends TextItem {
+  fontName?: string;
+}
+
 /**
  * Resolves the PDF.js engine and configures the worker.
  */
@@ -393,7 +397,7 @@ export const addPageNumbers = async (file: File): Promise<Uint8Array> => {
 };
 
 export const downloadBlob = (data: Uint8Array | Blob, filename: string) => {
-  const blob = data instanceof Blob ? data : new Blob([data as any], { type: 'application/pdf' });
+  const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1019,12 +1023,12 @@ export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTe
   const textContent = await page.getTextContent();
   const viewport = page.getViewport({ scale: 1.0 });
 
-  return (textContent.items as TextItem[]).map(item => {
+  return (textContent.items as ExtendedTextItem[]).map(item => {
     const tx = item.transform;
     const x = tx[4];
     const y = viewport.height - tx[5];
     const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
-    
+
     return {
       str: item.str || '',
       x: (x / viewport.width) * 1000,
@@ -1032,7 +1036,7 @@ export const getTextItems = async (file: File, pageIndex: number): Promise<PdfTe
       width: (item.width / viewport.width) * 1000,
       height: (fontSize / viewport.height) * 1000,
       fontSize,
-      fontName: (item as any).fontName || 'Helvetica'
+      fontName: item.fontName || 'Helvetica'
     };
   });
 };
