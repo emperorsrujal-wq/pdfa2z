@@ -152,6 +152,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [activeFont, setActiveFont] = React.useState('Helvetica');
   const [activeFontSize, setActiveFontSize] = React.useState(14);
+
+  const PRO_COLORS = [
+    '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
+    '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
+    '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9dadb',
+    '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
+    '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
+  ];
   const [zoom, setZoom] = React.useState(1);
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
@@ -159,6 +167,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [currentPath, setCurrentPath] = React.useState<{ x: number; y: number }[]>([]);
   const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
   const [dragEnd, setDragEnd] = React.useState<{ x: number; y: number } | null>(null);
+  const [guides, setGuides] = React.useState<{ v: number | null, h: number | null }>({ v: null, h: null });
 
   // Tier 2 Modal States
   const [showOcr, setShowOcr] = React.useState(false);
@@ -578,6 +587,60 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const zoomIn = () => setZoom(z => Math.min(z + 0.25, 3));
   const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
+
+  // --- Phase 2: Power-User Keyboard Shortcuts ---
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+
+      if (activeElementId) {
+        const el = elements.find(item => item.id === activeElementId);
+        if (!el) return;
+
+        // Delete / Backspace
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          const next = elements.filter(item => item.id !== activeElementId);
+          commit(next);
+          setActiveElementId(null);
+        }
+
+        // Arrow Keys (Nudging)
+        const shift = e.shiftKey ? 10 : 1;
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowLeft') dx = -shift;
+        if (e.key === 'ArrowRight') dx = shift;
+        if (e.key === 'ArrowUp') dy = -shift;
+        if (e.key === 'ArrowDown') dy = shift;
+
+        if (dx !== 0 || dy !== 0) {
+          e.preventDefault();
+          updateElement(activeElementId, {
+            x: (el.x || 0) + dx,
+            y: (el.y || 0) + dy
+          });
+          // Note: we don't commit on every 1px nudge to avoid history spam, 
+          // but we could add a throttle or commit on 'keyup'
+        }
+      }
+
+      // Undo (Ctrl+Z)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+
+      // Escape (Clear Selection)
+      if (e.key === 'Escape') {
+        setActiveElementId(null);
+        setMode('select');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeElementId, elements, commit, undo, updateElement]);
 
   const selectionRect =
     isDrawing && dragStart && dragEnd
@@ -1025,15 +1088,42 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     ev.stopPropagation();
                     setActiveElementId(el.id);
                     const startX = ev.clientX, startY = ev.clientY;
-                    const startElX = el.x, startElY = el.y;
+                    const startXPos = el.x, startYPos = el.y;
                     const onMove = (me: PointerEvent) => {
                       if (!pageRef.current) return;
                       const r = pageRef.current.getBoundingClientRect();
-                      const nx = Math.max(0, Math.min(1000, startElX + ((me.clientX - startX) / r.width) * 1000));
-                      const ny = Math.max(0, Math.min(1000, startElY + ((me.clientY - startY) / r.height) * 1000));
-                      updateElement(el.id, { x: nx, y: ny });
+                      const dx = ((me.clientX - startX) / r.width) * 1000;
+                      const dy = ((me.clientY - startY) / r.height) * 1000;
+                      
+                      let newX = startXPos + dx;
+                      let newY = startYPos + dy;
+                      const w = el.width || 0;
+                      const h = el.height || 0;
+
+                      // Smart Guides & Snapping (Page Center = 500)
+                      let guideV: number | null = null;
+                      let guideH: number | null = null;
+                      const SNAP_THRESHOLD = 5;
+
+                      if (Math.abs((newX + w / 2) - 500) < SNAP_THRESHOLD) {
+                        newX = 500 - w / 2;
+                        guideV = 500;
+                      }
+                      if (Math.abs((newY + h / 2) - 500) < SNAP_THRESHOLD) {
+                        newY = 500 - h / 2;
+                        guideH = 500;
+                      }
+                      
+                      setGuides({ v: guideV, h: guideH });
+
+                      // Movement Boundaries
+                      newX = Math.max(0, Math.min(1000 - w, newX));
+                      newY = Math.max(0, Math.min(1000 - h, newY));
+
+                      updateElement(el.id, { x: newX, y: newY });
                     };
                     const onUp = () => {
+                      setGuides({ v: null, h: null });
                       window.removeEventListener('pointermove', onMove);
                       window.removeEventListener('pointerup', onUp);
                       commit([...elements]);
@@ -1356,23 +1446,53 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         </div>
 
+        {/* Smart Alignment Guides Overlay */}
+        {guides.v !== null && (
+          <div 
+            className="absolute top-0 bottom-0 border-l border-dashed border-indigo-400 z-40 pointer-events-none opacity-60" 
+            style={{ left: `${(guides.v / 1000) * 100}%` }}
+          >
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[8px] px-1 rounded font-bold">CENTER</div>
+          </div>
+        )}
+        {guides.h !== null && (
+          <div 
+            className="absolute left-0 right-0 border-t border-dashed border-indigo-400 z-40 pointer-events-none opacity-60" 
+            style={{ top: `${(guides.h / 1000) * 100}%` }}
+          >
+             <div className="absolute left-0 top-1/2 -translate-y-1/2 bg-indigo-500 text-white text-[8px] px-1 rounded font-bold [writing-mode:vertical-lr]">CENTER</div>
+          </div>
+        )}
+
         {/* --- Contextual Tool Options Bar (Professional additions) --- */}
         {mode !== 'select' && !activeElementId && (
-          <div className="flex items-center gap-6 px-10 py-2 bg-indigo-50/50 border-t border-slate-100 animate-in slide-in-from-top-1 duration-300">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest whitespace-nowrap">Active Tool Settings:</span>
-              <div className="h-3 w-px bg-slate-200 mx-2" />
+          <div className="flex items-center gap-6 px-8 py-3 bg-white border-t border-slate-200 animate-in slide-in-from-top-1 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-50 overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                <Layout size={14} />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tool Settings</span>
+              <div className="h-4 w-px bg-slate-200 mx-2" />
             </div>
+            
+            {/* Sampling Tool (Eye Dropper) */}
+            <button
+               onClick={() => setMode('picker')}
+               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
+            >
+               <Pipette size={14} />
+               <span className="text-[10px] font-bold">Pick from Document</span>
+            </button>
 
-            {/* Common Color Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Brush Color'}</span>
-              <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
-                {['#000000', '#FFFFFF', '#FF0000', '#0000FF', '#00FF00', '#FFFF00'].map(c => (
+            {/* Common Color Selector (Grid) */}
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
+              <div className="grid grid-cols-7 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
+                {PRO_COLORS.map(c => (
                   <button 
                     key={c}
                     onClick={() => setActiveColor(c)}
-                    className={`w-5 h-5 rounded border transition-all ${activeColor === c ? 'border-indigo-600 scale-110 shadow-sm' : 'border-slate-100'}`}
+                    className={`w-4 h-4 rounded-sm border transition-all ${activeColor === c ? 'border-indigo-600 scale-125 z-10 shadow-sm' : 'border-slate-300/50 hover:scale-110'}`}
                     style={{ backgroundColor: c }}
                   />
                 ))}
@@ -1381,26 +1501,28 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
             {/* Typography Logic for Text Tools */}
             {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
-              <div className="flex items-center gap-4 animate-in fade-in transition-all">
-                 <div className="h-4 w-px bg-slate-200" />
+              <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
+                 <div className="h-6 w-px bg-slate-200" />
                  <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Size</span>
                     <select 
                       value={activeFontSize}
                       onChange={e => setActiveFontSize(parseInt(e.target.value))}
-                      className="bg-white border border-slate-200 rounded-md py-1 px-2 text-[10px] font-black text-indigo-600 outline-none"
+                      className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
                     >
-                      {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48].map(s => <option key={s} value={s}>{s}px</option>)}
+                      {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
                     </select>
                  </div>
               </div>
             )}
 
             {mode === 'erase' && (
-              <div className="flex items-center gap-2 animate-in fade-in transition-all">
-                <div className="h-4 w-px bg-slate-200" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Standard White is Default</span>
-                <div className="bg-white px-2 py-1 rounded border border-slate-200 text-[10px] font-black text-emerald-600">READY</div>
+              <div className="flex items-center gap-3 animate-in fade-in transition-all shrink-0">
+                <div className="h-6 w-px bg-slate-200" />
+                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-tight">Eraser Active</span>
+                </div>
               </div>
             )}
           </div>
