@@ -9,6 +9,16 @@ import pptxgen from 'pptxgenjs';
 
 type PdfJsLib = typeof PdfJsType;
 
+export interface PageDimensions {
+  width: number;
+  height: number;
+}
+
+export interface PdfProcessingResult {
+  images: string[];
+  dimensions: PageDimensions[];
+}
+
 /**
  * Resolves the PDF.js engine and configures the worker.
  */
@@ -176,16 +186,26 @@ export const compressPdf = async (file: File, options: CompressionOptions): Prom
   return compressedBytes;
 };
 
-export const pdfToImages = async (file: File): Promise<string[]> => {
+export const pdfToImages = async (file: File): Promise<PdfProcessingResult> => {
   const engine = await getPdfEngine();
   const arrayBuffer = await file.arrayBuffer();
   // We don't reuse arrayBuffer here after PDF.js, so no need to copy
   const loadingTask = engine.getDocument(getDocumentParams(new Uint8Array(arrayBuffer), engine));
   const pdf = await loadingTask.promise;
   const images: string[] = [];
+  const dimensions: PageDimensions[] = [];
+  
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale: 1.5 });
+    
+    // Store original dimensions (unscaled)
+    const originalViewport = page.getViewport({ scale: 1.0 });
+    dimensions.push({
+      width: originalViewport.width,
+      height: originalViewport.height
+    });
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     if (context) {
@@ -197,7 +217,7 @@ export const pdfToImages = async (file: File): Promise<string[]> => {
       images.push(canvas.toDataURL('image/jpeg', 0.8));
     }
   }
-  return images;
+  return { images, dimensions };
 };
 
 export const imagesToPdf = async (files: File[]): Promise<Uint8Array> => {
@@ -496,7 +516,7 @@ export const reversePdf = async (file: File): Promise<Uint8Array> => {
 };
 
 export const pdfToImagesZip = async (file: File): Promise<Blob> => {
-  const images = await pdfToImages(file); // Re-use existing rendering logic (returns data URLs)
+  const { images } = await pdfToImages(file); // Re-use existing rendering logic (returns data URLs)
   const zip = new JSZip();
   const folder = zip.folder("images");
 

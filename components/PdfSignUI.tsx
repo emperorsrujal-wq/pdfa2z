@@ -29,7 +29,7 @@ export const PdfSignUI: React.FC<PdfSignUIProps> = ({ files }) => {
     if (!files.length) return;
     setIsLoading(true);
     pdfToImages(files[0])
-      .then(imgs => {
+      .then(({ images: imgs }) => {
         setImages(imgs);
         setActivePage(0); // Go straight to editor on first page
       })

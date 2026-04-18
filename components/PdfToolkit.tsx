@@ -127,7 +127,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       else if (mode === 'SIGN') {
         // If files are selected, first convert to images if not already done
         if (resultImages.length === 0 && files.length > 0) {
-          const imgs = await pdfToImages(files[0]);
+          const { images: imgs } = await pdfToImages(files[0]);
           setResultImages(imgs);
           setIsProcessing(false); // Stop here to show UI
           return;
@@ -177,7 +177,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         setSuccessMsg("Compressed successfully!");
       }
       else if (mode === 'TO_IMAGE') {
-        const images = await pdfToImages(files[0]);
+        const { images } = await pdfToImages(files[0]);
         setResultImages(images);
       }
       else if (mode === 'IMG_TO_PDF') {
@@ -189,7 +189,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `rotated-${files[0].name}`);
       }
       else if (mode === 'EXTRACT_TEXT') {
-        const images = await pdfToImages(files[0]);
+        const { images } = await pdfToImages(files[0]);
         const text = await performOcrOnImages(images);
         setResultText(text);
       }
@@ -258,7 +258,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         setSuccessMsg("Images Extracted!");
       } else if (mode === 'REDACT') {
         if (resultImages.length === 0) {
-          const imgs = await pdfToImages(files[0]);
+          const { images: imgs } = await pdfToImages(files[0]);
           setResultImages(imgs);
           setIsProcessing(false);
           return;
@@ -367,7 +367,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setIsProcessing(true);
     try {
       // 1. Convert to images for preview
-      const imgs = await pdfToImages(files[0]);
+      const { images: imgs } = await pdfToImages(files[0]);
       setResultImages(imgs);
       // 2. Init state
       setOrganizedPages(imgs.map((_, i) => ({

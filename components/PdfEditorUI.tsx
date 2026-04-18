@@ -4,7 +4,7 @@ import { Button } from './Button';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
 import { PdfThumbnailSidebar } from './PdfThumbnailSidebar';
 import { SmartRedactButton } from './SmartRedactButton';
-import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem } from '../utils/pdfHelpers';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions } from '../utils/pdfHelpers';
 
 interface PdfEditorUIProps {
   file: File;
@@ -13,6 +13,7 @@ interface PdfEditorUIProps {
 
 export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [images, setImages] = React.useState<string[]>([]);
+  const [dimensions, setDimensions] = React.useState<PageDimensions[]>([]);
   const [elements, setElements] = React.useState<EditElement[]>([]);
   const [activePage, setActivePage] = React.useState<number>(0);
   const [textItems, setTextItems] = React.useState<PdfTextItem[]>([]);
@@ -26,9 +27,10 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     const processPdf = async () => {
       setIsProcessing(true);
       try {
-        const imgs = await pdfToImages(file);
+        const { images: imgs, dimensions: dims } = await pdfToImages(file);
         if (mounted) {
           setImages(imgs);
+          setDimensions(dims);
           setActivePage(0);
         }
       } catch (err: any) {
@@ -165,6 +167,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
            <PdfEditorCanvas
              image={images[activePage]}
+             dimensions={dimensions[activePage]}
              pageIndex={activePage}
              initialElements={elements.filter(el => el.pageIndex === activePage)}
              onSave={(newElements) => {

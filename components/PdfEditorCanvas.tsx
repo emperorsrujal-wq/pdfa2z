@@ -44,6 +44,7 @@ import { Tooltip } from './Tooltip';
 
 interface PdfEditorCanvasProps {
   image: string;
+  dimensions?: { width: number, height: number };
   pageIndex: number;
   initialElements: EditElement[];
   onSave: (elements: EditElement[]) => void;
@@ -140,9 +141,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [historyStep, setHistoryStep] = React.useState(0);
 
   const [mode, setMode] = React.useState<EditorMode>('magic-edit');
-  const [currentColor, setCurrentColor] = React.useState('#000000');
-  const [currentSize, setCurrentSize] = React.useState(14);
-  const [strokeWidth] = React.useState(3);
+  const [activeColor, setActiveColor] = React.useState('#000000');
+  const [activeFont, setActiveFont] = React.useState('Helvetica');
+  const [activeFontSize, setActiveFontSize] = React.useState(14);
   const [zoom, setZoom] = React.useState(1);
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
@@ -439,7 +440,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       try {
         const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
         bgColor = style.backgroundColor || '#FFFFFF';
-        fontColor = style.color || currentColor;
+        bgColor = style.backgroundColor || '#FFFFFF';
+        fontColor = style.color || activeColor;
       } catch (e) {
         console.warn("Color sampling failed, using defaults", e);
       }
@@ -453,13 +455,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         return;
       }
       // Fall through: add blank text
-      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: fontColor, text: '', size: currentSize, opacity: 1 };
+      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: fontColor, text: '', size: activeFontSize, opacity: 1 };
       commit([...elements, newEl]);
       setActiveElementId(newEl.id);
       return;
     }
       if (mode === 'text') {
-        const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: currentColor, text: '', size: currentSize, opacity: 1 };
+        const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, opacity: 1 };
         commit([...elements, newEl]);
         setActiveElementId(newEl.id);
         setMode('select');
@@ -509,24 +511,24 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     const h = Math.abs(dragStart.y - dragEnd.y);
 
     if (mode === 'draw' && currentPath.length > 1) {
-      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: currentColor, strokeWidth, path: currentPath, opacity: 1 };
+      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: 3, path: currentPath, opacity: 1 };
       commit([...elements, newEl]);
     } else if (mode === 'line' && currentPath.length === 2) {
       const [p1, p2] = currentPath;
-      const newEl: EditElement = { id: `line-${Date.now()}`, type: 'line', pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: currentColor, strokeWidth, opacity: 1 };
+      const newEl: EditElement = { id: `line-${Date.now()}`, type: 'line', pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: activeColor, strokeWidth: 3, opacity: 1 };
       commit([...elements, newEl]);
     } else if (w > 3 && h > 3) {
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
-        let bg = '#FFFFFF';
-        if (mode === 'smart-erase') {
-          // Retrieve sampled background from temporary storage
+        let bg = activeColor;
+        if (mode === 'erase') bg = activeColor; // Whiteout color
+        else if (mode === 'smart-erase') {
           const temp = (window as any)._smartBg;
           bg = temp?.bgColor || '#FFFFFF';
         }
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: mode === 'erase' ? currentColor : currentColor, bgColor: mode === 'erase' ? currentColor : bg, opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: activeColor, bgColor: bg, opacity: 1 };
       } else if (mode === 'circle') {
-        newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: currentColor, opacity: 1 };
+        newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
         newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: '#FFE600', opacity: 0.4 };
       } else if (mode === 'strikeout') {
@@ -578,8 +580,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     highlight: 'rgba(255, 230, 0, 0.35)',
     strikeout: 'rgba(239, 68, 68, 0.3)',
     underline: 'rgba(59, 130, 246, 0.3)',
-    erase: 'rgba(255,255,255,0.6)',
-    rect: currentColor.replace('#', 'rgba(') /* fallback */,
+    erase: activeColor,
+    rect: activeColor,
     circle: 'rgba(59,130,246,0.2)',
   };
 
@@ -693,31 +695,31 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               </button>
             </div>
 
-            {/* Premium Style Controls */}
+            {/* Premium Style Controls - Now in Main Toolbar */}
             <div className="flex items-center gap-2 px-3 border-l border-white/10">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-1">Style:</span>
-              
+              {/* Color Selector */}
               <div className="relative flex items-center">
                 <button
                   onClick={() => setShowColorPicker(!showColorPicker)}
                   className="flex items-center gap-1.5 p-1.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
-                  title="Current Color"
+                  title="Tool Color"
                 >
-                  <div className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: currentColor }} />
+                  <div className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: activeColor }} />
                   <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-300" />
                 </button>
 
                 {showColorPicker && (
-                  <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-4 rounded-2xl shadow-2xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Choose Tool Color</div>
+                  <div className="absolute top-full left-0 mt-2 bg-[#1e293b]/95 backdrop-blur-2xl border border-white/10 p-4 rounded-2xl shadow-2xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Choose Tool Color</div>
                     <div className="grid grid-cols-8 gap-2">
                       {SEJDA_COLORS.map(color => (
                         <button
                           key={color}
-                          className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${currentColor === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
+                          className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${activeColor === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
                           style={{ backgroundColor: color }}
                           onClick={() => {
-                            setCurrentColor(color);
+                            setActiveColor(color);
+                            if (activeElementId) updateElement(activeElementId, { color });
                             setShowColorPicker(false);
                           }}
                         />
@@ -736,20 +738,37 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       </div>
                       <div className="flex flex-col flex-1">
                         <span className="text-[10px] font-black text-slate-200 uppercase tracking-tight leading-none">Pick from Document</span>
-                        <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5 tracking-tighter">Choose any color from the PDF</span>
+                        <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5 tracking-tighter">Match color exactly</span>
                       </div>
                     </button>
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={() => setMode('picker')}
-                className={`p-2 rounded-xl transition-all ${mode === 'picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                title="Eyedropper / Color Picker"
-              >
-                <Pipette size={15} />
-              </button>
+              {/* Font Selector (Visible when text/magic mode active) */}
+              {(mode === 'text' || mode === 'magic-edit' || mode === 'sticky-note') && (
+                <div className="flex items-center gap-1.5 px-2 border-l border-white/5">
+                   <button 
+                     onClick={() => setMode('font-picker')}
+                     className={`p-2 rounded-xl transition-all ${mode === 'font-picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                     title="Match Font from PDF"
+                   >
+                     <Pipette size={15} />
+                   </button>
+                   <div className="h-4 w-px bg-white/5 mx-1" />
+                   <select 
+                     value={activeFontSize} 
+                     onChange={(e) => {
+                       const size = parseInt(e.target.value);
+                       setActiveFontSize(size);
+                       if (activeElementId) updateElement(activeElementId, { size });
+                     }}
+                     className="bg-white/5 border border-white/10 rounded-lg text-[10px] font-black text-indigo-400 px-1 outline-none"
+                   >
+                     {[8,10,12,14,16,18,24,30,36,48,60].map(s => <option key={s} value={s}>{s}px</option>)}
+                   </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -807,14 +826,19 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           }}
         >
           <div
-            ref={containerRef}
-            className={`relative bg-white shadow-2xl select-none touch-none ${
+            className={`relative bg-white shadow-2xl animate-fade-in select-none touch-none ${
               mode === 'text' || mode === 'magic-edit' ? 'cursor-text' :
               mode === 'picker' ? 'cursor-crosshair' :
               ['draw', 'line', 'erase', 'rect', 'circle', 'highlight', 'strikeout', 'underline'].includes(mode) ? 'cursor-crosshair' :
               mode === 'select' ? 'cursor-default' : 'cursor-default'
             }`}
-            style={{ aspectRatio: '1 / 1.414', width: '100%' }}
+            style={{ 
+              aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : '1 / 1.414', 
+              width: '100%',
+              backgroundImage: `url(${image})`,
+              backgroundSize: '100% 100%',
+              backgroundRepeat: 'no-repeat'
+            }}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
             onMouseUp={handlePointerUp}
@@ -823,13 +847,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             onTouchEnd={handlePointerUp}
             onClick={e => e.stopPropagation()}
           >
-            {/* PDF page image */}
-            <img
-              src={image}
-              draggable={false}
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none"
-              alt="PDF Page"
-            />
 
             {/* Picker overlay */}
             {mode === 'picker' && (
@@ -1050,12 +1067,15 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         className="w-full bg-transparent border-none outline-none p-0 m-0"
                         style={{
                           color: el.color || '#000',
-                          fontSize: `${((el.size || 14) / 794) * 100}%`,
+                          fontSize: `${((el.size || 14) / 1000) * 100}%`,
                           fontFamily: getFontFamily(el.fontName),
                           fontWeight: el.isBold ? 'bold' : 'normal',
                           fontStyle: el.isItalic ? 'italic' : 'normal',
                           lineHeight: 1.2,
                           whiteSpace: 'nowrap',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center'
                         }}
                       />
                     </div>
