@@ -126,6 +126,7 @@ function getFontFamily(fontName?: string) {
 
 export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   image,
+  dimensions,
   pageIndex,
   initialElements,
   onSave,
@@ -435,7 +436,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       
       // Auto-sample color logic for better masking
       let bgColor = '#FFFFFF';
-      let fontColor = currentColor;
+      let fontColor = activeColor;
       
       try {
         const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
@@ -586,84 +587,74 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#060910] overflow-hidden select-none" onClick={() => setActiveElementId(null)}>
-
-      {/* Collaboration Status */}
-      {isLive && (
-        <div className="shrink-0 flex items-center justify-between px-6 py-2 bg-indigo-600/10 border-b border-indigo-500/20 backdrop-blur-sm z-[150]">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-2 py-0.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-              <div className="w-1.5 h-1.5 bg-white rounded-full" />
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">Live Collaboration</span>
-            </div>
-            <div className="h-4 w-[1px] bg-indigo-500/20" />
-            <div className="flex -space-x-2">
-              {activeUsers.map((user, i) => (
-                <div key={user + i} className="w-6 h-6 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-indigo-400 capitalize" title={user}>
-                  {user[0]}
-                </div>
-              ))}
-              {activeUsers.length === 0 && (
-                <span className="text-[10px] text-slate-500 font-bold ml-2 italic">Waiting for collaborators...</span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400">
-             <span className="bg-slate-800/50 px-2 py-0.5 rounded border border-white/5 uppercase tracking-tighter">Doc ID: {docId}</span>
-          </div>
-        </div>
-      )}
-
-      {/* ─── SLIM CATEGORIZED TOOLBAR (Premium) ─────────────────── */}
-      <div className="shrink-0 flex flex-col bg-[#0f172a]/95 backdrop-blur-2xl border-b border-white/5 shadow-2xl z-[150]">
+    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden select-none" onClick={() => setActiveElementId(null)}>
+      {/* ─── PREMIUM LIGHT TOOLBAR (Sejda style) ─────────────────── */}
+      <div className="shrink-0 flex flex-col bg-white border-b border-slate-200 shadow-sm z-[150] relative">
         
         {/* Main Workspace Bar */}
         <div className="flex items-center justify-between px-6 py-2.5">
           
           {/* Left: Tool Categories */}
-          <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
-            {/* Tool Categorization Groups */}
-            <div className="flex items-center gap-1 pr-3 border-r border-white/10 ml-1">
+          <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200">
+            {/* Selection & Text Group */}
+            <div className="flex items-center gap-1 p-1">
               {[
-                { mode: 'select', icon: <MousePointer2 size={15} /> },
-                { mode: 'magic-edit', icon: <Type size={15} /> },
+                { mode: 'select', icon: <MousePointer2 size={15} />, label: 'Select' },
+                { mode: 'magic-edit', icon: <Type size={15} />, label: 'Text' },
               ].map(t => (
                 <button
                   key={t.mode}
-                  onClick={() => setMode(t.mode as EditorMode)}
-                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                  title={t.mode}
+                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                  title={t.label}
                 >
                   {t.icon}
+                  <span className="text-[11px] font-bold">{t.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5 px-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-2">Draw:</span>
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+
+            {/* Annotate Group */}
+            <div className="flex items-center gap-1">
               {[
-                { mode: 'erase', icon: <Eraser size={15} /> },
-                { mode: 'highlight', icon: <Highlighter size={15} /> },
-                { mode: 'draw', icon: <PenTool size={15} /> },
+                { mode: 'erase', icon: <Eraser size={15} />, label: 'Whiteout' },
+                { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Annotate' },
+                { mode: 'draw', icon: <PenTool size={15} />, label: 'Draw' },
               ].map(t => (
                 <button
                   key={t.mode}
-                  onClick={() => setMode(t.mode as EditorMode)}
-                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                  title={t.mode}
+                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                  title={t.label}
                 >
                   {t.icon}
+                  <span className="text-[11px] font-bold">{t.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5 px-2 border-l border-white/10">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-2">Insert:</span>
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+
+            {/* Shapes & Sign Group */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); setMode('rect'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+              >
+                <Shapes size={15} />
+                <span className="text-[11px] font-bold">Shapes</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMode('sign'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+              >
+                <FileSignature size={15} />
+                <span className="text-[11px] font-bold">Sign</span>
+              </button>
               {[
-                { mode: 'rect', icon: <Square size={15} /> },
-                { mode: 'circle', icon: <CircleIcon size={15} /> },
-                { mode: 'image', icon: <ImageIcon size={15} /> },
-                { mode: 'sticky-note', icon: <StickyNote size={15} /> },
+                { mode: 'image', icon: <ImageIcon size={15} />, label: 'Image' },
               ].map(t => (
                 <button
                   key={t.mode}
@@ -672,129 +663,137 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     if (t.mode === 'image') document.getElementById('img-upload')?.click(); 
                     else setMode(t.mode as EditorMode); 
                   }}
-                  className={`p-2 rounded-xl transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                  title={t.mode}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                  title={t.label}
                 >
                   {t.icon}
+                  <span className="text-[11px] font-bold">{t.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5 px-2 border-l border-white/10">
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+
+            {/* Advanced Group */}
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => setMode('ocr')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                onClick={(e) => { e.stopPropagation(); setMode('ocr'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-white hover:text-violet-600'}`}
               >
                 <FileSearch size={14} /> OCR
               </button>
               <button
-                onClick={() => setMode('form-builder')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${mode === 'form-builder' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                onClick={(e) => { e.stopPropagation(); setMode('form-builder'); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'form-builder' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-white hover:text-emerald-600'}`}
               >
                 <CheckSquare size={14} /> FORMS
               </button>
             </div>
-
-            {/* Premium Style Controls - Now in Main Toolbar */}
-            <div className="flex items-center gap-2 px-3 border-l border-white/10">
-              {/* Color Selector */}
-              <div className="relative flex items-center">
-                <button
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                  className="flex items-center gap-1.5 p-1.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
-                  title="Tool Color"
-                >
-                  <div className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: activeColor }} />
-                  <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-300" />
-                </button>
-
-                {showColorPicker && (
-                  <div className="absolute top-full left-0 mt-2 bg-[#1e293b]/95 backdrop-blur-2xl border border-white/10 p-4 rounded-2xl shadow-2xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Choose Tool Color</div>
-                    <div className="grid grid-cols-8 gap-2">
-                      {SEJDA_COLORS.map(color => (
-                        <button
-                          key={color}
-                          className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${activeColor === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
-                          style={{ backgroundColor: color }}
-                          onClick={() => {
-                            setActiveColor(color);
-                            if (activeElementId) updateElement(activeElementId, { color });
-                            setShowColorPicker(false);
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <div className="border-t border-white/5" />
-                    <button
-                      onClick={() => {
-                        setMode('picker');
-                        setShowColorPicker(false);
-                      }}
-                      className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
-                    >
-                      <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all">
-                        <Pipette size={14} />
-                      </div>
-                      <div className="flex flex-col flex-1">
-                        <span className="text-[10px] font-black text-slate-200 uppercase tracking-tight leading-none">Pick from Document</span>
-                        <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5 tracking-tighter">Match color exactly</span>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Font Selector (Visible when text/magic mode active) */}
-              {(mode === 'text' || mode === 'magic-edit' || mode === 'sticky-note') && (
-                <div className="flex items-center gap-1.5 px-2 border-l border-white/5">
-                   <button 
-                     onClick={() => setMode('font-picker')}
-                     className={`p-2 rounded-xl transition-all ${mode === 'font-picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                     title="Match Font from PDF"
-                   >
-                     <Pipette size={15} />
-                   </button>
-                   <div className="h-4 w-px bg-white/5 mx-1" />
-                   <select 
-                     value={activeFontSize} 
-                     onChange={(e) => {
-                       const size = parseInt(e.target.value);
-                       setActiveFontSize(size);
-                       if (activeElementId) updateElement(activeElementId, { size });
-                     }}
-                     className="bg-white/5 border border-white/10 rounded-lg text-[10px] font-black text-indigo-400 px-1 outline-none"
-                   >
-                     {[8,10,12,14,16,18,24,30,36,48,60].map(s => <option key={s} value={s}>{s}px</option>)}
-                   </select>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right: Controls & Zoom */}
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/5 shadow-inner">
-                <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Undo">
+          {/* Right: Controls & Style Overlays */}
+          <div className="flex items-center gap-3">
+             {/* Tool Styles */}
+             <div className="flex items-center gap-2 px-2 border-r border-slate-200">
+                {/* Color Selector */}
+                <div className="relative flex items-center">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
+                    className="flex items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-white transition-all group"
+                    title="Tool Color"
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-inner" style={{ backgroundColor: activeColor }} />
+                    <ChevronDown size={10} className="text-slate-400 group-hover:text-slate-600" />
+                  </button>
+
+                  {showColorPicker && (
+                    <div 
+                      className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Tool Color</div>
+                      <div className="grid grid-cols-8 gap-2">
+                         {SEJDA_COLORS.map(color => (
+                          <button
+                            key={color}
+                            className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${activeColor === color ? 'border-indigo-600 ring-2 ring-indigo-500/20' : 'border-slate-100 hover:border-slate-300'}`}
+                            style={{ backgroundColor: color }}
+                            onClick={() => {
+                              setActiveColor(color);
+                              if (activeElementId) updateElement(activeElementId, { color });
+                              setShowColorPicker(false);
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div className="border-t border-slate-100" />
+                      <button
+                        onClick={() => {
+                          setMode('picker');
+                          setShowColorPicker(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-left group transition-all border border-slate-200"
+                      >
+                        <div className="p-2 bg-indigo-600 text-white rounded-lg group-hover:scale-110 transition-all">
+                          <Pipette size={14} />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">Pick from Document</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5 tracking-tighter">Match color exactly</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Font Selector (Visible when text/magic mode active) */}
+                {(['text', 'magic-edit', 'sticky-note'] as EditorMode[]).includes(mode) && (
+                  <div className="flex items-center gap-1.5 px-2 border-l border-slate-200 ml-1">
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); setMode('font-picker'); }}
+                       className={`p-2 rounded-lg transition-all ${mode === 'font-picker' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'}`}
+                       title="Match Font from PDF"
+                     >
+                       <Pipette size={15} />
+                     </button>
+                     <div className="h-4 w-px bg-slate-200 mx-1" />
+                     <select 
+                       value={activeFontSize} 
+                       onChange={(e) => {
+                         const size = parseInt(e.target.value);
+                         setActiveFontSize(size);
+                         if (activeElementId) updateElement(activeElementId, { size });
+                       }}
+                       className="bg-white border border-slate-200 rounded text-[10px] font-bold text-indigo-600 px-1 outline-none h-7"
+                     >
+                       {[8,10,12,14,16,18,24,30,36,48,60].map(s => <option key={s} value={s}>{s}px</option>)}
+                     </select>
+                  </div>
+                )}
+             </div>
+
+             {/* Navigation & Zoom */}
+             <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Undo">
                   <Undo2 size={15} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Redo">
+                <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Redo">
                   <Redo2 size={15} />
                 </button>
-                <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <div className="w-[1px] h-4 bg-slate-200 mx-1" />
+                <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
                   <ZoomOut size={15} />
                 </button>
-                <span className="text-[11px] font-black text-indigo-400 min-w-[45px] text-center tabular-nums">
+                <span className="text-[11px] font-black text-indigo-600 min-w-[45px] text-center tabular-nums">
                   {Math.round(zoom * 100)}%
                 </span>
-                <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
                   <ZoomIn size={15} />
                 </button>
              </div>
              
-             <div className="px-3 py-1.5 bg-indigo-600/10 border border-indigo-500/20 rounded-xl">
-               <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
+             <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
              </div>
           </div>
         </div>
@@ -810,7 +809,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div 
-        className={`flex-1 overflow-auto bg-[#1e293b] p-12 scrollbar-none custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
+        className={`flex-1 overflow-auto bg-slate-200/50 p-12 scrollbar-none custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
         ref={containerRef}
         style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
       >
@@ -893,14 +892,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               {isDrawing && mode === 'draw' && currentPath.length > 1 && (
                 <polyline
                   points={currentPath.map(p => `${(p.x / 1000) * 100}%,${(p.y / 1000) * 100}%`).join(' ')}
-                  fill="none" stroke={currentColor} strokeWidth={`${strokeWidth / 10}%`} strokeLinecap="round" strokeLinejoin="round"
+                  fill="none" stroke={activeColor} strokeWidth="0.3%" strokeLinecap="round" strokeLinejoin="round"
                 />
               )}
               {isDrawing && mode === 'line' && currentPath.length === 2 && (
                 <line
                   x1={`${currentPath[0].x / 10}%`} y1={`${currentPath[0].y / 10}%`}
                   x2={`${currentPath[1].x / 10}%`} y2={`${currentPath[1].y / 10}%`}
-                  stroke={currentColor} strokeWidth={`${strokeWidth / 10}%`}
+                  stroke={activeColor} strokeWidth="0.3%"
                 />
               )}
 
@@ -1116,7 +1115,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           imageSrc={image} 
           onClose={() => setShowOcr(false)} 
           onApply={(text) => {
-            const newEl: EditElement = { id: `ocr-${Date.now()}`, type: 'text', pageIndex, x: 100, y: 100, width: 800, height: 400, color: currentColor, text, size: 12, opacity: 1 };
+            const newEl: EditElement = { id: `ocr-${Date.now()}`, type: 'text', pageIndex, x: 100, y: 100, width: 800, height: 400, color: activeColor, text, size: 12, opacity: 1 };
             commit([...elements, newEl]);
             setShowOcr(false);
           }}
