@@ -19,7 +19,7 @@ export interface PdfProcessingResult {
   dimensions: PageDimensions[];
 }
 
-export interface ExtendedTextItem extends TextItem {
+export interface ExtendedTextItem extends Omit<TextItem, 'fontName'> {
   fontName?: string;
 }
 
@@ -397,7 +397,7 @@ export const addPageNumbers = async (file: File): Promise<Uint8Array> => {
 };
 
 export const downloadBlob = (data: Uint8Array | Blob, filename: string) => {
-  const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+  const blob = data instanceof Blob ? data : new Blob([new Uint8Array(data) as BlobPart], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

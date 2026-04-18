@@ -7,12 +7,13 @@ interface SelectOption {
   disabled?: boolean;
 }
 
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children' | 'size'> {
   options: SelectOption[];
   variant?: 'default' | 'minimal';
   size?: 'sm' | 'md' | 'lg';
   error?: boolean;
   icon?: React.ReactNode;
+  placeholder?: string;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(

@@ -6,7 +6,7 @@ interface RadioOption {
   disabled?: boolean;
 }
 
-interface RadioGroupProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
+interface RadioGroupProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'size'> {
   options: RadioOption[];
   value?: string;
   onChange?: (value: string) => void;

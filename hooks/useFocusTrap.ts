@@ -4,7 +4,7 @@ import { A11Y } from '../utils/a11y';
 export const useFocusTrap = (
   isActive: boolean = true,
   onEscape?: () => void
-): React.RefObject<HTMLDivElement> => {
+): React.RefObject<HTMLDivElement | null> => {
   const containerRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Check } from 'lucide-react';
 
-interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   label?: string;
   error?: boolean;
   size?: 'sm' | 'md' | 'lg';
