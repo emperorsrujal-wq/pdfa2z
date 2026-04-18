@@ -64,13 +64,67 @@ export interface BrandConfig {
   // Identity & Trust
   includeAuditTrail?: boolean; // Append certificate of completion
   allowTypeSignature?: boolean; // Allow cursive font signatures
+  showSecurityBadges?: boolean; // Show the security trust footer
+  enabledSecurityBadges?: ('encryption' | 'soc2' | 'hipaa' | 'gdpr')[]; // Which badges to show
 
   // Localization
   localizedContent?: Record<string, any[]>; // languageCode -> steps[]
 
   // Account Tier
   isPro?: boolean;            // Whether the account has Pro/Enterprise features
+  
+  // Enterprise Features
+  crmMappingEnabled?: boolean; // Enable CRM Auto-Mapping
+  abTestingEnabled?: boolean;  // Enable A/B testing variants
 }
+
+/**
+ * Enterprise Theme Presets
+ */
+export const THEME_PRESETS: Record<string, Partial<BrandConfig>> = {
+  'corporate-blue': {
+    primaryColor: '#1e3a8a',
+    accentColor: '#3b82f6',
+    backgroundColor: '#ffffff',
+    textColor: '#0f172a',
+    secondaryTextColor: '#64748b',
+    fontFamily: 'Inter',
+    headingFontFamily: 'Bricolage Grotesque',
+  },
+  'modern-medical': {
+    primaryColor: '#0d9488',
+    accentColor: '#14b8a6',
+    backgroundColor: '#f8fafc',
+    textColor: '#1e293b',
+    secondaryTextColor: '#64748b',
+    fontFamily: 'Poppins',
+  },
+  'insurance-trust': {
+    primaryColor: '#0f172a',
+    accentColor: '#f59e0b',
+    backgroundColor: '#ffffff',
+    textColor: '#0f172a',
+    secondaryTextColor: '#475569',
+    fontFamily: 'Outfit',
+  },
+  'banking-clean': {
+    primaryColor: '#2563eb',
+    accentColor: '#94a3b8',
+    backgroundColor: '#ffffff',
+    textColor: '#1e293b',
+    secondaryTextColor: '#64748b',
+    fontFamily: 'Roboto',
+  },
+  'glassmorphism': {
+    primaryColor: '#f59e0b',
+    accentColor: '#fbbf24',
+    backgroundColor: '#0f172a',
+    textColor: '#e2e8f0',
+    secondaryTextColor: '#94a3b8',
+    fontFamily: 'Inter',
+    customCss: 'div.jb-card { backdrop-filter: blur(16px); background: rgba(15, 23, 42, 0.7); }',
+  }
+};
 
 /**
  * Detect regional settings based on browser defaults
@@ -124,7 +178,11 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   fieldMappings: {},
   includeAuditTrail: true,
   allowTypeSignature: true,
+  showSecurityBadges: true,
+  enabledSecurityBadges: ['encryption', 'soc2', 'hipaa', 'gdpr'],
   localizedContent: {},
+  crmMappingEnabled: false,
+  abTestingEnabled: false,
   ...autoDetectRegionalSettings(),
 };
 

@@ -12,6 +12,7 @@ import {
   saveBrandConfig,
   loadBrandConfig,
   validateBrandConfig,
+  THEME_PRESETS,
 } from '../utils/journeyBranding';
 
 interface JourneyBrandConfigProps {
@@ -44,7 +45,7 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
     initialConfig || loadBrandConfig() || DEFAULT_BRAND_CONFIG
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'legal' | 'integrations' | 'advanced' | 'layout'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout'>('colors');
   const [saved, setSaved] = useState(false);
 
   const handleConfigChange = (field: keyof BrandConfig, value: any) => {
@@ -91,17 +92,26 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
 
   const loadDefaultEmailTemplate = () => {
     const defaultTemplate = `
-<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; border-radius: 20px; overflow: hidden;">
-  <div style="padding: 40px; background: #f59e0b; text-align: center; color: #000;">
-    <h1>New Lead!</h1>
+<div style="font-family: 'Inter', system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; color: #0f172a; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+  <div style="padding: 40px; background: #1e3a8a; text-align: center; color: #ffffff;">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">New Lead Captured</h1>
+    <p style="margin: 8px 0 0 0; opacity: 0.8; font-size: 14px;">{{journey_title}}</p>
   </div>
   <div style="padding: 40px;">
-    <p>A new lead has been captured from your journey.</p>
-    <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+    <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">A new lead has completed your digital journey. Here is a summary of the captured data:</p>
+    
+    <div style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
       {{lead_data}}
     </div>
-    <div style="text-align: center; margin-top: 30px;">
-      <a href="{{pdf_url}}" style="background: #f59e0b; color: #000; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">View PDF</a>
+    
+    <div style="text-align: center; margin: 40px 0 20px;">
+      <a href="{{pdf_url}}" style="background: #1e3a8a; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.2);">
+        View Completed PDF →
+      </a>
+    </div>
+    
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #64748b;">
+      Powered by <strong>PDFA2Z Enterprise</strong> · Secure & Encrypted
     </div>
   </div>
 </div>`.trim();
@@ -409,6 +419,41 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
         .brand-helper-btn:hover {
           background: rgba(245,158,11,0.2);
         }
+        .brand-helper-btn {
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          color: #f59e0b;
+          padding: 4px 12px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .brand-helper-btn:hover {
+          background: #f59e0b;
+          color: #000;
+          transform: translateY(-1px);
+        }
+
+        .brand-textarea {
+          width: 100%;
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 10px 14px;
+          color: #fff;
+          font-size: 14px;
+          margin-bottom: 16px;
+          outline: none;
+          resize: vertical;
+          min-height: 100px;
+        }
+
+        .brand-textarea:focus {
+          border-color: #f59e0b;
+        }
       `}</style>
 
       <div className="brand-config-container">
@@ -453,6 +498,18 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
             Messaging
           </button>
           <button
+            className={`brand-tab ${activeTab === 'email' ? 'active' : ''}`}
+            onClick={() => setActiveTab('email')}
+          >
+            Email
+          </button>
+          <button
+            className={`brand-tab ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('security')}
+          >
+            Security
+          </button>
+          <button
             className={`brand-tab ${activeTab === 'legal' ? 'active' : ''}`}
             onClick={() => setActiveTab('legal')}
           >
@@ -481,6 +538,37 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
         {/* COLORS TAB */}
         {activeTab === 'colors' && (
           <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Theme Presets</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
+                {Object.entries(THEME_PRESETS).map(([id, preset]) => (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      const updated = { ...config, ...preset };
+                      setConfig(updated);
+                      onConfigChange?.(updated);
+                    }}
+                    style={{
+                      padding: '10px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.borderColor = preset.primaryColor || 'var(--brand-primary)'}
+                    onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  >
+                    <div style={{ width: '100%', height: '30px', background: preset.primaryColor, borderRadius: '6px', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', textTransform: 'capitalize' }}>
+                      {id.replace('-', ' ')}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="brand-preview">
               <div className="brand-preview-title">Color Preview</div>
               <div className="brand-preview-colors">
@@ -706,6 +794,154 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
           </>
         )}
 
+        {/* EMAIL TAB */}
+        {activeTab === 'email' && (
+          <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Default Email Settings</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                 <div>
+                    <label className="brand-form-label" style={{ fontSize: 10 }}>From Email</label>
+                    <input 
+                      type="email" 
+                      className="brand-input" 
+                      value={config.fromEmail || ''} 
+                      onChange={e => handleConfigChange('fromEmail', e.target.value)}
+                      placeholder="notifications@yourdomain.com"
+                    />
+                 </div>
+                 <div>
+                    <label className="brand-form-label" style={{ fontSize: 10 }}>Support Email</label>
+                    <input 
+                      type="email" 
+                      className="brand-input" 
+                      value={config.supportEmail || ''} 
+                      onChange={e => handleConfigChange('supportEmail', e.target.value)}
+                      placeholder="support@yourdomain.com"
+                    />
+                 </div>
+              </div>
+            </div>
+
+            <div className="brand-form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <label className="brand-form-label">Email Notification Template (HTML)</label>
+                <button className="brand-helper-btn" onClick={loadDefaultEmailTemplate}>Reset to Elite Default</button>
+              </div>
+              <textarea
+                className="brand-textarea"
+                style={{ height: 250, fontFamily: 'monospace', fontSize: 12 }}
+                value={config.emailTemplate || ''}
+                onChange={e => handleConfigChange('emailTemplate', e.target.value)}
+                placeholder="<html>...</html>"
+              />
+              <p className="brand-form-description">
+                Use <code>{"{{lead_data}}"}</code> for the data list and <code>{"{{pdf_url}}"}</code> for the file link.
+              </p>
+            </div>
+
+            <div className="brand-preview" style={{ background: '#1e293b' }}>
+               <div className="brand-preview-title">Live Preview</div>
+               <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', height: 400, border: '4px solid #334155' }}>
+                  <iframe 
+                    title="Email Preview"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    srcDoc={
+                      (config.emailTemplate || '')
+                        .replace(/\{\{lead_data\}\}/g, '<ul style="color: #000"><li><strong>Full Name:</strong> John Doe</li><li><strong>Email:</strong> john@example.com</li></ul>')
+                        .replace(/\{\{pdf_url\}\}/g, '#')
+                        .replace(/\{\{journey_title\}\}/g, config.journeyTitle || 'Sample Journey')
+                    }
+                  />
+               </div>
+            </div>
+          </>
+        )}
+
+        {/* SECURITY TAB */}
+        {activeTab === 'security' && (
+          <>
+            <div className="brand-form-group">
+              <label className="brand-form-label">Trust Signals</label>
+              <div className="brand-checkbox" style={{ marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  id="show-security-badges-new"
+                  checked={config.showSecurityBadges !== false}
+                  onChange={(e) => handleConfigChange('showSecurityBadges', e.target.checked)}
+                />
+                <label htmlFor="show-security-badges-new" className="brand-checkbox-label">
+                  <strong>Show Security Trust Badges</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Displays professional trust signals (Encryption, SOC 2, etc.) in the wizard footer.
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {config.showSecurityBadges !== false && (
+              <div style={{ padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 20 }}>
+                <label className="brand-form-label" style={{ fontSize: 11, marginBottom: 12 }}>Enabled Badges</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {[
+                    { id: 'encryption', label: '256-bit Encryption' },
+                    { id: 'soc2', label: 'SOC 2 Compliant' },
+                    { id: 'hipaa', label: 'HIPAA Ready' },
+                    { id: 'gdpr', label: 'GDPR / CCPA' }
+                  ].map(badge => (
+                    <label key={badge.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={(config.enabledSecurityBadges || []).includes(badge.id as any)} 
+                        onChange={(e) => {
+                          const current = config.enabledSecurityBadges || [];
+                          const updated = e.target.checked 
+                            ? [...current, badge.id] 
+                            : current.filter(id => id !== badge.id);
+                          handleConfigChange('enabledSecurityBadges', updated);
+                        }}
+                      />
+                      <span style={{ fontSize: 12, color: '#cbd5e1' }}>{badge.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="brand-form-group">
+              <div className="brand-checkbox" style={{ marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  id="audit-trail-security-enhanced"
+                  checked={config.includeAuditTrail !== false}
+                  onChange={(e) => handleConfigChange('includeAuditTrail', e.target.checked)}
+                />
+                <label htmlFor="audit-trail-security-enhanced" className="brand-checkbox-label">
+                  <strong>Include Completion Certificate</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Appends a professional audit trail with timestamps and IDs to the final PDF.
+                  </div>
+                </label>
+              </div>
+
+              <div className="brand-checkbox">
+                <input
+                  type="checkbox"
+                  id="allow-type-sig-security"
+                  checked={config.allowTypeSignature !== false}
+                  onChange={(e) => handleConfigChange('allowTypeSignature', e.target.checked)}
+                />
+                <label htmlFor="allow-type-sig-security" className="brand-checkbox-label">
+                  <strong>Allow Type-to-Sign</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Enable users to sign using professional cursive fonts.
+                  </div>
+                </label>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* LEGAL TAB */}
         {activeTab === 'legal' && (
           <>
@@ -847,9 +1083,42 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
 
             {availableFields.length > 0 && (
               <div className="brand-form-group" style={{ marginTop: 24, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <label className="brand-form-label" style={{ color: '#f59e0b', fontSize: 13, marginBottom: 12, display: 'block' }}>
-                  CRM Field Aliases (Zapier / Webhook Mapping)
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <label className="brand-form-label" style={{ color: '#f59e0b', fontSize: 13, margin: 0 }}>
+                    CRM Field Aliases (Zapier / Webhook Mapping)
+                  </label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button 
+                      className="brand-helper-btn" 
+                      style={{ margin: 0, padding: '2px 8px', fontSize: 9 }}
+                      onClick={() => {
+                        const newMappings = { ...config.fieldMappings };
+                        availableFields.forEach(f => {
+                          if (f.label.toLowerCase().includes('name')) newMappings[f.id] = 'FirstName';
+                          if (f.label.toLowerCase().includes('email')) newMappings[f.id] = 'Email';
+                          if (f.label.toLowerCase().includes('phone')) newMappings[f.id] = 'Phone';
+                        });
+                        handleConfigChange('fieldMappings', newMappings);
+                      }}
+                    >
+                      Salesforce
+                    </button>
+                    <button 
+                      className="brand-helper-btn" 
+                      style={{ margin: 0, padding: '2px 8px', fontSize: 9 }}
+                      onClick={() => {
+                        const newMappings = { ...config.fieldMappings };
+                        availableFields.forEach(f => {
+                          if (f.label.toLowerCase().includes('name')) newMappings[f.id] = 'firstname';
+                          if (f.label.toLowerCase().includes('email')) newMappings[f.id] = 'email';
+                        });
+                        handleConfigChange('fieldMappings', newMappings);
+                      }}
+                    >
+                      HubSpot
+                    </button>
+                  </div>
+                </div>
                 <div style={{ display: 'grid', gap: 10 }}>
                   {availableFields.map(f => (
                     <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

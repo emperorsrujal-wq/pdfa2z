@@ -1,5 +1,5 @@
 
-export type Language = 'en' | 'es' | 'fr' | 'hi';
+export type Language = 'en' | 'es' | 'fr' | 'hi' | 'ar' | 'he';
 
 export const JOURNEY_TRANSLATIONS: Record<Language, any> = {
   en: {
@@ -73,5 +73,41 @@ export const JOURNEY_TRANSLATIONS: Record<Language, any> = {
     errorRequired: "अनिवार्य है",
     reviewTitle: "अपनी जानकारी की समीक्षा करें",
     confirmSubmit: "मैं पुष्टि करता हूँ कि दी गई जानकारी सटीक है।"
+  },
+  ar: {
+    back: "رجوع",
+    continue: "استمرار",
+    review: "مراجعة واستمرار",
+    step: "خطوة",
+    of: "من",
+    minLeft: "دقائق متبقية",
+    secure: "آمن ومشفر",
+    privacyNote: "تتم جميع العمليات الحسابية محليًا. لم يتم تخزين أي بيانات على خوادمنا.",
+    complete: "اكتملت الرحلة",
+    download: "تحميل ملف PDF المكتمل",
+    startNew: "بدء رحلة جديدة",
+    helpExample: "مثال:",
+    required: "مطلوب",
+    errorRequired: "مطلوب",
+    reviewTitle: "راجع معلوماتك",
+    confirmSubmit: "أؤكد أن جميع المعلومات المقدمة دقيقة."
+  },
+  he: {
+    back: "חזור",
+    continue: "המשך",
+    review: "סקירה והמשך",
+    step: "שלב",
+    of: "מתוך",
+    minLeft: "דקות נותרו",
+    secure: "מאובטח ומוצפן",
+    privacyNote: "כל החישובים מבוצעים מקומית. שום מידע לא נשמר בשרתים שלנו.",
+    complete: "המסלול הושלם",
+    download: "הורד PDF מלא",
+    startNew: "התחל מסלול חדש",
+    helpExample: "למשל:",
+    required: "חובה",
+    errorRequired: "הוא שדה חובה",
+    reviewTitle: "סקור את המידע שלך",
+    confirmSubmit: "אני מאשר שכל המידע שנמסר מדויק."
   }
 };

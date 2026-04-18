@@ -15,64 +15,121 @@ export interface JourneyStats {
   completeCount: number;
   totalCompletionTime: number; // Total seconds for all completions
   stepCompletions: Record<string, number>; // counts per stepId
+  stepTimes: Record<string, number>; // total duration per stepId
+  fieldErrors: Record<string, number>; // total errors per fieldId/stepId
   geoDistribution: Record<string, number>; // counts per country code
+  variantStats?: Record<string, { views: number; starts: number; completes: number }>; // A/B test variant tracking
   lastUpdatedAt: any;
 }
 
 const STATS_COLLECTION = 'journey_stats';
 
 /**
- * Tracks a journey event (view, start, complete, step_complete)
+ * Tracks a journey event (view, start, complete, step_complete, field_error)
  */
 export async function trackJourneyEvent(
   journeyId: string, 
-  event: 'view' | 'start' | 'complete' | 'step_complete',
-  metadata?: { stepId?: string; duration?: number }
+  event: 'view' | 'start' | 'complete' | 'step_complete' | 'field_error',
+  metadata?: { stepId?: string; duration?: number; fieldId?: string; variant?: string }
 ) {
   const countryCode = (navigator.language || 'US').split('-')[1] || 'US';
+  const variant = metadata?.variant || 'v1';
+
   if (DEMO_MODE) {
     const statsKey = `jb_stats_${journeyId}`;
-    const stats = JSON.parse(localStorage.getItem(statsKey) || '{"viewCount":0, "startCount":0, "completeCount":0, "totalCompletionTime":0, "stepCompletions":{}, "geoDistribution":{}}');
+    const statsStr = localStorage.getItem(statsKey);
+    const stats: JourneyStats = statsStr ? JSON.parse(statsStr) : {
+      viewCount: 0,
+      startCount: 0,
+      completeCount: 0,
+      totalCompletionTime: 0,
+      stepCompletions: {},
+      stepTimes: {},
+      fieldErrors: {},
+      geoDistribution: {},
+      variantStats: { v1: { views: 0, starts: 0, completes: 0 }, v2: { views: 0, starts: 0, completes: 0 } }
+    };
     
-    if (event === 'view') stats.viewCount++;
-    if (event === 'start') stats.startCount++;
+    // Ensure nested objects exist
+    if (!stats.stepTimes) stats.stepTimes = {};
+    if (!stats.fieldErrors) stats.fieldErrors = {};
+    if (!stats.variantStats) stats.variantStats = { v1: { views: 0, starts: 0, completes: 0 }, v2: { views: 0, starts: 0, completes: 0 } };
+    if (!stats.variantStats[variant]) stats.variantStats[variant] = { views: 0, starts: 0, completes: 0 };
+
+    if (event === 'view') {
+      stats.viewCount++;
+      stats.variantStats[variant].views++;
+    }
+    if (event === 'start') {
+      stats.startCount++;
+      stats.variantStats[variant].starts++;
+    }
     if (event === 'complete') {
       stats.completeCount++;
+      stats.variantStats[variant].completes++;
       if (metadata?.duration) stats.totalCompletionTime += metadata.duration;
       stats.geoDistribution[countryCode] = (stats.geoDistribution[countryCode] || 0) + 1;
     }
     if (event === 'step_complete' && metadata?.stepId) {
       stats.stepCompletions[metadata.stepId] = (stats.stepCompletions[metadata.stepId] || 0) + 1;
+      if (metadata.duration) {
+        stats.stepTimes[metadata.stepId] = (stats.stepTimes[metadata.stepId] || 0) + metadata.duration;
+      }
+    }
+    if (event === 'field_error' && metadata?.fieldId) {
+      stats.fieldErrors[metadata.fieldId] = (stats.fieldErrors[metadata.fieldId] || 0) + 1;
     }
     
     localStorage.setItem(statsKey, JSON.stringify(stats));
     return;
   }
 
+  // Firestore path
   const statRef = doc(db, STATS_COLLECTION, journeyId);
   const snap = await getDoc(statRef);
 
-  const fieldMap: Record<string, string> = {
-    view: 'viewCount',
-    start: 'startCount',
-    complete: 'completeCount',
-    step_complete: 'stepCompletions'
+  const updates: any = {
+    lastUpdatedAt: serverTimestamp()
   };
 
-  const field = fieldMap[event];
+  if (event === 'view') {
+    updates.viewCount = increment(1);
+    updates[`variantStats.${variant}.views`] = increment(1);
+  } else if (event === 'start') {
+    updates.startCount = increment(1);
+    updates[`variantStats.${variant}.starts`] = increment(1);
+  } else if (event === 'complete') {
+    updates.completeCount = increment(1);
+    updates[`variantStats.${variant}.completes`] = increment(1);
+    if (metadata?.duration) updates.totalCompletionTime = increment(metadata.duration);
+    updates[`geoDistribution.${countryCode}`] = increment(1);
+  } else if (event === 'step_complete' && metadata?.stepId) {
+    updates[`stepCompletions.${metadata.stepId}`] = increment(1);
+    if (metadata.duration) updates[`stepTimes.${metadata.stepId}`] = increment(metadata.duration);
+  } else if (event === 'field_error' && metadata?.fieldId) {
+    updates[`fieldErrors.${metadata.fieldId}`] = increment(1);
+  }
 
   if (!snap.exists()) {
-    await setDoc(statRef, {
+    // Initial creation
+    const initialStats: any = {
       viewCount: event === 'view' ? 1 : 0,
       startCount: event === 'start' ? 1 : 0,
       completeCount: event === 'complete' ? 1 : 0,
+      totalCompletionTime: (event === 'complete' && metadata?.duration) ? metadata.duration : 0,
+      stepCompletions: (event === 'step_complete' && metadata?.stepId) ? { [metadata.stepId]: 1 } : {},
+      stepTimes: (event === 'step_complete' && metadata?.stepId && metadata.duration) ? { [metadata.stepId]: metadata.duration } : {},
+      fieldErrors: (event === 'field_error' && metadata?.fieldId) ? { [metadata.fieldId]: 1 } : {},
+      geoDistribution: (event === 'complete') ? { [countryCode]: 1 } : {},
+      variantStats: {
+        v1: { views: (variant === 'v1' && event === 'view') ? 1 : 0, starts: (variant === 'v1' && event === 'start') ? 1 : 0, completes: (variant === 'v1' && event === 'complete') ? 1 : 0 },
+        v2: { views: (variant === 'v2' && event === 'view') ? 1 : 0, starts: (variant === 'v2' && event === 'start') ? 1 : 0, completes: (variant === 'v2' && event === 'complete') ? 1 : 0 }
+      },
       lastUpdatedAt: serverTimestamp()
-    });
+    };
+    await setDoc(statRef, initialStats);
   } else {
-    await updateDoc(statRef, {
-      [field]: increment(1),
-      lastUpdatedAt: serverTimestamp()
-    });
+    await updateDoc(statRef, updates);
   }
 }
 
@@ -95,6 +152,8 @@ export async function getJourneyStats(journeyId: string): Promise<JourneyStats> 
       completeCount: 0,
       totalCompletionTime: 0,
       stepCompletions: {},
+      stepTimes: {},
+      fieldErrors: {},
       geoDistribution: {},
       lastUpdatedAt: null
     };

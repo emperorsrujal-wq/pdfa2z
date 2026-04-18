@@ -7,7 +7,6 @@
     "dev": "vite",
     "prebuild": "node scripts/generateSitemap.js",
     "build": "npm run prebuild && tsc && vite build",
-    "postbuild": "node scripts/prerender.js",
     "preview": "vite preview",
     "sitemap": "node scripts/generateSitemap.js",
     "sitemap:verify": "node scripts/verify-blog-sitemap.js",

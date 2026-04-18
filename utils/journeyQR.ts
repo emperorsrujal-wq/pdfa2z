@@ -3,15 +3,17 @@
  * Targeted for Real Estate (flyers) and Legal (office signage) use cases.
  */
 
-export const generateJourneyQR = (url: string, size: number = 1000) => {
+export const generateJourneyQR = (url: string, size: number = 250, color: string = '000000', bgColor: string = 'ffffff') => {
   // Use professional QR API (e.g., api.qrserver.com for high-res static QRs)
   const encodedUrl = encodeURIComponent(url);
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodedUrl}&margin=10&format=png`;
+  const cleanColor = color.replace('#', '');
+  const cleanBg = bgColor.replace('#', '');
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodedUrl}&margin=10&format=png&color=${cleanColor}&bgcolor=${cleanBg}`;
 };
 
-export const downloadJourneyQR = async (url: string, fileName: string) => {
+export const downloadJourneyQR = async (url: string, fileName: string, color: string = '000000', bgColor: string = 'ffffff') => {
   try {
-    const qrUrl = generateJourneyQR(url);
+    const qrUrl = generateJourneyQR(url, 1000, color, bgColor);
     const response = await fetch(qrUrl);
     const blob = await response.blob();
     const downloadUrl = window.URL.createObjectURL(blob);

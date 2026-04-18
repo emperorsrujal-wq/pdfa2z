@@ -2,7 +2,7 @@ import * as React from 'react';
 import { 
   FileText, Clock, CheckCircle2, Shield, Plus, List, Filter, Search,
   Download, ExternalLink, Settings, MoreVertical, Trash2, Users, 
-  BarChart3, Map, LayoutDashboard, Globe, ArrowUpRight
+  BarChart3, Map, LayoutDashboard, Globe, ArrowUpRight, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -432,4 +432,3 @@ export const Dashboard: React.FC = () => {
   );
 };
 
-const LogOut: React.FC<{ size: number }> = ({ size }) => <Clock size={size} />; // Fallback icon for demo

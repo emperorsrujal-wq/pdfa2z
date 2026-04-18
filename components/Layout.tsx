@@ -26,11 +26,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentLang = 'en' }) 
             onMouseMove={handleMouseMove}
             className="relative min-h-screen flex flex-col font-sans text-slate-900 overflow-x-hidden"
         >
-            <div className="mesh-bg">
-                <div className="mesh-blob bg-blue-100/50 -top-20 -left-20" />
-                <div className="mesh-blob bg-indigo-100/50 top-40 right-0" style={{ animationDelay: '-5s' }} />
-                <div className="mesh-blob bg-teal-100/30 bottom-0 left-1/4" style={{ animationDelay: '-10s' }} />
-            </div>
 
             <Header currentLang={currentLang} />
             <main className="flex-1 w-full pt-20">

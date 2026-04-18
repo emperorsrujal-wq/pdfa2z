@@ -22,6 +22,9 @@ import {
   Layout as LayoutIcon, Type, CheckCircle, CheckCircle2, BarChart2, Share2, Globe, Copy, Check, Info, X, AlertTriangle 
 } from "lucide-react";
 import { JOURNEY_TRANSLATIONS, Language } from "../utils/journeyTranslations";
+import { SecurityTrust } from "./SecurityTrust";
+import { WorldMap } from "./WorldMap";
+import { JourneyShareModal } from "./JourneyShareModal";
 
 // --- Types -------------------------------------------------------------------
 
@@ -258,9 +261,28 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
   if (field.type === "date") return <input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} style={base} />;
   return (
     <div>
-      <input type="text" value={value || ""} placeholder={`Enter ${field.label.toLowerCase()}`} onChange={(e) => onChange(e.target.value)} style={base} maxLength={field.maxLength} />
-      {field.helpText && <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{field.helpText}</p>}
-      {error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>{error}</p>}
+      <div style={{ position: 'relative' }}>
+        <input 
+          type="text" 
+          value={value || ""} 
+          placeholder={field.example || `Enter ${field.label.toLowerCase()}`} 
+          onChange={(e) => onChange(e.target.value)} 
+          style={base} 
+          maxLength={field.maxLength} 
+        />
+        {field.maxLength && (
+          <div style={{ position: 'absolute', bottom: -18, right: 0, fontSize: 9, fontWeight: 700, color: (value?.length || 0) > field.maxLength * 0.9 ? 'var(--brand-error)' : '#64748b' }}>
+            {value?.length || 0} / {field.maxLength}
+          </div>
+        )}
+      </div>
+      {(field.helpText || field.validationType) && (
+        <p style={{ fontSize: 11, color: "#64748b", marginTop: field.maxLength ? 12 : 6, display: 'flex', justifyContent: 'space-between' }}>
+          <span>{field.helpText}</span>
+          {field.validationType && <span style={{ opacity: 0.7, fontStyle: 'italic' }}>{getFormatHint(field.validationType)}</span>}
+        </p>
+      )}
+      {error && <p style={{ fontSize: 11, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{error}</p>}
     </div>
   );
 }
@@ -281,20 +303,38 @@ const CSS = `
     --brand-heading-font: Bricolage Grotesque, sans-serif;
   }
   .jb-root { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--brand-bg); font-family: var(--brand-font-family); color: var(--brand-text); padding: 24px; position: relative; overflow: hidden; }
-  .jb-card { background: rgba(10,15,28,0.95); border: 1px solid rgba(245,158,11,0.15); border-radius: 24px; padding: 44px 40px; max-width: 560px; width: 100%; position: relative; z-index: 1; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+  .jb-card { background: rgba(10,15,28,0.95); border: 1px solid rgba(245,158,11,0.15); border-radius: 24px; padding: 44px 40px; max-width: 560px; width: 100%; position: relative; z-index: 1; box-shadow: 0 30px 80px rgba(0,0,0,0.5); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .jb-brand { display: flex; align-items: center; gap: 8px; font-family: var(--brand-heading-font); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-primary); margin-bottom: 30px; }
   .jb-brand-pip { width: 6px; height: 6px; background: var(--brand-primary); border-radius: 50%; }
-  .jb-title { font-family: var(--brand-heading-font); font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; }
+  .jb-title { font-family: var(--brand-heading-font); font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; transition: all 0.3s; }
   .jb-title em { font-style: normal; color: var(--brand-primary); }
   .jb-sub { color: var(--brand-text-secondary); font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
   .jb-dropzone { border: 2px dashed rgba(245,158,11,0.2); border-radius: 16px; padding: 50px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(245,158,11,0.01); }
   .jb-dropzone:hover { border-color: var(--brand-primary); background: rgba(245,158,11,0.03); }
-  .jb-btn { display: block; width: 100%; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--brand-font-family); }
+  .jb-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 16px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--brand-font-family); min-height: 54px; gap: 8px; user-select: none; }
   .jb-btn-gold { background: var(--brand-primary); color: #000; margin-top: 16px; }
-  .jb-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(245,158,11,0.3); }
+  .jb-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(245,158,11,0.3); opacity: 0.95; }
+  .jb-btn-gold:active { transform: translateY(0); }
   .jb-btn-ghost { background: transparent; color: var(--brand-text-secondary); border: 1.5px solid rgba(71,85,105,0.3); margin-top: 12px; }
+  .jb-btn-ghost:hover { border-color: var(--brand-primary); color: var(--brand-text); }
   .jb-spinner { width: 40px; height: 40px; border: 3px solid rgba(245,158,11,0.1); border-top-color: var(--brand-primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* RTL Support */
+  .jb-root[dir="rtl"] { text-align: right; }
+  .jb-root[dir="rtl"] .jb-brand { flex-direction: row-reverse; }
+  .jb-root[dir="rtl"] .jb-side-item { flex-direction: row-reverse; text-align: right; }
+  .jb-root[dir="rtl"] .jb-btn { flex-direction: row-reverse; }
+  
+  /* Mobile Optimizations */
+  @media (max-width: 640px) {
+    .jb-root { padding: 16px; background: #05080f; }
+    .jb-card { padding: 32px 24px; border-radius: 0; position: fixed; inset: 0; max-width: none; border: none; overflow-y: auto; }
+    .jb-title { font-size: 26px; }
+    .jb-btn { padding: 18px 24px; font-size: 16px; } /* Larger touch targets */
+    .field-input { font-size: 16px !important; } /* Stop iOS zoom on focus */
+  }
+
   .jb-editor-layout { display: flex; width: 100%; max-width: 1440px; height: 100vh; overflow: hidden; background: #05080f; }
   .jb-sidebar { width: 320px; background: #0a0f1c; border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
   .jb-sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -357,10 +397,13 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [signingFieldId, setSigningFieldId] = useState<string | null>(null);
   const [webhookTestStatus, setWebhookTestStatus] = useState<{ loading: boolean, success?: boolean, error?: string } | null>(null);
-  const [isLogoUploading, setIsLogoUploading] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = React.useState(false);
+  const [showShareModal, setShowShareModal] = React.useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const startTimeRef = useRef<number>(0);
+  const stepStartTimeRef = useRef<number>(0);
+  const [variant, setVariant] = useState<'v1' | 'v2'>('v1');
 
   useEffect(() => {
     (async () => {
@@ -407,6 +450,18 @@ export const PDFJourneyBuilder: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // A/B Testing Variant Assignment (Sticky)
+    const storedVariant = localStorage.getItem(`jb_variant_${fileName || 'global'}`);
+    if (storedVariant === 'v1' || storedVariant === 'v2') {
+      setVariant(storedVariant);
+    } else {
+      const assigned = Math.random() > 0.5 ? 'v2' : 'v1';
+      setVariant(assigned);
+      localStorage.setItem(`jb_variant_${fileName || 'global'}`, assigned);
+    }
+  }, [fileName]);
+
+  useEffect(() => {
     // Process any leads that were buffered while offline
     processSyncQueue(async (data) => {
       console.log('[Sync] Resyncing lead data:', data);
@@ -416,7 +471,8 @@ export const PDFJourneyBuilder: React.FC = () => {
   useEffect(() => {
     if (stage === 'wizard') {
       startTimeRef.current = Date.now();
-      trackJourneyEvent(fileName || 'unnamed', 'start');
+      stepStartTimeRef.current = Date.now();
+      trackJourneyEvent(fileName || 'unnamed', 'start', { variant });
       
       // Auto-detect browser language and switch if translation exists
       const browserLang = navigator.language.split("-")[0];
@@ -424,7 +480,7 @@ export const PDFJourneyBuilder: React.FC = () => {
         setCurrentLanguage(browserLang);
       }
     }
-  }, [stage, brandConfig.localizedContent]);
+  }, [stage, brandConfig.localizedContent, variant]);
 
   const saveDraft = (data: FormData) => {
     localStorage.setItem(`jb_draft_${fileName}`, JSON.stringify({ fileName, steps, formData: data }));
@@ -514,6 +570,7 @@ export const PDFJourneyBuilder: React.FC = () => {
       const field = visible[activeFieldIndex];
       if (field.required && !formData[field.id]) {
         setFieldErrors({ [field.id]: "Required" });
+        trackJourneyEvent(fileName || 'unnamed', 'field_error', { fieldId: field.id, stepId: step.id, variant });
         return;
       }
       setFieldErrors({});
@@ -521,8 +578,10 @@ export const PDFJourneyBuilder: React.FC = () => {
         setActiveFieldIndex(activeFieldIndex + 1);
       } else {
         if (currentStep < steps.length - 1) {
-          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id });
+          const duration = Math.floor((Date.now() - stepStartTimeRef.current) / 1000);
+          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id, duration, variant });
           setCurrentStep(p => p + 1);
+          stepStartTimeRef.current = Date.now();
           setActiveFieldIndex(0);
         } else {
           setStage("review");
@@ -531,11 +590,19 @@ export const PDFJourneyBuilder: React.FC = () => {
     } else {
       if (validateCurrentStep()) {
         if (currentStep < steps.length - 1) {
-          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id });
+          const duration = Math.floor((Date.now() - stepStartTimeRef.current) / 1000);
+          trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id, duration, variant });
           setCurrentStep(p => p + 1);
+          stepStartTimeRef.current = Date.now();
           setActiveFieldIndex(0);
         } else {
           setStage("review");
+        }
+      } else {
+        // Track the first visible error
+        const firstErrorId = Object.keys(fieldErrors)[0];
+        if (firstErrorId) {
+          trackJourneyEvent(fileName || 'unnamed', 'field_error', { fieldId: firstErrorId, stepId: step.id, variant });
         }
       }
     }
@@ -635,7 +702,7 @@ export const PDFJourneyBuilder: React.FC = () => {
       setFilledUrl(URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })));
       
       const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
-      await trackJourneyEvent(fileName, 'complete', { duration });
+      await trackJourneyEvent(fileName, 'complete', { duration, variant });
       const user = getCurrentUser();
       const lead = await saveJourneyLead(fileName, steps[0].title, user?.uid || 'guest', formData, new Blob([bytes]), [], geoData as any);
       
@@ -731,6 +798,26 @@ export const PDFJourneyBuilder: React.FC = () => {
                 <button className={`jb-toggle-btn${editorTab === 'leads' ? " active" : ""}`} onClick={() => setEditorTab('leads')}>Leads</button>
               </div>
             </div>
+            {editorTab === 'settings' && (
+              <div style={{ padding: '20px 20px 0' }}>
+                 <div style={{ padding: 16, background: 'rgba(245,158,11,0.05)', borderRadius: 16, border: '1px solid rgba(245,158,11,0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                       <Globe size={16} className="text-amber-500" />
+                       <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>ENTERPRISE SYNC</span>
+                    </div>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#94a3b8', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={brandConfig.crmMappingEnabled} onChange={e => setBrandConfig(p => ({ ...p, crmMappingEnabled: e.target.checked }))} />
+                          Enable CRM Auto-Mapping
+                       </label>
+                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#94a3b8', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={brandConfig.abTestingEnabled} onChange={e => setBrandConfig(p => ({ ...p, abTestingEnabled: e.target.checked }))} />
+                          A/B Test Variant (v2)
+                       </label>
+                    </div>
+                 </div>
+              </div>
+            )}
             <div className="jb-sidebar-content">
               {editorTab === 'steps' ? (
                 <>
@@ -778,7 +865,8 @@ export const PDFJourneyBuilder: React.FC = () => {
                 <div style={{ padding: 16 }}>
                   <div style={{ fontSize: 11, color: '#64748b', marginBottom: 20 }}>CONVERSION FUNNEL</div>
                   {stats ? (
-                    <div style={{ display: 'grid', gap: 10 }}>
+                    <>
+                      <div style={{ display: 'grid', gap: 10 }}>
                       <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ fontSize: 10, color: '#64748b' }}>VIEWS</span>
@@ -801,22 +889,108 @@ export const PDFJourneyBuilder: React.FC = () => {
                         <div style={{ height: 4, background: 'var(--brand-primary)', width: `${(stats.completeCount / (stats.viewCount || 1)) * 100}%`, borderRadius: 2, opacity: 0.4 }} />
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
                         <div style={{ background: 'rgba(245,158,11,0.05)', padding: 12, borderRadius: 12 }}>
-                          <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4 }}>CONV. RATE</div>
+                          <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4 }}>TOTAL CONV.</div>
                           <div style={{ fontSize: 16, fontWeight: 800, color: '#f59e0b' }}>
                             {Math.round((stats.completeCount / (stats.viewCount || 1)) * 100)}%
                           </div>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                        <div style={{ background: 'rgba(255,158,11,0.03)', padding: 12, borderRadius: 12 }}>
                           <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4 }}>AVG. TIME</div>
-                          <div style={{ fontSize: 16, fontWeight: 800 }}>
-                            {Math.round((stats.totalCompletionTime || 0) / (stats.completeCount || 1))}s
+                          <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
+                            {Math.round(stats.totalCompletionTime / (stats.completeCount || 1))}s
                           </div>
                         </div>
                       </div>
+
+                      {/* A/B Test Variant Comparison */}
+                      {stats.variantStats && (
+                        <div style={{ marginTop: 20 }}>
+                          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 16 }}>A/B TEST PERFORMANCE</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            {['v1', 'v2'].map(v => {
+                              const s = stats.variantStats![v] || { views: 0, starts: 0, completes: 0 };
+                              const cr = Math.round((s.completes / (s.views || 1)) * 100);
+                              const isWinner = v === (Math.round((stats.variantStats!['v1'].completes / (stats.variantStats!['v1'].views || 1)) * 100) < Math.round((stats.variantStats!['v2'].completes / (stats.variantStats!['v2'].views || 1)) * 100) ? 'v2' : 'v1');
+                              
+                              return (
+                                <div key={v} style={{ background: isWinner ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)', padding: 12, borderRadius: 12, border: isWinner ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.05)' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <span style={{ fontSize: 9, fontWeight: 800, color: isWinner ? '#10b981' : '#64748b' }}>VARIANT {v.toUpperCase()}</span>
+                                    {isWinner && <div style={{ background: '#10b981', width: 6, height: 6, borderRadius: '50%' }} />}
+                                  </div>
+                                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{cr}%</div>
+                                  <div style={{ fontSize: 9, color: '#64748b', marginTop: 4 }}>{s.completes} leads / {s.views} views</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ) : <div>Loading stats...</div>}
+
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, color: '#64748b', marginBottom: 16 }}>GEOGRAPHIC HEAT MAP</div>
+                      <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 16, padding: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <WorldMap leads={leads} />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, color: '#64748b', marginBottom: 16 }}>DROP-OFF & TIMING PER STEP</div>
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        {steps.map((s, i) => {
+                          const count = stats.stepCompletions?.[s.id] || 0;
+                          const prevCount = i === 0 ? stats.startCount : (stats.stepCompletions?.[steps[i-1].id] || 0);
+                          const dropOff = prevCount > 0 ? Math.round(((prevCount - count) / prevCount) * 100) : 0;
+                          const width = stats.startCount > 0 ? (count / stats.startCount) * 100 : 0;
+                          const avgTime = Math.round((stats.stepTimes?.[s.id] || 0) / (count || 1));
+
+                          return (
+                            <div key={s.id} style={{ position: 'relative' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 10 }}>
+                                <span style={{ color: '#cbd5e1' }}>{s.title}</span>
+                                <span style={{ color: '#94a3b8' }}>{count} users · {avgTime}s avg.</span>
+                              </div>
+                              <div style={{ height: 24, background: 'rgba(255,255,255,0.03)', borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
+                                <div style={{ height: '100%', width: `${width}%`, background: 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)', opacity: 0.6 }} />
+                                {i > 0 && dropOff > 0 && (
+                                  <div style={{ position: 'absolute', right: 8, top: 4, fontSize: 9, color: '#f87171', fontWeight: 700 }}>
+                                    -{dropOff}% LOSS
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Friction Points (Field Errors) */}
+                    {Object.keys(stats.fieldErrors || {}).length > 0 && (
+                      <div style={{ marginTop: 25 }}>
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 16 }}>FRICTION POINTS (FIELD ERRORS)</div>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {Object.entries(stats.fieldErrors)
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 5)
+                            .map(([fieldId, errorCount]) => (
+                            <div key={fieldId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'rgba(248,113,113,0.05)', borderRadius: 10, border: '1px solid rgba(248,113,113,0.1)' }}>
+                              <div style={{ color: '#f87171' }}><AlertTriangle size={14} /></div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 11, color: '#e2e8f0', fontWeight: 700 }}>{formatLabel(fieldId)}</div>
+                                <div style={{ fontSize: 9, color: '#64748b' }}>{errorCount} validation failures</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    </>
+                  ) : (
+                    <div>Loading stats...</div>
+                  )}
                 </div>
               ) : (
                 <div style={{ padding: 10 }}>
@@ -874,7 +1048,16 @@ export const PDFJourneyBuilder: React.FC = () => {
                 <button className={`jb-toggle-btn${isEditorMode ? " active" : ""}`} onClick={() => setIsEditorMode(true)}>Editor</button>
                 <button className={`jb-toggle-btn${!isEditorMode ? " active" : ""}`} onClick={() => setIsEditorMode(false)}>Live Preview</button>
               </div>
-              <button className="jb-btn jb-btn-gold" style={{ width: 'auto', padding: '8px 24px' }} onClick={() => { setStage("wizard"); setCurrentStep(0); }}>Go Live {"->"}</button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  className="jb-btn jb-btn-ghost" 
+                  style={{ width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}
+                  onClick={() => setShowShareModal(true)}
+                >
+                  <Share2 size={14} /> Distribute
+                </button>
+                <button className="jb-btn jb-btn-gold" style={{ width: 'auto', padding: '8px 24px' }} onClick={() => { setStage("wizard"); setCurrentStep(0); }}>Go Live {"->"}</button>
+              </div>
             </div>
             <div className="jb-canvas">
                 {(() => {
@@ -930,9 +1113,13 @@ export const PDFJourneyBuilder: React.FC = () => {
         </div>
       )}
 
-      {stage === "wizard" && (
-        <div className="jb-root">
-          <div className="jb-card">
+      {stage === "wizard" && (() => {
+        const isRtl = ['ar', 'he'].includes(currentLanguage);
+        const t = (key: string) => (JOURNEY_TRANSLATIONS[currentLanguage as Language] || JOURNEY_TRANSLATIONS.en)[key];
+        
+        return (
+          <div className="jb-root" dir={isRtl ? 'rtl' : 'ltr'}>
+            <div className="jb-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div className="jb-brand"><span className="jb-brand-pip" /> {brandConfig.companyName || "pdfa2z"}</div>
               {brandConfig.localizedContent && Object.keys(brandConfig.localizedContent).length > 0 && (
@@ -1001,22 +1188,41 @@ export const PDFJourneyBuilder: React.FC = () => {
                       ));
                     })()}
                   </div>
+
+                  {/* Trust and Time Estimator */}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 24, paddingTop: 20 }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {brandConfig.showSecurityBadges !== false && (
+                          <SecurityTrust 
+                            horizontal 
+                            enabledBadges={brandConfig.enabledSecurityBadges} 
+                            className="opacity-70 scale-90 origin-left" 
+                          />
+                        )}
+                        <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textAlign: 'right', flex: 1 }}>
+                          <span style={{ color: 'var(--brand-primary)' }}>EST. REMAINING: </span>
+                          {Math.max(1, Math.ceil((steps.length - currentStep) * 0.8))} MINS
+                        </div>
+                     </div>
+                  </div>
+
                   <div className="jb-btn-row" style={{ display: 'flex', gap: 12, marginTop: 32 }}>
                     {(currentStep > 0 || (brandConfig.isFocusedMode && activeFieldIndex > 0)) && (
-                      <button className="jb-btn jb-btn-ghost" style={{ flex: 1 }} onClick={handleBack}>Back</button>
+                      <button className="jb-btn jb-btn-ghost" style={{ flex: 1 }} onClick={handleBack}>{t('back')}</button>
                     )}
                     <button className="jb-btn jb-btn-gold" style={{ flex: 2 }} onClick={handleNext}>
                       {brandConfig.isFocusedMode 
-                        ? (activeFieldIndex === getVisibleFields(s.fields, formData, fieldConditions).length - 1 && currentStep === steps.length - 1 ? "Review" : "Continue")
-                        : (currentStep === steps.length - 1 ? "Review" : "Next")}
+                        ? (activeFieldIndex === getVisibleFields(s.fields, formData, fieldConditions).length - 1 && currentStep === activeSteps.length - 1 ? t('review') : t('continue'))
+                        : (currentStep === activeSteps.length - 1 ? t('review') : t('continue'))}
                     </button>
                   </div>
                 </>
               );
             })()}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {stage === "review" && (
         <div className="jb-root">
@@ -1058,6 +1264,14 @@ export const PDFJourneyBuilder: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && (
+        <JourneyShareModal 
+          fileName={fileName} 
+          journeyTitle={brandConfig.journeyTitle || steps[0]?.title || "PDF Journey"} 
+          onClose={() => setShowShareModal(false)} 
+        />
       )}
     </>
   );

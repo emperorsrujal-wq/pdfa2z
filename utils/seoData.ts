@@ -1,5 +1,13 @@
-
 import { ToolType } from '../types.ts';
+import { 
+  Home, Info, Mail, Shield, FileSearch, ShieldCheck, Layers, Route, Scissors, 
+  Minimize2, FileText, MessageSquare, Zap, UserMinus, PenTool, Download, 
+  Video, Wand2, RotateCw, RefreshCw, Lock, Unlock, Table, Image, FileType, Code, Hash, 
+  Trash2, Paintbrush, Stamp, Hammer, Maximize2, EyeOff, LayoutTemplate, 
+  ImageMinus, FilePlus, Grid, User, PlusCircle, 
+  Type, Move, FileSpreadsheet, FileCode, FileDigit, Scan, ListOrdered, 
+  FileStack, FileLock, ImagePlus, Smile, Search, LucideIcon
+} from 'lucide-react';
 
 export interface ToolSEO {
   slug: string;
@@ -10,6 +18,7 @@ export interface ToolSEO {
   steps: string[];
   faqs: { q: string; a: string }[];
   type: ToolType;
+  icon?: LucideIcon;
   features?: string[];
   mode?: string;
   parentSlug?: string;
@@ -30,6 +39,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: [],
     faqs: [],
     type: ToolType.DASHBOARD,
+    icon: Home,
     translations: {
       es: {
         title: 'PDFA2Z - Herramientas Gratuitas de PDF e IA',
@@ -59,7 +69,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'We are on a mission to make document management accessible, free, and secure.',
     steps: [],
     faqs: [],
-    type: ToolType.INFO_PAGE
+    type: ToolType.INFO_PAGE,
+    icon: Info,
   },
   'contact': {
     slug: 'contact',
@@ -69,7 +80,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'Have a question? We are here to help.',
     steps: [],
     faqs: [],
-    type: ToolType.INFO_PAGE
+    type: ToolType.INFO_PAGE,
+    icon: Mail,
   },
   'privacy': {
     slug: 'privacy',
@@ -79,7 +91,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'Your privacy is our priority.',
     steps: [],
     faqs: [],
-    type: ToolType.INFO_PAGE
+    type: ToolType.INFO_PAGE,
+    icon: Shield,
   },
   'terms': {
     slug: 'terms',
@@ -89,7 +102,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'Please read our terms carefully.',
     steps: [],
     faqs: [],
-    type: ToolType.INFO_PAGE
+    type: ToolType.INFO_PAGE,
+    icon: FileSearch,
   },
   'notarize': {
     slug: 'notarize',
@@ -110,6 +124,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'How long does it take?', a: 'Most sessions are completed in under 15 minutes.' }
     ],
     type: ToolType.NOTARIZE,
+    icon: ShieldCheck,
     features: [
       '24/7 Availability',
       'Licensed US Notaries',
@@ -201,7 +216,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'No Server-Side Storage',
       'Mobile-First Design'
     ],
-    type: ToolType.JOURNEY_BUILDER
+    type: ToolType.JOURNEY_BUILDER,
+    icon: Route,
   },
   'split-pdf': {
     slug: 'split-pdf',
@@ -232,6 +248,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Perfect for separating invoices or receipts from a long scanned document.'
     ],
     type: ToolType.PDF_SUITE,
+    icon: Scissors,
     mode: 'SPLIT',
     translations: {
       es: {
@@ -345,6 +362,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     relatedGuides: ['pdf-to-word-conversion'],
     type: ToolType.PDF_SUITE,
+    icon: FileText,
     mode: 'TO_WORD'
   },
   'pdf-chat': {
@@ -373,6 +391,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     relatedGuides: ['ai-chat-with-pdf'],
     type: ToolType.PDF_SUITE,
+    icon: MessageSquare,
     mode: 'CHAT'
   },
   'ai-image-generator': {
@@ -403,7 +422,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Experiment with different styles to see how they affect the result.',
       'Use negative prompts (if available) to specify what you don\'t want in the image.'
     ],
-    type: ToolType.IMAGE_GENERATOR
+    type: ToolType.IMAGE_GENERATOR,
+    icon: Zap,
   },
   'remove-bg': {
     slug: 'remove-bg',
@@ -436,6 +456,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     relatedGuides: ['remove-image-background'],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: UserMinus,
     mode: 'REMOVE_BG'
   },
   'ai-writer': {
@@ -462,7 +483,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Multi-language Support',
       'Tone Adjustment'
     ],
-    type: ToolType.AI_WRITER
+    type: ToolType.AI_WRITER,
+    icon: PenTool
   },
   'video-downloader': {
     slug: 'video-downloader',
@@ -494,6 +516,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'If the download doesn\'t start, right-click the button and select "Save Link As".'
     ],
     type: ToolType.VIDEO_SUITE,
+    icon: Download,
     mode: 'DOWNLOAD'
   },
   'video-generator': {
@@ -530,6 +553,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Faces in complex scenes may sometimes appear slightly distorted.'
     ],
     type: ToolType.VIDEO_SUITE,
+    icon: Video,
     mode: 'GENERATE'
   },
   'magic-ai-editor': {
@@ -568,6 +592,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'AI might occasionally hallucinate details on very low-resolution images.'
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Wand2,
     mode: 'MAGIC_EDITOR'
   },
   'rotate-pdf': {
@@ -579,6 +604,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Select rotation angle', 'Download rotated PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: RotateCw,
     mode: 'ROTATE'
   },
   'protect-pdf': {
@@ -607,6 +633,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     tips: ['Use a password manager to generate and save a strong, unique password.'],
     relatedGuides: ['how-to-password-protect-pdf'],
     type: ToolType.PDF_SUITE,
+    icon: Lock,
     mode: 'PROTECT'
   },
   'unlock-pdf': {
@@ -633,6 +660,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'No Watermark'
     ],
     type: ToolType.PDF_SUITE,
+    icon: Unlock,
     mode: 'UNLOCK'
   },
   'pdf-to-excel': {
@@ -659,6 +687,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'XLSX Output'
     ],
     type: ToolType.PDF_SUITE,
+    icon: Table,
     mode: 'TO_EXCEL'
   },
   'jpg-to-pdf': {
@@ -685,6 +714,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Does it reduce quality?', a: 'We maintain the original image quality in the PDF.' }
     ],
     type: ToolType.PDF_SUITE,
+    icon: Image,
     mode: 'IMAGES_TO_PDF'
   },
   'word-to-pdf': {
@@ -706,6 +736,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FileType,
     mode: 'WORD_TO_PDF'
   },
   'pdf-to-html': {
@@ -717,6 +748,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Convert', 'Download HTML'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Code,
     mode: 'TO_HTML'
   },
   'page-numbers': {
@@ -728,6 +760,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Select position', 'Download numbered PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Hash,
     mode: 'PAGE_NUMBERS'
   },
   'delete-pages': {
@@ -739,6 +772,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Enter page numbers', 'Download modified PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Trash2,
     mode: 'DELETE_PAGES'
   },
   'grayscale-pdf': {
@@ -750,6 +784,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Convert', 'Download B&W PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Paintbrush,
     mode: 'GRAYSCALE'
   },
   'watermark-pdf': {
@@ -761,6 +796,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Enter text', 'Download watermarked PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Stamp,
     mode: 'WATERMARK'
   },
   'repair-pdf': {
@@ -772,6 +808,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload file', 'Wait for repair', 'Download fixed PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Hammer,
     mode: 'REPAIR'
   },
   'flatten-pdf': {
@@ -783,6 +820,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Flatten', 'Download result'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Maximize2,
     mode: 'FLATTEN'
   },
   'redact-pdf': {
@@ -808,6 +846,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'No Quality Loss'
     ],
     type: ToolType.PDF_SUITE,
+    icon: EyeOff,
     mode: 'REDACT'
   },
   'resize-image': {
@@ -833,6 +872,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I resize multiple images?', a: 'Yes, use our "Batch Resize" tool for processing multiple files at once.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Move,
     mode: 'RESIZE'
   },
   'convert-image': {
@@ -858,6 +898,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I convert to transparent PNG?', a: 'Yes, if your source image has transparency, converting to PNG will preserve it.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: RefreshCw,
     mode: 'CONVERT'
   },
   'crop-image': {
@@ -881,6 +922,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Does it reduce resolution?', a: 'The output resolution depends on the size of the cropped area.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Scissors,
     mode: 'CROP'
   },
   'rotate-image': {
@@ -901,6 +943,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: RotateCw,
     mode: 'ROTATE'
   },
   'meme-maker': {
@@ -926,6 +969,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I use my own images?', a: 'Yes, you can upload any JPG or PNG file to create a meme.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Smile,
     mode: 'MEME'
   },
   'passport-photo': {
@@ -976,6 +1020,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I resize individual photos?', a: 'Yes, you can zoom and pan each photo within its cell.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Grid,
     mode: 'COLLAGE'
   },
   'compare-image': {
@@ -1000,6 +1045,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I export as video?', a: 'Currently we support GIF and static image export.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Move,
     mode: 'COMPARE'
   },
   'face-blur': {
@@ -1025,6 +1071,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I blur only specific faces?', a: 'Currently, the tool applies blur to all detected faces for maximum privacy.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: UserMinus,
     mode: 'FACE_BLUR'
   },
   'upscale-image': {
@@ -1060,6 +1107,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Extremely small thumbnails (e.g., <100px) may not have enough data to recover perfectly.'
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Maximize2,
     mode: 'UPSCALE'
   },
   'round-image': {
@@ -1083,6 +1131,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Is the background transparent?', a: 'Yes, the output is a PNG file with a transparent background outside the circle.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: PlusCircle,
     mode: 'ROUND'
   },
   'sign-pdf': {
@@ -1094,6 +1143,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Draw Signature', 'Download Signed PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: PenTool,
     mode: 'SIGN'
   },
   'compress-image': {
@@ -1105,6 +1155,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload Image', 'Compress', 'Download'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Minimize2,
     mode: 'COMPRESS'
   },
   'qr-code-generator': {
@@ -1116,6 +1167,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Enter URL or text', 'Customize (optional)', 'Download QR Code'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Grid,
     mode: 'QR_CODE'
   },
   'youtube-thumbnail-downloader': {
@@ -1127,6 +1179,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Paste YouTube URL', 'Preview Thumbnail', 'Download Image'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Download,
     mode: 'YT_THUMBNAIL'
   },
   'pdf-organizer': {
@@ -1138,6 +1191,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Drag pages to reorder', 'Rotate or delete pages', 'Save PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Layers,
     mode: 'ORGANIZE'
   },
   'pdf-tools': {
@@ -1149,6 +1203,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: [],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: ListOrdered,
     mode: 'MENU'
   },
   'image-tools': {
@@ -1160,6 +1215,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: [],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: LayoutTemplate,
     mode: 'MENU'
   },
   'ai-tools': {
@@ -1170,7 +1226,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     intro: 'Smart AI tools to boost your productivity.',
     steps: [],
     faqs: [],
-    type: ToolType.AI_WRITER
+    type: ToolType.AI_WRITER,
+    icon: Zap
   },
   'batch-resize': {
     slug: 'batch-resize',
@@ -1195,6 +1252,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Are my photos uploaded?', a: 'No, batch resizing happens locally in your browser for maximum privacy.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: FileStack,
     mode: 'BATCH_RESIZE'
   },
   'watermark-image': {
@@ -1220,6 +1278,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Does it support transparent logos?', a: 'Yes, upload a PNG logo with transparency for the best results.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Stamp,
     mode: 'WATERMARK'
   },
   'flip-image': {
@@ -1241,6 +1300,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: RotateCw,
     mode: 'FLIP'
   },
   'pixelate-image': {
@@ -1262,6 +1322,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Grid,
     mode: 'PIXELATE'
   },
   'invert-image': {
@@ -1282,6 +1343,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: RotateCw,
     mode: 'INVERT'
   },
   'extract-images': {
@@ -1293,6 +1355,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Wait for extraction', 'Download ZIP file'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FilePlus,
     mode: 'EXTRACT_IMAGES'
   },
   'reverse-pdf': {
@@ -1304,6 +1367,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Click Process', 'Download reversed PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: ListOrdered,
     mode: 'REVERSE'
   },
   'edit-pdf': {
@@ -1329,6 +1393,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Secure Browser Processing'
     ],
     type: ToolType.PDF_SUITE,
+    icon: PenTool,
     mode: 'EDIT'
   },
   'crop-pdf': {
@@ -1343,6 +1408,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: ['Visual margin adjustment', 'Crop all pages', 'Instant download'],
     type: ToolType.PDF_SUITE,
+    icon: Scissors,
     mode: 'CROP'
   },
   'pdf-to-csv': {
@@ -1357,6 +1423,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: ['Extract tabular data', 'Excel compatible CSV', 'Fast conversion'],
     type: ToolType.PDF_SUITE,
+    icon: FileSpreadsheet,
     mode: 'PDF_TO_CSV'
   },
   'url-to-pdf': {
@@ -1371,6 +1438,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     features: ['Convert any website', 'Maintain layout', 'No installation needed'],
     type: ToolType.PDF_SUITE,
+    icon: FileSearch,
     mode: 'URL_TO_PDF'
   },
   'pdf-to-ppt': {
@@ -1383,6 +1451,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     faqs: [],
     features: ['Convert slides', 'Editable PPTX', 'Preserve text'],
     type: ToolType.PDF_SUITE,
+    icon: FileType,
     mode: 'PDF_TO_PPT'
   },
   'ppt-to-pdf': {
@@ -1394,6 +1463,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PPT', 'Convert', 'Download PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FileType,
     mode: 'PPT_TO_PDF'
   },
   'epub-to-pdf': {
@@ -1405,6 +1475,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload EPUB', 'Convert', 'Download PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FileType,
     mode: 'EPUB_TO_PDF'
   },
   'mobi-to-pdf': {
@@ -1416,6 +1487,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload MOBI', 'Convert', 'Download PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FileType,
     mode: 'MOBI_TO_PDF'
   },
   'outlook-to-pdf': {
@@ -1427,6 +1499,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload File', 'Convert', 'Download PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: Mail,
     mode: 'OUTLOOK_TO_PDF'
   },
   'pdf-to-text': {
@@ -1438,6 +1511,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Extract', 'Copy Text'],
     faqs: [],
     type: ToolType.PDF_SUITE,
+    icon: FileText,
     mode: 'EXTRACT_TEXT'
   },
   'profile-picture-maker': {
@@ -1462,6 +1536,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'What is the best size for profile pics?', a: 'Most platforms use 400x400px. We output high-resolution images suitable for all social media.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: User,
     mode: 'PROFILE_MAKER'
   },
   'sharpen-image': {
@@ -1474,6 +1549,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     features: ['Instant Sharpening', 'Detail Enhancement', 'No Upload Needed'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Zap,
     mode: 'SHARPEN'
   },
   'black-and-white-filter': {
@@ -1486,6 +1562,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     features: ['Classic Look', 'Instant Conversion', 'High Quality'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Paintbrush,
     mode: 'BLACK_WHITE'
   },
   'blur-image': {
@@ -1498,6 +1575,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     features: ['Adjustable Intensity', 'Privacy Protection', 'Fast Processing'],
     faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: EyeOff,
     mode: 'BLUR_IMG'
   },
   'split-image': {
@@ -1522,6 +1600,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'How do I post these?', a: 'Post them in reverse order (bottom-right to top-left) to form the grid on your profile.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Grid,
     mode: 'SPLIT_IMAGE'
   },
   'add-text-to-image': {
@@ -1546,6 +1625,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       { q: 'Can I add multiple text boxes?', a: 'Yes, you can add as many text layers as you need.' }
     ],
     type: ToolType.IMAGE_TOOLKIT,
+    icon: Type,
     mode: 'ADD_TEXT'
   },
   // Programmatic Use Cases (Virtual Routes)

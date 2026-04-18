@@ -46,12 +46,10 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
 
     // Get tools by category
     const pdfTools = Object.values(TOOLS_REGISTRY)
-        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'NOTARIZE' || t.type === 'JOURNEY_BUILDER') && t.unique !== false)
-        .slice(0, 8);
+        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'NOTARIZE' || t.type === 'JOURNEY_BUILDER') && t.unique !== false);
     
     const imageTools = Object.values(TOOLS_REGISTRY)
-        .filter((t: any) => t.type === 'IMAGE_TOOLKIT' && t.unique !== false)
-        .slice(0, 7);
+        .filter((t: any) => t.type === 'IMAGE_TOOLKIT' && t.unique !== false);
     
     const aiTools = Object.values(TOOLS_REGISTRY)
         .filter((t: any) => ['IMAGE_GENERATOR', 'AI_WRITER', 'AI_VISION'].includes(t.type));

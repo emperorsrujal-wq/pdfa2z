@@ -30,6 +30,7 @@ import {
   History as HistoryIcon,
   User as UserIcon,
   Package,
+  Pipette,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
@@ -106,6 +107,13 @@ const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: 
   { mode: 'comment',     label: 'Comment',   icon: <StickyNote size={16} />,    tooltip: 'Add a sticky comment' },
 ];
 
+const SEJDA_COLORS = [
+  '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
+  '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
+  '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
+  '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
+];
+
 function getFontFamily(fontName?: string) {
   if (fontName === 'Times-Roman') return '"Times New Roman", Times, serif';
   if (fontName === 'Helvetica') return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
@@ -158,6 +166,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   // Tier 3 Audit States
   const [showAudit, setShowAudit] = React.useState(false);
   const [auditEntries, setAuditEntries] = React.useState<any[]>([]);
+
+  const [showColorPicker, setShowColorPicker] = React.useState(false);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -514,7 +524,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           const temp = (window as any)._smartBg;
           bg = temp?.bgColor || '#FFFFFF';
         }
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: mode === 'erase' ? '#FFFFFF' : currentColor, bgColor: bg, opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: mode === 'erase' ? currentColor : currentColor, bgColor: mode === 'erase' ? currentColor : bg, opacity: 1 };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: currentColor, opacity: 1 };
       } else if (mode === 'highlight') {
@@ -680,6 +690,65 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${mode === 'form-builder' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
               >
                 <CheckSquare size={14} /> FORMS
+              </button>
+            </div>
+
+            {/* Premium Style Controls */}
+            <div className="flex items-center gap-2 px-3 border-l border-white/10">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-1">Style:</span>
+              
+              <div className="relative flex items-center">
+                <button
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  className="flex items-center gap-1.5 p-1.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
+                  title="Current Color"
+                >
+                  <div className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style={{ backgroundColor: currentColor }} />
+                  <ChevronDown size={10} className="text-slate-500 group-hover:text-slate-300" />
+                </button>
+
+                {showColorPicker && (
+                  <div className="absolute top-full left-0 mt-2 bg-[#1e293b] border border-white/10 p-4 rounded-2xl shadow-2xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Choose Tool Color</div>
+                    <div className="grid grid-cols-8 gap-2">
+                      {SEJDA_COLORS.map(color => (
+                        <button
+                          key={color}
+                          className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${currentColor === color ? 'border-white ring-2 ring-indigo-500' : 'border-white/10 hover:border-white/30'}`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => {
+                            setCurrentColor(color);
+                            setShowColorPicker(false);
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="border-t border-white/5" />
+                    <button
+                      onClick={() => {
+                        setMode('picker');
+                        setShowColorPicker(false);
+                      }}
+                      className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl text-left group transition-all"
+                    >
+                      <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-110 transition-all">
+                        <Pipette size={14} />
+                      </div>
+                      <div className="flex flex-col flex-1">
+                        <span className="text-[10px] font-black text-slate-200 uppercase tracking-tight leading-none">Pick from Document</span>
+                        <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5 tracking-tighter">Choose any color from the PDF</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setMode('picker')}
+                className={`p-2 rounded-xl transition-all ${mode === 'picker' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                title="Eyedropper / Color Picker"
+              >
+                <Pipette size={15} />
               </button>
             </div>
           </div>

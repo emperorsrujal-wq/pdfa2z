@@ -97,7 +97,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   }, {} as Record<number, number>);
 
   return (
-    <div className="fixed inset-0 bg-[#060910] z-50 flex flex-col overflow-hidden animate-fade-in font-sans">
+    <div className="fixed inset-0 bg-[#060910] z-[60] flex flex-col overflow-hidden animate-fade-in font-sans">
       {/* Premium Slim Header */}
       <header className="h-14 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 shadow-2xl shrink-0 z-50">
         <div className="flex items-center gap-5">

@@ -118,8 +118,7 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
                                 <div className="premium-card p-6 h-full flex flex-col hover:border-blue-200 transition-all">
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-50 group-hover:scale-110 transition-transform">
-                                            {/* Generic icon if none provided */}
-                                            <FileText className="text-blue-600" size={20} />
+                                            {tool.icon ? <tool.icon className="text-blue-600" size={20} /> : <FileText className="text-blue-600" size={20} />}
                                         </div>
                                         <ArrowRight className="text-slate-200 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" size={16} />
                                     </div>

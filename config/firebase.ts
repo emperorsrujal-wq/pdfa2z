@@ -8,12 +8,12 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'demo-api-key',
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'gen-lang-client-0072471951.firebaseapp.com',
+  apiKey:            'AIzaSyBQRLGDtpS6bEyAd8cCuxCRsNiJhc54S7o',
+  authDomain:        'gen-lang-client-0072471951.firebaseapp.com',
   projectId:         'gen-lang-client-0072471951',
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'gen-lang-client-0072471951.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID             || '',
+  storageBucket:     'gen-lang-client-0072471951.firebasestorage.app',
+  messagingSenderId: '508597263694',
+  appId:             '1:508597263694:web:055a561efb6bbc7989121f',
 };
 
 // Prevent duplicate initialization in dev hot-reload
@@ -28,5 +28,5 @@ export const FUNCTIONS_BASE_URL =
   import.meta.env.VITE_FUNCTIONS_URL ||
   `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net/api`;
 
-// Demo mode: active when no real Firebase API key is provided or it's a placeholder
-export const DEMO_MODE = !import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY.includes('PLACEHOLDER');
+// Forced Enterprise Mode: DEMO_MODE must be false to utilize hardcoded production keys.
+export const DEMO_MODE = false;

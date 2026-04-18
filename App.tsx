@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    if (slug === 'dashboard') {
+    if (slug === 'dashboard' || slug === 'elite') {
       setActiveTool(ToolType.DASHBOARD);
       return;
     }
@@ -166,6 +166,8 @@ const AppContent: React.FC = () => {
     // Unknown route - show 404
     if (slug !== '') {
       setActiveTool('NOT_FOUND' as ToolType);
+    } else {
+      setActiveTool(ToolType.HOME);
     }
   }, [slug]);
 
@@ -233,7 +235,7 @@ const AppContent: React.FC = () => {
           <div className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <Breadcrumbs items={breadcrumbItems} />
-              <div className="mt-8">
+              <div className="relative z-10 w-full">
                 <ErrorBoundary>
                   <React.Suspense fallback={<ToolLoader />}>
                     {renderContent()}

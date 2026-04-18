@@ -88,10 +88,6 @@ if (container) {
     </React.StrictMode>
   );
 
-  if (container.hasChildNodes()) {
-    hydrateRoot(container, app);
-  } else {
-    const root = createRoot(container);
-    root.render(app);
-  }
+  const root = createRoot(container);
+  root.render(app);
 }
