@@ -575,7 +575,7 @@ export const sampleBackgroundColor = async (
 };
 
 export type EditElementType = 
-  'text' | 'path' | 'image' | 'rect' | 'circle' | 'line' | 'audio' | 
+  'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'audio' | 
   'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'form-select' | 'link' | 'sticky-note';
 
 export type FormFieldType = 'text' | 'checkbox' | 'dropdown';
@@ -619,6 +619,8 @@ export interface EditElement {
   imageUrl?: string; // base64
   width?: number; // relative width 0-1000
   height?: number; // relative height 0-1000
+  borderWidth?: number; // in points
+  borderColor?: string; // hex string
   
   // Audio/Link/Form specific
   audioData?: string; // base64 or URL
@@ -724,17 +726,22 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         width: elWidth,
         height: elHeight,
         color: elColor,
+        borderColor: el.borderColor ? hexToRgbPdf(el.borderColor) : undefined,
+        borderWidth: el.borderWidth || 0,
         opacity: elOpacity,
         rotate: elRotation,
       });
-    } else if (el.type === 'circle') {
-      const radius = el.width ? (el.width / 1000) * width / 2 : 50;
-      page.drawCircle({
-        x: actualX + radius,
-        y: actualY - radius,
-        size: radius,
+    } else if (el.type === 'circle' || el.type === 'ellipse') {
+      page.drawEllipse({
+        x: actualX + elWidth / 2,
+        y: actualY - elHeight / 2,
+        xScale: elWidth / 2,
+        yScale: elHeight / 2,
         color: elColor,
+        borderColor: el.borderColor ? hexToRgbPdf(el.borderColor) : undefined,
+        borderWidth: el.borderWidth || 0,
         opacity: elOpacity,
+        rotate: elRotation,
       });
     } else if (el.type === 'line') {
       page.drawLine({
@@ -780,6 +787,30 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
       if (el.text) {
         page.drawText(el.text, { x: actualX + 5, y: actualY - 15, size: 8, color: rgb(0, 0, 0) });
       }
+    } else if (el.type === 'link' && el.linkUrl) {
+      // Add a clickable link annotation
+      // Using page.drawText is optional, here we just add the annotation
+      // Note: Rotation for annotations is complex in pdf-lib, focusing on static boxes first
+      try {
+        const linkAnnotation = (pdfDoc as any).context.obj({
+          Type: 'Annot',
+          Subtype: 'Link',
+          Rect: [actualX, actualY - elHeight, actualX + elWidth, actualY],
+          Border: [0, 0, 0],
+          C: [0, 0, 1],
+          A: {
+            Type: 'Action',
+            S: 'URI',
+            URI: (pdfDoc as any).context.obj(el.linkUrl),
+          },
+        });
+        const annots = page.node.get( (pdfDoc as any).context.obj('Annots') );
+        if (annots) {
+          (annots as any).push(linkAnnotation);
+        } else {
+          page.node.set( (pdfDoc as any).context.obj('Annots'), (pdfDoc as any).context.obj([linkAnnotation]) );
+        }
+      } catch (err) { console.error("Link annotation error:", err); }
     }
   }
   return pdfDoc.save();

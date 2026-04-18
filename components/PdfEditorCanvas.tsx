@@ -31,6 +31,7 @@ import {
   User as UserIcon,
   Package,
   Pipette,
+  RotateCw,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
@@ -73,6 +74,7 @@ type EditorMode =
   | 'strikeout'
   | 'underline'
   | 'link'
+  | 'ellipse'
   | 'forms'
   | 'sign'
   | 'sticky-note'
@@ -95,10 +97,11 @@ const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: 
   { mode: 'highlight',  label: 'Highlight', icon: <Highlighter size={16} />,   tooltip: 'Highlight text in the document' },
   { mode: 'draw',       label: 'Draw',      icon: <PenTool size={16} />,       tooltip: 'Freehand pen drawing' },
   { mode: 'rect',       label: 'Rectangle', icon: <Square size={16} />,        tooltip: 'Draw a rectangle or colored box' },
-  { mode: 'circle',     label: 'Circle',    icon: <CircleIcon size={16} />,    tooltip: 'Draw a circle or ellipse' },
+  { mode: 'ellipse',    label: 'Ellipse',   icon: <CircleIcon size={16} />,    tooltip: 'Draw a circle or elliptical shape' },
   { mode: 'line',       label: 'Line',      icon: <Minus size={16} />,         tooltip: 'Draw a straight line' },
   { mode: 'arrow',      label: 'Arrow',     icon: <ArrowRight size={16} />,    tooltip: 'Draw an arrow line' },
   { mode: 'image',      label: 'Image',     icon: <ImageIcon size={16} />,     tooltip: 'Insert an image from your device' },
+  { mode: 'link',       label: 'Link',      icon: <LinkIcon size={16} />,      tooltip: 'Create a clickable web link area' },
   { mode: 'sticky-note',label: 'Sticky Note',icon: <StickyNote size={16} />, tooltip: 'Add a sticky note/comment box' },
   { mode: 'find-replace',label: 'Find & Replace',icon: <Search size={16} />, tooltip: 'Search and replace text' },
   { mode: 'ocr',         label: 'OCR',       icon: <FileSearch size={16} />,    tooltip: 'Extract text from this page' },
@@ -170,6 +173,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [auditEntries, setAuditEntries] = React.useState<any[]>([]);
 
   const [showColorPicker, setShowColorPicker] = React.useState(false);
+  const [showFindReplace, setShowFindReplace] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [replaceTerm, setReplaceTerm] = React.useState('');
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -536,6 +542,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: '#EF4444', opacity: 1 };
       } else if (mode === 'underline') {
         newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: '#3B82F6', opacity: 1 };
+      } else if (mode === 'ellipse') {
+        newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
+      } else if (mode === 'link') {
+        const url = prompt("Enter link URL (e.g., https://example.com):");
+        if (url) {
+          newEl = { id: `link-${Date.now()}`, type: 'link', pageIndex, x, y, width: w, height: h, linkUrl: url, opacity: 1 };
+        }
       }
       if (newEl) {
         commit([...elements, newEl]);
@@ -583,7 +596,59 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     underline: 'rgba(59, 130, 246, 0.3)',
     erase: activeColor,
     rect: activeColor,
-    circle: 'rgba(59,130,246,0.2)',
+    ellipse: 'rgba(79, 70, 229, 0.15)',
+    link: 'rgba(59, 130, 246, 0.2)',
+  };
+
+  const handleFindReplace = () => {
+    if (!searchTerm || !textItems) return;
+    
+    const nextElements = [...elements];
+    let count = 0;
+    
+    // Find matches in textItems
+    textItems.forEach(item => {
+      if (item.str.toLowerCase().includes(searchTerm.toLowerCase())) {
+        // Create mask (whiteout)
+        const mask: EditElement = { 
+          id: `fr-mask-${Date.now()}-${count}`, 
+          type: 'rect', 
+          pageIndex, 
+          x: item.x, 
+          y: item.y, 
+          width: item.width, 
+          height: item.height, 
+          color: '#FFFFFF',
+          opacity: 1 
+        };
+        
+        // Create new text
+        const newText: EditElement = { 
+          id: `fr-text-${Date.now()}-${count}`, 
+          type: 'text', 
+          pageIndex, 
+          x: item.x, 
+          y: item.y, 
+          width: item.width, 
+          height: item.height, 
+          color: activeColor, 
+          text: replaceTerm, 
+          size: item.fontSize, 
+          opacity: 1 
+        };
+        
+        nextElements.push(mask, newText);
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      commit(nextElements);
+      alert(`Replaced ${count} occurrences.`);
+    } else {
+      alert("No matches found.");
+    }
+    setShowFindReplace(false);
   };
 
   return (
@@ -683,10 +748,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 <FileSearch size={14} /> OCR
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); setMode('form-builder'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'form-builder' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-white hover:text-emerald-600'}`}
+                onClick={(e) => { e.stopPropagation(); setShowFindReplace(true); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all text-slate-600 hover:bg-white hover:text-indigo-600`}
               >
-                <CheckSquare size={14} /> FORMS
+                <Search size={14} /> FIND & REPLACE
               </button>
             </div>
           </div>
@@ -966,22 +1031,78 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   )}
 
                   {/* Selection handles */}
-                  {isActive && (
+                  {isActive && mode === 'select' && (
                     <>
-                      <div className="absolute inset-0 border-2 border-dashed border-[#3b82f6] pointer-events-none rounded-sm" />
-                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm" />
-                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm" />
-                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm" />
-                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm" />
+                      <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
+                      
+                      {/* Rotation Handle */}
+                      <div 
+                        className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot"
+                        onPointerDown={ev => {
+                          ev.stopPropagation();
+                          const rect = ev.currentTarget.parentElement?.getBoundingClientRect();
+                          if (!rect) return;
+                          const cx = rect.left + rect.width / 2;
+                          const cy = rect.top + rect.height / 2;
+                          const onMove = (me: PointerEvent) => {
+                            const angle = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90;
+                            updateElement(el.id, { rotation: Math.round(angle) });
+                          };
+                          const onUp = () => {
+                            window.removeEventListener('pointermove', onMove);
+                            window.removeEventListener('pointerup', onUp);
+                            commit([...elements]);
+                          };
+                          window.addEventListener('pointermove', onMove);
+                          window.addEventListener('pointerup', onUp);
+                        }}
+                      >
+                        <div className="w-[1px] h-4 bg-[#3b82f6]" />
+                        <div className="w-5 h-5 bg-white border-2 border-[#3b82f6] rounded-full shadow-lg flex items-center justify-center cursor-alias hover:scale-110 transition-transform">
+                          <RotateCw size={10} className="text-[#3b82f6]" />
+                        </div>
+                      </div>
+
+                      {/* Resize Handles */}
+                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize" />
+                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize" />
+                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize" />
+                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize" 
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX, startY = ev.clientY;
+                             const startW = el.width || 0, startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!containerRef.current) return;
+                               const r = containerRef.current.getBoundingClientRect();
+                               const dw = ((me.clientX - startX) / r.width) * 1000;
+                               const dh = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { width: Math.max(10, startW + dw), height: Math.max(10, startH + dh) });
+                             };
+                             const onUp = () => {
+                               window.removeEventListener('pointermove', onMove);
+                               window.removeEventListener('pointerup', onUp);
+                               commit([...elements]);
+                             };
+                             window.addEventListener('pointermove', onMove);
+                             window.addEventListener('pointerup', onUp);
+                           }}
+                      />
                     </>
                   )}
 
                   {/* --- Element Content --- */}
                   {el.type === 'rect' && (
-                    <div className="w-full h-full" style={{ backgroundColor: el.color }} />
+                    <div className="w-full h-full" style={{ 
+                      backgroundColor: el.bgColor || el.color, 
+                      border: el.borderWidth ? `${el.borderWidth}px solid ${el.borderColor || '#000000'}` : 'none' 
+                    }} />
                   )}
-                  {el.type === 'circle' && (
-                    <div className="w-full h-full rounded-full" style={{ backgroundColor: el.color }} />
+                  {(el.type === 'circle' || el.type === 'ellipse') && (
+                    <div className="w-full h-full rounded-full" style={{ 
+                      backgroundColor: el.bgColor || el.color,
+                      border: el.borderWidth ? `${el.borderWidth}px solid ${el.borderColor || '#000000'}` : 'none'
+                    }} />
                   )}
                   {el.type === 'highlight' && (
                     <div className="w-full h-full" style={{ backgroundColor: el.color, opacity: 0.4 }} />
@@ -994,6 +1115,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   {el.type === 'underline' && (
                     <div className="w-full flex items-end h-full pb-0">
                       <div className="w-full h-[2px]" style={{ backgroundColor: el.color }} />
+                    </div>
+                  )}
+                  {el.type === 'link' && (
+                    <div className="w-full h-full border border-dashed border-blue-400 bg-blue-500/10 flex items-center justify-center">
+                       <LinkIcon size={12} className="text-blue-500 opacity-50" />
                     </div>
                   )}
                   {el.type === 'image' && el.imageUrl && (
@@ -1176,6 +1302,62 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           }}
           isFilling={isAiFilling}
         />
+      )}
+
+      {/* Find & Replace Modal */}
+      {showFindReplace && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-black text-slate-800 uppercase tracking-tight text-lg">Find & Replace</h3>
+              <button 
+                onClick={() => setShowFindReplace(false)}
+                className="p-1 hover:bg-slate-100 rounded-lg transition-all"
+              >
+                <Trash2 size={18} className="text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Find Text</label>
+                <input 
+                  type="text" 
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="e.g. Contract"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+              
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Replace With</label>
+                <input 
+                  type="text" 
+                  value={replaceTerm}
+                  onChange={e => setReplaceTerm(e.target.value)}
+                  placeholder="e.g. Agreement"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+              
+              <div className="pt-4 flex gap-3">
+                <button 
+                  onClick={() => setShowFindReplace(false)}
+                  className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[11px]"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleFindReplace}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-[11px]"
+                >
+                  Replace All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

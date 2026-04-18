@@ -20,6 +20,8 @@ import {
   StickyNote,
   List,
   MoreVertical,
+  RotateCw,
+  ExternalLink,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -61,7 +63,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   onSendToBack,
   setMode
 }) => {
-  const [showColorPicker, setShowColorPicker] = React.useState<null | 'color' | 'bg'>(null);
+  const [showColorPicker, setShowColorPicker] = React.useState<null | 'color' | 'bg' | 'border'>(null);
   const [showFontPicker, setShowFontPicker] = React.useState(false);
   const [showSizePicker, setShowSizePicker] = React.useState(false);
 
@@ -142,6 +144,27 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
             </button>
           </div>
           
+          <div className="flex gap-1 px-1">
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'left' })}
+              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'left' || !element.textAlign ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+            >
+              <AlignLeft size={14} />
+            </button>
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'center' })}
+              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'center' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+            >
+              <AlignCenter size={14} />
+            </button>
+            <button
+              onClick={() => onUpdate(element.id, { textAlign: 'right' })}
+              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'right' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+            >
+              <AlignRight size={14} />
+            </button>
+          </div>
+
           <div className="w-px h-6 bg-slate-200 mx-1" />
         </>
       )}
@@ -162,11 +185,11 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
           )}
         </div>
 
-        {['rect', 'circle', 'text', 'sticky-note'].includes(element.type) && (
+        {['rect', 'circle', 'ellipse', 'text', 'sticky-note'].includes(element.type) && (
           <div className="relative">
             <button 
               onClick={() => setShowColorPicker(showColorPicker === 'bg' ? null : 'bg')}
-              className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'bg' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+              className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'bg' ? 'bg-indigo-50 border-indigo-200 shadow-inner' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
               title="Background Color"
             >
               <div className="w-4 h-4 rounded border border-slate-200 relative overflow-hidden" style={{ backgroundColor: element.bgColor || 'transparent' }}>
@@ -179,12 +202,54 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
             )}
           </div>
         )}
+
+        {['rect', 'circle', 'ellipse'].includes(element.type) && (
+          <div className="relative flex items-center gap-1">
+             <div className="relative">
+              <button 
+                onClick={() => setShowColorPicker(showColorPicker === 'border' ? null : 'border')}
+                className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'border' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                title="Border Color"
+              >
+                <div className="w-4 h-4 rounded-full border-2 border-slate-200" style={{ borderColor: element.borderColor || '#000000' }} />
+                <ChevronDown size={10} className="text-slate-400" />
+              </button>
+              {showColorPicker === 'border' && (
+                <ColorDropdown selected={element.borderColor} onSelect={(c) => { onUpdate(element.id, { borderColor: c }); setShowColorPicker(null); }} title="Border Color" />
+              )}
+            </div>
+            
+            <select 
+              value={element.borderWidth || 0}
+              onChange={(e) => onUpdate(element.id, { borderWidth: Number(e.target.value) })}
+              className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              {[0, 1, 2, 3, 5, 8, 12].map(bw => (
+                <option key={bw} value={bw}>{bw}px</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
+
+      {element.type === 'link' && (
+        <div className="flex items-center gap-2 px-2 bg-slate-50 rounded-lg border border-slate-200 py-1 mx-1">
+          <ExternalLink size={12} className="text-slate-400" />
+          <input 
+            type="text" 
+            value={element.linkUrl || ''} 
+            onChange={(e) => onUpdate(element.id, { linkUrl: e.target.value })}
+            placeholder="https://..."
+            className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-700 w-32 placeholder:text-slate-300"
+          />
+        </div>
+      )}
 
       <div className="w-px h-6 bg-slate-200 mx-1" />
 
       {/* ACTIONS */}
       <div className="flex items-center gap-1 px-1">
+        <button onClick={() => onUpdate(element.id, { rotation: ((element.rotation || 0) + 90) % 360 })} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Rotate 90°"><RotateCw size={14} /></button>
         <button onClick={() => onDuplicate(element)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Duplicate"><Copy size={14} /></button>
         <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-all" title="Delete"><Trash2 size={14} /></button>
         <div className="w-px h-6 bg-slate-200 mx-1" />
