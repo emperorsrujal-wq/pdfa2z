@@ -178,6 +178,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [replaceTerm, setReplaceTerm] = React.useState('');
 
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const pageRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -368,8 +369,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   }, [docId]);
 
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!containerRef.current) return { x: 0, y: 0 };
-    const rect = containerRef.current.getBoundingClientRect();
+    if (!pageRef.current) return { x: 0, y: 0 };
+    const rect = pageRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const x = Math.max(0, Math.min(1000, ((clientX - rect.left) / rect.width) * 1000));
@@ -418,17 +419,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       }
       return;
     }
-    if (mode === 'smart-erase') {
-      // Sample background color at the click point for future rectangle creation
-      const bg = await sampleBackgroundColor(image, Math.round(pos.x), Math.round(pos.y));
-      // Store sampled bg in a temporary state (reuse activeElementId if needed)
-      // We'll apply it when the rectangle is finalized in handlePointerUp
-      setActiveElementId('smart-bg-' + Date.now()); // placeholder id
-      // Store bg in a hidden element to carry forward
-      const tempEl: any = { bgColor: bg };
-      // Attach to a ref (simple approach: use a global variable)
-      (window as any)._smartBg = tempEl;
-      setMode('erase'); // switch to erase mode for drawing
+    if (mode === 'erase') {
+      setActiveColor('#FFFFFF');
+      setIsDrawing(true);
+      setDragStart(pos);
+      setDragEnd(pos);
       return;
     }
     if (mode === 'image') {
@@ -528,12 +523,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
         let bg = activeColor;
-        if (mode === 'erase') bg = activeColor; // Whiteout color
+        if (mode === 'erase') bg = '#FFFFFF'; // Force standard white for common use
         else if (mode === 'smart-erase') {
           const temp = (window as any)._smartBg;
           bg = temp?.bgColor || '#FFFFFF';
         }
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: activeColor, bgColor: bg, opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: mode === 'erase' ? '#FFFFFF' : activeColor, bgColor: bg, opacity: 1 };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
@@ -903,6 +898,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               backgroundSize: '100% 100%',
               backgroundRepeat: 'no-repeat'
             }}
+            ref={pageRef}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
             onMouseUp={handlePointerUp}
@@ -1009,8 +1005,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     const startX = ev.clientX, startY = ev.clientY;
                     const startElX = el.x, startElY = el.y;
                     const onMove = (me: PointerEvent) => {
-                      if (!containerRef.current) return;
-                      const r = containerRef.current.getBoundingClientRect();
+                      if (!pageRef.current) return;
+                      const r = pageRef.current.getBoundingClientRect();
                       const nx = Math.max(0, Math.min(1000, startElX + ((me.clientX - startX) / r.width) * 1000));
                       const ny = Math.max(0, Math.min(1000, startElY + ((me.clientY - startY) / r.height) * 1000));
                       updateElement(el.id, { x: nx, y: ny });
@@ -1063,29 +1059,156 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         </div>
                       </div>
 
-                      {/* Resize Handles */}
-                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize" />
-                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize" />
-                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize" />
+                      {/* Resize Handles - Top Side */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ns-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startY = ev.clientY;
+                             const startElY = el.y, startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dy = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { y: Math.min(startElY + startH - 10, startElY + dy), height: Math.max(10, startH - dy) });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+                      
+                      {/* Resize Handles - Bottom Side */}
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ns-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startY = ev.clientY;
+                             const startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dy = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { height: Math.max(10, startH + dy) });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Resize Handles - Left Side */}
+                      <div className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ew-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX;
+                             const startElX = el.x, startW = el.width || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dx = ((me.clientX - startX) / r.width) * 1000;
+                               updateElement(el.id, { x: Math.min(startElX + startW - 10, startElX + dx), width: Math.max(10, startW - dx) });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Resize Handles - Right Side */}
+                      <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ew-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX;
+                             const startW = el.width || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dx = ((me.clientX - startX) / r.width) * 1000;
+                               updateElement(el.id, { width: Math.max(10, startW + dx) });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Corner Handles - NW */}
+                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX, startY = ev.clientY;
+                             const startElX = el.x, startElY = el.y, startW = el.width || 0, startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dx = ((me.clientX - startX) / r.width) * 1000;
+                               const dy = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { 
+                                 x: Math.min(startElX + startW - 10, startElX + dx), 
+                                 y: Math.min(startElY + startH - 10, startElY + dy),
+                                 width: Math.max(10, startW - dx),
+                                 height: Math.max(10, startH - dy)
+                               });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Corner Handles - NE */}
+                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX, startY = ev.clientY;
+                             const startElY = el.y, startW = el.width || 0, startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dx = ((me.clientX - startX) / r.width) * 1000;
+                               const dy = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { 
+                                 y: Math.min(startElY + startH - 10, startElY + dy),
+                                 width: Math.max(10, startW + dx),
+                                 height: Math.max(10, startH - dy)
+                               });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Corner Handles - SW */}
+                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const startX = ev.clientX, startY = ev.clientY;
+                             const startElX = el.x, startW = el.width || 0, startH = el.height || 0;
+                             const onMove = (me: PointerEvent) => {
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
+                               const dx = ((me.clientX - startX) / r.width) * 1000;
+                               const dy = ((me.clientY - startY) / r.height) * 1000;
+                               updateElement(el.id, { 
+                                 x: Math.min(startElX + startW - 10, startElX + dx), 
+                                 width: Math.max(10, startW - dx),
+                                 height: Math.max(10, startH + dy)
+                               });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
+                      />
+
+                      {/* Corner Handles - SE */}
                       <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize" 
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
                              const startW = el.width || 0, startH = el.height || 0;
                              const onMove = (me: PointerEvent) => {
-                               if (!containerRef.current) return;
-                               const r = containerRef.current.getBoundingClientRect();
+                               if (!pageRef.current) return;
+                               const r = pageRef.current.getBoundingClientRect();
                                const dw = ((me.clientX - startX) / r.width) * 1000;
                                const dh = ((me.clientY - startY) / r.height) * 1000;
                                updateElement(el.id, { width: Math.max(10, startW + dw), height: Math.max(10, startH + dh) });
                              };
-                             const onUp = () => {
-                               window.removeEventListener('pointermove', onMove);
-                               window.removeEventListener('pointerup', onUp);
-                               commit([...elements]);
-                             };
-                             window.addEventListener('pointermove', onMove);
-                             window.addEventListener('pointerup', onUp);
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
                     </>
@@ -1210,6 +1333,56 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             })}
           </div>
         </div>
+
+        {/* --- Contextual Tool Options Bar (Professional additions) --- */}
+        {mode !== 'select' && !activeElementId && (
+          <div className="flex items-center gap-6 px-10 py-2 bg-indigo-50/50 border-t border-slate-100 animate-in slide-in-from-top-1 duration-300">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest whitespace-nowrap">Active Tool Settings:</span>
+              <div className="h-3 w-px bg-slate-200 mx-2" />
+            </div>
+
+            {/* Common Color Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Brush Color'}</span>
+              <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                {['#000000', '#FFFFFF', '#FF0000', '#0000FF', '#00FF00', '#FFFF00'].map(c => (
+                  <button 
+                    key={c}
+                    onClick={() => setActiveColor(c)}
+                    className={`w-5 h-5 rounded border transition-all ${activeColor === c ? 'border-indigo-600 scale-110 shadow-sm' : 'border-slate-100'}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Typography Logic for Text Tools */}
+            {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
+              <div className="flex items-center gap-4 animate-in fade-in transition-all">
+                 <div className="h-4 w-px bg-slate-200" />
+                 <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Size</span>
+                    <select 
+                      value={activeFontSize}
+                      onChange={e => setActiveFontSize(parseInt(e.target.value))}
+                      className="bg-white border border-slate-200 rounded-md py-1 px-2 text-[10px] font-black text-indigo-600 outline-none"
+                    >
+                      {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48].map(s => <option key={s} value={s}>{s}px</option>)}
+                    </select>
+                 </div>
+              </div>
+            )}
+
+            {mode === 'erase' && (
+              <div className="flex items-center gap-2 animate-in fade-in transition-all">
+                <div className="h-4 w-px bg-slate-200" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Standard White is Default</span>
+                <div className="bg-white px-2 py-1 rounded border border-slate-200 text-[10px] font-black text-emerald-600">READY</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
