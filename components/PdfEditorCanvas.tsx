@@ -32,6 +32,10 @@ import {
   Package,
   Pipette,
   RotateCw,
+  PenLine,
+  Pen,
+  Link2,
+  Circle,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
