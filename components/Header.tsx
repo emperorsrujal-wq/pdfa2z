@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { User as UserIcon, LogOut, LayoutDashboard, ShieldCheck, Home as HomeIcon } from 'lucide-react';
 import { MegaMenu } from './MegaMenu';
 import { ToolType } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
     currentLang?: string;
@@ -149,6 +150,8 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     </Link>
                     <div className="h-4 w-[1px] bg-slate-200 mx-1" />
                     <LanguageSelector />
+                    <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+                    <ThemeToggle />
                     
                     {user ? (
                         <div className="relative group">
@@ -189,7 +192,8 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                 </div>
 
                 {/* Mobile Menu Button */}
-                <div className="flex md:hidden">
+                <div className="flex md:hidden items-center gap-2">
+                    <ThemeToggle />
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="p-2 text-slate-600 hover:text-blue-600"
