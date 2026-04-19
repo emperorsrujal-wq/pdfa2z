@@ -48,6 +48,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const [activeRedactPage, setActiveRedactPage] = React.useState<number | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const htmlFileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (initialMode) {
@@ -531,8 +532,32 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     <FileCode size={32} />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">HTML to PDF Converter</h3>
-                  <p className="text-slate-500 mb-6 text-sm text-center">Paste your HTML and CSS code below. You can see a live preview before converting.</p>
+                  <p className="text-slate-500 mb-6 text-sm text-center">Paste your HTML and CSS code below, or upload a .html file to get started.</p>
                   
+                  <div className="w-full flex justify-end mb-2">
+                    <button 
+                      onClick={() => htmlFileInputRef.current?.click()}
+                      className="text-[10px] font-black uppercase tracking-widest text-orange-600 hover:text-orange-700 flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-lg transition-all"
+                    >
+                      <Upload size={12} /> Upload HTML File
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={htmlFileInputRef} 
+                      className="hidden" 
+                      accept=".html,.htm" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (re) => {
+                            setInputValue(re.target?.result as string);
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                    />
+                  </div>
                   <textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
