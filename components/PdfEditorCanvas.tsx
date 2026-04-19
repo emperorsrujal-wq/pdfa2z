@@ -418,7 +418,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       return;
     }
     if (mode === 'picker' || mode === 'font-picker') {
-      const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
+      const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
       if (activeElementId) {
         if (mode === 'picker') {
           updateElement(activeElementId, { color: style.backgroundColor });
@@ -1133,6 +1133,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   }}
                   onClick={ev => ev.stopPropagation()}
                 >
+                  {/* Magic Edit Overlay (Targeting feedback) */}
+                  {mode === 'magic-edit' && (
+                    <div className="absolute inset-0 border-2 border-indigo-400 border-dashed animate-pulse pointer-events-none" />
+                  )}
                   {/* Object property bar */}
                   {isActive && (
                     <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
@@ -1172,7 +1176,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       </div>
 
                       {/* Resize Handles - Top Side */}
-                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ns-resize"
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-n-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startY = ev.clientY;
@@ -1189,7 +1193,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
                       
                       {/* Resize Handles - Bottom Side */}
-                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ns-resize"
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-s-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startY = ev.clientY;
@@ -1206,7 +1210,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Resize Handles - Left Side */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ew-resize"
+                      <div className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-w-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX;
@@ -1223,7 +1227,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Resize Handles - Right Side */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ew-resize"
+                      <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-e-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX;
@@ -1240,7 +1244,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Corner Handles - NW */}
-                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize"
+                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nw-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
@@ -1263,7 +1267,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Corner Handles - NE */}
-                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize"
+                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ne-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
@@ -1285,7 +1289,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Corner Handles - SW */}
-                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nesw-resize"
+                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-sw-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
@@ -1307,7 +1311,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
 
                       {/* Corner Handles - SE */}
-                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nwse-resize" 
+                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-se-resize hover:scale-125 transition-transform" 
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
