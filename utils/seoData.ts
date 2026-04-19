@@ -1443,6 +1443,31 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     icon: FileSearch,
     mode: 'URL_TO_PDF'
   },
+  'html-to-pdf': {
+    slug: 'html-to-pdf',
+    title: 'HTML to PDF - Convert HTML Code to PDF Online',
+    description: 'Convert raw HTML and CSS code into professional PDF documents. Instant preview and high-quality rendering.',
+    h1: 'Convert HTML Code to PDF',
+    intro: 'Paste your HTML code and transform it into a high-fidelity PDF document instantly.',
+    steps: [
+      'Paste your HTML and CSS code into the editor.',
+      'Check the real-time preview of your document.',
+      'Click "Convert & Download" to generate your PDF.'
+    ],
+    faqs: [
+      { q: 'Can I include CSS?', a: 'Yes, you can include <style> tags or inline styles per page.' },
+      { q: 'Is it secure?', a: 'Absolutely. All rendering happens locally in your browser.' }
+    ],
+    features: [
+      'Real-time HTML Preview',
+      'Full CSS Support',
+      'No Server-side Storage',
+      'High-Fidelity Rendering'
+    ],
+    type: ToolType.PDF_SUITE,
+    icon: FileCode,
+    mode: 'HTML_TO_PDF'
+  },
   'pdf-to-ppt': {
     slug: 'pdf-to-ppt',
     title: 'PDF to PowerPoint - Convert PDF to PPTX',

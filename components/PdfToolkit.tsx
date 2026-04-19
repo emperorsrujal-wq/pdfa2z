@@ -445,6 +445,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <ToolCard title="EPUB to PDF" description="Convert EPUB ebooks to PDF format." icon={<Book />} onClick={() => setMode('EPUB_TO_PDF')} colorClass="bg-yellow-600 text-yellow-600" />
           <ToolCard title="MOBI to PDF" description="Convert MOBI ebooks to PDF format." icon={<Book />} onClick={() => setMode('MOBI_TO_PDF')} colorClass="bg-yellow-500 text-yellow-500" />
           <ToolCard title="Outlook to PDF" description="Convert MSG/EML email files to PDF." icon={<Mail />} onClick={() => setMode('OUTLOOK_TO_PDF')} colorClass="bg-cyan-500 text-cyan-500" />
+          <ToolCard title="HTML to PDF" description="Convert raw HTML code and CSS into high-quality PDF." icon={<FileCode />} onClick={() => setMode('HTML_TO_PDF')} colorClass="bg-orange-600 text-orange-600" />
           <ToolCard title="Batch Process" description="Bulk merge, split, and compress files." icon={<Package />} onClick={() => setMode('BATCH')} colorClass="bg-indigo-600 border-2 border-indigo-400 shadow-indigo-100 shadow-xl" />
         </div>
       </div>
@@ -475,6 +476,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'EXTRACT_IMAGES': return { icon: <FileImage />, title: 'Extract Images' };
       case 'REDACT': return { icon: <EyeOff />, title: 'Redact PDF' };
       case 'BATCH': return { icon: <Package />, title: 'Batch Workspace' };
+      case 'HTML_TO_PDF': return { icon: <FileCode />, title: 'HTML to PDF' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
@@ -490,7 +492,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         {/* API Key button removed - Integrated */}
       </div>
       <div className="flex-1 bg-slate-50 rounded-3xl p-8 flex flex-col overflow-y-auto custom-scrollbar">
-        {files.length === 0 && mode !== 'URL_TO_PDF' ? (
+        {files.length === 0 && !['URL_TO_PDF', 'HTML_TO_PDF'].includes(mode) ? (
           <div onClick={() => fileInputRef.current?.click()} className="flex-1 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-600 transition-all min-h-[300px]">
             <Upload size={40} className="mb-4 text-indigo-600" />
             <p className="font-black uppercase tracking-tighter">
@@ -518,6 +520,68 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 font-medium mb-4"
                   />
                   <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4">Convert to PDF</Button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'HTML_TO_PDF' && files.length === 0 && (
+              <div className="space-y-6 animate-fade-in w-full">
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center">
+                  <div className="p-4 bg-orange-50 rounded-2xl text-orange-600 mb-4">
+                    <FileCode size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">HTML to PDF Converter</h3>
+                  <p className="text-slate-500 mb-6 text-sm text-center">Paste your HTML and CSS code below. You can see a live preview before converting.</p>
+                  
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="<h1 style='color: navy; text-align: center'>Hello PDFA2Z</h1><p>This is a professional PDF generated from HTML.</p>"
+                    className="w-full h-48 bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-orange-500 font-mono text-sm mb-4 custom-scrollbar"
+                  />
+
+                  <div className="w-full border border-slate-200 rounded-2xl overflow-hidden mb-6 bg-white min-h-[250px] shadow-inner">
+                    <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center">
+                      <span>Live Canvas Preview</span>
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 rounded-full bg-slate-200" />
+                        <div className="w-2 h-2 rounded-full bg-slate-200" />
+                        <div className="w-2 h-2 rounded-full bg-slate-200" />
+                      </div>
+                    </div>
+                    <iframe
+                      title="HTML Preview"
+                      srcDoc={inputValue || '<html><body style="font-family: sans-serif; color: #cbd5e1; display: flex; align-items: center; justify-content: center; height: 80vh; margin: 0; text-align: center; font-weight: bold; font-size: 14px;">Documentation preview will appear here in real-time...</body></html>'}
+                      className="w-full h-[250px] border-none"
+                    />
+                  </div>
+
+                  <Button onClick={() => {
+                    const win = window.open('', '_blank');
+                    if (win) {
+                      win.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                          <head>
+                            <title>PDFA2Z Generated Document</title>
+                            <style>
+                              @page { margin: 1cm; }
+                              body { margin: 0; padding: 0; }
+                            </style>
+                          </head>
+                          <body>${inputValue}</body>
+                        </html>
+                      `);
+                      win.document.close();
+                      win.focus();
+                      setTimeout(() => {
+                        win.print();
+                      }, 500);
+                    }
+                    setSuccessMsg("PDF Generation Started. Please select 'Save as PDF' as your printer destination.");
+                  }} className="w-full py-4 bg-orange-600 hover:bg-orange-700 shadow-xl shadow-orange-100 uppercase tracking-widest font-black">
+                    Convert & Download PDF
+                  </Button>
                 </div>
               </div>
             )}
