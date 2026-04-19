@@ -576,8 +576,27 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     </div>
                     <iframe
                       title="HTML Preview"
-                      srcDoc={inputValue || '<html><body style="font-family: sans-serif; color: #cbd5e1; display: flex; align-items: center; justify-content: center; height: 80vh; margin: 0; text-align: center; font-weight: bold; font-size: 14px;">Documentation preview will appear here in real-time...</body></html>'}
-                      className="w-full h-[250px] border-none"
+                      srcDoc={`
+                        <!DOCTYPE html>
+                        <html>
+                          <head>
+                            <script src="https://cdn.tailwindcss.com"></script>
+                            <style>
+                              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                              body { 
+                                font-family: 'Inter', sans-serif; 
+                                padding: 2rem; 
+                                color: #1e293b;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                              }
+                              ${inputValue ? '' : 'body { display: flex; align-items: center; justify-content: center; height: 80vh; color: #cbd5e1; font-weight: bold; }'}
+                            </style>
+                          </head>
+                          <body>${inputValue || 'Real-time high-fidelity preview will appear here...'}</body>
+                        </html>
+                      `}
+                      className="w-full h-[350px] border-none"
                     />
                   </div>
 
@@ -589,21 +608,39 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                         <html>
                           <head>
                             <title>PDFA2Z Generated Document</title>
+                            <script src="https://cdn.tailwindcss.com"></script>
                             <style>
-                              @page { margin: 1cm; }
-                              body { margin: 0; padding: 0; }
+                              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                              @page { margin: 1.5cm; size: auto; }
+                              body { 
+                                margin: 0; 
+                                padding: 0; 
+                                font-family: 'Inter', sans-serif;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color: #1e293b;
+                              }
+                              table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; page-break-inside: auto; }
+                              tr { page-break-inside: avoid !important; page-break-after: auto; }
+                              thead { display: table-header-group; }
+                              th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+                              th { background-color: #f8fafc; font-weight: 600; }
+                              img, canvas, svg { max-width: 100%; height: auto; page-break-inside: avoid; }
+                              h1, h2, h3 { color: #0f172a; page-break-after: avoid; }
                             </style>
                           </head>
-                          <body>${inputValue}</body>
+                          <body class="bg-white p-8">${inputValue}</body>
                         </html>
                       `);
                       win.document.close();
                       win.focus();
+                      
+                      // Professional delay for complex chart initialization
                       setTimeout(() => {
                         win.print();
-                      }, 500);
+                      }, 2000);
                     }
-                    setSuccessMsg("PDF Generation Started. Please select 'Save as PDF' as your printer destination.");
+                    setSuccessMsg("High-Fidelity PDF Generation Started. Please select 'Save as PDF' as your printer destination.");
                   }} className="w-full py-4 bg-orange-600 hover:bg-orange-700 shadow-xl shadow-orange-100 uppercase tracking-widest font-black">
                     Convert & Download PDF
                   </Button>
