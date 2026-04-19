@@ -10,27 +10,16 @@ interface ThemeContextType {
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = React.useState<Theme>('light');
-    const [mounted, setMounted] = React.useState(false);
+    const theme: Theme = 'light';
 
     React.useEffect(() => {
-        const saved = localStorage.getItem('theme');
-        if (saved === 'light' || saved === 'dark') {
-            setTheme(saved);
-        }
-        setMounted(true);
+        const root = window.document.documentElement;
+        root.classList.remove('dark');
+        root.classList.add('light');
     }, []);
 
-    React.useEffect(() => {
-        if (!mounted) return;
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(theme);
-        localStorage.setItem('theme', theme);
-    }, [theme, mounted]);
-
     const toggleTheme = () => {
-        setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+        console.warn('Theme switching is disabled. Application is locked to Light Mode.');
     };
 
     return (
