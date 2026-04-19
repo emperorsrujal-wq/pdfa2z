@@ -6,7 +6,8 @@ import {
   Trash2, Paintbrush, Stamp, Hammer, Maximize2, EyeOff, LayoutTemplate, 
   ImageMinus, FilePlus, Grid, User, PlusCircle, 
   Type, Move, FileSpreadsheet, FileCode, FileDigit, Scan, ListOrdered, 
-  FileStack, FileLock, ImagePlus, Smile, Search, LucideIcon
+  FileStack, FileLock, ImagePlus, Smile, Search, LucideIcon,
+  Wrench, FileEdit, ImageDown, ScanText, Sparkles
 } from 'lucide-react';
 
 export interface ToolSEO {
@@ -165,6 +166,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     relatedGuides: ['best-ilovepdf-alternative-2026', 'how-to-merge-pdfs'],
     type: ToolType.PDF_SUITE,
     mode: 'MERGE',
+    icon: FileStack,
     translations: {
       es: {
         title: 'Combinar PDF - Unir Archivos PDF Gratis Online',
@@ -423,7 +425,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Use negative prompts (if available) to specify what you don\'t want in the image.'
     ],
     type: ToolType.IMAGE_GENERATOR,
-    icon: Zap,
+    icon: Sparkles,
   },
   'remove-bg': {
     slug: 'remove-bg',
@@ -456,7 +458,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     relatedGuides: ['remove-image-background'],
     type: ToolType.IMAGE_TOOLKIT,
-    icon: UserMinus,
+    icon: ImageMinus,
     mode: 'REMOVE_BG'
   },
   'ai-writer': {
@@ -592,7 +594,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'AI might occasionally hallucinate details on very low-resolution images.'
     ],
     type: ToolType.IMAGE_TOOLKIT,
-    icon: Wand2,
+    icon: Sparkles,
     mode: 'MAGIC_EDITOR'
   },
   'rotate-pdf': {
@@ -808,7 +810,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload file', 'Wait for repair', 'Download fixed PDF'],
     faqs: [],
     type: ToolType.PDF_SUITE,
-    icon: Hammer,
+    icon: Wrench,
     mode: 'REPAIR'
   },
   'flatten-pdf': {
@@ -820,7 +822,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Flatten', 'Download result'],
     faqs: [],
     type: ToolType.PDF_SUITE,
-    icon: Maximize2,
+    icon: Layers,
     mode: 'FLATTEN'
   },
   'redact-pdf': {
@@ -1355,7 +1357,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PDF', 'Wait for extraction', 'Download ZIP file'],
     faqs: [],
     type: ToolType.PDF_SUITE,
-    icon: FilePlus,
+    icon: ImageDown,
     mode: 'EXTRACT_IMAGES'
   },
   'reverse-pdf': {
@@ -1393,7 +1395,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
       'Secure Browser Processing'
     ],
     type: ToolType.PDF_SUITE,
-    icon: PenTool,
+    icon: FileEdit,
     mode: 'EDIT'
   },
   'crop-pdf': {

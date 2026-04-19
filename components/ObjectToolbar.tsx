@@ -23,6 +23,7 @@ import {
   RotateCw,
   ExternalLink,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';

@@ -36,6 +36,10 @@ import {
   Pen,
   Link2,
   Circle,
+  Sparkles,
+  ScanText,
+  Replace,
+  Link,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
@@ -727,8 +731,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <div className="flex items-center gap-1 p-1">
               {[
                 { mode: 'select', icon: <MousePointer2 size={15} />, label: 'Select' },
-                { mode: 'magic-edit', icon: <Type size={15} />, label: 'Edit Text' },
-                { mode: 'text', icon: <PenLine size={15} />, label: 'Add Text' },
+                { mode: 'magic-edit', icon: <Sparkles size={15} />, label: 'Magic Edit' },
+                { mode: 'text', icon: <Type size={15} />, label: 'Add Text' },
               ].map(t => (
                 <button
                   key={t.mode}
@@ -773,14 +777,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 title="Rectangle"
               >
                 <Square size={15} />
-                <span className="text-[11px] font-black">Rect</span>
+                <span className="text-[11px] font-black">Rectangle</span>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setMode('circle'); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'circle' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
                 title="Circle/Ellipse"
               >
-                <Circle size={15} />
+                <CircleIcon size={15} />
                 <span className="text-[11px] font-black">Circle</span>
               </button>
               <button
@@ -788,7 +792,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'link' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
                 title="Add External Link"
               >
-                <Link2 size={15} />
+                <Link size={15} />
                 <span className="text-[11px] font-black">Link</span>
               </button>
               <button
@@ -796,7 +800,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
               >
                 <FileSignature size={15} />
-                <span className="text-[11px] font-black">Sign</span>
+                <span className="text-[11px] font-black">Signature</span>
               </button>
               {[
                 { mode: 'image', icon: <ImageIcon size={15} />, label: 'Image' },
@@ -825,13 +829,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 onClick={(e) => { e.stopPropagation(); setMode('ocr'); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-white hover:text-violet-600'}`}
               >
-                <FileSearch size={14} /> OCR
+                <ScanText size={14} /> OCR
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFindReplace(true); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all text-slate-600 hover:bg-white hover:text-indigo-600`}
               >
-                <Search size={14} /> FIND & REPLACE
+                <Replace size={14} /> FIND & REPLACE
               </button>
             </div>
           </div>
