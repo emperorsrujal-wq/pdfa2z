@@ -42,6 +42,7 @@ import {
   Link,
   HelpCircle,
   Keyboard,
+  X,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
