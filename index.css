@@ -4,13 +4,25 @@
 
 @layer base {
   :root {
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.3);
-    --glass-bg-dark: rgba(15, 23, 42, 0.5);
-    --glass-border-dark: rgba(71, 85, 105, 0.3);
-    --premium-blue: #2563eb;
-    --premium-indigo: #4338ca;
-    --mesh-glow: rgba(37, 99, 235, 0.05);
+    /* Glass */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-bg-dark: rgba(15, 23, 42, 0.6);
+    --glass-border-dark: rgba(71, 85, 105, 0.25);
+
+    /* Brand */
+    --brand-blue: #2563eb;
+    --brand-indigo: #4f46e5;
+    --brand-violet: #7c3aed;
+    --mesh-glow: rgba(37, 99, 235, 0.06);
+
+    /* Editor */
+    --editor-bg: #0f1117;
+    --editor-sidebar: #161b27;
+    --editor-toolbar: #1a2033;
+    --editor-canvas: #1c1f2b;
+    --editor-border: rgba(255,255,255,0.07);
+    --editor-accent: #4f8ef7;
   }
 
   @font-face {
@@ -21,30 +33,38 @@
     src: url('/fonts/inter-variable.woff2') format('woff2');
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-[#fcfcfd] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors;
+    @apply bg-[#f8f9fc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased;
     background-image:
       radial-gradient(at 0% 0%, var(--mesh-glow) 0, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.05) 0, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.05) 0, transparent 50%);
+      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.04) 0, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.04) 0, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.04) 0, transparent 50%);
     background-attachment: fixed;
   }
 
   @media (prefers-color-scheme: dark) {
     body {
       background-image:
-        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.03) 0, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.03) 0, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.03) 0, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.025) 0, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.025) 0, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.025) 0, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.025) 0, transparent 50%);
     }
+  }
+
+  * {
+    box-sizing: border-box;
   }
 }
 
-/* World-Class Utilities */
+/* ─── Glass & Premium Cards ───────────────────────────── */
 .glass-panel {
-  @apply backdrop-blur-xl border shadow-2xl shadow-blue-900/5 transition-all duration-300;
+  @apply backdrop-blur-2xl border shadow-2xl shadow-blue-900/5 transition-all duration-300;
   background: var(--glass-bg);
   border-color: var(--glass-border);
 }
@@ -52,13 +72,28 @@
 .dark .glass-panel {
   background: var(--glass-bg-dark);
   border-color: var(--glass-border-dark);
-  @apply shadow-2xl shadow-black/20;
+  @apply shadow-2xl shadow-black/30;
 }
 
 .premium-card {
-  @apply bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-900/20 transition-all duration-500;
+  @apply bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800
+         shadow-xl shadow-slate-200/60 dark:shadow-slate-950/60
+         hover:shadow-2xl hover:shadow-blue-500/10 dark:hover:shadow-blue-900/25
+         transition-all duration-500;
 }
 
+/* ─── Tool Card ─────────────────────────────────────────── */
+.tool-card {
+  @apply relative bg-white rounded-2xl border border-slate-100 overflow-hidden
+         shadow-md shadow-slate-100/80 hover:shadow-xl hover:shadow-blue-100/60
+         transition-all duration-300 cursor-pointer;
+}
+
+.tool-card:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+
+/* ─── Mesh Background ───────────────────────────────────── */
 .mesh-bg {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -69,26 +104,32 @@
 
 .mesh-blob {
   position: absolute;
-  filter: blur(80px);
-  opacity: 0.3;
-  width: 40%;
-  height: 40%;
+  filter: blur(90px);
+  opacity: 0.22;
+  width: 45%;
+  height: 45%;
   border-radius: 50%;
-  animation: meshFloat 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+  animation: meshFloat 22s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 @keyframes meshFloat {
-  0% { transform: translate(0,0) scale(1); }
-  100% { transform: translate(100px, 50px) scale(1.1); }
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(80px, 40px) scale(1.12); }
 }
 
+/* ─── Typography ────────────────────────────────────────── */
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500;
 }
 
+.text-gradient-blue {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -96,29 +137,167 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+  @apply bg-slate-200 rounded-full;
 }
 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300;
+}
+
+/* Dark scrollbar for editor */
+.editor-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.editor-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.editor-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ─── Animations ────────────────────────────────────────── */
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
 
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-toast-in {
+  animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-toast-out {
+  animation: toastOut 0.25s ease-in both;
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+/* Parallax blobs */
 .animate-alive-1 {
-  transform: translate(calc(var(--mouse-x) * 30px), calc(var(--mouse-y) * 30px));
+  transform: translate(calc(var(--mouse-x, 0) * 30px), calc(var(--mouse-y, 0) * 30px));
   transition: transform 0.3s ease-out;
 }
 
 .animate-alive-2 {
-  transform: translate(calc(var(--mouse-x) * -40px), calc(var(--mouse-y) * 20px)) scale(1.1);
+  transform: translate(calc(var(--mouse-x, 0) * -40px), calc(var(--mouse-y, 0) * 20px)) scale(1.1);
   transition: transform 0.4s ease-out;
 }
 
 .animate-alive-3 {
-  transform: translate(calc(var(--mouse-x) * 20px), calc(var(--mouse-y) * -30px)) rotate(5deg);
+  transform: translate(calc(var(--mouse-x, 0) * 20px), calc(var(--mouse-y, 0) * -30px)) rotate(5deg);
   transition: transform 0.5s ease-out;
+}
+
+/* ─── PDF Editor Specific ───────────────────────────────── */
+.editor-bg {
+  background: var(--editor-bg);
+}
+
+.editor-sidebar {
+  background: var(--editor-sidebar);
+  border-right: 1px solid var(--editor-border);
+}
+
+.editor-toolbar {
+  background: var(--editor-toolbar);
+  border-bottom: 1px solid var(--editor-border);
+}
+
+.editor-canvas-area {
+  background: var(--editor-canvas);
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(79, 142, 247, 0.03) 0%, transparent 60%);
+}
+
+/* Checkerboard pattern for canvas area */
+.canvas-grid {
+  background-color: #1c1f2b;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Tool Button — Editor */
+.editor-tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  color: #94a3b8;
+  transition: all 150ms;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-tool-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.editor-tool-btn.active {
+  color: white;
+  background: rgba(79, 142, 247, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(79, 142, 247, 0.4);
+}
+
+/* Selection ring on active elements */
+.element-selected {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 12px rgba(59, 130, 246, 0.3);
+  border-radius: 2px;
+}
+
+/* Keyboard shortcut badge */
+.kbd {
+  @apply inline-flex items-center justify-center px-1.5 py-0.5
+         bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700
+         rounded text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400;
+}
+
+/* ─── Hero gradient text ─────────────────────────────────── */
+.hero-gradient-text {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

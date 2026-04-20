@@ -40,6 +40,8 @@ import {
   ScanText,
   Replace,
   Link,
+  HelpCircle,
+  Keyboard,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
@@ -194,6 +196,29 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [searchTerm, setSearchTerm] = React.useState('');
   const [replaceTerm, setReplaceTerm] = React.useState('');
 
+  // Inline modals replacing prompt()
+  const [linkModal, setLinkModal] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [linkUrl, setLinkUrl] = React.useState('https://');
+  const [commentModal, setCommentModal] = React.useState<{ x: number; y: number } | null>(null);
+  const [commentText, setCommentText] = React.useState('');
+
+  // Toast notifications replacing alert()
+  const [toasts, setToasts] = React.useState<{ id: number; type: 'success' | 'error' | 'info'; msg: string }[]>([]);
+  const showToast = React.useCallback((type: 'success' | 'error' | 'info', msg: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, msg }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+
+  // Keyboard shortcuts overlay
+  const [showShortcuts, setShowShortcuts] = React.useState(false);
+
+  // Whiteout: user-chosen background color (default white)
+  const [whiteoutColor, setWhiteoutColor] = React.useState('#FFFFFF');
+  const [showWhiteoutPicker, setShowWhiteoutPicker] = React.useState(false);
+  const [hexInput, setHexInput] = React.useState('#000000');
+  const [pickerHoverColor, setPickerHoverColor] = React.useState(null);
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -301,61 +326,61 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     commit(next);
   };
 
-  // Keyboard shortcuts
+  // ── Unified keyboard handler (single registration) ──
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Z / Cmd+Z: Undo
+      const tag = (e.target as HTMLElement).tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+
+      // Ctrl+Z: Undo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-        return;
+        e.preventDefault(); undo(); return;
       }
-      // Ctrl+Shift+Z / Cmd+Shift+Z: Redo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
-        e.preventDefault();
-        redo();
-        return;
+      // Ctrl+Shift+Z: Redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault(); redo(); return;
       }
-      // Ctrl+D / Cmd+D: Duplicate
+      // Ctrl+D: Duplicate
       if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeElementId) {
         e.preventDefault();
-        const element = elements.find(el => el.id === activeElementId);
-        if (element) duplicateElement(element);
+        const el = elements.find(item => item.id === activeElementId);
+        if (el) duplicateElement(el);
         return;
       }
-      // Delete: Delete selected element
-      if (e.key === 'Delete' && activeElementId) {
+      // Delete / Backspace: delete selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && activeElementId) {
         e.preventDefault();
         deleteElement(activeElementId);
         return;
       }
-      // Escape: Deselect
+      // Escape: deselect / switch to select mode
       if (e.key === 'Escape') {
         e.preventDefault();
         setActiveElementId(null);
+        setMode('select');
         return;
       }
-      // Arrow keys: Move selected element (5px increments)
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && activeElementId) {
+      // ?: show shortcuts help
+      if (e.key === '?') {
+        setShowShortcuts(s => !s);
+        return;
+      }
+      // Arrow keys: nudge selected element
+      if (activeElementId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
-        const element = elements.find(el => el.id === activeElementId);
-        if (element) {
-          let newX = element.x;
-          let newY = element.y;
-          const step = e.shiftKey ? 20 : 5; // Shift for larger moves
-          if (e.key === 'ArrowUp') newY = Math.max(0, newY - step);
-          if (e.key === 'ArrowDown') newY = Math.min(1000, newY + step);
-          if (e.key === 'ArrowLeft') newX = Math.max(0, newX - step);
-          if (e.key === 'ArrowRight') newX = Math.min(1000, newX + step);
-          updateElement(activeElementId, { x: newX, y: newY });
+        const el = elements.find(item => item.id === activeElementId);
+        if (el) {
+          const step = e.shiftKey ? 20 : 2;
+          const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+          const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+          updateElement(activeElementId, { x: Math.max(0, Math.min(1000, el.x + dx)), y: Math.max(0, Math.min(1000, el.y + dy)) });
         }
         return;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeElementId, elements, historyStep]);
+  }, [activeElementId, elements, historyStep, mode]);
 
   // Tier 3: Collaboration Sync
   React.useEffect(() => {
@@ -422,22 +447,34 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       return;
     }
     if (mode === 'picker' || mode === 'font-picker') {
-      const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
-      if (activeElementId) {
+      try {
+        const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
         if (mode === 'picker') {
-          updateElement(activeElementId, { color: style.backgroundColor });
+          const sampledColor = style.color || style.backgroundColor || '#000000';
+          setActiveColor(sampledColor);
+          setHexInput(sampledColor);
+          setPickerHoverColor(null);
+          if (activeElementId) {
+            updateElement(activeElementId, { color: sampledColor });
+          }
+          showToast('success', 'Color sampled from document');
         } else {
-          updateElement(activeElementId, { 
-            fontName: style.fontName, 
-            size: style.fontSize 
-          });
+          if (activeElementId) {
+            updateElement(activeElementId, {
+              fontName: style.fontName,
+              size: style.fontSize
+            });
+          }
         }
-        setMode('select');
+      } catch(e) {
+        showToast('error', 'Could not sample color at that point');
       }
+      setMode('select');
       return;
     }
     if (mode === 'erase') {
-      setActiveColor('#FFFFFF');
+      // Use whiteoutColor (user-chosen, defaults to white)
+      setActiveColor(whiteoutColor);
       setIsDrawing(true);
       setDragStart(pos);
       setDragEnd(pos);
@@ -452,17 +489,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         item => pos.x >= item.x && pos.x <= item.x + item.width && pos.y >= item.y && pos.y <= item.y + item.height
       );
       
-      // Auto-sample color logic for better masking
+      // Auto-sample color logic for better masking — use actual file prop (bug fix)
       let bgColor = '#FFFFFF';
       let fontColor = activeColor;
       
       try {
-        const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
-        bgColor = style.backgroundColor || '#FFFFFF';
+        const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
         bgColor = style.backgroundColor || '#FFFFFF';
         fontColor = style.color || activeColor;
       } catch (e) {
-        console.warn("Color sampling failed, using defaults", e);
+        console.warn('Color sampling failed, using defaults', e);
       }
 
       if (clicked) {
@@ -494,13 +530,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         return;
       }
       if (mode === 'comment') {
-        const text = prompt("Enter your comment:");
-        if (text && docId) {
-          import('../services/collaborationService').then(m => m.addComment(docId, {
-            text, x: pos.x, y: pos.y, pageIndex
-          }));
-        }
-        setMode('select');
+        // Show inline comment modal instead of prompt()
+        setCommentModal({ x: pos.x, y: pos.y });
+        setCommentText('');
         return;
       }
     // All drag-draw modes
@@ -557,10 +589,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       } else if (mode === 'ellipse') {
         newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'link') {
-        const url = prompt("Enter link URL (e.g., https://example.com):");
-        if (url) {
-          newEl = { id: `link-${Date.now()}`, type: 'link', pageIndex, x, y, width: w, height: h, linkUrl: url, opacity: 1 };
-        }
+        // Show inline link modal instead of prompt()
+        setLinkModal({ x, y, w, h });
+        setLinkUrl('https://');
+        setIsDrawing(false);
+        setCurrentPath([]);
+        setDragStart(null);
+        setDragEnd(null);
+        return;
       }
       if (newEl) {
         commit([...elements, newEl]);
@@ -671,38 +707,30 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     
     const nextElements = [...elements];
     let count = 0;
+    const base = Date.now();
     
-    // Find matches in textItems
-    textItems.forEach(item => {
+    textItems.forEach((item, idx) => {
       if (item.str.toLowerCase().includes(searchTerm.toLowerCase())) {
-        // Create mask (whiteout)
+        // Fixed: unique IDs using base timestamp + index to prevent collisions
         const mask: EditElement = { 
-          id: `fr-mask-${Date.now()}-${count}`, 
+          id: `fr-mask-${base}-${idx}`, 
           type: 'rect', 
           pageIndex, 
-          x: item.x, 
-          y: item.y, 
-          width: item.width, 
-          height: item.height, 
-          color: '#FFFFFF',
-          opacity: 1 
+          x: item.x, y: item.y, 
+          width: item.width, height: item.height, 
+          color: '#FFFFFF', opacity: 1 
         };
-        
-        // Create new text
         const newText: EditElement = { 
-          id: `fr-text-${Date.now()}-${count}`, 
+          id: `fr-text-${base}-${idx}`, 
           type: 'text', 
           pageIndex, 
-          x: item.x, 
-          y: item.y, 
-          width: item.width, 
-          height: item.height, 
+          x: item.x, y: item.y, 
+          width: item.width, height: item.height, 
           color: activeColor, 
           text: replaceTerm, 
           size: item.fontSize, 
           opacity: 1 
         };
-        
         nextElements.push(mask, newText);
         count++;
       }
@@ -710,9 +738,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     
     if (count > 0) {
       commit(nextElements);
-      alert(`Replaced ${count} occurrences.`);
+      showToast('success', `Replaced ${count} occurrence${count !== 1 ? 's' : ''}`);
     } else {
-      alert("No matches found.");
+      showToast('info', 'No matches found');
     }
     setShowFindReplace(false);
   };
@@ -751,7 +779,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             {/* Annotate Group */}
             <div className="flex items-center gap-1">
               {[
-                { mode: 'erase', icon: <Eraser size={15} />, label: 'Whiteout' },
+                { mode: 'erase', icon: <span className="relative inline-flex"><Eraser size={15} /><span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-slate-300 shadow-sm" style={{backgroundColor: whiteoutColor}} /></span>, label: 'Whiteout' },
                 { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Highlight' },
                 { mode: 'draw', icon: <Pen size={15} />, label: 'Draw' },
               ].map(t => (
@@ -857,38 +885,101 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
                   {showColorPicker && (
                     <div 
-                      className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3"
+                      className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[500] w-[280px] animate-slide-up space-y-3"
                       onClick={e => e.stopPropagation()}
                     >
-                      <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Tool Color</div>
-                      <div className="grid grid-cols-8 gap-2">
-                         {SEJDA_COLORS.map(color => (
-                          <button
-                            key={color}
-                            className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${activeColor === color ? 'border-indigo-600 ring-2 ring-indigo-500/20' : 'border-slate-100 hover:border-slate-300'}`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => {
-                              setActiveColor(color);
-                              if (activeElementId) updateElement(activeElementId, { color });
-                              setShowColorPicker(false);
-                            }}
-                          />
-                        ))}
+                      {/* Section label */}
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-1">
+                        {mode === 'erase' ? 'Whiteout Fill Color' : 'Tool Color'}
                       </div>
-                      <div className="border-t border-slate-100" />
+
+                      {/* Swatch grid */}
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {SEJDA_COLORS.map(color => {
+                          const isActive = mode === 'erase' ? whiteoutColor === color : activeColor === color;
+                          return (
+                            <button
+                              key={color}
+                              className={`w-6 h-6 rounded-md border-2 hover:scale-110 transition-all shadow-sm ${isActive ? 'border-indigo-600 ring-2 ring-indigo-500/20 scale-110' : 'border-white hover:border-slate-300'}`}
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                if (mode === 'erase') {
+                                  setWhiteoutColor(color);
+                                } else {
+                                  setActiveColor(color);
+                                  setHexInput(color);
+                                  if (activeElementId) updateElement(activeElementId, { color });
+                                }
+                                setShowColorPicker(false);
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <div className="border-t border-slate-100 my-1" />
+
+                      {/* Hex input */}
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-8 h-8 rounded-lg border border-slate-200 shrink-0 shadow-inner cursor-pointer"
+                          style={{ backgroundColor: mode === 'erase' ? whiteoutColor : hexInput }}
+                        />
+                        <div className="flex-1 relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">#</span>
+                          <input
+                            type="text"
+                            value={(mode === 'erase' ? whiteoutColor : hexInput).replace('#', '')}
+                            maxLength={6}
+                            onChange={e => {
+                              const val = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+                              if (mode === 'erase') {
+                                setWhiteoutColor(val);
+                              } else {
+                                setHexInput(val);
+                                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                                  setActiveColor(val);
+                                  if (activeElementId) updateElement(activeElementId, { color: val });
+                                }
+                              }
+                            }}
+                            className="w-full pl-6 pr-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
+                          />
+                        </div>
+                        <input
+                          type="color"
+                          value={mode === 'erase' ? whiteoutColor : (hexInput.length === 7 ? hexInput : '#000000')}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (mode === 'erase') {
+                              setWhiteoutColor(val);
+                            } else {
+                              setActiveColor(val);
+                              setHexInput(val);
+                              if (activeElementId) updateElement(activeElementId, { color: val });
+                            }
+                          }}
+                          className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                          title="Open color picker"
+                        />
+                      </div>
+
+                      <div className="border-t border-slate-100 my-1" />
+
+                      {/* Eyedropper — pick from document */}
                       <button
                         onClick={() => {
                           setMode('picker');
                           setShowColorPicker(false);
                         }}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-left group transition-all border border-slate-200"
+                        className="w-full flex items-center gap-3 p-2.5 hover:bg-indigo-50 rounded-xl text-left group transition-all border border-slate-200 hover:border-indigo-300"
                       >
-                        <div className="p-2 bg-indigo-600 text-white rounded-lg group-hover:scale-110 transition-all">
+                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-lg group-hover:scale-110 transition-all shadow-md">
                           <Pipette size={14} />
                         </div>
                         <div className="flex flex-col flex-1">
-                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">Pick from Document</span>
-                          <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5 tracking-tighter">Match color exactly</span>
+                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">Select a color from the document</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">Click anywhere on the PDF to sample</span>
                         </div>
                       </button>
                     </div>
@@ -940,8 +1031,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   <ZoomIn size={15} />
                 </button>
              </div>
-             
-             <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+
+             {/* ? Keyboard Shortcut Help */}
+             <button
+               onClick={(e) => { e.stopPropagation(); setShowShortcuts(true); }}
+               title="Keyboard Shortcuts (?)"
+               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all border border-transparent hover:border-slate-200"
+             >
+               <HelpCircle size={15} />
+             </button>
+
+            <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
              </div>
           </div>
@@ -951,14 +1051,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         {mode === 'erase' && (
           <div className="px-6 py-1.5 bg-amber-500/10 border-t border-amber-500/10 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300">
              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-             <span className="text-[10px] font-bold text-amber-200/80 uppercase tracking-tight">Whiteout covers content but does NOT permanently redact underlying data.</span>
+             <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">Whiteout covers content but does NOT permanently redact underlying data.</span>
           </div>
         )}
       </div>
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div 
-        className={`flex-1 overflow-auto bg-slate-200/50 p-12 scrollbar-none custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
+        className={`flex-1 overflow-auto canvas-grid editor-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
         ref={containerRef}
         style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
       >
@@ -968,7 +1068,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             position: 'relative',
             width: `${794 * zoom}px`,
             flexShrink: 0,
-            boxShadow: '0 30px 60px -12px rgba(0,0,0,0.5), 0 18px 36px -18px rgba(0,0,0,0.5)',
+            boxShadow: '0 40px 80px -12px rgba(0,0,0,0.7), 0 20px 40px -8px rgba(0,0,0,0.5)',
             borderRadius: '4px',
             overflow: 'hidden'
           }}
@@ -999,9 +1099,18 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
             {/* Picker overlay */}
             {mode === 'picker' && (
-              <div className="absolute inset-0 flex items-center justify-center z-[500] bg-black/10 pointer-events-none">
-                <div className="bg-slate-900 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl">
-                  🎨 Click to sample a color from the document
+              <div className="absolute inset-0 z-[500] pointer-events-none" style={{cursor:'crosshair'}}>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-slate-900/90 backdrop-blur text-white text-[11px] font-bold px-5 py-3 rounded-2xl shadow-2xl border border-white/10">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
+                    <path d="M2 13.5V21h7.5"/><path d="M14 13V7l3-3 3 3-3 3-4 0z"/><path d="M2 21l5.5-5.5M7.5 21l-5.5-5.5"/>
+                  </svg>
+                  Click anywhere on the document to sample that color
+                  {pickerHoverColor && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full border border-white/30" style={{backgroundColor: pickerHoverColor}} />
+                      <span className="font-mono text-slate-300">{pickerHoverColor}</span>
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -1024,6 +1133,95 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 </div>
               </div>
             ))}
+
+            {/* ── Floating Inline Format Bar (shows when a text element is selected) ── */}
+            {(() => {
+              const activeEl = activeElementId ? elements.find(el => el.id === activeElementId) : null;
+              if (!activeEl || activeEl.type !== 'text') return null;
+              return (
+                <div
+                  className="absolute z-[600] pointer-events-auto"
+                  style={{
+                    left: `${activeEl.x / 10}%`,
+                    top: `calc(${activeEl.y / 10}% - 48px)`,
+                    transform: 'translateY(0)'
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-2xl shadow-slate-300/40 px-2 py-1.5">
+                    {/* Bold */}
+                    <button
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[13px] transition-all ${activeEl.isBold ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+                      onClick={() => updateElement(activeEl.id, { isBold: !activeEl.isBold })}
+                      title="Bold"
+                    >B</button>
+                    {/* Italic */}
+                    <button
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center italic font-bold text-[13px] transition-all ${activeEl.isItalic ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+                      onClick={() => updateElement(activeEl.id, { isItalic: !activeEl.isItalic })}
+                      title="Italic"
+                    >I</button>
+                    {/* Underline */}
+                    <button
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center underline font-bold text-[13px] transition-all ${activeEl.isUnderline ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+                      onClick={() => updateElement(activeEl.id, { isUnderline: !activeEl.isUnderline })}
+                      title="Underline"
+                    >U</button>
+
+                    <div className="w-px h-5 bg-slate-200 mx-1" />
+
+                    {/* Font size */}
+                    <select
+                      value={activeEl.size || 14}
+                      onChange={e => {
+                        const size = parseInt(e.target.value);
+                        setActiveFontSize(size);
+                        updateElement(activeEl.id, { size });
+                      }}
+                      className="h-7 w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-1 outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      {[8,9,10,11,12,14,16,18,20,24,28,32,36,48,60].map(s => (
+                        <option key={s} value={s}>{s}pt</option>
+                      ))}
+                    </select>
+
+                    <div className="w-px h-5 bg-slate-200 mx-1" />
+
+                    {/* Text color */}
+                    <button
+                      className="w-7 h-7 rounded-lg border border-slate-200 shadow-inner hover:scale-110 transition-all relative"
+                      style={{ backgroundColor: activeEl.color || '#000000' }}
+                      onClick={() => { setShowColorPicker(!showColorPicker); }}
+                      title="Text Color"
+                    />
+
+                    {/* Eyedropper — pick color from doc */}
+                    <button
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+                      onClick={() => setMode('picker')}
+                      title="Pick color from document"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 13.5V21h7.5"/><path d="M14 13V7l3-3 3 3-3 3-4 0z"/><path d="M2 21l5.5-5.5M7.5 21l-5.5-5.5"/>
+                      </svg>
+                    </button>
+
+                    <div className="w-px h-5 bg-slate-200 mx-1" />
+
+                    {/* Delete element */}
+                    <button
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                      onClick={() => { deleteElement(activeEl.id); }}
+                      title="Delete (Delete key)"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* SVG overlay (paths, lines, draw preview) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
@@ -1639,7 +1837,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 onClick={() => setShowFindReplace(false)}
                 className="p-1 hover:bg-slate-100 rounded-lg transition-all"
               >
-                <Trash2 size={18} className="text-slate-400" />
+                <X size={18} className="text-slate-400" />
               </button>
             </div>
             
@@ -1684,6 +1882,134 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         </div>
       )}
+
+      {/* ── Inline Link Modal ─────────────────────────── */}
+      {linkModal && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" onClick={() => setLinkModal(null)}>
+          <div className="w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <h3 className="font-black text-slate-800 text-lg mb-1">Add Hyperlink</h3>
+            <p className="text-slate-400 text-xs mb-4">The link will be applied to the drawn area.</p>
+            <input
+              type="url"
+              autoFocus
+              value={linkUrl}
+              onChange={e => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none mb-4"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  if (linkUrl && linkModal) {
+                    const newEl: EditElement = { id: `link-${Date.now()}`, type: 'link', pageIndex, x: linkModal.x, y: linkModal.y, width: linkModal.w, height: linkModal.h, linkUrl, opacity: 1 };
+                    commit([...elements, newEl]);
+                    setActiveElementId(newEl.id);
+                    setMode('select');
+                  }
+                  setLinkModal(null);
+                }
+              }}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setLinkModal(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
+              <button
+                onClick={() => {
+                  if (linkUrl && linkModal) {
+                    const newEl: EditElement = { id: `link-${Date.now()}`, type: 'link', pageIndex, x: linkModal.x, y: linkModal.y, width: linkModal.w, height: linkModal.h, linkUrl, opacity: 1 };
+                    commit([...elements, newEl]);
+                    setActiveElementId(newEl.id);
+                    setMode('select');
+                  }
+                  setLinkModal(null);
+                }}
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20"
+              >
+                Add Link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Inline Comment Modal ─────────────────────── */}
+      {commentModal && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" onClick={() => setCommentModal(null)}>
+          <div className="w-[380px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <h3 className="font-black text-slate-800 text-lg mb-4">Add Comment</h3>
+            <textarea
+              autoFocus
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder="Type your comment..."
+              rows={3}
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setCommentModal(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
+              <button
+                onClick={() => {
+                  if (commentText.trim() && docId) {
+                    import('../services/collaborationService').then(m => m.addComment(docId, { text: commentText, x: commentModal!.x, y: commentModal!.y, pageIndex }));
+                  }
+                  setCommentModal(null);
+                  setMode('select');
+                }}
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/20"
+              >
+                Post Comment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Keyboard Shortcuts Overlay ───────────────── */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-[800] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowShortcuts(false)}>
+          <div className="w-[480px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-7 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-black text-slate-800 text-xl">Keyboard Shortcuts</h3>
+              <button onClick={() => setShowShortcuts(false)} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} className="text-slate-400" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {[
+                ['Ctrl + Z', 'Undo'],
+                ['Ctrl + Y', 'Redo'],
+                ['Ctrl + D', 'Duplicate selected'],
+                ['Delete', 'Delete selected'],
+                ['Escape', 'Deselect / Select mode'],
+                ['Arrow Keys', 'Nudge element (2px)'],
+                ['Shift + Arrows', 'Nudge element (20px)'],
+                ['?', 'Show this help'],
+              ].map(([key, desc]) => (
+                <div key={key} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-xl">
+                  <span className="text-slate-500 text-xs">{desc}</span>
+                  <span className="kbd">{key}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs text-slate-400 mt-4">Click anywhere to close</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast Notifications ──────────────────────── */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[900] flex flex-col gap-2 items-center pointer-events-none">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl font-bold text-sm animate-toast-in ${
+              toast.type === 'success' ? 'bg-emerald-500 text-white' :
+              toast.type === 'error'   ? 'bg-red-500 text-white' :
+                                         'bg-slate-800 text-white'
+            }`}
+            onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+          >
+            {toast.type === 'success' && <CheckCircle2 size={16} />}
+            {toast.type === 'error' && <X size={16} />}
+            {toast.type === 'info' && <Search size={16} />}
+            {toast.msg}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

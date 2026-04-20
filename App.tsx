@@ -190,7 +190,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTool) {
       case ToolType.HOME: return <Home />;
-      case ToolType.NOTARIZE: return <NotarizeApp subPath={notarizeSubPath} />;
+      case ToolType.NOTARIZE: return null; // Handled by the outer guard below
       case ToolType.DASHBOARD: return <Dashboard />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
