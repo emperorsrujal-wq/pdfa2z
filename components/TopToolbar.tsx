@@ -92,21 +92,21 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
   };
 
   const btnClass = (isActive: boolean) => 
-    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
-      isActive ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+    `flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+      isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'
     }`;
 
-  const dropdownMenuClass = "absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-[600] py-1 animate-slide-up";
-  const dropdownItemClass = "w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 text-left transition-all";
+  const dropdownMenuClass = "absolute top-full left-0 mt-2 w-52 bg-[#222222] border border-white/10 rounded-2xl shadow-2xl z-[600] py-1.5 animate-slide-up backdrop-blur-xl";
+  const dropdownItemClass = "w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-slate-300 hover:bg-white/5 hover:text-white text-left transition-all uppercase tracking-tight";
 
   return (
-    <div ref={toolbarRef} className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.03)] h-14 shrink-0 relative z-[500]">
+    <div ref={toolbarRef} className="flex items-center justify-between px-4 py-2 bg-[#1a1a1a] border-b border-white/5 shadow-2xl h-14 shrink-0 relative z-[500]">
       
       {/* Left: Tool Categories */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
         
         {/* EDIT GROUP */}
-        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5">
            {/* TEXT */}
           <div className="relative flex items-center group">
             <button onClick={() => selectMode('text')} className={btnClass(mode === 'text' || mode === 'magic-edit') + " pr-1 rounded-r-none border-r border-transparent group-hover:border-slate-200"}>
@@ -144,7 +144,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
         {/* ANNOTATE GROUP */}
-        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5">
           <button onClick={() => selectMode('highlight')} className={btnClass(mode === 'highlight')}><Highlighter size={16}/> Highlight</button>
           <button onClick={() => selectMode('sticky-note')} className={btnClass(mode === 'sticky-note')}><StickyNote size={16}/> Note</button>
           <button onClick={() => selectMode('draw')} className={btnClass(mode === 'draw')}><Pencil size={16}/> Draw</button>
@@ -153,7 +153,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
         {/* INSERT GROUP */}
-        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5">
           <button 
             onClick={() => {
               selectMode('image');
@@ -207,54 +207,54 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
 
         {/* --- INLINE TOOL SETTINGS --- */}
         {(['text', 'magic-edit'].includes(mode)) && (
-          <div className="flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in zoom-in-95 duration-200 ml-2 shadow-sm">
+          <div className="flex items-center gap-3 px-4 py-1.5 studio-glass rounded-xl animate-in fade-in zoom-in-95 duration-200 ml-2 shadow-xl border border-white/10">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Font</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Font</span>
               <select 
                 value={activeFont}
                 onChange={e => setActiveFont(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-bold text-slate-700 outline-none hover:border-indigo-400 transition-all cursor-pointer"
+                className="bg-[#222] border border-white/10 rounded-lg py-1 px-2 text-[11px] font-bold text-slate-300 outline-none hover:border-indigo-500 transition-all cursor-pointer"
               >
                 {['Helvetica', 'Times-Roman', 'Courier', 'Verdana', 'Georgia'].map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
-            <div className="h-4 w-px bg-slate-200" />
+            <div className="h-4 w-px bg-white/10" />
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Size</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Size</span>
               <select 
                 value={activeFontSize}
                 onChange={e => setActiveFontSize(parseInt(e.target.value))}
-                className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-bold text-slate-700 outline-none hover:border-indigo-400 transition-all cursor-pointer"
+                className="bg-[#222] border border-white/10 rounded-lg py-1 px-2 text-[11px] font-bold text-slate-300 outline-none hover:border-indigo-500 transition-all cursor-pointer"
               >
                 {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}pt</option>)}
               </select>
             </div>
-            <div className="h-4 w-px bg-slate-200" />
+            <div className="h-4 w-px bg-white/10" />
             
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-              <button onClick={() => setIsBold?.(!isBold)} className={`px-2.5 py-1 text-[11px] font-black ${isBold ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}>B</button>
-              <button onClick={() => setIsItalic?.(!isItalic)} className={`px-2.5 py-1 text-[11px] font-black italic border-l border-slate-100 ${isItalic ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}>I</button>
+            <div className="flex items-center bg-[#222] border border-white/10 rounded-lg overflow-hidden shadow-sm">
+              <button onClick={() => setIsBold?.(!isBold)} className={`px-2.5 py-1 text-[11px] font-black ${isBold ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>B</button>
+              <button onClick={() => setIsItalic?.(!isItalic)} className={`px-2.5 py-1 text-[11px] font-black italic border-l border-white/5 ${isItalic ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>I</button>
             </div>
 
-            <div className="h-4 w-px bg-slate-200" />
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-              <button onClick={() => setTextAlign?.('left')} className={`p-1.5 ${textAlign === 'left' ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}><AlignLeft size={12} /></button>
-              <button onClick={() => setTextAlign?.('center')} className={`p-1.5 border-l border-slate-100 ${textAlign === 'center' ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}><AlignCenter size={12} /></button>
+            <div className="h-4 w-px bg-white/10" />
+            <div className="flex items-center bg-[#222] border border-white/10 rounded-lg overflow-hidden shadow-sm">
+              <button onClick={() => setTextAlign?.('left')} className={`p-1.5 ${textAlign === 'left' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}><AlignLeft size={12} /></button>
+              <button onClick={() => setTextAlign?.('center')} className={`p-1.5 border-l border-white/5 ${textAlign === 'center' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}><AlignCenter size={12} /></button>
             </div>
           </div>
         )}
 
         {mode === 'erase' && (
-          <div className="flex items-center gap-3 px-4 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl animate-in fade-in zoom-in-95 duration-200 ml-2">
+          <div className="flex items-center gap-3 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl animate-in fade-in zoom-in-95 duration-200 ml-2">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Eraser Mode</span>
-             <div className="h-4 w-px bg-emerald-200 mx-1" />
+             <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Eraser Mode</span>
+             <div className="h-4 w-px bg-emerald-500/20 mx-1" />
              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest">Color</span>
+                <span className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Color</span>
                 <div className="relative">
                   <button 
                     onClick={(e) => toggleDropdown('whiteoutColorTop', e)}
-                    className="w-6 h-6 rounded-md border border-emerald-200 bg-white shadow-sm transition-all hover:scale-110"
+                    className="w-6 h-6 rounded-md border border-white/10 bg-white shadow-sm transition-all hover:scale-110"
                     style={{ backgroundColor: whiteoutColor }}
                   />
                   {openDropdown === 'whiteoutColorTop' && renderColorPicker(whiteoutColor, setWhiteoutColor, true)}
@@ -265,49 +265,49 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
       </div>
 
       {/* Middle: Zoom, Grid and Search */}
-      <div className="flex items-center gap-4 px-4 border-l border-r border-slate-100 mx-4">
+      <div className="flex items-center gap-4 px-4 border-l border-r border-white/5 mx-4 h-8">
         <div className="flex items-center gap-2">
-           <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500">
+           <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="p-1.5 hover:bg-white/5 rounded-md text-slate-500 hover:text-white transition-all">
               <Plus size={14} className="rotate-45" />
            </button>
            <div className="relative">
               <button 
                 onClick={(e) => toggleDropdown('zoom', e)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 min-w-[60px] flex items-center justify-between"
+                className="px-2 py-1 bg-[#222] border border-white/10 rounded-lg text-[11px] font-black text-slate-300 min-w-[65px] flex items-center justify-between hover:border-indigo-500 transition-all"
               >
                 {Math.round(zoom * 100)}% <ChevronDown size={12} className="opacity-40" />
               </button>
               {openDropdown === 'zoom' && (
-                <div className={dropdownMenuClass + " min-w-[80px]"}>
-                   {[0.5, 0.75, 1, 1.25, 1.5, 2].map(z => (
+                <div className={dropdownMenuClass + " min-w-[100px]"}>
+                   {[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(z => (
                      <button key={z} className={dropdownItemClass} onClick={() => { setZoom(z); setOpenDropdown(null); }}>{z * 100}%</button>
                    ))}
                 </div>
               )}
            </div>
-           <button onClick={() => setZoom(Math.min(4, zoom + 0.25))} className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500">
+           <button onClick={() => setZoom(Math.min(4, zoom + 0.25))} className="p-1.5 hover:bg-white/5 rounded-md text-slate-500 hover:text-white transition-all">
               <Plus size={14} />
            </button>
         </div>
 
         <button
           onClick={() => setShowGrid?.(!showGrid)}
-          className={`p-2 rounded-lg transition-all border ${showGrid ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 border-transparent hover:bg-slate-100'}`}
+          className={`p-2 rounded-lg transition-all border ${showGrid ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'text-slate-500 border-transparent hover:bg-white/5 hover:text-white'}`}
           title="Toggle Layout Grid (G)"
         >
-          <Grid size={18} />
+          <Grid size={16} />
         </button>
 
         <div className="relative group">
-           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
            </div>
            <input 
              type="text" 
              value={searchTerm}
              onChange={e => setSearchTerm(e.target.value)}
-             placeholder="Find text..."
-             className="pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium outline-none focus:border-indigo-500 focus:bg-white w-40 transition-all shadow-inner shadow-slate-100"
+             placeholder="Search document..."
+             className="pl-9 pr-3 py-1.5 bg-[#222] border border-white/10 rounded-xl text-[11px] font-bold text-slate-300 outline-none focus:border-indigo-500 focus:bg-[#2a2a2a] w-44 transition-all"
            />
         </div>
       </div>

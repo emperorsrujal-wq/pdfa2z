@@ -1191,9 +1191,9 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div 
-        className={`flex-1 overflow-auto canvas-grid editor-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
+        className={`flex-1 overflow-auto bg-[#141414] canvas-grid editor-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
         ref={containerRef}
-        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
+        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 40px' }}
       >
         {/* The PDF page — width scales naturally so coordinate math stays correct */}
         <div
@@ -1201,9 +1201,10 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
             position: 'relative',
             width: `${794 * zoom}px`,
             flexShrink: 0,
-            boxShadow: '0 40px 80px -12px rgba(0,0,0,0.7), 0 20px 40px -8px rgba(0,0,0,0.5)',
+            boxShadow: '0 40px 100px -20px rgba(0,0,0,0.8), 0 25px 50px -12px rgba(0,0,0,0.6)',
             borderRadius: '4px',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            backgroundColor: '#fff'
           }}
         >
           <div
@@ -1444,56 +1445,135 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                     minWidth: 20,
                     minHeight: 10,
                   }}
-                  onPointerDown={ev => {
-                    if (mode !== 'select') return;
-                    ev.stopPropagation();
-                    setActiveElementId(el.id);
-                    const startX = ev.clientX, startY = ev.clientY;
-                    const startXPos = el.x, startYPos = el.y;
-                    const onMove = (me: PointerEvent) => {
-                      if (!pageRef.current) return;
-                      const r = pageRef.current.getBoundingClientRect();
-                      const dx = ((me.clientX - startX) / r.width) * 1000;
-                      const dy = ((me.clientY - startY) / r.height) * 1000;
+                    onPointerDown={ev => {
+                      if (mode !== 'select') return;
+                      ev.stopPropagation();
+                      setActiveElementId(el.id);
                       
-                      let newX = startXPos + dx;
-                      let newY = startYPos + dy;
-                      const w = el.width || 0;
-                      const h = el.height || 0;
-
-                      // Smart Guides & Snapping (Page Center = 500)
-                      let guideV: number | null = null;
-                      let guideH: number | null = null;
-                      const SNAP_THRESHOLD = 5;
-
-                      if (Math.abs((newX + w / 2) - 500) < SNAP_THRESHOLD) {
-                        newX = 500 - w / 2;
-                        guideV = 500;
-                      }
-                      if (Math.abs((newY + h / 2) - 500) < SNAP_THRESHOLD) {
-                        newY = 500 - h / 2;
-                        guideH = 500;
-                      }
+                      const target = ev.currentTarget as HTMLDivElement;
+                      const startX = ev.clientX, startY = ev.clientY;
+                      const startXPos = el.x, startYPos = el.y;
                       
-                      setGuides({ v: guideV, h: guideH });
+                      let lastX = startXPos;
+                      let lastY = startYPos;
 
-                      // Movement Boundaries
-                      newX = Math.max(0, Math.min(1000 - w, newX));
-                      newY = Math.max(0, Math.min(1000 - h, newY));
+                      const onMove = (me: PointerEvent) => {
+                        if (!pageRef.current) return;
+                        const r = pageRef.current.getBoundingClientRect();
+                        const dx = ((me.clientX - startX) / (r.width * zoom)) * 1000 * zoom; // Adjust for zoom
+                        const dy = ((me.clientY - startY) / (r.height * zoom)) * 1000 * zoom;
 
-                      updateElement(el.id, { x: newX, y: newY });
-                    };
-                    const onUp = () => {
-                      setGuides({ v: null, h: null });
-                      window.removeEventListener('pointermove', onMove);
-                      window.removeEventListener('pointerup', onUp);
-                      commit([...elements]);
-                    };
-                    window.addEventListener('pointermove', onMove);
-                    window.addEventListener('pointerup', onUp);
-                  }}
+                        let newX = startXPos + dx;
+                        let newY = startYPos + dy;
+                        const w = el.width || 0;
+                        const h = el.height || 0;
+
+                        // Smart Guides & Snapping (Transient)
+                        let guideV: number | null = null;
+                        let guideH: number | null = null;
+                        const SNAP_THRESHOLD = 5;
+
+                        // Snap to center
+                        if (Math.abs((newX + w / 2) - 500) < SNAP_THRESHOLD) { newX = 500 - w / 2; guideV = 500; }
+                        if (Math.abs((newY + h / 2) - 500) < SNAP_THRESHOLD) { newY = 500 - h / 2; guideH = 500; }
+                        
+                        // Boundaries
+                        newX = Math.max(0, Math.min(1000 - w, newX));
+                        newY = Math.max(0, Math.min(1000 - h, newY));
+
+                        lastX = newX;
+                        lastY = newY;
+
+                        // Apply directly to DOM for performance
+                        target.style.left = `${newX / 10}%`;
+                        target.style.top = `${newY / 10}%`;
+                        
+                        setGuides({ v: guideV, h: guideH });
+                      };
+
+                      const onUp = () => {
+                        setGuides({ v: null, h: null });
+                        window.removeEventListener('pointermove', onMove);
+                        window.removeEventListener('pointerup', onUp);
+                        
+                        // Final state update
+                        updateElement(el.id, { x: lastX, y: lastY });
+                        commit([...elements.map(e => e.id === el.id ? { ...e, x: lastX, y: lastY } : e)]);
+                      };
+                      
+                      window.addEventListener('pointermove', onMove);
+                      window.addEventListener('pointerup', onUp);
+                    }}
                   onClick={ev => ev.stopPropagation()}
                 >
+                  {/* Floating Contextual Toolbar */}
+                  {isActive && mode === 'select' && (
+                    <>
+                      <div 
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 studio-glass px-3 py-1.5 rounded-2xl shadow-2xl flex items-center gap-2.5 z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 border border-white/10"
+                        onClick={e => e.stopPropagation()}
+                        onPointerDown={e => e.stopPropagation()}
+                      >
+                         {/* Typography shortcuts */}
+                         {el.type === 'text' && (
+                           <>
+                             <button onClick={() => updateElement(el.id, { isBold: !el.isBold })} className={`p-1.5 rounded-lg transition-all ${el.isBold ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-white/10'}`}><span className="font-bold">B</span></button>
+                             <button onClick={() => updateElement(el.id, { isItalic: !el.isItalic })} className={`p-1.5 rounded-lg transition-all ${el.isItalic ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-white/10'}`}><span className="italic">I</span></button>
+                             <div className="w-px h-4 bg-white/10 mx-0.5" />
+                           </>
+                         )}
+                         
+                         {/* Color Picker Shortcut */}
+                         <button 
+                           onClick={() => setShowColorPicker(!showColorPicker)}
+                           className="w-6 h-6 rounded-full border border-white/20 shadow-inner transition-transform hover:scale-110 active:scale-95"
+                           style={{ backgroundColor: el.color || el.bgColor || '#000' }}
+                         />
+
+                         <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+                         {/* Duplicate/Delete */}
+                         <button 
+                            onClick={() => {
+                              const newId = `el-${Date.now()}`;
+                              setElements([...elements, { ...el, id: newId, x: el.x + 20, y: el.y + 20 }]);
+                              setActiveElementId(newId);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                            title="Duplicate"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                         </button>
+                         <button 
+                            onClick={() => {
+                              setElements(elements.filter(e => e.id !== el.id));
+                              setActiveElementId(null);
+                            }}
+                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all"
+                            title="Delete"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                         </button>
+                      </div>
+
+                      {/* Selection Box & Resizers */}
+                      <div className="absolute -inset-1 border-2 border-indigo-500/80 rounded-sm pointer-events-none animate-selection shadow-[0_0_15px_rgba(99,102,241,0.3)] z-50">
+                        {/* Corner Handles */}
+                        <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-nw-resize" />
+                        <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-ne-resize" />
+                        <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-sw-resize" />
+                        <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-se-resize" />
+                        
+                        {/* Rotation Handle */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-auto cursor-grab active:cursor-grabbing">
+                           <div className="w-4 h-4 bg-white border-2 border-indigo-500 rounded-full flex items-center justify-center">
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                           </div>
+                           <div className="w-[2px] h-4 bg-indigo-500/50" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   {/* Magic Edit Overlay (Targeting feedback) */}
                   {mode === 'magic-edit' && (
                     <div className="absolute inset-0 border-2 border-indigo-400 border-dashed animate-pulse pointer-events-none" />

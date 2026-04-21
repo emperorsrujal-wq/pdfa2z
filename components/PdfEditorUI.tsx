@@ -296,6 +296,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           onDeletePage={handleDeletePage}
           onRotatePage={handleRotatePage}
           onMovePage={handleMovePage}
+          elements={elements}
         />
 
         {/* Editor Canvas */}
