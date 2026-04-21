@@ -228,6 +228,31 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   const setModeLocal = (m: EditorMode) => { setMode(m); if (propSetMode) propSetMode(m); };
   const setActiveColorLocal = (c: string) => { setActiveColor(c); if (propSetActiveColor) propSetActiveColor(c); };
 
+  // Use refs to avoid stale closures in event listeners
+  const elementsRef = React.useRef(elements);
+  const historyStepRef = React.useRef(historyStep);
+  const historyRef = React.useRef(history);
+
+  React.useEffect(() => { elementsRef.current = elements; }, [elements]);
+  React.useEffect(() => { historyStepRef.current = historyStep; }, [historyStep]);
+  React.useEffect(() => { historyRef.current = history; }, [history]);
+
+  const commit = (next: EditElement[]) => {
+    const newHistory = historyRef.current.slice(0, historyStepRef.current + 1);
+    const updatedHistory = [...newHistory, next];
+    
+    setHistory(updatedHistory);
+    setHistoryStep(updatedHistory.length - 1);
+    setElements(next);
+    onSave(next);
+
+    addAuditEntry(`Modified page ${pageIndex + 1}`, `${next.length} elements`);
+
+    if (docId) {
+      import('../services/collaborationService').then(m => m.updateSharedState(docId, next));
+    }
+  };
+
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState<{ x: number; y: number }[]>([]);
@@ -324,30 +349,7 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
     setHistoryStep(0);
   }, [initialElements, pageIndex]);
 
-  const commit = (next: EditElement[]) => {
-    const newHistory = history.slice(0, historyStep + 1);
-    const prevCount = elements.length;
-    const nextCount = next.length;
-
-    newHistory.push(next);
-    setHistory(newHistory);
-    setHistoryStep(newHistory.length - 1);
-    setElements(next);
-    onSave(next);
-
-    // Audit Entry
-    if (next.length > elements.length) {
-      const added = next[next.length - 1];
-      addAuditEntry(`Added ${added.type}`, `Positioned at ${Math.round(added.x)},${Math.round(added.y)}`);
-    } else if (next.length < elements.length) {
-      addAuditEntry(`Deleted element`, `Removed element from page ${pageIndex + 1}`);
-    }
-
-    // Tier 3: Sync to Firebase if collaborating
-    if (docId) {
-      import('../services/collaborationService').then(m => m.updateSharedState(docId, next));
-    }
-  };
+  // Commit already refactored above
 
   const addAuditEntry = (action: string, details?: string) => {
     const entry = {
@@ -379,9 +381,8 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   };
 
   const updateElement = (id: string, updates: Partial<EditElement>) => {
-    const next = elements.map(el => (el.id === id ? { ...el, ...updates } : el));
-    setElements(next);
-    onSave(next);
+    setElements(prev => prev.map(el => (el.id === id ? { ...el, ...updates } : el)));
+    // We don't onSave here to avoid heavy operations during dragging
   };
 
   const deleteElement = (id: string) => {
@@ -921,12 +922,9 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
               backgroundRepeat: 'no-repeat'
             }}
             ref={pageRef}
-            onMouseDown={handlePointerDown}
-            onMouseMove={handlePointerMove}
-            onMouseUp={handlePointerUp}
-            onTouchStart={handlePointerDown}
-            onTouchMove={handlePointerMove}
-            onTouchEnd={handlePointerUp}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
             onClick={e => e.stopPropagation()}
           >
             {/* Search Highlighting Overlay */}
@@ -1051,12 +1049,14 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                     transform: `rotate(${el.rotation || 0}deg)`,
                     transformOrigin: 'top left',
                     opacity: el.opacity,
-                    zIndex: isActive ? 50 : 1,
-                    cursor: mode === 'select' ? 'move' : 'default',
+                    zIndex: isActive ? 2000 : 100,
+                    cursor: (mode === 'select' || isActive) ? 'move' : 'pointer',
                     minWidth: 20,
                     minHeight: 10,
+                    pointerEvents: 'auto',
                   }}
                   onPointerDown={ev => {
+                    // Prevent page-level drawing if we click an element
                     ev.stopPropagation();
                     setActiveElementId(el.id);
                     if (mode !== 'select') setMode('select');
@@ -1069,8 +1069,8 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                     const onMove = (me: PointerEvent) => {
                       if (!pageRef.current) return;
                       const r = pageRef.current.getBoundingClientRect();
-                      const dx = ((me.clientX - startX) / (r.width * zoom)) * 1000 * zoom; 
-                      const dy = ((me.clientY - startY) / (r.height * zoom)) * 1000 * zoom;
+                      const dx = ((me.clientX - startX) / r.width) * 1000;
+                      const dy = ((me.clientY - startY) / r.height) * 1000;
                       let newX = startXPos + dx, newY = startYPos + dy;
                       const w = el.width || 0, h = el.height || 0;
                       let guideV: number | null = null, guideH: number | null = null;
@@ -1088,8 +1088,10 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                       setGuides({ v: null, h: null });
                       window.removeEventListener('pointermove', onMove);
                       window.removeEventListener('pointerup', onUp);
-                      updateElement(el.id, { x: lastX, y: lastY });
-                      commit([...elements.map(e => e.id === el.id ? { ...e, x: lastX, y: lastY } : e)]);
+                      
+                      const currentElements = elementsRef.current;
+                      const next = currentElements.map(e => e.id === el.id ? { ...e, x: lastX, y: lastY } : e);
+                      commit(next);
                     };
                     window.addEventListener('pointermove', onMove);
                     window.addEventListener('pointerup', onUp);
