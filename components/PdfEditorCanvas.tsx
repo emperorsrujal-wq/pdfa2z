@@ -878,309 +878,8 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden select-none" onClick={() => setActiveElementId(null)}>
-      {/* ─── PREMIUM LIGHT TOOLBAR (Sejda style) ─────────────────── */}
-      <div className="shrink-0 flex flex-col bg-white border-b border-slate-200 shadow-sm z-[150] relative">
-        
-        {/* Main Workspace Bar */}
-        <div className="flex items-center justify-between px-6 py-2.5">
-          
-          {/* Left: Tool Categories */}
-          <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200">
-            {/* Selection & Text Group */}
-            <div className="flex items-center gap-1 p-1">
-              {[
-                { mode: 'select', icon: <MousePointer2 size={15} />, label: 'Select' },
-                { mode: 'magic-edit', icon: <Sparkles size={15} />, label: 'Magic Edit' },
-                { mode: 'text', icon: <Type size={15} />, label: 'Add Text' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Annotate Group */}
-            <div className="flex items-center gap-1">
-              {[
-                { mode: 'erase', icon: <span className="relative inline-flex"><Eraser size={15} /><span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-slate-300 shadow-sm" style={{backgroundColor: whiteoutColor}} /></span>, label: 'Whiteout' },
-                { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Highlight' },
-                { mode: 'draw', icon: <Pen size={15} />, label: 'Draw' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Shapes & Sign Group */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('rect'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Rectangle"
-              >
-                <Square size={15} />
-                <span className="text-[11px] font-black">Rectangle</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('circle'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'circle' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Circle/Ellipse"
-              >
-                <CircleIcon size={15} />
-                <span className="text-[11px] font-black">Circle</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('link'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'link' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Add External Link"
-              >
-                <Link size={15} />
-                <span className="text-[11px] font-black">Link</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('sign'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-              >
-                <FileSignature size={15} />
-                <span className="text-[11px] font-black">Signature</span>
-              </button>
-              {[
-                { mode: 'image', icon: <ImageIcon size={15} />, label: 'Image' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    if (t.mode === 'image') document.getElementById('img-upload')?.click(); 
-                    else setMode(t.mode as EditorMode); 
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Advanced Group */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('ocr'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-white hover:text-violet-600'}`}
-              >
-                <ScanText size={14} /> OCR
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowFindReplace(true); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all text-slate-600 hover:bg-white hover:text-indigo-600`}
-              >
-                <Replace size={14} /> FIND & REPLACE
-              </button>
-            </div>
-          </div>
-
-          {/* Right: Controls & Style Overlays */}
-          <div className="flex items-center gap-3">
-             {/* Tool Styles */}
-             <div className="flex items-center gap-2 px-2 border-r border-slate-200">
-                {/* Color Selector */}
-                <div className="relative flex items-center">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
-                    className="flex items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-white transition-all group"
-                    title="Tool Color"
-                  >
-                    <div className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-inner" style={{ backgroundColor: activeColor }} />
-                    <ChevronDown size={10} className="text-slate-400 group-hover:text-slate-600" />
-                  </button>
-
-                  {showColorPicker && (
-                    <div 
-                      className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[500] w-[280px] animate-slide-up space-y-3"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      {/* Section label */}
-                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-1">
-                        {mode === 'erase' ? 'Whiteout Fill Color' : 'Tool Color'}
-                      </div>
-
-                      {/* Swatch grid */}
-                      <div className="grid grid-cols-8 gap-1.5">
-                        {SEJDA_COLORS.map(color => {
-                          const isActive = mode === 'erase' ? whiteoutColor === color : activeColor === color;
-                          return (
-                            <button
-                              key={color}
-                              className={`w-6 h-6 rounded-md border-2 hover:scale-110 transition-all shadow-sm ${isActive ? 'border-indigo-600 ring-2 ring-indigo-500/20 scale-110' : 'border-white hover:border-slate-300'}`}
-                              style={{ backgroundColor: color }}
-                              onClick={() => {
-                                if (mode === 'erase') {
-                                  setWhiteoutColor(color);
-                                } else {
-                                  setActiveColor(color);
-                                  setHexInput(color);
-                                  if (activeElementId) updateElement(activeElementId, { color });
-                                }
-                                setShowColorPicker(false);
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      <div className="border-t border-slate-100 my-1" />
-
-                      {/* Hex input */}
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-8 h-8 rounded-lg border border-slate-200 shrink-0 shadow-inner cursor-pointer"
-                          style={{ backgroundColor: mode === 'erase' ? whiteoutColor : hexInput }}
-                        />
-                        <div className="flex-1 relative">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">#</span>
-                          <input
-                            type="text"
-                            value={(mode === 'erase' ? whiteoutColor : hexInput).replace('#', '')}
-                            maxLength={6}
-                            onChange={e => {
-                              const val = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
-                              if (mode === 'erase') {
-                                setWhiteoutColor(val);
-                              } else {
-                                setHexInput(val);
-                                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-                                  setActiveColor(val);
-                                  if (activeElementId) updateElement(activeElementId, { color: val });
-                                }
-                              }
-                            }}
-                            className="w-full pl-6 pr-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
-                          />
-                        </div>
-                        <input
-                          type="color"
-                          value={mode === 'erase' ? whiteoutColor : (hexInput.length === 7 ? hexInput : '#000000')}
-                          onChange={e => {
-                            const val = e.target.value;
-                            if (mode === 'erase') {
-                              setWhiteoutColor(val);
-                            } else {
-                              setActiveColor(val);
-                              setHexInput(val);
-                              if (activeElementId) updateElement(activeElementId, { color: val });
-                            }
-                          }}
-                          className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer p-0.5"
-                          title="Open color picker"
-                        />
-                      </div>
-
-                      <div className="border-t border-slate-100 my-1" />
-
-                      {/* Eyedropper — pick from document */}
-                      <button
-                        onClick={() => {
-                          setMode('picker');
-                          setShowColorPicker(false);
-                        }}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-indigo-50 rounded-xl text-left group transition-all border border-slate-200 hover:border-indigo-300"
-                      >
-                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-lg group-hover:scale-110 transition-all shadow-md">
-                          <Pipette size={14} />
-                        </div>
-                        <div className="flex flex-col flex-1">
-                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">Select a color from the document</span>
-                          <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">Click anywhere on the PDF to sample</span>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Font Selector (Visible when text/magic mode active) */}
-                {(['text', 'magic-edit', 'sticky-note'] as EditorMode[]).includes(mode) && (
-                  <div className="flex items-center gap-1.5 px-2 border-l border-slate-200 ml-1">
-                     <button 
-                       onClick={(e) => { e.stopPropagation(); setMode('font-picker'); }}
-                       className={`p-2 rounded-lg transition-all ${mode === 'font-picker' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'}`}
-                       title="Match Font from PDF"
-                     >
-                       <Pipette size={15} />
-                     </button>
-                     <div className="h-4 w-px bg-slate-200 mx-1" />
-                     <select 
-                       value={activeFontSize} 
-                       onChange={(e) => {
-                         const size = parseInt(e.target.value);
-                         setActiveFontSize(size);
-                         if (activeElementId) updateElement(activeElementId, { size });
-                       }}
-                       className="bg-white border border-slate-200 rounded text-[10px] font-bold text-indigo-600 px-1 outline-none h-7"
-                     >
-                       {[8,10,12,14,16,18,24,30,36,48,60].map(s => <option key={s} value={s}>{s}px</option>)}
-                     </select>
-                  </div>
-                )}
-             </div>
-
-             {/* Navigation & Zoom (Internal fallback) */}
-             {!propZoom && (
-               <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                  <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Undo">
-                    <Undo2 size={15} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Redo">
-                    <Redo2 size={15} />
-                  </button>
-                  <div className="w-[1px] h-4 bg-slate-200 mx-1" />
-                  <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                    <ZoomOut size={15} />
-                  </button>
-                  <span className="text-[11px] font-black text-indigo-600 min-w-[45px] text-center tabular-nums">
-                    {Math.round(zoom * 100)}%
-                  </span>
-                  <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                    <ZoomIn size={15} />
-                  </button>
-               </div>
-             )}
-
-             {/* ? Keyboard Shortcut Help */}
-             <button
-               onClick={(e) => { e.stopPropagation(); setShowShortcuts(true); }}
-               title="Keyboard Shortcuts (?)"
-               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all border border-transparent hover:border-slate-200"
-             >
-               <HelpCircle size={15} />
-             </button>
-
-            <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
-               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
-             </div>
-          </div>
-        </div>
-
-        {/* Dynamic Context Hint (Conditional) */}
+      {/* Dynamic Context Hint (Conditional) */}
+      <div className="shrink-0">
         {mode === 'erase' && (
           <div className="px-6 py-1.5 bg-amber-500/10 border-t border-amber-500/10 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300">
              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
@@ -1294,94 +993,6 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
               </div>
             ))}
 
-            {/* ── Floating Inline Format Bar (shows when a text element is selected) ── */}
-            {(() => {
-              const activeEl = activeElementId ? elements.find(el => el.id === activeElementId) : null;
-              if (!activeEl || activeEl.type !== 'text') return null;
-              return (
-                <div
-                  className="absolute z-[600] pointer-events-auto"
-                  style={{
-                    left: `${activeEl.x / 10}%`,
-                    top: `calc(${activeEl.y / 10}% - 48px)`,
-                    transform: 'translateY(0)'
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-2xl shadow-slate-300/40 px-2 py-1.5">
-                    {/* Bold */}
-                    <button
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[13px] transition-all ${activeEl.isBold ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-                      onClick={() => updateElement(activeEl.id, { isBold: !activeEl.isBold })}
-                      title="Bold"
-                    >B</button>
-                    {/* Italic */}
-                    <button
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center italic font-bold text-[13px] transition-all ${activeEl.isItalic ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-                      onClick={() => updateElement(activeEl.id, { isItalic: !activeEl.isItalic })}
-                      title="Italic"
-                    >I</button>
-                    {/* Underline */}
-                    <button
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center underline font-bold text-[13px] transition-all ${activeEl.isUnderline ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-                      onClick={() => updateElement(activeEl.id, { isUnderline: !activeEl.isUnderline })}
-                      title="Underline"
-                    >U</button>
-
-                    <div className="w-px h-5 bg-slate-200 mx-1" />
-
-                    {/* Font size */}
-                    <select
-                      value={activeEl.size || 14}
-                      onChange={e => {
-                        const size = parseInt(e.target.value);
-                        setActiveFontSize(size);
-                        updateElement(activeEl.id, { size });
-                      }}
-                      className="h-7 w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-1 outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      {[8,9,10,11,12,14,16,18,20,24,28,32,36,48,60].map(s => (
-                        <option key={s} value={s}>{s}pt</option>
-                      ))}
-                    </select>
-
-                    <div className="w-px h-5 bg-slate-200 mx-1" />
-
-                    {/* Text color */}
-                    <button
-                      className="w-7 h-7 rounded-lg border border-slate-200 shadow-inner hover:scale-110 transition-all relative"
-                      style={{ backgroundColor: activeEl.color || '#000000' }}
-                      onClick={() => { setShowColorPicker(!showColorPicker); }}
-                      title="Text Color"
-                    />
-
-                    {/* Eyedropper — pick color from doc */}
-                    <button
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
-                      onClick={() => setMode('picker')}
-                      title="Pick color from document"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 13.5V21h7.5"/><path d="M14 13V7l3-3 3 3-3 3-4 0z"/><path d="M2 21l5.5-5.5M7.5 21l-5.5-5.5"/>
-                      </svg>
-                    </button>
-
-                    <div className="w-px h-5 bg-slate-200 mx-1" />
-
-                    {/* Delete element */}
-                    <button
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
-                      onClick={() => { deleteElement(activeEl.id); }}
-                      title="Delete (Delete key)"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* SVG overlay (paths, lines, draw preview) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
@@ -1445,163 +1056,110 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                     minWidth: 20,
                     minHeight: 10,
                   }}
-                    onPointerDown={ev => {
-                      if (mode !== 'select') return;
-                      ev.stopPropagation();
-                      setActiveElementId(el.id);
-                      
-                      const target = ev.currentTarget as HTMLDivElement;
-                      const startX = ev.clientX, startY = ev.clientY;
-                      const startXPos = el.x, startYPos = el.y;
-                      
-                      let lastX = startXPos;
-                      let lastY = startYPos;
+                  onPointerDown={ev => {
+                    ev.stopPropagation();
+                    setActiveElementId(el.id);
+                    if (mode !== 'select') setMode('select');
 
-                      const onMove = (me: PointerEvent) => {
-                        if (!pageRef.current) return;
-                        const r = pageRef.current.getBoundingClientRect();
-                        const dx = ((me.clientX - startX) / (r.width * zoom)) * 1000 * zoom; // Adjust for zoom
-                        const dy = ((me.clientY - startY) / (r.height * zoom)) * 1000 * zoom;
+                    const target = ev.currentTarget as HTMLDivElement;
+                    const startX = ev.clientX, startY = ev.clientY;
+                    const startXPos = el.x, startYPos = el.y;
+                    let lastX = startXPos, lastY = startYPos;
 
-                        let newX = startXPos + dx;
-                        let newY = startYPos + dy;
-                        const w = el.width || 0;
-                        const h = el.height || 0;
+                    const onMove = (me: PointerEvent) => {
+                      if (!pageRef.current) return;
+                      const r = pageRef.current.getBoundingClientRect();
+                      const dx = ((me.clientX - startX) / (r.width * zoom)) * 1000 * zoom; 
+                      const dy = ((me.clientY - startY) / (r.height * zoom)) * 1000 * zoom;
+                      let newX = startXPos + dx, newY = startYPos + dy;
+                      const w = el.width || 0, h = el.height || 0;
+                      let guideV: number | null = null, guideH: number | null = null;
+                      if (Math.abs((newX + w / 2) - 500) < 5) { newX = 500 - w / 2; guideV = 500; }
+                      if (Math.abs((newY + h / 2) - 500) < 5) { newY = 500 - h / 2; guideH = 500; }
+                      newX = Math.max(0, Math.min(1000 - w, newX));
+                      newY = Math.max(0, Math.min(1000 - h, newY));
+                      lastX = newX; lastY = newY;
+                      target.style.left = `${newX / 10}%`;
+                      target.style.top = `${newY / 10}%`;
+                      setGuides({ v: guideV, h: guideH });
+                    };
 
-                        // Smart Guides & Snapping (Transient)
-                        let guideV: number | null = null;
-                        let guideH: number | null = null;
-                        const SNAP_THRESHOLD = 5;
-
-                        // Snap to center
-                        if (Math.abs((newX + w / 2) - 500) < SNAP_THRESHOLD) { newX = 500 - w / 2; guideV = 500; }
-                        if (Math.abs((newY + h / 2) - 500) < SNAP_THRESHOLD) { newY = 500 - h / 2; guideH = 500; }
-                        
-                        // Boundaries
-                        newX = Math.max(0, Math.min(1000 - w, newX));
-                        newY = Math.max(0, Math.min(1000 - h, newY));
-
-                        lastX = newX;
-                        lastY = newY;
-
-                        // Apply directly to DOM for performance
-                        target.style.left = `${newX / 10}%`;
-                        target.style.top = `${newY / 10}%`;
-                        
-                        setGuides({ v: guideV, h: guideH });
-                      };
-
-                      const onUp = () => {
-                        setGuides({ v: null, h: null });
-                        window.removeEventListener('pointermove', onMove);
-                        window.removeEventListener('pointerup', onUp);
-                        
-                        // Final state update
-                        updateElement(el.id, { x: lastX, y: lastY });
-                        commit([...elements.map(e => e.id === el.id ? { ...e, x: lastX, y: lastY } : e)]);
-                      };
-                      
-                      window.addEventListener('pointermove', onMove);
-                      window.addEventListener('pointerup', onUp);
-                    }}
-                  onClick={ev => ev.stopPropagation()}
+                    const onUp = () => {
+                      setGuides({ v: null, h: null });
+                      window.removeEventListener('pointermove', onMove);
+                      window.removeEventListener('pointerup', onUp);
+                      updateElement(el.id, { x: lastX, y: lastY });
+                      commit([...elements.map(e => e.id === el.id ? { ...e, x: lastX, y: lastY } : e)]);
+                    };
+                    window.addEventListener('pointermove', onMove);
+                    window.addEventListener('pointerup', onUp);
+                  }}
                 >
                   {/* Floating Contextual Toolbar */}
-                  {isActive && mode === 'select' && (
-                    <>
-                      <div 
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 studio-glass px-3 py-1.5 rounded-2xl shadow-2xl flex items-center gap-2.5 z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 border border-white/10"
-                        onClick={e => e.stopPropagation()}
-                        onPointerDown={e => e.stopPropagation()}
-                      >
-                         {/* Typography shortcuts */}
-                         {el.type === 'text' && (
-                           <>
-                             <button onClick={() => updateElement(el.id, { isBold: !el.isBold })} className={`p-1.5 rounded-lg transition-all ${el.isBold ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-white/10'}`}><span className="font-bold">B</span></button>
-                             <button onClick={() => updateElement(el.id, { isItalic: !el.isItalic })} className={`p-1.5 rounded-lg transition-all ${el.isItalic ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-white/10'}`}><span className="italic">I</span></button>
-                             <div className="w-px h-4 bg-white/10 mx-0.5" />
-                           </>
-                         )}
-                         
-                         {/* Color Picker Shortcut */}
-                         <button 
-                           onClick={() => setShowColorPicker(!showColorPicker)}
-                           className="w-6 h-6 rounded-full border border-white/20 shadow-inner transition-transform hover:scale-110 active:scale-95"
-                           style={{ backgroundColor: el.color || el.bgColor || '#000' }}
-                         />
-
-                         <div className="w-px h-4 bg-white/10 mx-0.5" />
-
-                         {/* Duplicate/Delete */}
-                         <button 
-                            onClick={() => {
-                              const newId = `el-${Date.now()}`;
-                              setElements([...elements, { ...el, id: newId, x: el.x + 20, y: el.y + 20 }]);
-                              setActiveElementId(newId);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-all"
-                            title="Duplicate"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                         </button>
-                         <button 
-                            onClick={() => {
-                              setElements(elements.filter(e => e.id !== el.id));
-                              setActiveElementId(null);
-                            }}
-                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all"
-                            title="Delete"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                         </button>
-                      </div>
-
-                      {/* Selection Box & Resizers */}
-                      <div className="absolute -inset-1 border-2 border-indigo-500/80 rounded-sm pointer-events-none animate-selection shadow-[0_0_15px_rgba(99,102,241,0.3)] z-50">
-                        {/* Corner Handles */}
-                        <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-nw-resize" />
-                        <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-ne-resize" />
-                        <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-sw-resize" />
-                        <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full pointer-events-auto cursor-se-resize" />
-                        
-                        {/* Rotation Handle */}
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-auto cursor-grab active:cursor-grabbing">
-                           <div className="w-4 h-4 bg-white border-2 border-indigo-500 rounded-full flex items-center justify-center">
-                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                           </div>
-                           <div className="w-[2px] h-4 bg-indigo-500/50" />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Magic Edit Overlay (Targeting feedback) */}
-                  {mode === 'magic-edit' && (
-                    <div className="absolute inset-0 border-2 border-indigo-400 border-dashed animate-pulse pointer-events-none" />
-                  )}
-                  {/* Object property bar */}
                   {isActive && (
-                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
+                    <div 
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-5 studio-glass px-3 py-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-2.5 z-[2000] animate-in fade-in slide-in-from-bottom-2 duration-300 border border-white/10"
+                      onClick={e => e.stopPropagation()}
+                      onPointerDown={e => e.stopPropagation()}
+                    >
+                      {el.type === 'text' && (
+                        <>
+                          <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
+                            <button onClick={() => updateElement(el.id, { isBold: !el.isBold })} className={`w-8 h-8 rounded-md flex items-center justify-center font-black transition-all ${el.isBold ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>B</button>
+                            <button onClick={() => updateElement(el.id, { isItalic: !el.isItalic })} className={`w-8 h-8 rounded-md flex items-center justify-center italic font-bold transition-all border-l border-white/5 ${el.isItalic ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>I</button>
+                          </div>
+                          <div className="w-px h-5 bg-white/10" />
+                        </>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        {['#000000', '#FFFFFF', '#EF4444', '#3B82F6', '#10B981', '#F59E0B'].map(c => (
+                          <button 
+                            key={c}
+                            onClick={() => updateElement(el.id, { color: c, bgColor: c })}
+                            className={`w-5 h-5 rounded-full border border-white/20 transition-transform hover:scale-125 shadow-sm ${(el.color === c || el.bgColor === c) ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#1a1a1a] scale-110' : ''}`}
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="w-px h-5 bg-white/10" />
+
+                      {/* Layer Controls */}
+                      <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
+                        <button onClick={() => bringToFront(el.id)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white" title="Bring to Front">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 13V2l8 4-8 4"/><path d="M20 18l-8 4-8-4"/><path d="M20 12l-8 4-8-4"/></svg>
+                        </button>
+                        <button onClick={() => sendToBack(el.id)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white border-l border-white/5" title="Send to Back">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l8 4-8 4-8-4 8-4z"/><path d="M20 12l-8 4-8-4"/><path d="M20 18l-8 4-8-4"/></svg>
+                        </button>
+                      </div>
+
+                      <div className="w-px h-5 bg-white/10" />
+
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => duplicateElement(el)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-white/5 rounded-md transition-all" title="Duplicate">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        </button>
+                        <button onClick={() => deleteElement(el.id)} className="w-8 h-8 flex items-center justify-center text-rose-400 hover:bg-rose-500/20 rounded-md transition-all" title="Delete">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                      </div>
+                    </div>
                   )}
 
-                  {/* Selection handles */}
-                  {isActive && mode === 'select' && (
+                  {/* Selection Visuals */}
+                  {isActive && (
                     <>
-                      <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
-                      
-
-
-                      {/* Rotation Handle */}
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-indigo-600 rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                      <div className="absolute inset-0 border-2 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)] pointer-events-none rounded-sm animate-pulse z-50" />
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto cursor-grab active:cursor-grabbing z-[60]"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const rect = pageRef.current?.getBoundingClientRect();
                              if (!rect) return;
                              const centerX = (el.x / 1000) * rect.width + ((el.width || 0) / 2000) * rect.width;
                              const centerY = (el.y / 1000) * rect.height + ((el.height || 0) / 2000) * rect.height;
-                             
                              const onMove = (me: PointerEvent) => {
-                               const dx = me.clientX - (rect.left + centerX);
-                               const dy = me.clientY - (rect.top + centerY);
+                               const dx = me.clientX - (rect.left + centerX), dy = me.clientY - (rect.top + centerY);
                                const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                                updateElement(el.id, { rotation: angle });
                              };
@@ -1609,48 +1167,36 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       >
-                         <RotateCw size={10} className="text-indigo-600" />
+                         <div className="w-5 h-5 bg-white border-2 border-indigo-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                           <RotateCw size={10} className="text-indigo-600" />
+                         </div>
+                         <div className="w-[2px] h-5 bg-indigo-500/50" />
                       </div>
-
-                      {/* --- Resize Handles (8 points) --- */}
-                      {[
-                        { pos: 'top-left', cursor: 'nw-resize', style: { top: '-4px', left: '-4px' } },
-                        { pos: 'top-center', cursor: 'n-resize', style: { top: '-4px', left: '50%', marginLeft: '-4px' } },
-                        { pos: 'top-right', cursor: 'ne-resize', style: { top: '-4px', right: '-4px' } },
-                        { pos: 'middle-right', cursor: 'e-resize', style: { top: '50%', right: '-4px', marginTop: '-4px' } },
-                        { pos: 'bottom-right', cursor: 'se-resize', style: { bottom: '-4px', right: '-4px' } },
-                        { pos: 'bottom-center', cursor: 's-resize', style: { bottom: '-4px', left: '50%', marginLeft: '-4px' } },
-                        { pos: 'bottom-left', cursor: 'sw-resize', style: { bottom: '-4px', left: '-4px' } },
-                        { pos: 'middle-left', cursor: 'w-resize', style: { top: '50%', left: '-4px', marginTop: '-4px' } },
-                      ].map(h => (
+                      {['nw', 'ne', 'sw', 'se'].map(pos => (
                         <div 
-                          key={h.pos}
-                          className="absolute w-2 h-2 bg-white border border-indigo-600 rounded-sm shadow-sm z-50 hover:scale-125 transition-transform"
-                          style={{ ...h.style, cursor: h.cursor }}
+                          key={pos}
+                          className="absolute w-2.5 h-2.5 bg-white border-2 border-indigo-600 rounded-full shadow-md z-[60] hover:scale-150 transition-transform"
+                          style={{
+                            top: pos.includes('n') ? '-4px' : 'auto',
+                            bottom: pos.includes('s') ? '-4px' : 'auto',
+                            left: pos.includes('w') ? '-4px' : 'auto',
+                            right: pos.includes('e') ? '-4px' : 'auto',
+                            cursor: `${pos}-resize`
+                          }}
                           onPointerDown={ev => {
                             ev.stopPropagation();
                             const startX = ev.clientX, startY = ev.clientY;
-                            const startX_el = el.x, startY_el = el.y;
-                            const startW = el.width || 0, startH = el.height || 0;
-                            
+                            const startX_el = el.x, startY_el = el.y, startW = el.width || 0, startH = el.height || 0;
                             const onMove = (me: PointerEvent) => {
                               if (!pageRef.current) return;
                               const r = pageRef.current.getBoundingClientRect();
-                              const dx = ((me.clientX - startX) / r.width) * 1000;
-                              const dy = ((me.clientY - startY) / r.height) * 1000;
-                              
+                              const dx = ((me.clientX - startX) / r.width) * 1000, dy = ((me.clientY - startY) / r.height) * 1000;
                               let nextX = startX_el, nextY = startY_el, nextW = startW, nextH = startH;
-                              
-                              if (h.pos.includes('top')) { nextY = startY_el + dy; nextH = startH - dy; }
-                              if (h.pos.includes('bottom')) { nextH = startH + dy; }
-                              if (h.pos.includes('left')) { nextX = startX_el + dx; nextW = startW - dx; }
-                              if (h.pos.includes('right')) { nextW = startW + dx; }
-                              
-                              // Minimum size constraint
-                              if (nextW < 5) nextW = 5;
-                              if (nextH < 5) nextH = 5;
-
-                              updateElement(el.id, { x: nextX, y: nextY, width: nextW, height: nextH });
+                              if (pos.includes('n')) { nextY = startY_el + dy; nextH = startH - dy; }
+                              if (pos.includes('s')) { nextH = startH + dy; }
+                              if (pos.includes('w')) { nextX = startX_el + dx; nextW = startW - dx; }
+                              if (pos.includes('e')) { nextW = startW + dx; }
+                              updateElement(el.id, { x: nextX, y: nextY, width: Math.max(5, nextW), height: Math.max(5, nextH) });
                             };
                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
