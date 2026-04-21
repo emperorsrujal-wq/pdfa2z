@@ -541,18 +541,54 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       // Auto-sample color logic for better masking — use actual file prop (bug fix)
       let bgColor = '#FFFFFF';
       let fontColor = activeColor;
+      let fontToUse = 'Helvetica';
+      let isBoldDetected = false;
+      let isItalicDetected = false;
       
       try {
         const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
         bgColor = style.backgroundColor || '#FFFFFF';
         fontColor = style.color || activeColor;
+        
+        const fName = style.fontName.toLowerCase();
+        isBoldDetected = fName.includes('bold');
+        isItalicDetected = fName.includes('italic') || fName.includes('oblique');
+        
+        if (fName.includes('times')) fontToUse = 'Times-Roman';
+        else if (fName.includes('courier')) fontToUse = 'Courier';
+        else fontToUse = 'Helvetica';
       } catch (e) {
         console.warn('Color sampling failed, using defaults', e);
       }
 
       if (clicked) {
-        const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: bgColor, opacity: 1 };
-        const text: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: fontColor, text: clicked.str, size: clicked.fontSize, opacity: 1 };
+        const mask: EditElement = { 
+          id: `mask-${Date.now()}`, 
+          type: 'rect', 
+          pageIndex, 
+          x: clicked.x, 
+          y: clicked.y, 
+          width: clicked.width, 
+          height: clicked.height, 
+          color: bgColor, 
+          opacity: 1 
+        };
+        const text: EditElement = { 
+          id: `t-${Date.now()}`, 
+          type: 'text', 
+          pageIndex, 
+          x: clicked.x, 
+          y: clicked.y, 
+          width: clicked.width, 
+          height: clicked.height, 
+          color: fontColor, 
+          text: clicked.str, 
+          size: clicked.fontSize, 
+          fontName: fontToUse,
+          isBold: isBoldDetected,
+          isItalic: isItalicDetected,
+          opacity: 1 
+        };
         const next = [...elements, mask, text];
         commit(next);
         setActiveElementId(text.id);

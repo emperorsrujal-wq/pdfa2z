@@ -21,6 +21,18 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
   onRotatePage
 }) => {
   const [isOpen, setIsOpen] = React.useState(true);
+  const [selectedIndices, setSelectedIndices] = React.useState<number[]>([]);
+
+  const handleThumbnailClick = (e: React.MouseEvent, index: number) => {
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedIndices(prev => 
+        prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+      );
+    } else {
+      setSelectedIndices([index]);
+      onSelect(index);
+    }
+  };
 
   return (
     <div
@@ -42,9 +54,25 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
             <FileText size={13} className="text-slate-500" />
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pages</span>
           </div>
-          <span className="text-[9px] font-black text-blue-400/70 bg-blue-400/10 px-1.5 py-0.5 rounded-full border border-blue-400/20">
-            {images.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {selectedIndices.length > 1 && (
+              <button 
+                onClick={() => {
+                  if (confirm(`Delete ${selectedIndices.length} pages?`)) {
+                    selectedIndices.sort((a,b) => b-a).forEach(idx => onDeletePage?.(idx));
+                    setSelectedIndices([]);
+                  }
+                }}
+                className="p-1 hover:bg-red-500/20 text-red-400 rounded-md transition-colors"
+                title="Delete Selected Pages"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
+            <span className="text-[9px] font-black text-blue-400/70 bg-blue-400/10 px-1.5 py-0.5 rounded-full border border-blue-400/20">
+              {images.length}
+            </span>
+          </div>
         </div>
       )}
 
@@ -54,9 +82,9 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
           isOpen ? (
             <div
               key={i}
-              onClick={() => onSelect(i)}
+              onClick={(e) => handleThumbnailClick(e, i)}
               className={`group relative cursor-pointer rounded-xl overflow-hidden transition-all duration-200 ${
-                activeIndex === i
+                selectedIndices.includes(i)
                   ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#161b27] shadow-lg shadow-blue-500/20'
                   : 'hover:ring-1 hover:ring-white/20 ring-transparent'
               }`}
@@ -101,7 +129,7 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
                   </div>
                 )}
               </div>
-              <div className={`mt-1.5 text-center text-[9px] font-bold transition-colors ${activeIndex === i ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+              <div className={`mt-1.5 text-center text-[9px] font-bold transition-colors ${selectedIndices.includes(i) ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
                 Page {i + 1}
               </div>
             </div>
@@ -109,10 +137,10 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
             // Collapsed: show dot indicators
             <button
               key={i}
-              onClick={() => onSelect(i)}
+              onClick={(e) => handleThumbnailClick(e, i)}
               title={`Page ${i + 1}`}
               className={`relative w-4 h-4 rounded-full transition-all ${
-                activeIndex === i
+                selectedIndices.includes(i)
                   ? 'bg-blue-500 ring-2 ring-blue-400/40'
                   : 'bg-white/10 hover:bg-white/25'
               }`}

@@ -94,28 +94,106 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     <div ref={toolbarRef} className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-[0_4px_10px_rgba(0,0,0,0.03)] h-14 shrink-0 relative z-[500]">
       
       {/* Left: Tool Categories */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
         
-        {/* TEXT */}
-        <div className="relative flex items-center group">
-          <button onClick={() => selectMode('text')} className={btnClass(mode === 'text' || mode === 'magic-edit') + " pr-1 rounded-r-none border-r border-transparent group-hover:border-slate-200"}>
-            <Type size={16} /> Text
+        {/* EDIT GROUP */}
+        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+           {/* TEXT */}
+          <div className="relative flex items-center group">
+            <button onClick={() => selectMode('text')} className={btnClass(mode === 'text' || mode === 'magic-edit') + " pr-1 rounded-r-none border-r border-transparent group-hover:border-slate-200"}>
+              <Type size={16} /> Text
+            </button>
+            <button 
+              onClick={(e) => toggleDropdown('textColor', e)}
+              className={`px-1.5 py-2 transition-all ${(mode === 'text' || mode === 'magic-edit') ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-slate-100'} rounded-r-md flex items-center justify-center`}
+            >
+              <div className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{backgroundColor: activeColor}} />
+            </button>
+            {openDropdown === 'textColor' && renderColorPicker(activeColor, setActiveColor, false)}
+          </div>
+
+          {/* LINKS */}
+          <button onClick={() => selectMode('link')} className={btnClass(mode === 'link')}>
+            <Link size={16} /> Links
           </button>
-          <button 
-            onClick={(e) => toggleDropdown('textColor', e)}
-            className={`px-1.5 py-2 transition-all ${(mode === 'text' || mode === 'magic-edit') ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-slate-100'} rounded-r-md flex items-center justify-center`}
-          >
-            <div className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{backgroundColor: activeColor}} />
-          </button>
-          {openDropdown === 'textColor' && renderColorPicker(activeColor, setActiveColor, false)}
+
+           {/* WHITEOUT */}
+          <div className="relative flex items-center group">
+            <button onClick={() => selectMode('erase')} className={btnClass(mode === 'erase') + " pr-1 rounded-r-none border-r border-transparent group-hover:border-slate-200"}>
+              <Eraser size={16} /> Whiteout
+            </button>
+            <button 
+              onClick={(e) => toggleDropdown('whiteoutColor', e)}
+              className={`px-1.5 py-2 transition-all ${mode === 'erase' ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-slate-100'} rounded-r-md flex items-center justify-center`}
+            >
+              <div className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{backgroundColor: whiteoutColor}} />
+            </button>
+            {openDropdown === 'whiteoutColor' && renderColorPicker(whiteoutColor, setWhiteoutColor, true)}
+          </div>
         </div>
 
-        {/* LINKS */}
-        <button onClick={() => selectMode('link')} className={btnClass(mode === 'link')}>
-          <Link size={16} /> Links
-        </button>
+        <div className="w-px h-6 bg-slate-200 mx-1" />
 
-        {/* FORMS DROPDOWN */}
+        {/* ANNOTATE GROUP */}
+        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+          <button onClick={() => selectMode('highlight')} className={btnClass(mode === 'highlight')}><Highlighter size={16}/> Highlight</button>
+          <button onClick={() => selectMode('sticky-note')} className={btnClass(mode === 'sticky-note')}><StickyNote size={16}/> Note</button>
+          <button onClick={() => selectMode('draw')} className={btnClass(mode === 'draw')}><Pencil size={16}/> Draw</button>
+          
+          <div className="relative">
+            <button 
+              onClick={(e) => toggleDropdown('annotate-more', e)} 
+              className={btnClass(['strikeout', 'underline'].includes(mode))}
+            >
+              More <ChevronDown size={14} className="opacity-50" />
+            </button>
+            {openDropdown === 'annotate-more' && (
+              <div className={dropdownMenuClass}>
+                <button onClick={() => selectMode('strikeout')} className={dropdownItemClass}><span className="line-through">S</span> Strikeout</button>
+                <button onClick={() => selectMode('underline')} className={dropdownItemClass}><span className="underline">U</span> Underline</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="w-px h-6 bg-slate-200 mx-1" />
+
+        {/* INSERT GROUP */}
+        <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+          <button 
+            onClick={() => {
+              selectMode('image');
+              triggerImageUpload();
+            }} 
+            className={btnClass(mode === 'image')}
+          >
+            <ImageIcon size={16} /> Images
+          </button>
+
+          <button onClick={() => selectMode('signature')} className={btnClass(mode === 'signature')}>
+            <FileSignature size={16} /> Sign
+          </button>
+
+          <div className="relative">
+            <button 
+              onClick={(e) => toggleDropdown('shapes', e)} 
+              className={btnClass(['rect', 'circle', 'line'].includes(mode))}
+            >
+              <Square size={16} /> Shapes <ChevronDown size={14} className="opacity-50" />
+            </button>
+            {openDropdown === 'shapes' && (
+              <div className={dropdownMenuClass}>
+                <button onClick={() => selectMode('rect')} className={dropdownItemClass}><Square size={14}/> Rectangle</button>
+                <button onClick={() => selectMode('circle')} className={dropdownItemClass}><Circle size={14}/> Ellipse</button>
+                <button onClick={() => selectMode('line')} className={dropdownItemClass}><MoveDiagonal size={14}/> Arrow/Line</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="w-px h-6 bg-slate-200 mx-1" />
+
+        {/* FORMS GROUP */}
         <div className="relative">
           <button 
             onClick={(e) => toggleDropdown('forms', e)} 
@@ -130,72 +208,6 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
               <button onClick={() => selectMode('form-text')} className={dropdownItemClass}><Type size={14}/> Text Field</button>
               <button onClick={() => selectMode('form-textarea')} className={dropdownItemClass}><AlignLeft size={14}/> Textarea</button>
               <button onClick={() => selectMode('form-select')} className={dropdownItemClass}><ChevronDown size={14}/> Dropdown</button>
-            </div>
-          )}
-        </div>
-
-        {/* IMAGES */}
-        <button 
-          onClick={() => {
-            selectMode('image');
-            triggerImageUpload();
-          }} 
-          className={btnClass(mode === 'image')}
-        >
-          <ImageIcon size={16} /> Images
-        </button>
-
-        {/* SIGNATURE */}
-        <button onClick={() => selectMode('signature')} className={btnClass(mode === 'signature')}>
-          <FileSignature size={16} /> Sign
-        </button>
-
-        {/* WHITEOUT */}
-        <div className="relative flex items-center group">
-          <button onClick={() => selectMode('erase')} className={btnClass(mode === 'erase') + " pr-1 rounded-r-none border-r border-transparent group-hover:border-slate-200"}>
-            <Eraser size={16} /> Whiteout
-          </button>
-          <button 
-            onClick={(e) => toggleDropdown('whiteoutColor', e)}
-            className={`px-1.5 py-2 transition-all ${mode === 'erase' ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-slate-100'} rounded-r-md flex items-center justify-center`}
-          >
-            <div className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{backgroundColor: whiteoutColor}} />
-          </button>
-          {openDropdown === 'whiteoutColor' && renderColorPicker(whiteoutColor, setWhiteoutColor, true)}
-        </div>
-
-        {/* ANNOTATE DROPDOWN */}
-        <div className="relative">
-          <button 
-            onClick={(e) => toggleDropdown('annotate', e)} 
-            className={btnClass(['highlight', 'strikeout', 'underline', 'sticky-note'].includes(mode))}
-          >
-            <Highlighter size={16} /> Annotate <ChevronDown size={14} className="opacity-50" />
-          </button>
-          {openDropdown === 'annotate' && (
-            <div className={dropdownMenuClass}>
-              <button onClick={() => selectMode('highlight')} className={dropdownItemClass}><Highlighter size={14}/> Highlight</button>
-              <button onClick={() => selectMode('strikeout')} className={dropdownItemClass}><span className="line-through">S</span> Strikeout</button>
-              <button onClick={() => selectMode('underline')} className={dropdownItemClass}><span className="underline">U</span> Underline</button>
-              <button onClick={() => selectMode('sticky-note')} className={dropdownItemClass}><StickyNote size={14}/> Sticky Note</button>
-              <button onClick={() => selectMode('draw')} className={dropdownItemClass}><Pencil size={14}/> Freehand Draw</button>
-            </div>
-          )}
-        </div>
-
-        {/* SHAPES DROPDOWN */}
-        <div className="relative">
-          <button 
-            onClick={(e) => toggleDropdown('shapes', e)} 
-            className={btnClass(['rect', 'circle', 'line'].includes(mode))}
-          >
-            <Square size={16} /> Shapes <ChevronDown size={14} className="opacity-50" />
-          </button>
-          {openDropdown === 'shapes' && (
-            <div className={dropdownMenuClass}>
-              <button onClick={() => selectMode('rect')} className={dropdownItemClass}><Square size={14}/> Rectangle</button>
-              <button onClick={() => selectMode('circle')} className={dropdownItemClass}><Circle size={14}/> Ellipse</button>
-              <button onClick={() => selectMode('line')} className={dropdownItemClass}><MoveDiagonal size={14}/> Arrow/Line</button>
             </div>
           )}
         </div>
