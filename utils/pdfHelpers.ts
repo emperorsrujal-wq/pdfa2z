@@ -1215,3 +1215,27 @@ export const findTextPositions = async (pdfBytes: Uint8Array, pageIndex: number,
 
   return foundAreas;
 };
+
+/**
+ * Adds Bates Numbering to a PDF document for legal compliance
+ */
+export const addBatesNumbering = async (pdfBytes: ArrayBuffer, prefix: string = 'ABC-', startNumber: number = 1): Promise<Uint8Array> => {
+  const { PDFDocument, rgb, StandardFonts } = (window as any).PDFLib;
+  const doc = await PDFDocument.load(pdfBytes);
+  const pages = doc.getPages();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  
+  pages.forEach((page, i) => {
+    const batesNumber = `${prefix}${String(startNumber + i).padStart(6, '0')}`;
+    const { width } = page.getSize();
+    page.drawText(batesNumber, {
+      x: width - 120,
+      y: 20,
+      size: 10,
+      font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  });
+  
+  return await doc.save();
+};

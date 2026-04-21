@@ -204,14 +204,50 @@ export const Home: React.FC = () => {
 
           {/* Headline */}
           <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-6 tracking-[-0.03em] leading-[0.92]">
-            <span className="hero-gradient-text">Every Document.</span>
+            <span className="hero-gradient-text">Automated.</span>
             <br />
-            <span className="text-gradient-blue">Perfectly Handled.</span>
+            <span className="text-gradient-blue">Compliant Journeys.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-            The world's most advanced PDF & AI document suite. Securely sign, edit, compress, and automate your documents with professional precision.
+            The specialized PDF platform for <span className="text-indigo-600 font-bold">Mortgage Agents, Lawyers, and Banks</span>. Turn complex onboarding into automated, legally binding journeys.
           </p>
+
+          {/* Industry Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16 max-w-4xl mx-auto">
+            <button 
+              onClick={() => navigate('/journey-builder?template=mortgage')}
+              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 transition-all text-left"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                <FileText size={24} />
+              </div>
+              <h3 className="font-black text-slate-900 text-lg mb-1">Mortgage Agents</h3>
+              <p className="text-xs text-slate-500 font-medium">Auto-fill loan apps & lawyer instructions.</p>
+            </button>
+            
+            <button 
+              onClick={() => navigate('/journey-builder?template=legal')}
+              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/10 transition-all text-left"
+            >
+              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="font-black text-slate-900 text-lg mb-1">Legal Teams</h3>
+              <p className="text-xs text-slate-500 font-medium">Automate intakes, NDAs, and wills.</p>
+            </button>
+
+            <button 
+              onClick={() => navigate('/journey-builder?template=real-estate')}
+              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all text-left"
+            >
+              <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-110 transition-transform">
+                <LucideImage size={24} />
+              </div>
+              <h3 className="font-black text-slate-900 text-lg mb-1">Real Estate</h3>
+              <p className="text-xs text-slate-500 font-medium">Listing agreements & mobile e-signs.</p>
+            </button>
+          </div>
 
           {/* Search */}
           <div className="max-w-2xl mx-auto relative group mb-10">

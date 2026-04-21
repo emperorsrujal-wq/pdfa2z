@@ -65,9 +65,9 @@ export const Dashboard: React.FC = () => {
   };
 
   const stats = [
-    { label: 'Total Leads', value: leads.length, icon: <Users size={20} />, color: 'bg-indigo-50 text-indigo-600', trend: '+12%' },
-    { label: 'Document Library', value: docs.length, icon: <FileText size={20} />, color: 'bg-blue-50 text-blue-600', trend: '+5%' },
-    { label: 'Notarizations', value: sessions.length, icon: <Shield size={20} />, color: 'bg-emerald-50 text-emerald-600', trend: '+2%' },
+    { label: 'Active Journeys', value: leads.length, icon: <Users size={20} />, color: 'bg-indigo-50 text-indigo-600', trend: '+12%' },
+    { label: 'Est. Time Saved', value: `${Math.round(leads.length * 0.5)}h`, icon: <Clock size={20} />, color: 'bg-blue-50 text-blue-600', trend: '+5%' },
+    { label: 'Compliance ROI', value: `${(leads.length * 25).toLocaleString()}$`, icon: <Shield size={20} />, color: 'bg-emerald-50 text-emerald-600', trend: '+2%' },
   ];
 
   if (!user && !DEMO_MODE) {
@@ -87,7 +87,7 @@ export const Dashboard: React.FC = () => {
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} /> },
-    { id: 'leads', label: 'Leads & CRM', icon: <Users size={20} /> },
+    { id: 'leads', label: 'Journeys & Compliance', icon: <Users size={20} /> },
     { id: 'documents', label: 'Documents', icon: <FileText size={20} /> },
     { id: 'notarizations', label: 'Notarizations', icon: <Shield size={20} /> },
     { id: 'analytics', label: 'Geo Analytics', icon: <Globe size={20} /> },

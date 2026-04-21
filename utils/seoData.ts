@@ -33,10 +33,10 @@ export interface ToolSEO {
 export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'home': {
     slug: '',
-    title: 'PDFA2Z - Free Online PDF & AI Tools',
-    description: 'All-in-one PDF and Image tools. Merge, split, compress, edit, and generate content with AI. 100% free and secure.',
-    h1: 'Professional PDF & Image Tools',
-    intro: 'PDFA2Z provides a complete suite of utilities to manage your documents and images. No signup required.',
+    title: 'PDFA2Z - Professional PDF Journeys & Compliant Automation',
+    description: 'The specialized PDF platform for Mortgage Agents, Lawyers, and Banks. Automate client onboarding, e-signatures, and legally-binding PDF journeys with PIPEDA/GDPR compliance.',
+    h1: 'Automated. Compliant Journeys.',
+    intro: 'PDFA2Z turns complex onboarding into automated, legally binding journeys. Tailored for high-stakes industries like Mortgage, Legal, and Real Estate.',
     steps: [],
     faqs: [],
     type: ToolType.DASHBOARD,
@@ -196,27 +196,27 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'journey-builder': {
     slug: 'journey-builder',
-    title: 'PDF Journey Builder - Transform PDF into a Step-by-Step Experience',
-    description: 'Convert any static PDF form into a guided, beautiful, and secure step-by-step digital journey. Automatically detect fields and fill them out in minutes.',
-    h1: 'PDF to <em>Digital Journey</em>',
-    intro: 'Stop sending static forms. Turn your PDFs into interactive, wizard-based experiences that your users can complete on any device. 100% Client-Side and secure.',
+    title: 'PDF Journey Builder - High-Stakes Onboarding Automation',
+    description: 'Automate Mortgage applications, Legal intakes, and Real Estate contracts. Turn static PDFs into secure, step-by-step journeys with audit trails and compliance.',
+    h1: 'PDF to <em>Compliant Journey</em>',
+    intro: 'Ditch the static forms. Create professional, guided experiences for your clients. Perfect for Law firms, Mortgage brokers, and Banks requiring PIPEDA/GDPR compliance.',
     steps: [
-      'Upload your PDF document.',
-      'Allow our AI to automatically detect all fillable fields.',
-      'Review the structured "Journey" created for your document.',
-      'Complete the guided steps and download your perfectly filled PDF.'
+      'Select an industry-specific template (Mortgage, Legal, Real Estate).',
+      'AI detects fields and maps them to a secure workflow.',
+      'Configure compliance settings (Bates numbering, Audit trail).',
+      'Deploy your journey and capture verified, signed documents.'
     ],
     faqs: [
-      { q: 'Does it work with non-fillable PDFs?', a: 'Yes! If no fields are detected, we provide a default "Journey" that allows you to sign and date the document anywhere.' },
-      { q: 'Is it secure?', a: 'Completely. All PDF processing and data extraction happens locally in your browser. Nothing is uploaded to our servers.' },
-      { q: 'What fields are supported?', a: 'We support Text, Checkboxes, Dropdowns, and Digital Signatures.' }
+      { q: 'Is it PIPEDA / GDPR compliant?', a: 'Yes, our Enterprise mode enables strict data purging and encrypted audit logs.' },
+      { q: 'Can I add Bates numbering?', a: 'Yes, our Legal vertical includes automated Bates numbering for document discovery.' },
+      { q: 'Do you support Mortgage Form 1003?', a: 'We have pre-built templates for standard mortgage and real estate disclosures.' }
     ],
     features: [
-      'Auto-Field Detection',
-      'Wizard-Style Interface',
-      'Interactive Signature Pad',
-      'No Server-Side Storage',
-      'Mobile-First Design'
+      'Industry-Specific Templates',
+      'PIPEDA / GDPR Compliance',
+      'Automated Bates Numbering',
+      'Legally Binding Audit Trails',
+      'CRM & Webhook Integration'
     ],
     type: ToolType.JOURNEY_BUILDER,
     icon: Route,
