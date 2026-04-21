@@ -69,6 +69,22 @@ interface PdfEditorCanvasProps {
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
+  // Master control props
+  mode?: EditorMode;
+  setMode?: (m: EditorMode) => void;
+  activeColor?: string;
+  setActiveColor?: (c: string) => void;
+  whiteoutColor?: string;
+  setWhiteoutColor?: (c: string) => void;
+  activeFont?: string;
+  activeFontSize?: number;
+  isBold?: boolean;
+  isItalic?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  zoom?: number;
+  searchTerm?: string;
+  showGrid?: boolean;
+  setShowGrid?: (s: boolean) => void;
 }
 
 type EditorMode =
@@ -141,81 +157,76 @@ function getFontFamily(fontName?: string) {
   return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
 }
 
-export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
-  image,
-  dimensions,
-  pageIndex,
-  initialElements,
-  onSave,
-  onFinalSave,
-  onCancel,
-  isEmbedded = false,
-  textItems = [],
-  file,
-  docId,
-}) => {
+export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((props, ref) => {
+  const {
+    image,
+    dimensions,
+    pageIndex,
+    initialElements,
+    onSave,
+    onFinalSave,
+    onCancel,
+    isEmbedded = false,
+    textItems = [],
+    file,
+    docId,
+    mode: propMode,
+    setMode: propSetMode,
+    activeColor: propActiveColor,
+    setActiveColor: propSetActiveColor,
+    whiteoutColor: propWhiteoutColor,
+    setWhiteoutColor: propSetWhiteoutColor,
+    activeFont: propActiveFont,
+    activeFontSize: propActiveFontSize,
+    isBold: propIsBold,
+    isItalic: propIsItalic,
+    textAlign: propTextAlign,
+    zoom: propZoom,
+    searchTerm: propSearchTerm,
+    showGrid: propShowGrid,
+    setShowGrid: propSetShowGrid,
+  } = props;
   const [elements, setElements] = React.useState<EditElement[]>(initialElements);
   const [history, setHistory] = React.useState<EditElement[][]>([initialElements]);
   const [historyStep, setHistoryStep] = React.useState(0);
 
-  const [mode, setMode] = React.useState<EditorMode>('magic-edit');
-  const [activeColor, setActiveColor] = React.useState('#000000');
-  const [activeFont, setActiveFont] = React.useState('Helvetica');
-  const [activeFontSize, setActiveFontSize] = React.useState(14);
-  const [isBold, setIsBold] = React.useState(false);
-  const [isItalic, setIsItalic] = React.useState(false);
-  const [isUnderline, setIsUnderline] = React.useState(false);
-  const [textAlign, setTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
+  React.useImperativeHandle(ref, () => ({
+    undo,
+    redo,
+    canUndo: historyStep > 0,
+    canRedo: historyStep < history.length - 1
+  }));
 
-  // Sync state with selected element
-  React.useEffect(() => {
-    const el = elements.find(e => e.id === activeElementId);
-    if (el && el.type === 'text') {
-      setIsBold(el.isBold || false);
-      setIsItalic(el.isItalic || false);
-      setIsUnderline(el.isUnderline || false);
-      setTextAlign(el.textAlign || 'left');
-      setActiveFont(el.fontName || 'Helvetica');
-      setActiveFontSize(el.size || 14);
-    }
-  }, [activeElementId, elements]);
+  // Internal fallbacks if not controlled
+  const [internalMode, setInternalMode] = React.useState<EditorMode>('magic-edit');
+  const [internalActiveColor, setInternalActiveColor] = React.useState('#000000');
+  const [internalActiveFont, setInternalActiveFont] = React.useState('Helvetica');
+  const [internalActiveFontSize, setInternalActiveFontSize] = React.useState(14);
+  const [internalIsBold, setInternalIsBold] = React.useState(false);
+  const [internalIsItalic, setInternalIsItalic] = React.useState(false);
+  const [internalIsUnderline, setInternalIsUnderline] = React.useState(false);
+  const [internalTextAlign, setInternalTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
+  const [internalZoom, setInternalZoom] = React.useState(1);
+  const [internalWhiteoutColor, setInternalWhiteoutColor] = React.useState('#FFFFFF');
 
-  const handleBoldToggle = () => {
-    const next = !isBold;
-    setIsBold(next);
-    if (activeElementId) updateElement(activeElementId, { isBold: next });
-  };
-  const handleItalicToggle = () => {
-    const next = !isItalic;
-    setIsItalic(next);
-    if (activeElementId) updateElement(activeElementId, { isItalic: next });
-  };
-  const handleUnderlineToggle = () => {
-    const next = !isUnderline;
-    setIsUnderline(next);
-    if (activeElementId) updateElement(activeElementId, { isUnderline: next });
-  };
-  const handleTextAlign = (align: 'left' | 'center' | 'right') => {
-    setTextAlign(align);
-    if (activeElementId) updateElement(activeElementId, { textAlign: align });
-  };
-  const handleFontSize = (size: number) => {
-    setActiveFontSize(size);
-    if (activeElementId) updateElement(activeElementId, { size });
-  };
-  const handleFontFamily = (font: string) => {
-    setActiveFont(font);
-    if (activeElementId) updateElement(activeElementId, { fontName: font });
-  };
+  // Unified derived state
+  const mode = propMode || internalMode;
+  const setMode = propSetMode || setInternalMode;
+  const activeColor = propActiveColor || internalActiveColor;
+  const setActiveColor = propSetActiveColor || setInternalActiveColor;
+  const activeFont = propActiveFont || internalActiveFont;
+  const activeFontSize = propActiveFontSize || internalActiveFontSize;
+  const isBold = propIsBold ?? internalIsBold;
+  const isItalic = propIsItalic ?? internalIsItalic;
+  const textAlign = propTextAlign || internalTextAlign;
+  const zoom = propZoom ?? internalZoom;
+  const whiteoutColor = propWhiteoutColor || internalWhiteoutColor;
+  const setWhiteoutColor = propSetWhiteoutColor || setInternalWhiteoutColor;
+  const searchTerm = propSearchTerm ?? "";
 
-  const PRO_COLORS = [
-    '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
-    '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
-    '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9dadb',
-    '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
-    '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
-  ];
-  const [zoom, setZoom] = React.useState(1);
+  // Setters that handle both controlled and uncontrolled scenarios
+  const setModeLocal = (m: EditorMode) => { setMode(m); if (propSetMode) propSetMode(m); };
+  const setActiveColorLocal = (c: string) => { setActiveColor(c); if (propSetActiveColor) propSetActiveColor(c); };
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
@@ -242,8 +253,43 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [showFindReplace, setShowFindReplace] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState('');
   const [replaceTerm, setReplaceTerm] = React.useState('');
+
+  const PRO_COLORS = [
+    '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
+    '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
+    '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9dadb',
+    '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
+    '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
+  ];
+
+  // Sync state with selected element
+  React.useEffect(() => {
+    const el = elements.find(e => e.id === activeElementId);
+    if (el && el.type === 'text') {
+      // Note: in controlled mode, we should ideally inform the parent, but for now we just sync local view
+      if (propSetMode) { /* Handle element selection sync to toolbar if needed */ }
+    }
+  }, [activeElementId, elements]);
+
+  const handleBoldToggle = () => {
+    const next = !isBold;
+    if (activeElementId) updateElement(activeElementId, { isBold: next });
+  };
+  const handleItalicToggle = () => {
+    const next = !isItalic;
+    if (activeElementId) updateElement(activeElementId, { isItalic: next });
+  };
+  const handleTextAlign = (align: 'left' | 'center' | 'right') => {
+    if (activeElementId) updateElement(activeElementId, { textAlign: align });
+  };
+  const handleFontSize = (size: number) => {
+    if (activeElementId) updateElement(activeElementId, { size });
+  };
+  const handleFontFamily = (font: string) => {
+    if (activeElementId) updateElement(activeElementId, { fontName: font });
+  };
+
 
   // Inline modals replacing prompt()
   const [linkModal, setLinkModal] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -1097,25 +1143,27 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 )}
              </div>
 
-             {/* Navigation & Zoom */}
-             <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Undo">
-                  <Undo2 size={15} />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Redo">
-                  <Redo2 size={15} />
-                </button>
-                <div className="w-[1px] h-4 bg-slate-200 mx-1" />
-                <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                  <ZoomOut size={15} />
-                </button>
-                <span className="text-[11px] font-black text-indigo-600 min-w-[45px] text-center tabular-nums">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                  <ZoomIn size={15} />
-                </button>
-             </div>
+             {/* Navigation & Zoom (Internal fallback) */}
+             {!propZoom && (
+               <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+                  <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Undo">
+                    <Undo2 size={15} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Redo">
+                    <Redo2 size={15} />
+                  </button>
+                  <div className="w-[1px] h-4 bg-slate-200 mx-1" />
+                  <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
+                    <ZoomOut size={15} />
+                  </button>
+                  <span className="text-[11px] font-black text-indigo-600 min-w-[45px] text-center tabular-nums">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
+                    <ZoomIn size={15} />
+                  </button>
+               </div>
+             )}
 
              {/* ? Keyboard Shortcut Help */}
              <button
@@ -1181,6 +1229,32 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             onTouchEnd={handlePointerUp}
             onClick={e => e.stopPropagation()}
           >
+            {/* Search Highlighting Overlay */}
+            {searchTerm.length > 2 && textItems && textItems.map((item, idx) => {
+              if (item.str.toLowerCase().includes(searchTerm.toLowerCase())) {
+                return (
+                  <div
+                    key={`search-hl-${idx}`}
+                    className="absolute bg-yellow-400/40 mix-blend-multiply rounded-sm pointer-events-none z-10 animate-pulse"
+                    style={{
+                      left: `${item.x / 10}%`,
+                      top: `${item.y / 10}%`,
+                      width: `${item.width / 10}%`,
+                      height: `${item.height / 10}%`
+                    }}
+                  />
+                );
+              }
+              return null;
+            })}
+
+            {/* Layout Grid Overlay */}
+            {(propShowGrid ?? false) && (
+              <div className="absolute inset-0 pointer-events-none z-[5]" style={{
+                backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
+                backgroundSize: '20px 20px'
+              }} />
+            )}
 
             {/* Picker overlay */}
             {mode === 'picker' && (
@@ -1644,139 +1718,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         )}
 
-        {/* --- Contextual Tool Options Bar (Professional additions) --- */}
-        {mode !== 'select' && !activeElementId && (
-          <div className="flex items-center gap-6 px-8 py-3 bg-white border-t border-slate-200 animate-in slide-in-from-top-1 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-50 overflow-x-auto custom-scrollbar">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
-                <Layout size={14} />
-              </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tool Settings</span>
-              <div className="h-4 w-px bg-slate-200 mx-2" />
-            </div>
-            
-            {/* Sampling Tool (Eye Dropper) */}
-            <button
-               onClick={() => setMode('picker')}
-               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
-            >
-               <Pipette size={14} />
-               <span className="text-[10px] font-bold">Pick from Document</span>
-            </button>
-
-            {/* Common Color Selector (Grid) */}
-            <div className="flex items-center gap-3 shrink-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
-              <div className="grid grid-cols-7 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                {PRO_COLORS.map(c => (
-                  <button 
-                    key={c}
-                    onClick={() => setActiveColor(c)}
-                    className={`w-4 h-4 rounded-sm border transition-all ${activeColor === c ? 'border-indigo-600 scale-125 z-10 shadow-sm' : 'border-slate-300/50 hover:scale-110'}`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Typography Logic for Text Tools */}
-            {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
-              <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
-                 <div className="h-6 w-px bg-slate-200" />
-                 
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Font</span>
-                    <select 
-                      value={activeFont}
-                      onChange={e => handleFontFamily(e.target.value)}
-                      className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
-                    >
-                      {['Helvetica', 'Times-Roman', 'Courier', 'Verdana', 'Georgia'].map(f => <option key={f} value={f}>{f}</option>)}
-                    </select>
-                 </div>
-
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Size</span>
-                    <select 
-                      value={activeFontSize}
-                      onChange={e => handleFontSize(parseInt(e.target.value))}
-                      className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
-                    >
-                      {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
-                    </select>
-                 </div>
-
-                 <div className="flex items-center bg-slate-100/50 rounded-lg p-0.5 border border-slate-200 shadow-inner">
-                    <button 
-                      onClick={handleBoldToggle}
-                      className={`px-3 py-1 text-[11px] font-black transition-all rounded ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      B
-                    </button>
-                    <button 
-                      onClick={handleItalicToggle}
-                      className={`px-3 py-1 text-[11px] font-black italic transition-all rounded ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      I
-                    </button>
-                    <button 
-                      onClick={handleUnderlineToggle}
-                      className={`px-3 py-1 text-[11px] font-black underline transition-all rounded ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      U
-                    </button>
-                 </div>
-
-                 <div className="flex items-center bg-slate-100/50 rounded-lg p-0.5 border border-slate-200 shadow-inner">
-                    <button 
-                      onClick={() => handleTextAlign('left')}
-                      className={`p-1.5 transition-all rounded ${textAlign === 'left' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      <AlignLeft size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleTextAlign('center')}
-                      className={`p-1.5 transition-all rounded ${textAlign === 'center' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      <AlignCenter size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleTextAlign('right')}
-                      className={`p-1.5 transition-all rounded ${textAlign === 'right' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      <AlignRight size={14} />
-                    </button>
-                 </div>
-              </div>
-            )}
-
-            {mode === 'erase' && (
-              <div className="flex items-center gap-3 animate-in fade-in transition-all shrink-0">
-                <div className="h-6 w-px bg-slate-200" />
-                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-tight">Eraser Active</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-
-      {/* ─── APPLY CHANGES BUTTON ────────────────────────── */}
-      <div className="shrink-0 flex justify-center py-6 bg-[#0f172a]/80 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.4)] z-[200]">
-        <button
-          onClick={() => (onFinalSave ? onFinalSave(elements) : onSave(elements))}
-          className="group relative flex items-center gap-3 px-20 py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-[#060910] rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/20"
-        >
-          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-          <CheckCircle2 size={20} className="relative z-10" />
-          <span className="relative z-10">Save & Apply Changes</span>
-        </button>
-      </div>
 
       {/* Audit Log Panel */}
       {showAudit && (
@@ -2040,4 +1985,4 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       </div>
     </div>
   );
-};
+});

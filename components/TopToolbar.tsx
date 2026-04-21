@@ -3,7 +3,7 @@ import { EditorMode } from '../utils/pdfHelpers';
 import {
   Type, Link, FormInput, Image as ImageIcon, FileSignature, Eraser,
   Highlighter, Square, Undo2, ChevronDown, CheckSquare, AlignLeft, AlignCenter, AlignRight,
-  CircleDot, Pencil, StickyNote, Circle, MoveDiagonal, Plus
+  CircleDot, Pencil, StickyNote, Circle, MoveDiagonal, Plus, Grid
 } from 'lucide-react';
 
 interface TopToolbarProps {
@@ -11,6 +11,8 @@ interface TopToolbarProps {
   setMode: (mode: EditorMode) => void;
   canUndo?: boolean;
   undo: () => void;
+  canRedo?: boolean;
+  redo?: () => void;
   triggerImageUpload: () => void;
   activeColor: string;
   setActiveColor: (color: string) => void;
@@ -29,14 +31,21 @@ interface TopToolbarProps {
   setIsUnderline?: (v: boolean) => void;
   textAlign?: 'left' | 'center' | 'right';
   setTextAlign?: (v: 'left' | 'center' | 'right') => void;
+  zoom: number;
+  setZoom: (v: number) => void;
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  showGrid?: boolean;
+  setShowGrid?: (v: boolean) => void;
 }
 
 export const TopToolbar: React.FC<TopToolbarProps> = ({ 
-  mode, setMode, undo, canUndo, triggerImageUpload, 
+  mode, setMode, undo, canUndo, redo, canRedo, triggerImageUpload, 
   activeColor, setActiveColor, whiteoutColor, setWhiteoutColor, colors, 
   activeFontSize, setActiveFontSize, activeFont, setActiveFont,
   isBold, setIsBold, isItalic, setIsItalic, isUnderline, setIsUnderline,
-  textAlign, setTextAlign
+  textAlign, setTextAlign, zoom, setZoom, searchTerm, setSearchTerm,
+  showGrid, setShowGrid
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -139,21 +148,6 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
           <button onClick={() => selectMode('highlight')} className={btnClass(mode === 'highlight')}><Highlighter size={16}/> Highlight</button>
           <button onClick={() => selectMode('sticky-note')} className={btnClass(mode === 'sticky-note')}><StickyNote size={16}/> Note</button>
           <button onClick={() => selectMode('draw')} className={btnClass(mode === 'draw')}><Pencil size={16}/> Draw</button>
-          
-          <div className="relative">
-            <button 
-              onClick={(e) => toggleDropdown('annotate-more', e)} 
-              className={btnClass(['strikeout', 'underline'].includes(mode))}
-            >
-              More <ChevronDown size={14} className="opacity-50" />
-            </button>
-            {openDropdown === 'annotate-more' && (
-              <div className={dropdownMenuClass}>
-                <button onClick={() => selectMode('strikeout')} className={dropdownItemClass}><span className="line-through">S</span> Strikeout</button>
-                <button onClick={() => selectMode('underline')} className={dropdownItemClass}><span className="underline">U</span> Underline</button>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="w-px h-6 bg-slate-200 mx-1" />
@@ -167,7 +161,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             }} 
             className={btnClass(mode === 'image')}
           >
-            <ImageIcon size={16} /> Images
+            <ImageIcon size={16} /> Image
           </button>
 
           <button onClick={() => selectMode('signature')} className={btnClass(mode === 'signature')}>
@@ -190,7 +184,6 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             )}
           </div>
         </div>
-
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
         {/* FORMS GROUP */}
@@ -238,63 +231,15 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
             </div>
             <div className="h-4 w-px bg-slate-200" />
             
-            {/* Style Toggles */}
             <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-              <button 
-                onClick={() => setIsBold?.(!isBold)}
-                className={`px-2.5 py-1 text-[11px] font-black transition-all ${isBold ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                B
-              </button>
-              <button 
-                onClick={() => setIsItalic?.(!isItalic)}
-                className={`px-2.5 py-1 text-[11px] font-black italic border-l border-slate-100 transition-all ${isItalic ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                I
-              </button>
-              <button 
-                onClick={() => setIsUnderline?.(!isUnderline)}
-                className={`px-2.5 py-1 text-[11px] font-black underline border-l border-slate-100 transition-all ${isUnderline ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                U
-              </button>
+              <button onClick={() => setIsBold?.(!isBold)} className={`px-2.5 py-1 text-[11px] font-black ${isBold ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}>B</button>
+              <button onClick={() => setIsItalic?.(!isItalic)} className={`px-2.5 py-1 text-[11px] font-black italic border-l border-slate-100 ${isItalic ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}>I</button>
             </div>
 
             <div className="h-4 w-px bg-slate-200" />
-
-            {/* Alignment */}
             <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-              <button 
-                onClick={() => setTextAlign?.('left')}
-                className={`p-1.5 transition-all ${textAlign === 'left' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                <AlignLeft size={12} />
-              </button>
-              <button 
-                onClick={() => setTextAlign?.('center')}
-                className={`p-1.5 border-l border-slate-100 transition-all ${textAlign === 'center' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                <AlignCenter size={12} />
-              </button>
-              <button 
-                onClick={() => setTextAlign?.('right')}
-                className={`p-1.5 border-l border-slate-100 transition-all ${textAlign === 'right' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                <AlignRight size={12} />
-              </button>
-            </div>
-
-            <div className="h-4 w-px bg-slate-200" />
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Color</span>
-              <div className="relative">
-                <button 
-                  onClick={(e) => toggleDropdown('textColor', e)}
-                  className="w-6 h-6 rounded-md border border-slate-200 shadow-sm transition-all hover:scale-110"
-                  style={{ backgroundColor: activeColor }}
-                />
-                {openDropdown === 'textColor' && renderColorPicker(activeColor, setActiveColor)}
-              </div>
+              <button onClick={() => setTextAlign?.('left')} className={`p-1.5 ${textAlign === 'left' ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}><AlignLeft size={12} /></button>
+              <button onClick={() => setTextAlign?.('center')} className={`p-1.5 border-l border-slate-100 ${textAlign === 'center' ? 'bg-indigo-500 text-white' : 'text-slate-600'}`}><AlignCenter size={12} /></button>
             </div>
           </div>
         )}
@@ -319,16 +264,73 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
         )}
       </div>
 
+      {/* Middle: Zoom, Grid and Search */}
+      <div className="flex items-center gap-4 px-4 border-l border-r border-slate-100 mx-4">
+        <div className="flex items-center gap-2">
+           <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500">
+              <Plus size={14} className="rotate-45" />
+           </button>
+           <div className="relative">
+              <button 
+                onClick={(e) => toggleDropdown('zoom', e)}
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 min-w-[60px] flex items-center justify-between"
+              >
+                {Math.round(zoom * 100)}% <ChevronDown size={12} className="opacity-40" />
+              </button>
+              {openDropdown === 'zoom' && (
+                <div className={dropdownMenuClass + " min-w-[80px]"}>
+                   {[0.5, 0.75, 1, 1.25, 1.5, 2].map(z => (
+                     <button key={z} className={dropdownItemClass} onClick={() => { setZoom(z); setOpenDropdown(null); }}>{z * 100}%</button>
+                   ))}
+                </div>
+              )}
+           </div>
+           <button onClick={() => setZoom(Math.min(4, zoom + 0.25))} className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500">
+              <Plus size={14} />
+           </button>
+        </div>
+
+        <button
+          onClick={() => setShowGrid?.(!showGrid)}
+          className={`p-2 rounded-lg transition-all border ${showGrid ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-500 border-transparent hover:bg-slate-100'}`}
+          title="Toggle Layout Grid (G)"
+        >
+          <Grid size={18} />
+        </button>
+
+        <div className="relative group">
+           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+           </div>
+           <input 
+             type="text" 
+             value={searchTerm}
+             onChange={e => setSearchTerm(e.target.value)}
+             placeholder="Find text..."
+             className="pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium outline-none focus:border-indigo-500 focus:bg-white w-40 transition-all shadow-inner shadow-slate-100"
+           />
+        </div>
+      </div>
+
       <div className="flex-1" />
 
-      {/* Undo */}
-      <div className="flex items-center gap-2 pr-4">
+      {/* Right: History Actions */}
+      <div className="flex items-center gap-1 pr-6">
         <button
           onClick={undo}
           disabled={!canUndo}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all border ${!canUndo ? 'text-slate-300 border-transparent cursor-not-allowed opacity-50' : 'text-slate-600 border-slate-200 hover:bg-slate-100 active:scale-95 shadow-sm'}`}
+          title="Undo (Ctrl+Z)"
+          className={`p-2.5 rounded-xl transition-all border ${!canUndo ? 'text-slate-300 border-transparent cursor-not-allowed opacity-40' : 'text-slate-600 border-slate-200 hover:bg-white hover:shadow-md active:scale-95'}`}
         >
-          <Undo2 size={16} /> Undo
+          <Undo2 size={18} />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Y)"
+          className={`p-2.5 rounded-xl transition-all border ${!canRedo ? 'text-slate-300 border-transparent cursor-not-allowed opacity-40' : 'text-slate-600 border-slate-200 hover:bg-white hover:shadow-md active:scale-95'}`}
+        >
+          <div className="scale-x-[-1]"><Undo2 size={18} /></div>
         </button>
       </div>
 

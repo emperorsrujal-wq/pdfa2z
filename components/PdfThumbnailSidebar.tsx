@@ -22,6 +22,7 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = React.useState(true);
   const [selectedIndices, setSelectedIndices] = React.useState<number[]>([]);
+  const [viewMode, setViewMode] = React.useState<'pages' | 'layers'>('pages');
 
   const handleThumbnailClick = (e: React.MouseEvent, index: number) => {
     if (e.ctrlKey || e.metaKey) {
@@ -36,7 +37,7 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
 
   return (
     <div
-      className={`relative h-full flex flex-col transition-all duration-300 ease-in-out shrink-0 ${isOpen ? 'w-52' : 'w-12'}`}
+      className={`relative h-full flex flex-col transition-all duration-300 ease-in-out shrink-0 ${isOpen ? 'w-56' : 'w-12'}`}
       style={{ background: 'var(--editor-sidebar)', borderRight: '1px solid var(--editor-border)' }}
     >
       {/* Toggle Button */}
@@ -49,36 +50,54 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
 
       {/* Header */}
       {isOpen && (
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 shrink-0">
-          <div className="flex items-center gap-2">
-            <FileText size={13} className="text-slate-500" />
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pages</span>
+        <div className="flex flex-col shrink-0">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5">
+            <div className="flex items-center gap-2">
+              <FileText size={13} className="text-slate-500" />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Workspace</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedIndices.length > 1 && (
+                <button 
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedIndices.length} pages?`)) {
+                      selectedIndices.sort((a,b) => b-a).forEach(idx => onDeletePage?.(idx));
+                      setSelectedIndices([]);
+                    }
+                  }}
+                  className="p-1 hover:bg-red-500/20 text-red-400 rounded-md transition-colors"
+                  title="Delete Selected Pages"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+              <span className="text-[9px] font-black text-blue-400/70 bg-blue-400/10 px-1.5 py-0.5 rounded-full border border-blue-400/20">
+                {images.length}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {selectedIndices.length > 1 && (
-              <button 
-                onClick={() => {
-                  if (confirm(`Delete ${selectedIndices.length} pages?`)) {
-                    selectedIndices.sort((a,b) => b-a).forEach(idx => onDeletePage?.(idx));
-                    setSelectedIndices([]);
-                  }
-                }}
-                className="p-1 hover:bg-red-500/20 text-red-400 rounded-md transition-colors"
-                title="Delete Selected Pages"
-              >
-                <Trash2 size={12} />
-              </button>
-            )}
-            <span className="text-[9px] font-black text-blue-400/70 bg-blue-400/10 px-1.5 py-0.5 rounded-full border border-blue-400/20">
-              {images.length}
-            </span>
+
+          {/* View Toggle */}
+          <div className="p-2 flex gap-1">
+            <button 
+              onClick={() => setViewMode('pages')}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewMode === 'pages' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Pages
+            </button>
+            <button 
+              onClick={() => setViewMode('layers')}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewMode === 'layers' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Layers
+            </button>
           </div>
         </div>
       )}
 
       {/* Thumbnails */}
       <div className={`flex-1 overflow-y-auto editor-scrollbar ${isOpen ? 'p-3 space-y-3' : 'flex flex-col items-center pt-6 gap-3'}`}>
-        {images.map((img, i) => (
+        {viewMode === 'pages' ? images.map((img, i) => (
           isOpen ? (
             <div
               key={i}
@@ -98,28 +117,48 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
                 )}
 
                 {/* Page Action Overlay (Visible on Hover) */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                   <button 
-                     onClick={(e) => { e.stopPropagation(); onRotatePage?.(i, 90); }}
-                     className="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-white transition-colors"
-                     title="Rotate 90°"
-                   >
-                     <RotateCw size={12} />
-                   </button>
-                   <button 
-                     onClick={(e) => { e.stopPropagation(); onDuplicatePage?.(i); }}
-                     className="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-white transition-colors"
-                     title="Duplicate Page"
-                   >
-                     <Copy size={12} />
-                   </button>
-                   <button 
-                     onClick={(e) => { e.stopPropagation(); onDeletePage?.(i); }}
-                     className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors"
-                     title="Delete Page"
-                   >
-                     <Trash2 size={12} />
-                   </button>
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                   <div className="flex gap-2">
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); onRotatePage?.(i, 90); }}
+                       className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
+                       title="Rotate 90°"
+                     >
+                       <RotateCw size={14} />
+                     </button>
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); onDuplicatePage?.(i); }}
+                       className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
+                       title="Duplicate Page"
+                     >
+                       <Copy size={14} />
+                     </button>
+                   </div>
+                   <div className="flex gap-2">
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); /* Logic for move up */ }}
+                       disabled={i === 0}
+                       className={`p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors ${i === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                       title="Move Up"
+                     >
+                       <ChevronLeft size={14} className="rotate-90" />
+                     </button>
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); /* Logic for move down */ }}
+                       disabled={i === images.length - 1}
+                       className={`p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors ${i === images.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                       title="Move Down"
+                     >
+                       <ChevronLeft size={14} className="-rotate-90" />
+                     </button>
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); onDeletePage?.(i); }}
+                       className="p-2 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white transition-colors"
+                       title="Delete Page"
+                     >
+                       <Trash2 size={14} />
+                     </button>
+                   </div>
                 </div>
 
                 {/* Edit count badge */}
@@ -150,7 +189,12 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
               )}
             </button>
           )
-        ))}
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+             <Plus size={24} className="text-slate-700 mb-2 opacity-20" />
+             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-relaxed">Select a page to view active layers</p>
+          </div>
+        )}
       </div>
 
       {/* Add page placeholder */}

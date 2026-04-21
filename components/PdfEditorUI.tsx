@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
 import { PdfThumbnailSidebar } from './PdfThumbnailSidebar';
-import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions } from '../utils/pdfHelpers';
+import { TopToolbar } from './TopToolbar';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, EditorMode } from '../utils/pdfHelpers';
 
 interface PdfEditorUIProps {
   file: File;
@@ -46,6 +47,34 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
+  const [zoom, setZoom] = React.useState(1);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [showGrid, setShowGrid] = React.useState(false);
+  
+  // Workspace Shared State
+  const [mode, setMode] = React.useState<EditorMode>('magic-edit');
+  const [activeColor, setActiveColor] = React.useState('#000000');
+  const [whiteoutColor, setWhiteoutColor] = React.useState('#FFFFFF');
+  const [activeFontSize, setActiveFontSize] = React.useState(14);
+  const [activeFont, setActiveFont] = React.useState('Helvetica');
+  const [isBold, setIsBold] = React.useState(false);
+  const [isItalic, setIsItalic] = React.useState(false);
+  const [textAlign, setTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
+  const [canUndo, setCanUndo] = React.useState(false);
+  const [canRedo, setCanRedo] = React.useState(false);
+
+  const canvasRef = React.useRef<any>(null);
+
+  // Sync history availability from canvas periodically or via callback
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      if (canvasRef.current) {
+        setCanUndo(canvasRef.current.canUndo);
+        setCanRedo(canvasRef.current.canRedo);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
 
   const showToast = React.useCallback((type: ToastType, message: string) => {
     const id = Date.now();
@@ -150,6 +179,30 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     showToast('success', `Page ${index + 1} rotated by ${angle}°`);
   };
 
+  const handleMovePage = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= images.length) return;
+
+    const newImages = [...images];
+    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+
+    const newDimensions = [...dimensions];
+    [newDimensions[index], newDimensions[targetIndex]] = [newDimensions[targetIndex], newDimensions[index]];
+
+    // Reassign pageIndex for elements
+    const updatedElements = elements.map(el => {
+      if (el.pageIndex === index) return { ...el, pageIndex: targetIndex };
+      if (el.pageIndex === targetIndex) return { ...el, pageIndex: index };
+      return el;
+    });
+
+    setImages(newImages);
+    setDimensions(newDimensions);
+    setElements(updatedElements);
+    setActivePage(targetIndex);
+    showToast('success', `Page moved ${direction}`);
+  };
+
   // ── Save & Download ───────────────────────────────────
   const handleApplyAll = async (latestElements?: EditElement[]) => {
     setIsSaving(true);
@@ -200,18 +253,38 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden font-sans editor-bg">
-
+      <TopToolbar
+        mode={mode}
+        setMode={setMode}
+        undo={() => canvasRef.current?.undo()}
+        redo={() => canvasRef.current?.redo()}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        triggerImageUpload={() => document.getElementById('img-upload')?.click()}
+        activeColor={activeColor}
+        setActiveColor={setActiveColor}
+        whiteoutColor={whiteoutColor}
+        setWhiteoutColor={setWhiteoutColor}
+        colors={['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']}
+        activeFontSize={activeFontSize}
+        setActiveFontSize={setActiveFontSize}
+        activeFont={activeFont}
+        setActiveFont={setActiveFont}
+        isBold={isBold}
+        setIsBold={setIsBold}
+        isItalic={isItalic}
+        setIsItalic={setIsItalic}
+        textAlign={textAlign}
+        setTextAlign={setTextAlign}
+        zoom={zoom}
+        setZoom={setZoom}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+      />
       
-      {/* ── Scan Warning Banner (Sejda style) ──────────────────────────── */}
-      <div className="shrink-0 bg-slate-800 text-white flex items-center justify-center gap-3 px-4 py-2 z-[100]">
-        <AlertCircle size={14} className="text-yellow-400" />
-        <span className="text-[11px] font-medium">
-          <strong>Editing a scan?</strong> Changing existing text inside scans not supported. <a href="#" className="underline hover:text-indigo-300">Convert to Word</a> to edit text.
-        </span>
-        <button className="p-1 hover:bg-white/10 rounded-lg ml-2"><X size={12} className="opacity-70"/></button>
-      </div>
-      
-{/* ── Main Workspace ───────────────────────────────── */}
+      {/* ── Main Workspace ───────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <PdfThumbnailSidebar
@@ -222,11 +295,13 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           onDuplicatePage={handleDuplicatePage}
           onDeletePage={handleDeletePage}
           onRotatePage={handleRotatePage}
+          onMovePage={handleMovePage}
         />
 
         {/* Editor Canvas */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
           <PdfEditorCanvas
+            ref={canvasRef}
             image={images[activePage]}
             dimensions={dimensions[activePage]}
             pageIndex={activePage}
@@ -240,6 +315,22 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             isEmbedded={true}
             textItems={textItems}
             file={file}
+            // Controlled props
+            mode={mode}
+            setMode={setMode}
+            activeColor={activeColor}
+            setActiveColor={setActiveColor}
+            whiteoutColor={whiteoutColor}
+            setWhiteoutColor={setWhiteoutColor}
+            activeFont={activeFont}
+            activeFontSize={activeFontSize}
+            isBold={isBold}
+            isItalic={isItalic}
+            textAlign={textAlign}
+            zoom={zoom}
+            searchTerm={searchTerm}
+            showGrid={showGrid}
+            setShowGrid={setShowGrid}
           />
         </main>
       </div>
