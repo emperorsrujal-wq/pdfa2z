@@ -27,6 +27,9 @@ import {
   Download,
   Layout,
   ChevronDown,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   History as HistoryIcon,
   User as UserIcon,
   Package,
@@ -159,6 +162,51 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [activeFont, setActiveFont] = React.useState('Helvetica');
   const [activeFontSize, setActiveFontSize] = React.useState(14);
+  const [isBold, setIsBold] = React.useState(false);
+  const [isItalic, setIsItalic] = React.useState(false);
+  const [isUnderline, setIsUnderline] = React.useState(false);
+  const [textAlign, setTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
+
+  // Sync state with selected element
+  React.useEffect(() => {
+    const el = elements.find(e => e.id === activeElementId);
+    if (el && el.type === 'text') {
+      setIsBold(el.isBold || false);
+      setIsItalic(el.isItalic || false);
+      setIsUnderline(el.isUnderline || false);
+      setTextAlign(el.textAlign || 'left');
+      setActiveFont(el.fontName || 'Helvetica');
+      setActiveFontSize(el.size || 14);
+    }
+  }, [activeElementId, elements]);
+
+  const handleBoldToggle = () => {
+    const next = !isBold;
+    setIsBold(next);
+    if (activeElementId) updateElement(activeElementId, { isBold: next });
+  };
+  const handleItalicToggle = () => {
+    const next = !isItalic;
+    setIsItalic(next);
+    if (activeElementId) updateElement(activeElementId, { isItalic: next });
+  };
+  const handleUnderlineToggle = () => {
+    const next = !isUnderline;
+    setIsUnderline(next);
+    if (activeElementId) updateElement(activeElementId, { isUnderline: next });
+  };
+  const handleTextAlign = (align: 'left' | 'center' | 'right') => {
+    setTextAlign(align);
+    if (activeElementId) updateElement(activeElementId, { textAlign: align });
+  };
+  const handleFontSize = (size: number) => {
+    setActiveFontSize(size);
+    if (activeElementId) updateElement(activeElementId, { size });
+  };
+  const handleFontFamily = (font: string) => {
+    setActiveFont(font);
+    if (activeElementId) updateElement(activeElementId, { fontName: font });
+  };
 
   const PRO_COLORS = [
     '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
@@ -1350,186 +1398,75 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     <>
                       <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
                       
+
+
                       {/* Rotation Handle */}
-                      <div 
-                        className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot"
-                        onPointerDown={ev => {
-                          ev.stopPropagation();
-                          const rect = ev.currentTarget.parentElement?.getBoundingClientRect();
-                          if (!rect) return;
-                          const cx = rect.left + rect.width / 2;
-                          const cy = rect.top + rect.height / 2;
-                          const onMove = (me: PointerEvent) => {
-                            const angle = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90;
-                            updateElement(el.id, { rotation: Math.round(angle) });
-                          };
-                          const onUp = () => {
-                            window.removeEventListener('pointermove', onMove);
-                            window.removeEventListener('pointerup', onUp);
-                            commit([...elements]);
-                          };
-                          window.addEventListener('pointermove', onMove);
-                          window.addEventListener('pointerup', onUp);
-                        }}
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-indigo-600 rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                           onPointerDown={ev => {
+                             ev.stopPropagation();
+                             const rect = pageRef.current?.getBoundingClientRect();
+                             if (!rect) return;
+                             const centerX = (el.x / 1000) * rect.width + ((el.width || 0) / 2000) * rect.width;
+                             const centerY = (el.y / 1000) * rect.height + ((el.height || 0) / 2000) * rect.height;
+                             
+                             const onMove = (me: PointerEvent) => {
+                               const dx = me.clientX - (rect.left + centerX);
+                               const dy = me.clientY - (rect.top + centerY);
+                               const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                               updateElement(el.id, { rotation: angle });
+                             };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                           }}
                       >
-                        <div className="w-[1px] h-4 bg-[#3b82f6]" />
-                        <div className="w-5 h-5 bg-white border-2 border-[#3b82f6] rounded-full shadow-lg flex items-center justify-center cursor-alias hover:scale-110 transition-transform">
-                          <RotateCw size={10} className="text-[#3b82f6]" />
-                        </div>
+                         <RotateCw size={10} className="text-indigo-600" />
                       </div>
 
-                      {/* Resize Handles - Top Side */}
-                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-n-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startY = ev.clientY;
-                             const startElY = el.y, startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { y: Math.min(startElY + startH - 10, startElY + dy), height: Math.max(10, startH - dy) });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-                      
-                      {/* Resize Handles - Bottom Side */}
-                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-s-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startY = ev.clientY;
-                             const startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { height: Math.max(10, startH + dy) });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
+                      {/* --- Resize Handles (8 points) --- */}
+                      {[
+                        { pos: 'top-left', cursor: 'nw-resize', style: { top: '-4px', left: '-4px' } },
+                        { pos: 'top-center', cursor: 'n-resize', style: { top: '-4px', left: '50%', marginLeft: '-4px' } },
+                        { pos: 'top-right', cursor: 'ne-resize', style: { top: '-4px', right: '-4px' } },
+                        { pos: 'middle-right', cursor: 'e-resize', style: { top: '50%', right: '-4px', marginTop: '-4px' } },
+                        { pos: 'bottom-right', cursor: 'se-resize', style: { bottom: '-4px', right: '-4px' } },
+                        { pos: 'bottom-center', cursor: 's-resize', style: { bottom: '-4px', left: '50%', marginLeft: '-4px' } },
+                        { pos: 'bottom-left', cursor: 'sw-resize', style: { bottom: '-4px', left: '-4px' } },
+                        { pos: 'middle-left', cursor: 'w-resize', style: { top: '50%', left: '-4px', marginTop: '-4px' } },
+                      ].map(h => (
+                        <div 
+                          key={h.pos}
+                          className="absolute w-2 h-2 bg-white border border-indigo-600 rounded-sm shadow-sm z-50 hover:scale-125 transition-transform"
+                          style={{ ...h.style, cursor: h.cursor }}
+                          onPointerDown={ev => {
+                            ev.stopPropagation();
+                            const startX = ev.clientX, startY = ev.clientY;
+                            const startX_el = el.x, startY_el = el.y;
+                            const startW = el.width || 0, startH = el.height || 0;
+                            
+                            const onMove = (me: PointerEvent) => {
+                              if (!pageRef.current) return;
+                              const r = pageRef.current.getBoundingClientRect();
+                              const dx = ((me.clientX - startX) / r.width) * 1000;
+                              const dy = ((me.clientY - startY) / r.height) * 1000;
+                              
+                              let nextX = startX_el, nextY = startY_el, nextW = startW, nextH = startH;
+                              
+                              if (h.pos.includes('top')) { nextY = startY_el + dy; nextH = startH - dy; }
+                              if (h.pos.includes('bottom')) { nextH = startH + dy; }
+                              if (h.pos.includes('left')) { nextX = startX_el + dx; nextW = startW - dx; }
+                              if (h.pos.includes('right')) { nextW = startW + dx; }
+                              
+                              // Minimum size constraint
+                              if (nextW < 5) nextW = 5;
+                              if (nextH < 5) nextH = 5;
 
-                      {/* Resize Handles - Left Side */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-w-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX;
-                             const startElX = el.x, startW = el.width || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dx = ((me.clientX - startX) / r.width) * 1000;
-                               updateElement(el.id, { x: Math.min(startElX + startW - 10, startElX + dx), width: Math.max(10, startW - dx) });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-
-                      {/* Resize Handles - Right Side */}
-                      <div className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-e-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX;
-                             const startW = el.width || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dx = ((me.clientX - startX) / r.width) * 1000;
-                               updateElement(el.id, { width: Math.max(10, startW + dx) });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-
-                      {/* Corner Handles - NW */}
-                      <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-nw-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX, startY = ev.clientY;
-                             const startElX = el.x, startElY = el.y, startW = el.width || 0, startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dx = ((me.clientX - startX) / r.width) * 1000;
-                               const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 x: Math.min(startElX + startW - 10, startElX + dx), 
-                                 y: Math.min(startElY + startH - 10, startElY + dy),
-                                 width: Math.max(10, startW - dx),
-                                 height: Math.max(10, startH - dy)
-                               });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-
-                      {/* Corner Handles - NE */}
-                      <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-ne-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX, startY = ev.clientY;
-                             const startElY = el.y, startW = el.width || 0, startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dx = ((me.clientX - startX) / r.width) * 1000;
-                               const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 y: Math.min(startElY + startH - 10, startElY + dy),
-                                 width: Math.max(10, startW + dx),
-                                 height: Math.max(10, startH - dy)
-                               });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-
-                      {/* Corner Handles - SW */}
-                      <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-sw-resize hover:scale-125 transition-transform"
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX, startY = ev.clientY;
-                             const startElX = el.x, startW = el.width || 0, startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dx = ((me.clientX - startX) / r.width) * 1000;
-                               const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 x: Math.min(startElX + startW - 10, startElX + dx), 
-                                 width: Math.max(10, startW - dx),
-                                 height: Math.max(10, startH + dy)
-                               });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
-
-                      {/* Corner Handles - SE */}
-                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-se-resize hover:scale-125 transition-transform" 
-                           onPointerDown={ev => {
-                             ev.stopPropagation();
-                             const startX = ev.clientX, startY = ev.clientY;
-                             const startW = el.width || 0, startH = el.height || 0;
-                             const onMove = (me: PointerEvent) => {
-                               if (!pageRef.current) return;
-                               const r = pageRef.current.getBoundingClientRect();
-                               const dw = ((me.clientX - startX) / r.width) * 1000;
-                               const dh = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { width: Math.max(10, startW + dw), height: Math.max(10, startH + dh) });
-                             };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
-                             window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-                           }}
-                      />
+                              updateElement(el.id, { x: nextX, y: nextY, width: nextW, height: nextH });
+                            };
+                            const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                            window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+                          }}
+                        />
+                      ))}
                     </>
                   )}
 
@@ -1710,15 +1647,69 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
               <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
                  <div className="h-6 w-px bg-slate-200" />
+                 
+                 <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Font</span>
+                    <select 
+                      value={activeFont}
+                      onChange={e => handleFontFamily(e.target.value)}
+                      className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
+                    >
+                      {['Helvetica', 'Times-Roman', 'Courier', 'Verdana', 'Georgia'].map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                 </div>
+
                  <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Size</span>
                     <select 
                       value={activeFontSize}
-                      onChange={e => setActiveFontSize(parseInt(e.target.value))}
+                      onChange={e => handleFontSize(parseInt(e.target.value))}
                       className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
                     >
                       {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
                     </select>
+                 </div>
+
+                 <div className="flex items-center bg-slate-100/50 rounded-lg p-0.5 border border-slate-200 shadow-inner">
+                    <button 
+                      onClick={handleBoldToggle}
+                      className={`px-3 py-1 text-[11px] font-black transition-all rounded ${isBold ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      B
+                    </button>
+                    <button 
+                      onClick={handleItalicToggle}
+                      className={`px-3 py-1 text-[11px] font-black italic transition-all rounded ${isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      I
+                    </button>
+                    <button 
+                      onClick={handleUnderlineToggle}
+                      className={`px-3 py-1 text-[11px] font-black underline transition-all rounded ${isUnderline ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      U
+                    </button>
+                 </div>
+
+                 <div className="flex items-center bg-slate-100/50 rounded-lg p-0.5 border border-slate-200 shadow-inner">
+                    <button 
+                      onClick={() => handleTextAlign('left')}
+                      className={`p-1.5 transition-all rounded ${textAlign === 'left' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      <AlignLeft size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleTextAlign('center')}
+                      className={`p-1.5 transition-all rounded ${textAlign === 'center' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      <AlignCenter size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleTextAlign('right')}
+                      className={`p-1.5 transition-all rounded ${textAlign === 'right' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      <AlignRight size={14} />
+                    </button>
                  </div>
               </div>
             )}

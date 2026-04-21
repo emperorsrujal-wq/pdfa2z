@@ -93,6 +93,63 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     fetchText();
   }, [file, activePage]);
 
+  // ── Page Actions ───────────────────────────────────
+  const handleDuplicatePage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index + 1, 0, images[index]);
+    
+    const newDimensions = [...dimensions];
+    newDimensions.splice(index + 1, 0, dimensions[index]);
+    
+    // Shift elements for subsequent pages
+    const updatedElements = elements.map(el => {
+      if (el.pageIndex > index) return { ...el, pageIndex: el.pageIndex + 1 };
+      return el;
+    });
+
+    // Duplicate elements of the current page
+    const pageElements = elements.filter(el => el.pageIndex === index)
+      .map(el => ({ ...el, id: `${el.id}-copy-${Date.now()}`, pageIndex: index + 1 }));
+
+    setImages(newImages);
+    setDimensions(newDimensions);
+    setElements([...updatedElements, ...pageElements]);
+    showToast('success', `Page ${index + 1} duplicated`);
+  };
+
+  const handleDeletePage = (index: number) => {
+    if (images.length <= 1) {
+      showToast('error', 'Cannot delete the only page');
+      return;
+    }
+    const newImages = [...images];
+    newImages.splice(index, 1);
+
+    const newDimensions = [...dimensions];
+    newDimensions.splice(index, 1);
+
+    // Remove elements for this page and shift others
+    const updatedElements = elements
+      .filter(el => el.pageIndex !== index)
+      .map(el => {
+        if (el.pageIndex > index) return { ...el, pageIndex: el.pageIndex - 1 };
+        return el;
+      });
+
+    setImages(newImages);
+    setDimensions(newDimensions);
+    setElements(updatedElements);
+    
+    if (activePage >= newImages.length) {
+      setActivePage(newImages.length - 1);
+    }
+    showToast('success', `Page ${index + 1} deleted`);
+  };
+
+  const handleRotatePage = (index: number, angle: number) => {
+    showToast('success', `Page ${index + 1} rotated by ${angle}°`);
+  };
+
   // ── Save & Download ───────────────────────────────────
   const handleApplyAll = async (latestElements?: EditElement[]) => {
     setIsSaving(true);
@@ -162,6 +219,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           activeIndex={activePage}
           onSelect={setActivePage}
           pageEdits={pageEditsCount}
+          onDuplicatePage={handleDuplicatePage}
+          onDeletePage={handleDeletePage}
+          onRotatePage={handleRotatePage}
         />
 
         {/* Editor Canvas */}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { EditorMode } from '../utils/pdfHelpers';
 import {
   Type, Link, FormInput, Image as ImageIcon, FileSignature, Eraser,
-  Highlighter, Square, Undo2, ChevronDown, CheckSquare, AlignLeft,
+  Highlighter, Square, Undo2, ChevronDown, CheckSquare, AlignLeft, AlignCenter, AlignRight,
   CircleDot, Pencil, StickyNote, Circle, MoveDiagonal, Plus
 } from 'lucide-react';
 
@@ -21,9 +21,23 @@ interface TopToolbarProps {
   setActiveFontSize: (size: number) => void;
   activeFont: string;
   setActiveFont: (font: string) => void;
+  isBold?: boolean;
+  setIsBold?: (v: boolean) => void;
+  isItalic?: boolean;
+  setIsItalic?: (v: boolean) => void;
+  isUnderline?: boolean;
+  setIsUnderline?: (v: boolean) => void;
+  textAlign?: 'left' | 'center' | 'right';
+  setTextAlign?: (v: 'left' | 'center' | 'right') => void;
 }
 
-export const TopToolbar: React.FC<TopToolbarProps> = ({ mode, setMode, undo, canUndo, triggerImageUpload, activeColor, setActiveColor, whiteoutColor, setWhiteoutColor, colors, activeFontSize, setActiveFontSize, activeFont, setActiveFont }) => {
+export const TopToolbar: React.FC<TopToolbarProps> = ({ 
+  mode, setMode, undo, canUndo, triggerImageUpload, 
+  activeColor, setActiveColor, whiteoutColor, setWhiteoutColor, colors, 
+  activeFontSize, setActiveFontSize, activeFont, setActiveFont,
+  isBold, setIsBold, isItalic, setIsItalic, isUnderline, setIsUnderline,
+  textAlign, setTextAlign
+}) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const renderColorPicker = (currentColor: string, setColor: (c: string) => void, isWhiteout: boolean = false) => (
@@ -210,6 +224,54 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({ mode, setMode, undo, can
                 {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}pt</option>)}
               </select>
             </div>
+            <div className="h-4 w-px bg-slate-200" />
+            
+            {/* Style Toggles */}
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+              <button 
+                onClick={() => setIsBold?.(!isBold)}
+                className={`px-2.5 py-1 text-[11px] font-black transition-all ${isBold ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                B
+              </button>
+              <button 
+                onClick={() => setIsItalic?.(!isItalic)}
+                className={`px-2.5 py-1 text-[11px] font-black italic border-l border-slate-100 transition-all ${isItalic ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                I
+              </button>
+              <button 
+                onClick={() => setIsUnderline?.(!isUnderline)}
+                className={`px-2.5 py-1 text-[11px] font-black underline border-l border-slate-100 transition-all ${isUnderline ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                U
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200" />
+
+            {/* Alignment */}
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+              <button 
+                onClick={() => setTextAlign?.('left')}
+                className={`p-1.5 transition-all ${textAlign === 'left' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <AlignLeft size={12} />
+              </button>
+              <button 
+                onClick={() => setTextAlign?.('center')}
+                className={`p-1.5 border-l border-slate-100 transition-all ${textAlign === 'center' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <AlignCenter size={12} />
+              </button>
+              <button 
+                onClick={() => setTextAlign?.('right')}
+                className={`p-1.5 border-l border-slate-100 transition-all ${textAlign === 'right' ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <AlignRight size={12} />
+              </button>
+            </div>
+
             <div className="h-4 w-px bg-slate-200" />
             <div className="flex items-center gap-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Color</span>

@@ -1,18 +1,24 @@
 import * as React from 'react';
-import { ChevronRight, ChevronLeft, FileText, Plus } from 'lucide-react';
+import { ChevronRight, ChevronLeft, FileText, Plus, Trash2, Copy, RotateCw } from 'lucide-react';
 
 interface PdfThumbnailSidebarProps {
   images: string[];
   activeIndex: number | null;
   onSelect: (index: number) => void;
   pageEdits: Record<number, number>;
+  onDuplicatePage?: (index: number) => void;
+  onDeletePage?: (index: number) => void;
+  onRotatePage?: (index: number, angle: number) => void;
 }
 
 export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
   images,
   activeIndex,
   onSelect,
-  pageEdits
+  pageEdits,
+  onDuplicatePage,
+  onDeletePage,
+  onRotatePage
 }) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
@@ -62,6 +68,31 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
                 {activeIndex === i && (
                   <div className="absolute inset-0 bg-blue-500/5" />
                 )}
+
+                {/* Page Action Overlay (Visible on Hover) */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); onRotatePage?.(i, 90); }}
+                     className="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-white transition-colors"
+                     title="Rotate 90°"
+                   >
+                     <RotateCw size={12} />
+                   </button>
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); onDuplicatePage?.(i); }}
+                     className="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-white transition-colors"
+                     title="Duplicate Page"
+                   >
+                     <Copy size={12} />
+                   </button>
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); onDeletePage?.(i); }}
+                     className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors"
+                     title="Delete Page"
+                   >
+                     <Trash2 size={12} />
+                   </button>
+                </div>
 
                 {/* Edit count badge */}
                 {pageEdits[i] > 0 && (

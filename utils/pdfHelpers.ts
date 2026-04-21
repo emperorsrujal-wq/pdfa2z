@@ -695,8 +695,14 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
       }
 
       const font = await pdfDoc.embedFont(fontToEmbed); 
+      const textWidth = font.widthOfTextAtSize(el.text, fontSize);
+      
+      let drawX = actualX;
+      if (el.textAlign === 'center') drawX = actualX - (textWidth / 2);
+      else if (el.textAlign === 'right') drawX = actualX - textWidth;
+
       page.drawText(el.text, {
-        x: actualX,
+        x: drawX,
         y: actualY - fontSize,
         size: fontSize,
         font,
@@ -704,6 +710,16 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         opacity: elOpacity,
         rotate: elRotation,
       });
+
+      if (el.isUnderline) {
+        page.drawLine({
+          start: { x: drawX, y: actualY - fontSize - 2 },
+          end: { x: drawX + textWidth, y: actualY - fontSize - 2 },
+          color: elColor,
+          thickness: 1,
+          opacity: elOpacity,
+        });
+      }
     } else if (el.type === 'highlight') {
       page.drawRectangle({
         x: actualX,
