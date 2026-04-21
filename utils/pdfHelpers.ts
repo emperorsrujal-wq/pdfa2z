@@ -580,7 +580,13 @@ export const sampleBackgroundColor = async (
 
 export type EditElementType = 
   'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'audio' | 
-  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'form-select' | 'link' | 'sticky-note';
+  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature';
+
+export type EditorMode =
+  | 'select' | 'text' | 'draw' | 'erase' | 'smart-erase' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'picker' | 'magic-edit' | 'font-picker'
+  | 'highlight' | 'strikeout' | 'underline' | 'link' | 'ellipse' | 'forms' | 'sign' | 'signature' | 'sticky-note' | 'find-replace'
+  | 'ocr' | 'convert' | 'page-tools' | 'form-builder' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'comment';
+
 
 export type FormFieldType = 'text' | 'checkbox' | 'dropdown';
 
@@ -845,10 +851,8 @@ export const notImplementedPlaceholder = async (file: File, format: string): Pro
 };
 
 export const pdfToPpt = async (file: File): Promise<Blob> => {
-  // Basic implementation: Extract text and put in a text file but call it PPT
-  // Real implementation requires PptxGenJS
   const text = await extractTextFromPdf(file);
-  return new Blob([text], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+  return convertPdfToPptx(text);
 };
 
 export interface RedactionArea {

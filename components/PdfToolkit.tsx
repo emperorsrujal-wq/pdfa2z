@@ -181,7 +181,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         const { images } = await pdfToImages(files[0]);
         setResultImages(images);
       }
-      else if (mode === 'IMG_TO_PDF') {
+      else if (mode === 'IMG_TO_PDF' || mode === 'IMAGES_TO_PDF') {
         const res = await imagesToPdf(files);
         downloadBlob(res, 'converted.pdf');
       }
@@ -469,7 +469,8 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'ROTATE': return { icon: <RotateCw />, title: 'Rotate PDF' };
       case 'DELETE_PAGES': return { icon: <FileX />, title: 'Delete Pages' };
       case 'EXTRACT_TEXT': return { icon: <FileText />, title: 'Extract Text' };
-      case 'IMG_TO_PDF': return { icon: <FileImage />, title: 'Image to PDF' };
+      case 'IMG_TO_PDF':
+      case 'IMAGES_TO_PDF': return { icon: <FileImage />, title: 'Image to PDF' };
       case 'COMPRESS': return { icon: <Zap />, title: 'Optimize PDF' };
       case 'ORGANIZE': return { icon: <LayoutTemplate />, title: 'Organize Pages' };
       case 'SANITIZE': return { icon: <ShieldAlert />, title: 'Sanitize PDF' };
@@ -497,7 +498,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
           <div onClick={() => fileInputRef.current?.click()} className="flex-1 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-600 transition-all min-h-[300px]">
             <Upload size={40} className="mb-4 text-indigo-600" />
             <p className="font-black uppercase tracking-tighter">
-              {mode === 'IMG_TO_PDF' ? 'Upload Images' :
+              {mode === 'IMG_TO_PDF' || mode === 'IMAGES_TO_PDF' ? 'Upload Images' :
                 mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
                   mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' ? 'Upload Ebook' :
                     'Upload your PDF'}
@@ -648,19 +649,22 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
               </div>
             )}
 
-            {['PPT_TO_PDF', 'EPUB_TO_PDF', 'MOBI_TO_PDF', 'OUTLOOK_TO_PDF', 'AZW3_TO_PDF'].includes(mode) && files.length > 0 && (
+            {['PPT_TO_PDF', 'WORD_TO_PDF', 'EPUB_TO_PDF', 'MOBI_TO_PDF', 'OUTLOOK_TO_PDF', 'AZW3_TO_PDF'].includes(mode) && files.length > 0 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-blue-900">
                   <h3 className="font-bold mb-2 flex items-center gap-2">
                     <Info size={18} /> Direct Conversion Limited
                   </h3>
-                  <p className="text-sm opacity-90 leading-relaxed">
-                    Converting <strong>{mode.split('_')[0]}</strong> files permanently to PDF locally in the browser is challenging. We are building a secure server-side engine for this.
+                  <p className="text-sm opacity-90 leading-relaxed mb-4">
+                    Converting <strong>{mode.split('_')[0]}</strong> files directly in the browser is technically limited. We are currently building a secure high-performance engine to handle these professionally.
                   </p>
-                  <div className="mt-4 pt-4 border-t border-blue-100">
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Pro Tip:</p>
-                    <p className="text-sm">Open your file and use <strong>File {" > "} Print {" > "} Save as PDF</strong> for a high-quality result right now.</p>
+                  <div className="bg-white/50 rounded-xl p-4 border border-blue-100">
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">Pro Tip:</p>
+                    <p className="text-xs">
+                      Open your document, press <strong>Ctrl + P</strong> (or Cmd + P) and select <strong>"Save as PDF"</strong> as your printer for an instant conversion.
+                    </p>
                   </div>
+
                 </div>
                 <div className="bg-white p-4 rounded-xl border flex justify-between items-center shadow-sm opacity-50">
                   <div className="flex items-center gap-3 overflow-hidden">
@@ -670,7 +674,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   <button onClick={reset}><Trash2 size={18} className="text-slate-300" /></button>
                 </div>
                 <Button disabled className="w-full py-6 bg-slate-400 opacity-50 cursor-not-allowed uppercase font-black tracking-widest">
-                  Server Enging Coming Soon
+                  Server Engine Coming Soon
                 </Button>
               </div>
             )}

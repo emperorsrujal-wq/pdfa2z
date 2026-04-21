@@ -717,7 +717,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     ],
     type: ToolType.PDF_SUITE,
     icon: Image,
-    mode: 'IMAGES_TO_PDF'
+    mode: 'IMG_TO_PDF'
   },
   'word-to-pdf': {
     slug: 'word-to-pdf',
@@ -1740,7 +1740,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload PNG images.', 'Drag to reorder.', 'Download combined PDF.'],
     faqs: [],
     type: ToolType.PDF_SUITE,
-    mode: 'IMAGES_TO_PDF',
+    mode: 'IMG_TO_PDF',
     unique: true
   },
   'bmp-to-pdf': {
@@ -1753,7 +1753,7 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
     steps: ['Upload BMP images.', 'Convert to PDF.', 'Download.'],
     faqs: [],
     type: ToolType.PDF_SUITE,
-    mode: 'IMAGES_TO_PDF',
+    mode: 'IMG_TO_PDF',
     unique: true
   }
 };

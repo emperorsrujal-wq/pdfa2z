@@ -242,10 +242,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     onSave(next);
 
     // Audit Entry
-    if (nextCount > prevCount) {
+    if (next.length > elements.length) {
       const added = next[next.length - 1];
       addAuditEntry(`Added ${added.type}`, `Positioned at ${Math.round(added.x)},${Math.round(added.y)}`);
-    } else if (nextCount < prevCount) {
+    } else if (next.length < elements.length) {
       addAuditEntry(`Deleted element`, `Removed element from page ${pageIndex + 1}`);
     }
 

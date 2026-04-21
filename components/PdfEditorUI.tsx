@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   PenTool, Download, X, ChevronLeft, ChevronRight,
   Layers, CheckCircle2, AlertCircle, Loader2
@@ -140,88 +141,20 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     return acc;
   }, {} as Record<number, number>);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden font-sans editor-bg">
 
-      {/* ── Premium Dark Header ──────────────────────────── */}
-      <header
-        className="shrink-0 z-50 flex items-center justify-between px-5 h-14"
-        style={{ background: 'var(--editor-toolbar)', borderBottom: '1px solid var(--editor-border)' }}
-      >
-        {/* Left: Logo + File info */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <PenTool size={14} className="text-white" />
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-black text-white text-sm tracking-tighter">PDF Editor</span>
-              <span className="text-[9px] font-black text-blue-400/70 bg-blue-400/10 px-1.5 py-0.5 rounded-full border border-blue-400/20 uppercase tracking-widest">PRO</span>
-            </div>
-          </div>
-
-          <div className="w-px h-4 bg-white/8" />
-
-          <div className="flex items-center gap-2.5">
-            <span className="text-[11px] text-slate-400 truncate max-w-[180px]">{file.name}</span>
-            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{images.length} page{images.length !== 1 ? 's' : ''}</span>
-          </div>
-
-          {totalEdits > 0 && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black text-blue-400">{totalEdits} edit{totalEdits !== 1 ? 's' : ''}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Page navigation */}
-        {images.length > 1 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActivePage(p => Math.max(0, p - 1))}
-              disabled={activePage === 0}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs font-bold text-slate-400 min-w-[70px] text-center tabular-nums">
-              Page <span className="text-white">{activePage + 1}</span> / {images.length}
-            </span>
-            <button
-              onClick={() => setActivePage(p => Math.min(images.length - 1, p + 1))}
-              disabled={activePage === images.length - 1}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onCancel}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/8 text-[11px] font-bold transition-all"
-          >
-            <X size={14} /> Close
-          </button>
-
-          <button
-            onClick={() => handleApplyAll()}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-blue-500/25 text-[11px] font-black transition-all active:scale-95"
-          >
-            {isSaving ? (
-              <><Loader2 size={14} className="animate-spin" /> Saving...</>
-            ) : (
-              <><Download size={14} /> Save & Download</>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Main Workspace ───────────────────────────────── */}
+      
+      {/* ── Scan Warning Banner (Sejda style) ──────────────────────────── */}
+      <div className="shrink-0 bg-slate-800 text-white flex items-center justify-center gap-3 px-4 py-2 z-[100]">
+        <AlertCircle size={14} className="text-yellow-400" />
+        <span className="text-[11px] font-medium">
+          <strong>Editing a scan?</strong> Changing existing text inside scans not supported. <a href="#" className="underline hover:text-indigo-300">Convert to Word</a> to edit text.
+        </span>
+        <button className="p-1 hover:bg-white/10 rounded-lg ml-2"><X size={12} className="opacity-70"/></button>
+      </div>
+      
+{/* ── Main Workspace ───────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <PdfThumbnailSidebar
@@ -253,6 +186,37 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-    </div>
+    
+      {/* ── Sticky Bottom Banner ──────────────────────────── */}
+      <div className="shrink-0 flex items-center justify-between px-6 py-3 bg-white border-t border-slate-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-[200]">
+        <div className="flex flex-col">
+          <span className="text-sm font-black text-slate-800">Apply changes</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{file.name}</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[13px] font-bold transition-all"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => handleApplyAll()}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-emerald-500/25 text-[14px] font-black transition-all active:scale-95"
+          >
+            {isSaving ? (
+              <><Loader2 size={16} className="animate-spin" /> Saving...</>
+            ) : (
+              <>Apply changes</>
+            )}
+          </button>
+        </div>
+      </div>
+
+    </div>,
+    document.body
   );
 };
