@@ -14,20 +14,23 @@
 
 ## ⚙️ Required API Keys & Setup
 
-### 1. **Gemini API Key** (For AI Tools)
+### 1. **Gemini API Key** (For AI Tools & Blog Generator)
 
-**Status**: ❌ Not configured (PLACEHOLDER_API_KEY)
+**Status**: ⚠️ Re-configuration Required (Old key leaked and revoked)
 
 Get your free API key:
-1. Go to https://ai.google.dev/gemini-api
-2. Click "Get API Key" 
-3. Create a new project or use existing
-4. Copy the API key
+1. Go to https://aistudio.google.com/app/apikey
+2. Click "Create API key" 
+3. Copy the API key
 
 **Add to .env.local**:
 ```env
 VITE_GEMINI_API_KEY=your_actual_api_key_here
 ```
+
+**How it works now**:
+- The blog generator script (`scripts/generateDailyBlog.js`) now securely reads from this `.env.local` file.
+- Hardcoded keys have been removed to prevent future leaks.
 
 **Or set in browser**:
 ```javascript
