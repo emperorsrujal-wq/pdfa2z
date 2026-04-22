@@ -12,7 +12,9 @@ RUN apk add --no-cache \
     ttf-freefont
 
 # Tell Puppeteer to skip installing Chrome (we'll use the installed one)
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+# PUPPETEER_SKIP_DOWNLOAD covers Puppeteer v20+; keep legacy var for older versions
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 COPY package*.json ./
