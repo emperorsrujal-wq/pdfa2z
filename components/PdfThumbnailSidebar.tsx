@@ -10,6 +10,8 @@ interface PdfThumbnailSidebarProps {
   onDeletePage?: (index: number) => void;
   onRotatePage?: (index: number, angle: number) => void;
   onMovePage?: (index: number, direction: 'up' | 'down') => void;
+  onAddPage?: () => void;
+  pageRotations?: Record<number, number>;
   elements: any[];
 }
 
@@ -22,6 +24,8 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
   onDeletePage,
   onRotatePage,
   onMovePage,
+  onAddPage,
+  pageRotations = {},
   elements
 }) => {
   const [isOpen, setIsOpen] = React.useState(true);
@@ -109,7 +113,12 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
               }`}
             >
               <div className="aspect-[3/4] bg-slate-800 rounded-lg overflow-hidden relative">
-                <img src={img} className="w-full h-full object-contain" alt={`Page ${i + 1}`} />
+                <img
+                  src={img}
+                  className="w-full h-full object-contain transition-transform duration-300"
+                  style={{ transform: `rotate(${pageRotations[i] || 0}deg)` }}
+                  alt={`Page ${i + 1}`}
+                />
 
                 {/* Active overlay */}
                 {activeIndex === i && (
@@ -225,11 +234,12 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
       {isOpen && (
         <div className="shrink-0 p-3 border-t border-white/5">
           <button
-            title="Feature coming soon"
-            disabled
-            className="w-full py-2 rounded-xl border border-dashed border-white/10 text-slate-600 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:border-white/20 transition-colors cursor-not-allowed"
+            type="button"
+            onClick={onAddPage}
+            disabled={!onAddPage}
+            className="w-full py-2 rounded-xl border border-dashed border-white/10 text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:border-indigo-500/50 hover:text-indigo-400 transition-all disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Plus size={12} /> Add Page
+            <Plus size={12} /> Add Blank Page
           </button>
         </div>
       )}

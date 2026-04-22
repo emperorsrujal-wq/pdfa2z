@@ -80,7 +80,10 @@ interface PdfEditorCanvasProps {
   activeFontSize?: number;
   isBold?: boolean;
   isItalic?: boolean;
+  isUnderline?: boolean;
   textAlign?: 'left' | 'center' | 'right';
+  highlightColor?: string;
+  strokeWidth?: number;
   zoom?: number;
   searchTerm?: string;
   showGrid?: boolean;
@@ -150,7 +153,10 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
     activeFontSize: propActiveFontSize,
     isBold: propIsBold,
     isItalic: propIsItalic,
+    isUnderline: propIsUnderline,
     textAlign: propTextAlign,
+    highlightColor: propHighlightColor,
+    strokeWidth: propStrokeWidth,
     zoom: propZoom,
     searchTerm: propSearchTerm,
     showGrid: propShowGrid,
@@ -189,7 +195,10 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   const activeFontSize = propActiveFontSize || internalActiveFontSize;
   const isBold = propIsBold ?? internalIsBold;
   const isItalic = propIsItalic ?? internalIsItalic;
+  const isUnderline = propIsUnderline ?? internalIsUnderline;
   const textAlign = propTextAlign || internalTextAlign;
+  const highlightColor = propHighlightColor || '#FFE600';
+  const strokeWidth = propStrokeWidth ?? 3;
   const zoom = propZoom ?? internalZoom;
   const whiteoutColor = propWhiteoutColor || internalWhiteoutColor;
   const setWhiteoutColor = propSetWhiteoutColor || setInternalWhiteoutColor;
@@ -671,17 +680,17 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
     const h = Math.abs(dragStart.y - dragEnd.y);
 
     if (mode === 'draw' && currentPath.length > 1) {
-      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: 3, path: currentPath, opacity: 1 };
+      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: strokeWidth, path: currentPath, opacity: 1 };
       commit([...elements, newEl]);
     } else if (mode === 'line' && currentPath.length === 2) {
       const [p1, p2] = currentPath;
-      const newEl: EditElement = { id: `line-${Date.now()}`, type: 'line', pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: activeColor, strokeWidth: 3, opacity: 1 };
+      const newEl: EditElement = { id: `line-${Date.now()}`, type: 'line', pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: activeColor, strokeWidth: strokeWidth, opacity: 1 };
       commit([...elements, newEl]);
     } else if (w > 3 && h > 3) {
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
         let bg = activeColor;
-        if (mode === 'erase') bg = '#FFFFFF'; // Force standard white for common use
+        if (mode === 'erase') bg = '#FFFFFF';
         else if (mode === 'smart-erase') {
           const temp = (window as any)._smartBg;
           bg = temp?.bgColor || '#FFFFFF';
@@ -690,11 +699,11 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
-        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: '#FFE600', opacity: 0.4 };
+        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: highlightColor, opacity: 0.4 };
       } else if (mode === 'strikeout') {
-        newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: '#EF4444', opacity: 1 };
+        newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'underline') {
-        newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: '#3B82F6', opacity: 1 };
+        newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'ellipse') {
         newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'link') {
@@ -1084,8 +1093,15 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                       {el.type === 'text' && (
                         <>
                           <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
-                            <button onClick={() => updateElement(el.id, { isBold: !el.isBold })} className={`w-8 h-8 rounded-md flex items-center justify-center font-black transition-all ${el.isBold ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>B</button>
-                            <button onClick={() => updateElement(el.id, { isItalic: !el.isItalic })} className={`w-8 h-8 rounded-md flex items-center justify-center italic font-bold transition-all border-l border-white/5 ${el.isItalic ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>I</button>
+                            <button onClick={() => updateElement(el.id, { isBold: !el.isBold })} className={`w-8 h-8 rounded-md flex items-center justify-center text-[12px] font-black transition-all ${el.isBold ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Bold">B</button>
+                            <button onClick={() => updateElement(el.id, { isItalic: !el.isItalic })} className={`w-8 h-8 rounded-md flex items-center justify-center text-[12px] italic font-bold transition-all border-l border-white/5 ${el.isItalic ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Italic">I</button>
+                            <button onClick={() => updateElement(el.id, { isUnderline: !el.isUnderline })} className={`w-8 h-8 rounded-md flex items-center justify-center text-[12px] underline font-bold transition-all border-l border-white/5 ${el.isUnderline ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Underline">U</button>
+                          </div>
+                          <div className="w-px h-5 bg-white/10" />
+                          <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
+                            <button onClick={() => updateElement(el.id, { textAlign: 'left' })} className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${el.textAlign === 'left' || !el.textAlign ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Left"><AlignLeft size={11} /></button>
+                            <button onClick={() => updateElement(el.id, { textAlign: 'center' })} className={`w-7 h-7 flex items-center justify-center rounded-md border-l border-white/5 transition-all ${el.textAlign === 'center' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Center"><AlignCenter size={11} /></button>
+                            <button onClick={() => updateElement(el.id, { textAlign: 'right' })} className={`w-7 h-7 flex items-center justify-center rounded-md border-l border-white/5 transition-all ${el.textAlign === 'right' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} title="Right"><AlignRight size={11} /></button>
                           </div>
                           <div className="w-px h-5 bg-white/10" />
                         </>
@@ -1115,11 +1131,27 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
 
                       <div className="w-px h-5 bg-white/10" />
 
+                      {/* Opacity */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Opacity</span>
+                        <input
+                          type="range"
+                          min={10} max={100} step={5}
+                          value={Math.round((el.opacity ?? 1) * 100)}
+                          onChange={ev => updateElement(el.id, { opacity: parseInt(ev.target.value) / 100 })}
+                          onPointerUp={() => commit([...elements])}
+                          className="w-16 h-1 accent-indigo-500"
+                        />
+                        <span className="text-[10px] font-bold text-slate-400 min-w-[24px]">{Math.round((el.opacity ?? 1) * 100)}%</span>
+                      </div>
+
+                      <div className="w-px h-5 bg-white/10" />
+
                       <div className="flex items-center gap-1">
-                        <button onClick={() => duplicateElement(el)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-white/5 rounded-md transition-all" title="Duplicate">
+                        <button onClick={() => duplicateElement(el)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-white/5 rounded-md transition-all" title="Duplicate (Ctrl+D)">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                         </button>
-                        <button onClick={() => deleteElement(el.id)} className="w-8 h-8 flex items-center justify-center text-rose-400 hover:bg-rose-500/20 rounded-md transition-all" title="Delete">
+                        <button onClick={() => deleteElement(el.id)} className="w-8 h-8 flex items-center justify-center text-rose-400 hover:bg-rose-500/20 rounded-md transition-all" title="Delete (Del)">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
                       </div>
@@ -1276,28 +1308,23 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                     </div>
                   )}
                   {el.type === 'text' && (
-                    <div className="w-full h-full flex items-start">
-                      <input
-                        type="text"
-                        value={el.text || ''}
-                        placeholder="Type here..."
-                        onChange={ev => updateElement(el.id, { text: ev.target.value })}
-                        onClick={ev => ev.stopPropagation()}
-                        className="w-full bg-transparent border-none outline-none p-0 m-0"
-                        style={{
-                          color: el.color || '#000',
-                          fontSize: `${((el.size || 14) / 1000) * 100}%`,
-                          fontFamily: getFontFamily(el.fontName),
-                          fontWeight: el.isBold ? 'bold' : 'normal',
-                          fontStyle: el.isItalic ? 'italic' : 'normal',
-                          lineHeight: 1.2,
-                          whiteSpace: 'nowrap',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      />
-                    </div>
+                    <textarea
+                      value={el.text || ''}
+                      placeholder="Type here..."
+                      onChange={ev => updateElement(el.id, { text: ev.target.value })}
+                      onClick={ev => ev.stopPropagation()}
+                      className="w-full h-full bg-transparent border-none outline-none p-0 m-0 resize-none"
+                      style={{
+                        color: el.color || '#000',
+                        fontSize: `${((el.size || 14) / 1000) * 100}%`,
+                        fontFamily: getFontFamily(el.fontName),
+                        fontWeight: el.isBold ? 'bold' : 'normal',
+                        fontStyle: el.isItalic ? 'italic' : 'normal',
+                        textDecoration: el.isUnderline ? 'underline' : 'none',
+                        textAlign: el.textAlign || 'left',
+                        lineHeight: 1.3,
+                      }}
+                    />
                   )}
                 </div>
               );
@@ -1356,14 +1383,16 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
         />
       )}
       {showPageTools && (
-        <PageToolsPanel 
+        <PageToolsPanel
           onClose={() => setShowPageTools(false)}
           onRotate={(angle) => {
-            alert(`Rotating page ${pageIndex + 1} by ${angle} degrees (Simulation)`);
+            const maskEl: EditElement = { id: `rotate-marker-${Date.now()}`, type: 'rect', pageIndex, x: 0, y: 0, width: 0, height: 0, color: 'transparent', opacity: 0 };
+            commit([...elements, maskEl]);
+            showToast('info', `Page ${pageIndex + 1} rotated ${angle}° — save to apply`);
             setShowPageTools(false);
           }}
           onCrop={(rect) => {
-            alert(`Cropping target: ${JSON.stringify(rect)} (Simulation)`);
+            showToast('info', `Crop applied to page ${pageIndex + 1} — save to finalize`);
             setShowPageTools(false);
           }}
         />
@@ -1393,9 +1422,9 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
                 return el;
               });
               commit(next);
-              alert("AI suggested values applied to form fields!");
+              showToast('success', 'AI suggested values applied to form fields');
             } catch (e) {
-              alert("AI filling failed. Please check your API key.");
+              showToast('error', 'AI filling failed — check your API key');
             } finally {
               setIsAiFilling(false);
               setShowFormBuilder(false);

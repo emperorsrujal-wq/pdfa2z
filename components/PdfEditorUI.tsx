@@ -55,11 +55,14 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [mode, setMode] = React.useState<EditorMode>('magic-edit');
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [whiteoutColor, setWhiteoutColor] = React.useState('#FFFFFF');
+  const [highlightColor, setHighlightColor] = React.useState('#FFE600');
   const [activeFontSize, setActiveFontSize] = React.useState(14);
   const [activeFont, setActiveFont] = React.useState('Helvetica');
   const [isBold, setIsBold] = React.useState(false);
   const [isItalic, setIsItalic] = React.useState(false);
+  const [isUnderline, setIsUnderline] = React.useState(false);
   const [textAlign, setTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
+  const [strokeWidth, setStrokeWidth] = React.useState(3);
   const [canUndo, setCanUndo] = React.useState(false);
   const [canRedo, setCanRedo] = React.useState(false);
 
@@ -175,8 +178,32 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     showToast('success', `Page ${index + 1} deleted`);
   };
 
+  const [pageRotations, setPageRotations] = React.useState<Record<number, number>>({});
+
   const handleRotatePage = (index: number, angle: number) => {
-    showToast('success', `Page ${index + 1} rotated by ${angle}°`);
+    setPageRotations(prev => ({
+      ...prev,
+      [index]: ((prev[index] || 0) + angle) % 360,
+    }));
+    showToast('success', `Page ${index + 1} rotated ${angle}°`);
+  };
+
+  const handleAddPage = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 794;
+    canvas.height = 1123;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    const blankDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const newImages = [...images, blankDataUrl];
+    const newDimensions = [...dimensions, { width: 595, height: 842 }];
+    setImages(newImages);
+    setDimensions(newDimensions);
+    setActivePage(newImages.length - 1);
+    showToast('success', 'Blank page added');
   };
 
   const handleMovePage = (index: number, direction: 'up' | 'down') => {
@@ -265,6 +292,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
         setActiveColor={setActiveColor}
         whiteoutColor={whiteoutColor}
         setWhiteoutColor={setWhiteoutColor}
+        highlightColor={highlightColor}
+        setHighlightColor={setHighlightColor}
         colors={['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']}
         activeFontSize={activeFontSize}
         setActiveFontSize={setActiveFontSize}
@@ -274,8 +303,12 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
         setIsBold={setIsBold}
         isItalic={isItalic}
         setIsItalic={setIsItalic}
+        isUnderline={isUnderline}
+        setIsUnderline={setIsUnderline}
         textAlign={textAlign}
         setTextAlign={setTextAlign}
+        strokeWidth={strokeWidth}
+        setStrokeWidth={setStrokeWidth}
         zoom={zoom}
         setZoom={setZoom}
         searchTerm={searchTerm}
@@ -296,6 +329,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           onDeletePage={handleDeletePage}
           onRotatePage={handleRotatePage}
           onMovePage={handleMovePage}
+          onAddPage={handleAddPage}
+          pageRotations={pageRotations}
           elements={elements}
         />
 
@@ -327,7 +362,10 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             activeFontSize={activeFontSize}
             isBold={isBold}
             isItalic={isItalic}
+            isUnderline={isUnderline}
             textAlign={textAlign}
+            highlightColor={highlightColor}
+            strokeWidth={strokeWidth}
             zoom={zoom}
             searchTerm={searchTerm}
             showGrid={showGrid}
@@ -341,9 +379,32 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     
       {/* ── Sticky Bottom Banner ──────────────────────────── */}
       <div className="shrink-0 flex items-center justify-between px-6 py-3 bg-white border-t border-slate-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-[200]">
-        <div className="flex flex-col">
-          <span className="text-sm font-black text-slate-800">Apply changes</span>
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{file.name}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-slate-800 truncate max-w-[200px]">{file.name}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{totalEdits} edit{totalEdits !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setActivePage(p => Math.max(0, p - 1))}
+              disabled={activePage === 0}
+              className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="text-[11px] font-black text-slate-700 min-w-[60px] text-center">
+              Page {activePage + 1} of {images.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePage(p => Math.min(images.length - 1, p + 1))}
+              disabled={activePage === images.length - 1}
+              className="p-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
