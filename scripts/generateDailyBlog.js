@@ -13,7 +13,21 @@ try {
   const { default: dotenv } = await import('dotenv');
   dotenv.config();
 } catch (e) {
-  // Dotenv not available, that's fine
+  // Dotenv not available, try manual parse of .env.local
+  try {
+    const envLocalPath = path.join(__dirname, '../.env.local');
+    if (fs.existsSync(envLocalPath)) {
+      const envContent = fs.readFileSync(envLocalPath, 'utf-8');
+      envContent.split('\n').forEach(line => {
+        const [key, ...value] = line.split('=');
+        if (key && value) {
+          process.env[key.trim()] = value.join('=').trim();
+        }
+      });
+    }
+  } catch (err) {
+    // Manual parse failed
+  }
 }
 
 let GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
