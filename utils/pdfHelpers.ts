@@ -1225,7 +1225,7 @@ export const addBatesNumbering = async (pdfBytes: ArrayBuffer, prefix: string = 
   const pages = doc.getPages();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   
-  pages.forEach((page, i) => {
+  pages.forEach((page: any, i: number) => {
     const batesNumber = `${prefix}${String(startNumber + i).padStart(6, '0')}`;
     const { width } = page.getSize();
     page.drawText(batesNumber, {

@@ -53,7 +53,7 @@ import { PageToolsPanel } from './PageToolsPanel';
 import { FormBuilder } from './FormBuilder';
 import { AuditLog } from './AuditLog';
 import { suggestFormValues } from '../services/geminiService';
-import { EditElement, EditElementType, extractStyleAtPoint, getTextItems, PdfTextItem, sampleBackgroundColor } from '../utils/pdfHelpers';
+import { EditElement, EditElementType, extractStyleAtPoint, getTextItems, PdfTextItem, sampleBackgroundColor, EditorMode } from '../utils/pdfHelpers';
 import { ObjectToolbar } from './ObjectToolbar';
 import { Tooltip } from './Tooltip';
 
@@ -87,37 +87,7 @@ interface PdfEditorCanvasProps {
   setShowGrid?: (s: boolean) => void;
 }
 
-type EditorMode =
-  | 'select'
-  | 'text'
-  | 'draw'
-  | 'erase'
-  | 'smart-erase'
-  | 'rect'
-  | 'circle'
-  | 'line'
-  | 'arrow'
-  | 'image'
-  | 'picker'
-  | 'magic-edit'
-  | 'highlight'
-  | 'strikeout'
-  | 'underline'
-  | 'link'
-  | 'ellipse'
-  | 'forms'
-  | 'sign'
-  | 'sticky-note'
-  | 'find-replace'
-  | 'ocr'
-  | 'convert'
-  | 'page-tools'
-  | 'form-builder'
-  | 'form-check'
-  | 'form-text'
-  | 'form-select'
-  | 'comment'
-  | 'font-picker';
+
 
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
   { mode: 'select',     label: 'Select',    icon: <MousePointer2 size={16} />, tooltip: 'Select and move elements' },
@@ -208,6 +178,7 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   const [internalTextAlign, setInternalTextAlign] = React.useState<'left' | 'center' | 'right'>('left');
   const [internalZoom, setInternalZoom] = React.useState(1);
   const [internalWhiteoutColor, setInternalWhiteoutColor] = React.useState('#FFFFFF');
+  const [internalSearchTerm, setInternalSearchTerm] = React.useState("");
 
   // Unified derived state
   const mode = propMode || internalMode;
@@ -222,7 +193,15 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   const zoom = propZoom ?? internalZoom;
   const whiteoutColor = propWhiteoutColor || internalWhiteoutColor;
   const setWhiteoutColor = propSetWhiteoutColor || setInternalWhiteoutColor;
-  const searchTerm = propSearchTerm ?? "";
+  const searchTerm = propSearchTerm ?? internalSearchTerm;
+
+  const setZoom = (z: number | ((prev: number) => number)) => {
+    const val = typeof z === 'function' ? z(zoom) : z;
+    setInternalZoom(val);
+  };
+  const setSearchTerm = (s: string) => {
+    setInternalSearchTerm(s);
+  };
 
   // Setters that handle both controlled and uncontrolled scenarios
   const setModeLocal = (m: EditorMode) => { setMode(m); if (propSetMode) propSetMode(m); };
@@ -333,8 +312,6 @@ export const PdfEditorCanvas = React.forwardRef<any, PdfEditorCanvasProps>((prop
   // Keyboard shortcuts overlay
   const [showShortcuts, setShowShortcuts] = React.useState(false);
 
-  // Whiteout: user-chosen background color (default white)
-  const [whiteoutColor, setWhiteoutColor] = React.useState('#FFFFFF');
   const [showWhiteoutPicker, setShowWhiteoutPicker] = React.useState(false);
   const [hexInput, setHexInput] = React.useState('#000000');
   const [pickerHoverColor, setPickerHoverColor] = React.useState(null);

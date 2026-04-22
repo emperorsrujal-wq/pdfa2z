@@ -45,7 +45,7 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
     initialConfig || loadBrandConfig() || DEFAULT_BRAND_CONFIG
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout' | 'industry'>('colors');
   const [saved, setSaved] = useState(false);
 
   const handleConfigChange = (field: keyof BrandConfig, value: any) => {

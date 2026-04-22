@@ -18,7 +18,7 @@ import { BrandConfig, DEFAULT_BRAND_CONFIG, mergeBrandConfig, loadBrandConfig, a
 import { generateJourneyWorkflow, translateJourneyContent } from "../services/geminiService";
 import { extractTextFromPdf } from "../utils/pdfHelpers";
 import { 
-  Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, 
+  Settings, Sparkles, Plus, Trash2, ChevronUp, ChevronDown, Eye, PenTool, Download,
   Layout as LayoutIcon, Type, CheckCircle, CheckCircle2, BarChart2, Share2, Globe, Copy, Check, Info, X, AlertTriangle 
 } from "lucide-react";
 import { JOURNEY_TRANSLATIONS, Language } from "../utils/journeyTranslations";
@@ -1251,7 +1251,7 @@ export const PDFJourneyBuilder: React.FC = () => {
           <div className="jb-card animate-in zoom-in-95 duration-500" style={{ textAlign: "center", maxWidth: 500 }}>
             <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 24px' }}>
                <div style={{ position: 'absolute', inset: 0, background: 'var(--brand-primary)', opacity: 0.1, borderRadius: '50%', filter: 'blur(10px)' }} />
-               <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: '#fff' }}>
+               <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                   <CheckCircle2 size={40} />
                </div>
             </div>
