@@ -186,7 +186,7 @@ export const PdfThumbnailSidebar: React.FC<PdfThumbnailSidebarProps> = ({
               )}
             </button>
           )
-        ) : (
+        )) : (
           /* Layers View Mode */
           <div className="space-y-1.5 px-1 animate-in fade-in duration-300">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-2">Active Layers</div>
