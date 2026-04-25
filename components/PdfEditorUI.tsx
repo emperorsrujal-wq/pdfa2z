@@ -94,7 +94,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   }, {} as Record<number, number>);
 
   return (
-    <div className="fixed inset-0 bg-[#f3f3f3] z-[60] flex flex-col overflow-hidden animate-fade-in font-sans">
+    <div className="fixed inset-0 bg-[#f3f3f3] z-[9999] flex flex-col overflow-hidden animate-fade-in font-sans">
       {/* Sejda Style Header */}
       <header className="bg-white border-b border-slate-200 shrink-0 z-50 py-6">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">

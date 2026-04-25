@@ -953,15 +953,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             </div>
           ))}
           
-          <div className="w-px h-6 bg-slate-300 mx-1 self-center" />
-          
-          <button
-            onClick={(e) => { e.stopPropagation(); undo(); }}
-            className="flex items-center gap-2 px-4 py-2 rounded transition-all text-slate-600 hover:bg-white/50 hover:text-[#333]"
-          >
-            <Undo2 size={18} className="text-[#333]" />
-            <span className="text-sm font-medium">Undo</span>
-          </button>
         </div>
       </div>
 
@@ -1005,15 +996,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             overflow: 'hidden'
           }}
         >
-          {/* Apply Changes Button (Sejda style) */}
-          <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full flex justify-center">
-             <button 
-               onClick={(e) => { e.stopPropagation(); onFinalSave?.(elements); }}
-               className="bg-[#11b67a] hover:bg-[#0da26a] text-white px-10 py-3 rounded-md text-xl font-bold shadow-xl flex items-center gap-2 transform hover:scale-105 transition-all duration-300 pointer-events-auto"
-             >
-               Apply changes <ArrowRight size={24} />
-             </button>
-          </div>
           <div
             className={`relative bg-white animate-fade-in select-none touch-none ${
               mode === 'text' || mode === 'magic-edit' ? 'cursor-text' :
@@ -1582,17 +1564,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 
-      {/* ─── APPLY CHANGES BUTTON ────────────────────────── */}
-      <div className="shrink-0 flex justify-center py-6 bg-[#0f172a]/80 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.4)] z-[200]">
-        <button
-          onClick={() => (onFinalSave ? onFinalSave(elements) : onSave(elements))}
-          className="group relative flex items-center gap-3 px-20 py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-[#060910] rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/20"
-        >
-          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-          <CheckCircle2 size={20} className="relative z-10" />
-          <span className="relative z-10">Save & Apply Changes</span>
-        </button>
-      </div>
 
       {/* Audit Log Panel */}
       {showAudit && (
