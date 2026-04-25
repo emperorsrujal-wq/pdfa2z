@@ -488,7 +488,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     <div className={`h-full flex flex-col p-6 animate-fade-in ${mode === 'EDIT' ? 'bg-white' : ''}`}>
       <div className={`flex items-center gap-4 mb-8 ${mode === 'EDIT' ? 'flex-col text-center' : 'justify-between'}`}>
         <div className={`flex items-center gap-4 ${mode === 'EDIT' ? 'flex-col' : ''}`}>
-          {mode !== 'MENU' && (
+          {(mode as any) !== 'MENU' && (
             <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl self-start"><ArrowLeft size={20} /></button>
           )}
           <div className={`${mode === 'EDIT' ? 'mt-4' : ''}`}>

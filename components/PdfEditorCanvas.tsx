@@ -49,6 +49,7 @@ import { ConversionPanel } from './ConversionPanel';
 import { PageToolsPanel } from './PageToolsPanel';
 import { FormBuilder } from './FormBuilder';
 import { AuditLog } from './AuditLog';
+import { SignaturePad } from './SignaturePad';
 import { suggestFormValues } from '../services/geminiService';
 import { EditElement, EditElementType, extractStyleAtPoint, getTextItems, PdfTextItem, sampleBackgroundColor } from '../utils/pdfHelpers';
 import { ObjectToolbar } from './ObjectToolbar';
@@ -1738,7 +1739,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       {/* ─── NEW SIGNATURE PAD MODAL ─────────────────── */}
       {isSigPadOpen && (
         <SignaturePad 
-          onSave={(base64, shouldSave) => {
+          onSave={(base64: string, shouldSave: boolean) => {
             if (shouldSave) {
               setStoredSignatures(prev => [...prev, base64]);
             }

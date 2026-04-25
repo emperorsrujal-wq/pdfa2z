@@ -14,6 +14,8 @@ import {
   Type,
   Palette,
   Link2,
+  Square,
+  Circle,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
