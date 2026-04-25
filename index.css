@@ -122,3 +122,11 @@
   transform: translate(calc(var(--mouse-x) * 20px), calc(var(--mouse-y) * -30px)) rotate(5deg);
   transition: transform 0.5s ease-out;
 }
+
+.sejda-shadow {
+  box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 8px 16px rgba(0,0,0,.1);
+}
+
+.sejda-shadow-large {
+  box-shadow: 0 0 0 1px rgba(0,0,0,.02), 0 30px 60px -12px rgba(0,0,0,0.1), 0 18px 36px -18px rgba(0,0,0,0.15);
+}

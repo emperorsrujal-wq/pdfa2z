@@ -94,63 +94,17 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   }, {} as Record<number, number>);
 
   return (
-    <div className="fixed inset-0 bg-slate-50 z-[60] flex flex-col overflow-hidden animate-fade-in font-sans">
-      {/* Premium Slim Header */}
-      <header className="h-14 bg-white/95 backdrop-blur-xl border-b border-slate-200 flex items-center justify-between px-6 shadow-sm shrink-0 z-50">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2.5">
-             <div className="p-1.5 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-500/10">
-                <PenTool size={16} />
-             </div>
-             <h1 className="font-black text-slate-800 tracking-tighter text-base">PDF EDITOR <span className="text-indigo-600">PRO</span></h1>
-          </div>
-          
-          <div className="h-4 w-px bg-slate-200" />
-          
-          <div className="flex items-center gap-2.5">
-             <span className="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-500 truncate max-w-[120px]">{file.name}</span>
-             <span className="text-indigo-600/80 text-[10px] font-black uppercase tracking-widest">{images.length} Pages</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <button 
-              onClick={onCancel} 
-              className="px-3 py-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg transition-all text-[11px] font-bold flex items-center gap-2"
-            >
-               <X size={14} /> Close
-            </button>
-            
-            <button
-              onClick={() => handleApplyAll()}
-              disabled={isProcessing}
-              className="group bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg shadow-lg shadow-indigo-600/20 flex items-center gap-2 text-[11px] font-black transition-all active:scale-95"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>SAVING...</span>
-                </>
-              ) : (
-                <>
-                  <Download size={14} />
-                  <span>SAVE & DOWNLOAD</span>
-                </>
-              )}
-            </button>
+    <div className="fixed inset-0 bg-[#f3f3f3] z-[60] flex flex-col overflow-hidden animate-fade-in font-sans">
+      {/* Sejda Style Header */}
+      <header className="bg-white border-b border-slate-200 shrink-0 z-50 py-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
+           <h1 className="text-3xl font-bold text-[#333] mb-1">Online PDF editor</h1>
+           <p className="text-slate-500 text-lg">Edit PDF files for free. Fill & sign PDF</p>
         </div>
       </header>
 
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <PdfThumbnailSidebar 
-          images={images} 
-          activeIndex={activePage} 
-          onSelect={setActivePage}
-          pageEdits={pageEditsCount}
-        />
-
         {/* Editor Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
            {successMsg && (

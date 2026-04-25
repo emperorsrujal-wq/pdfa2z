@@ -478,30 +478,49 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       case 'REDACT': return { icon: <EyeOff />, title: 'Redact PDF' };
       case 'BATCH': return { icon: <Package />, title: 'Batch Workspace' };
       case 'HTML_TO_PDF': return { icon: <FileCode />, title: 'HTML to PDF' };
+      case 'EDIT': return { icon: <PenTool />, title: 'Online PDF editor' };
       default: return { icon: <FileIcon />, title: 'PDF Tool' };
     }
   };
   const header = getHeader();
 
   return (
-    <div className="h-full flex flex-col p-6 animate-fade-in">
-      <div className="flex items-center gap-4 mb-8 justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-          <h1 className="text-2xl font-black flex items-center gap-3">{header.icon}{header.title}</h1>
+    <div className={`h-full flex flex-col p-6 animate-fade-in ${mode === 'EDIT' ? 'bg-white' : ''}`}>
+      <div className={`flex items-center gap-4 mb-8 ${mode === 'EDIT' ? 'flex-col text-center' : 'justify-between'}`}>
+        <div className={`flex items-center gap-4 ${mode === 'EDIT' ? 'flex-col' : ''}`}>
+          {mode !== 'MENU' && (
+            <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl self-start"><ArrowLeft size={20} /></button>
+          )}
+          <div className={`${mode === 'EDIT' ? 'mt-4' : ''}`}>
+            <h1 className={`${mode === 'EDIT' ? 'text-4xl font-extrabold text-[#333] mb-2' : 'text-2xl font-black'} flex items-center gap-3 justify-center`}>
+              {mode !== 'EDIT' && header.icon}
+              {header.title}
+            </h1>
+            {mode === 'EDIT' && (
+              <p className="text-slate-500 text-lg max-w-xl mx-auto">Edit PDF files for free. Fill & sign PDF</p>
+            )}
+          </div>
         </div>
-        {/* API Key button removed - Integrated */}
       </div>
-      <div className="flex-1 bg-slate-50 rounded-3xl p-8 flex flex-col overflow-y-auto custom-scrollbar">
+      <div className={`flex-1 ${mode === 'EDIT' ? 'bg-transparent' : 'bg-slate-50 rounded-3xl'} p-8 flex flex-col overflow-y-auto custom-scrollbar`}>
         {files.length === 0 && !['URL_TO_PDF', 'HTML_TO_PDF'].includes(mode) ? (
-          <div onClick={() => fileInputRef.current?.click()} className="flex-1 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-600 transition-all min-h-[300px]">
-            <Upload size={40} className="mb-4 text-indigo-600" />
-            <p className="font-black uppercase tracking-tighter">
-              {mode === 'IMG_TO_PDF' ? 'Upload Images' :
-                mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
-                  mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' ? 'Upload Ebook' :
-                    'Upload your PDF'}
-            </p>
+          <div 
+            onClick={() => fileInputRef.current?.click()} 
+            className={`flex-1 ${mode === 'EDIT' ? 'bg-[#11b67a] hover:bg-[#0da26a] max-w-md mx-auto h-20 flex-none rounded px-12 py-6' : 'border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center min-h-[300px] hover:border-indigo-600'} transition-all cursor-pointer flex items-center justify-center`}
+          >
+            {mode === 'EDIT' ? (
+              <span className="text-white text-xl font-bold uppercase tracking-wider">Upload PDF file</span>
+            ) : (
+              <>
+                <Upload size={40} className="mb-4 text-indigo-600" />
+                <p className="font-black uppercase tracking-tighter text-slate-800">
+                  {mode === 'IMG_TO_PDF' ? 'Upload Images' :
+                    mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
+                      mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' ? 'Upload Ebook' :
+                        'Upload your PDF'}
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-6 max-w-2xl mx-auto w-full pb-8">

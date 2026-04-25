@@ -1,29 +1,19 @@
 import * as React from 'react';
 import {
-  Trash2,
+  PenTool,
+  Maximize,
+  Move,
+  ExternalLink,
+  RotateCw,
   Copy,
+  Trash2,
   ChevronDown,
   Pipette,
-  Square,
-  Circle,
   Bold,
   Italic,
   Type,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Underline,
-  Minus,
-  ArrowUp,
-  ArrowDown,
-  CheckSquare,
-  StickyNote,
-  List,
-  MoreVertical,
-  RotateCw,
-  ExternalLink,
-  Layers,
-  Sparkles,
+  Palette,
+  Link2,
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { EditElement } from '../utils/pdfHelpers';
@@ -70,212 +60,191 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   const [showSizePicker, setShowSizePicker] = React.useState(false);
 
   const ColorDropdown = ({ selected, onSelect, title }: { selected?: string, onSelect: (color: string) => void, title: string }) => (
-    <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[400] w-[280px] animate-in fade-in slide-in-from-top-1 space-y-4">
-      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
-        {title}
-      </div>
-      <div className="grid grid-cols-7 gap-1.5">
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-[#ccc] p-[10px] shadow-2xl z-[400] w-[280px] animate-in fade-in slide-in-from-bottom-2">
+      <div className="grid grid-cols-10 gap-0.5">
         {SEJDA_COLORS.map(color => (
           <button
             key={color}
-            className={`w-8 h-8 rounded border-2 transition-all ${selected === color ? 'border-indigo-600 scale-110 shadow-md' : 'border-slate-100 hover:border-slate-300'}`}
+            className={`w-6 h-6 border transition-all ${selected === color ? 'border-white ring-1 ring-blue-500 z-10' : 'border-transparent'}`}
             style={{ backgroundColor: color }}
             onClick={() => onSelect(color)}
           />
         ))}
       </div>
-      <div className="border-t border-slate-100 pt-3">
+      <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-1">
         <button
           onClick={() => {
             setMode?.('picker');
             setShowColorPicker(null);
           }}
-          className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg group transition-all border border-slate-200"
+          className="w-full flex items-center justify-between p-2 hover:bg-slate-100 rounded text-slate-700 transition-all border border-slate-200"
         >
-          <div className="p-1.5 bg-indigo-600 rounded text-white group-hover:scale-110 transition-all">
-            <Pipette size={14} />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-[12px] font-bold text-slate-800 leading-none">Pick from Document</span>
-            <span className="text-[10px] text-slate-400 mt-1">Select any color from the PDF</span>
-          </div>
+          <span className="text-[11px] font-bold">Select a color from the document</span>
+          <Pipette size={14} className="text-slate-500" />
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="absolute -top-16 left-0 flex items-center gap-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-lg z-[450] animate-in fade-in zoom-in-95 duration-200 whitespace-nowrap">
+    <div className="absolute -top-[55px] left-1/2 -translate-x-1/2 flex items-center bg-[#fff] border border-[#2196f3] rounded-lg shadow-[0_4px_12px_rgba(33,150,243,0.15)] z-[450] p-1 h-[42px] animate-in fade-in slide-in-from-bottom-2 duration-200">
       
-      {/* TEXT FORMATTING */}
+      {/* TEXT TOOLS */}
       {element.type === 'text' && (
-        <>
-          <div className="flex items-center gap-1 px-1">
-            <button
-              onClick={() => onUpdate(element.id, { fontName: element.fontName === 'Helvetica' ? 'Times-Roman' : 'Helvetica' })}
-              className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 border border-slate-200 rounded-lg transition-all min-w-[100px]"
-            >
-              <span className="text-[11px] font-bold text-slate-700 truncate">{element.fontName || 'Helvetica'}</span>
-              <ChevronDown size={10} className="text-slate-400" />
-            </button>
-            <button
-              onClick={() => setShowSizePicker(!showSizePicker)}
-              className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 border border-slate-200 rounded-lg transition-all"
-            >
-              <span className="text-[11px] font-bold text-slate-700">{element.size || 14}</span>
-              <ChevronDown size={10} className="text-slate-400" />
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-slate-200 mx-1" />
-
-          <div className="flex gap-1 px-1">
-            <button
-              onClick={() => onUpdate(element.id, { isBold: !element.isBold })}
-              className={`p-1.5 rounded-lg transition-all ${element.isBold ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-600'}`}
-              title="Bold"
-            >
-              <Bold size={14} />
-            </button>
-            <button
-              onClick={() => onUpdate(element.id, { isItalic: !element.isItalic })}
-              className={`p-1.5 rounded-lg transition-all ${element.isItalic ? 'bg-indigo-600 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-600'}`}
-              title="Italic"
-            >
-              <Italic size={14} />
-            </button>
-          </div>
+        <div className="flex items-center">
+          {/* Bold */}
+          <button
+            onClick={() => onUpdate(element.id, { isBold: !element.isBold })}
+            className={`flex items-center justify-center w-10 h-8 font-serif text-lg ${element.isBold ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 border-r border-[#eee] transition-colors`}
+          >
+            B
+          </button>
+          {/* Italic */}
+          <button
+            onClick={() => onUpdate(element.id, { isItalic: !element.isItalic })}
+            className={`flex items-center justify-center w-10 h-8 font-serif italic text-lg ${element.isItalic ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 border-r border-[#eee] transition-colors`}
+          >
+            I
+          </button>
           
-          <div className="flex gap-1 px-1">
+          {/* Size (T arrow icon) */}
+          <div className="relative">
             <button
-              onClick={() => onUpdate(element.id, { textAlign: 'left' })}
-              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'left' || !element.textAlign ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+              onClick={() => {
+                setShowSizePicker(!showSizePicker);
+                setShowFontPicker(false);
+                setShowColorPicker(null);
+              }}
+              className={`flex items-center justify-center w-12 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] gap-0.5 transition-colors ${showSizePicker ? 'bg-slate-50' : ''}`}
             >
-              <AlignLeft size={14} />
+              <span className="text-sm font-semibold">T</span>
+              <div className="flex flex-col -gap-0.5 scale-75">
+                <ChevronDown size={8} className="rotate-180" />
+                <ChevronDown size={8} />
+              </div>
             </button>
-            <button
-              onClick={() => onUpdate(element.id, { textAlign: 'center' })}
-              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'center' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
-            >
-              <AlignCenter size={14} />
-            </button>
-            <button
-              onClick={() => onUpdate(element.id, { textAlign: 'right' })}
-              className={`p-1.5 rounded-lg transition-all ${element.textAlign === 'right' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
-            >
-              <AlignRight size={14} />
-            </button>
+            {showSizePicker && (
+              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] p-1 shadow-2xl z-[400] grid grid-cols-3 gap-0.5 w-32 animate-in fade-in slide-in-from-bottom-2">
+                {SIZES.map(s => (
+                  <button key={s} onClick={() => { onUpdate(element.id, { size: s }); setShowSizePicker(false); }} className={`p-1.5 text-xs font-bold ${element.size === s ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>{s}</button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="w-px h-6 bg-slate-200 mx-1" />
-        </>
+          {/* Font selection (Aa) */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowFontPicker(!showFontPicker);
+                setShowSizePicker(false);
+                setShowColorPicker(null);
+              }}
+              className={`flex items-center justify-center w-12 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] gap-0.5 transition-colors ${showFontPicker ? 'bg-slate-50' : ''}`}
+            >
+              <span className="text-sm">Aa</span>
+              <ChevronDown size={10} className="text-[#888]" />
+            </button>
+            {showFontPicker && (
+              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] shadow-2xl z-[400] w-48 animate-in fade-in slide-in-from-bottom-2">
+                {FONTS.map(f => (
+                  <button key={f.value} onClick={() => { onUpdate(element.id, { fontName: f.value }); setShowFontPicker(false); }} className={`w-full text-left px-4 py-2 text-sm font-medium ${element.fontName === f.value ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}>{f.name}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Color Palette */}
+          <div className="relative">
+            <button 
+              onClick={() => {
+                setShowColorPicker(showColorPicker === 'color' ? null : 'color');
+                setShowFontPicker(false);
+                setShowSizePicker(false);
+              }}
+              className={`flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors ${showColorPicker === 'color' ? 'bg-slate-100' : ''}`}
+            >
+              <Palette size={18} className={element.color ? '' : 'text-[#888]'} style={{ color: element.color }} />
+              <ChevronDown size={10} className="text-[#888]" />
+            </button>
+            {showColorPicker === 'color' && (
+              <ColorDropdown selected={element.color} onSelect={(c) => { onUpdate(element.id, { color: c }); setShowColorPicker(null); }} title="Color" />
+            )}
+          </div>
+
+          {/* Link */}
+          <button 
+            onClick={() => {
+              const url = prompt("Enter link URL:", element.linkUrl || "");
+              if (url !== null) onUpdate(element.id, { linkUrl: url });
+            }}
+            className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors"
+          >
+            <Link2 size={18} />
+          </button>
+
+          {/* Move handle */}
+          <button className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] cursor-move transition-colors">
+            <Move size={18} />
+          </button>
+
+          {/* Duplicate */}
+          <button onClick={() => onDuplicate(element)} className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors">
+            <Copy size={16} />
+          </button>
+
+          {/* Delete */}
+          <button onClick={() => onDelete(element.id)} className="flex items-center justify-center w-10 h-8 text-red-500 hover:bg-red-50 transition-colors">
+            <Trash2 size={16} />
+          </button>
+        </div>
       )}
 
-      {/* COLOR PICKERS */}
-      <div className="flex items-center gap-1 px-1">
-        <div className="relative">
-          <button 
-            onClick={() => setShowColorPicker(showColorPicker === 'color' ? null : 'color')}
-            className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'color' ? 'bg-indigo-50 border-indigo-200 shadow-inner' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
-            title="Color"
-          >
-            <div className="w-4 h-4 rounded shadow-sm border border-slate-200" style={{ backgroundColor: element.color || '#000000' }} />
-            <ChevronDown size={10} className="text-slate-400" />
+      {/* SHAPE TOOLS (Whiteout / Rectangle) */}
+      {(element.type === 'rect' || element.type === 'ellipse' || element.type === 'circle') && (
+        <div className="flex items-center">
+          {/* Border Style (Stub for now) */}
+          <button className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors">
+            <div className="w-4 h-[2px] bg-[#333]" />
           </button>
-          {showColorPicker === 'color' && (
-            <ColorDropdown selected={element.color} onSelect={(c) => { onUpdate(element.id, { color: c }); setShowColorPicker(null); }} title="Text/Stroke Color" />
-          )}
-        </div>
 
-        {['rect', 'circle', 'ellipse', 'text', 'sticky-note'].includes(element.type) && (
+          {/* Shape Indicator */}
+          <button className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors">
+            {element.type === 'rect' ? <Square size={16} /> : <Circle size={16} />}
+          </button>
+
+          {/* Fill Color Palette */}
           <div className="relative">
             <button 
               onClick={() => setShowColorPicker(showColorPicker === 'bg' ? null : 'bg')}
-              className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'bg' ? 'bg-indigo-50 border-indigo-200 shadow-inner' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
-              title="Background Color"
+              className={`flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors ${showColorPicker === 'bg' ? 'bg-slate-100' : ''}`}
             >
-              <div className="w-4 h-4 rounded border border-slate-200 relative overflow-hidden" style={{ backgroundColor: element.bgColor || 'transparent' }}>
-                 {!element.bgColor || element.bgColor === 'transparent' ? <div className="absolute inset-0 border-t border-red-500 rotate-45" /> : null}
-              </div>
-              <ChevronDown size={10} className="text-slate-400" />
+              <Palette size={18} style={{ color: element.bgColor || element.color }} />
+              <ChevronDown size={10} className="text-[#888]" />
             </button>
             {showColorPicker === 'bg' && (
-              <ColorDropdown selected={element.bgColor} onSelect={(c) => { onUpdate(element.id, { bgColor: c }); setShowColorPicker(null); }} title="Background Fill" />
+              <ColorDropdown selected={element.bgColor || element.color} onSelect={(c) => { onUpdate(element.id, { bgColor: c, color: c }); setShowColorPicker(null); }} title="Fill Color" />
             )}
           </div>
-        )}
 
-        {['rect', 'circle', 'ellipse'].includes(element.type) && (
-          <div className="relative flex items-center gap-1">
-             <div className="relative">
-              <button 
-                onClick={() => setShowColorPicker(showColorPicker === 'border' ? null : 'border')}
-                className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all ${showColorPicker === 'border' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
-                title="Border Color"
-              >
-                <div className="w-4 h-4 rounded-full border-2 border-slate-200" style={{ borderColor: element.borderColor || '#000000' }} />
-                <ChevronDown size={10} className="text-slate-400" />
-              </button>
-              {showColorPicker === 'border' && (
-                <ColorDropdown selected={element.borderColor} onSelect={(c) => { onUpdate(element.id, { borderColor: c }); setShowColorPicker(null); }} title="Border Color" />
-              )}
-            </div>
-            
-            <select 
-              value={element.borderWidth || 0}
-              onChange={(e) => onUpdate(element.id, { borderWidth: Number(e.target.value) })}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              {[0, 1, 2, 3, 5, 8, 12].map(bw => (
-                <option key={bw} value={bw}>{bw}px</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+          {/* Duplicate */}
+          <button onClick={() => onDuplicate(element)} className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors">
+            <Copy size={16} />
+          </button>
 
-      {element.type === 'link' && (
-        <div className="flex items-center gap-2 px-2 bg-slate-50 rounded-lg border border-slate-200 py-1 mx-1">
-          <ExternalLink size={12} className="text-slate-400" />
-          <input 
-            type="text" 
-            value={element.linkUrl || ''} 
-            onChange={(e) => onUpdate(element.id, { linkUrl: e.target.value })}
-            placeholder="https://..."
-            className="bg-transparent border-none outline-none text-[11px] font-bold text-slate-700 w-32 placeholder:text-slate-300"
-          />
+          {/* Delete */}
+          <button onClick={() => onDelete(element.id)} className="flex items-center justify-center w-10 h-8 text-red-500 hover:bg-red-50 transition-colors">
+            <Trash2 size={16} />
+          </button>
         </div>
       )}
 
-      <div className="w-px h-6 bg-slate-200 mx-1" />
-
-      {/* ACTIONS */}
-      <div className="flex items-center gap-1 px-1">
-        <button onClick={() => onUpdate(element.id, { rotation: ((element.rotation || 0) + 90) % 360 })} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Rotate 90°"><RotateCw size={14} /></button>
-        <button onClick={() => onDuplicate(element)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all" title="Duplicate"><Copy size={14} /></button>
-        <Tooltip content="Delete Object">
-          <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-all">
-            <Trash2 size={14} />
-          </button>
-        </Tooltip>
-        <div className="w-px h-6 bg-slate-200 mx-1" />
-        <Tooltip content="Move Forward">
-          <button onClick={() => onBringToFront?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all">
-            <Layers size={14} className="scale-y-[-1]" />
-          </button>
-        </Tooltip>
-        <Tooltip content="Move Backward">
-          <button onClick={() => onSendToBack?.(element.id)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-all">
-            <Layers size={14} />
-          </button>
-        </Tooltip>
-      </div>
-
-      {showSizePicker && (
-        <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-2 rounded-xl shadow-xl z-[400] grid grid-cols-4 gap-1 w-44 animate-in fade-in slide-in-from-top-1">
-          {SIZES.map(s => (
-            <button key={s} onClick={() => { onUpdate(element.id, { size: s }); setShowSizePicker(false); }} className={`p-2 text-[11px] font-bold rounded-lg ${element.size === s ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>{s}</button>
-          ))}
+      {/* OTHER TOOLS (Path, Line, Arrow, Image) */}
+      {(element.type !== 'text' && element.type !== 'rect' && element.type !== 'ellipse' && element.type !== 'circle') && (
+        <div className="flex items-center px-1">
+          <button onClick={() => onDelete(element.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><Trash2 size={14} /></button>
+          <div className="w-px h-6 bg-slate-200 mx-1" />
+          <button onClick={() => onDuplicate(element)} className="p-2 hover:bg-slate-100 text-slate-500 rounded-lg transition-colors"><Copy size={14} /></button>
         </div>
       )}
     </div>

@@ -40,6 +40,9 @@ import {
   ScanText,
   Replace,
   Link,
+  X,
+  Plus,
+  ChevronRight,
 } from 'lucide-react';
 import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
@@ -93,7 +96,13 @@ type EditorMode =
   | 'form-builder'
   | 'form-check'
   | 'form-text'
+  | 'form-text-multiline'
+  | 'form-radio'
   | 'form-select'
+  | 'form-signature'
+  | 'symbol-cross'
+  | 'symbol-check'
+  | 'symbol-dot'
   | 'comment'
   | 'font-picker';
 
@@ -191,6 +200,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [showFindReplace, setShowFindReplace] = React.useState(false);
+  const [showFormsMenu, setShowFormsMenu] = React.useState(false);
+  const [showAnnotateMenu, setShowAnnotateMenu] = React.useState(false);
+  const [showSignMenu, setShowSignMenu] = React.useState(false);
+  const [isSigPadOpen, setIsSigPadOpen] = React.useState(false);
+  const [storedSignatures, setStoredSignatures] = React.useState<string[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [replaceTerm, setReplaceTerm] = React.useState('');
 
@@ -718,263 +732,289 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden select-none" onClick={() => setActiveElementId(null)}>
-      {/* ─── PREMIUM LIGHT TOOLBAR (Sejda style) ─────────────────── */}
-      <div className="shrink-0 flex flex-col bg-white border-b border-slate-200 shadow-sm z-[150] relative">
-        
-        {/* Main Workspace Bar */}
-        <div className="flex items-center justify-between px-6 py-2.5">
-          
-          {/* Left: Tool Categories */}
-          <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200">
-            {/* Selection & Text Group */}
-            <div className="flex items-center gap-1 p-1">
-              {[
-                { mode: 'select', icon: <MousePointer2 size={15} />, label: 'Select' },
-                { mode: 'magic-edit', icon: <Sparkles size={15} />, label: 'Magic Edit' },
-                { mode: 'text', icon: <Type size={15} />, label: 'Add Text' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Annotate Group */}
-            <div className="flex items-center gap-1">
-              {[
-                { mode: 'erase', icon: <Eraser size={15} />, label: 'Whiteout' },
-                { mode: 'highlight', icon: <Highlighter size={15} />, label: 'Highlight' },
-                { mode: 'draw', icon: <Pen size={15} />, label: 'Draw' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { e.stopPropagation(); setMode(t.mode as EditorMode); }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Shapes & Sign Group */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('rect'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'rect' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Rectangle"
-              >
-                <Square size={15} />
-                <span className="text-[11px] font-black">Rectangle</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('circle'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'circle' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Circle/Ellipse"
-              >
-                <CircleIcon size={15} />
-                <span className="text-[11px] font-black">Circle</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('link'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'link' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                title="Add External Link"
-              >
-                <Link size={15} />
-                <span className="text-[11px] font-black">Link</span>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('sign'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === 'sign' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-              >
-                <FileSignature size={15} />
-                <span className="text-[11px] font-black">Signature</span>
-              </button>
-              {[
-                { mode: 'image', icon: <ImageIcon size={15} />, label: 'Image' },
-              ].map(t => (
-                <button
-                  key={t.mode}
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    if (t.mode === 'image') document.getElementById('img-upload')?.click(); 
-                    else setMode(t.mode as EditorMode); 
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${mode === t.mode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                  title={t.label}
-                >
-                  {t.icon}
-                  <span className="text-[11px] font-black">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-            {/* Advanced Group */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMode('ocr'); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${mode === 'ocr' ? 'bg-violet-600 text-white' : 'text-slate-600 hover:bg-white hover:text-violet-600'}`}
-              >
-                <ScanText size={14} /> OCR
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowFindReplace(true); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold transition-all text-slate-600 hover:bg-white hover:text-indigo-600`}
-              >
-                <Replace size={14} /> FIND & REPLACE
-              </button>
-            </div>
-          </div>
-
-          {/* Right: Controls & Style Overlays */}
-          <div className="flex items-center gap-3">
-             {/* Tool Styles */}
-             <div className="flex items-center gap-2 px-2 border-r border-slate-200">
-                {/* Color Selector */}
-                <div className="relative flex items-center">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
-                    className="flex items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-white transition-all group"
-                    title="Tool Color"
-                  >
-                    <div className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-inner" style={{ backgroundColor: activeColor }} />
-                    <ChevronDown size={10} className="text-slate-400 group-hover:text-slate-600" />
-                  </button>
-
-                  {showColorPicker && (
-                    <div 
-                      className="absolute top-full right-0 mt-2 bg-white border border-slate-200 p-4 rounded-xl shadow-xl z-[500] w-[260px] animate-in fade-in slide-in-from-top-1 space-y-3"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Choose Tool Color</div>
-                      <div className="grid grid-cols-8 gap-2">
-                         {SEJDA_COLORS.map(color => (
-                          <button
-                            key={color}
-                            className={`w-7 h-7 rounded-lg border-2 hover:scale-110 transition-all shadow-md ${activeColor === color ? 'border-indigo-600 ring-2 ring-indigo-500/20' : 'border-slate-100 hover:border-slate-300'}`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => {
-                              setActiveColor(color);
-                              if (activeElementId) updateElement(activeElementId, { color });
-                              setShowColorPicker(false);
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <div className="border-t border-slate-100" />
-                      <button
-                        onClick={() => {
-                          setMode('picker');
-                          setShowColorPicker(false);
-                        }}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-50 rounded-lg text-left group transition-all border border-slate-200"
-                      >
-                        <div className="p-2 bg-indigo-600 text-white rounded-lg group-hover:scale-110 transition-all">
-                          <Pipette size={14} />
-                        </div>
-                        <div className="flex flex-col flex-1">
-                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">Pick from Document</span>
-                          <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5 tracking-tighter">Match color exactly</span>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Font Selector (Visible when text/magic mode active) */}
-                {(['text', 'magic-edit', 'sticky-note'] as EditorMode[]).includes(mode) && (
-                  <div className="flex items-center gap-1.5 px-2 border-l border-slate-200 ml-1">
-                     <button 
-                       onClick={(e) => { e.stopPropagation(); setMode('font-picker'); }}
-                       className={`p-2 rounded-lg transition-all ${mode === 'font-picker' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'}`}
-                       title="Match Font from PDF"
-                     >
-                       <Pipette size={15} />
-                     </button>
-                     <div className="h-4 w-px bg-slate-200 mx-1" />
-                     <select 
-                       value={activeFontSize} 
-                       onChange={(e) => {
-                         const size = parseInt(e.target.value);
-                         setActiveFontSize(size);
-                         if (activeElementId) updateElement(activeElementId, { size });
-                       }}
-                       className="bg-white border border-slate-200 rounded text-[10px] font-bold text-indigo-600 px-1 outline-none h-7"
-                     >
-                       {[8,10,12,14,16,18,24,30,36,48,60].map(s => <option key={s} value={s}>{s}px</option>)}
-                     </select>
-                  </div>
-                )}
-             </div>
-
-             {/* Navigation & Zoom */}
-             <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                <button onClick={(e) => { e.stopPropagation(); undo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Undo">
-                  <Undo2 size={15} />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); redo(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all" title="Redo">
-                  <Redo2 size={15} />
-                </button>
-                <div className="w-[1px] h-4 bg-slate-200 mx-1" />
-                <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                  <ZoomOut size={15} />
-                </button>
-                <span className="text-[11px] font-black text-indigo-600 min-w-[45px] text-center tabular-nums">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg transition-all">
-                  <ZoomIn size={15} />
-                </button>
-             </div>
-             
-             <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
-               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Page {pageIndex + 1}</span>
-             </div>
+    <div className="flex flex-col h-full w-full bg-[#f3f3f3] overflow-hidden select-none relative" onClick={() => setActiveElementId(null)}>
+      {/* ─── WHITEOUT WARNING BANNER ─────────────────── */}
+      {mode === 'erase' && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[200] max-w-2xl w-full px-4 animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-black text-white px-8 py-3 rounded shadow-2xl text-center border border-white/20 backdrop-blur-md">
+            <p className="text-sm font-medium leading-relaxed">
+              Whiteout hides but will not completely remove underlying text or images. 
+              <span className="block opacity-80 text-xs mt-1 italic font-normal">Not suitable for redacting sensitive data.</span>
+            </p>
           </div>
         </div>
+      )}
 
-        {/* Dynamic Context Hint (Conditional) */}
-        {mode === 'erase' && (
-          <div className="px-6 py-1.5 bg-amber-500/10 border-t border-amber-500/10 flex items-center gap-2 animate-in slide-in-from-top-1 duration-300">
-             <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-             <span className="text-[10px] font-bold text-amber-200/80 uppercase tracking-tight">Whiteout covers content but does NOT permanently redact underlying data.</span>
-          </div>
-        )}
+      {/* ─── CENTRIC TOOLBAR (Sejda style) ─────────────────── */}
+      <div className="shrink-0 flex items-center justify-center bg-white border-b border-slate-200 shadow-sm z-[150] py-4">
+        <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm">
+          {[
+            { mode: 'magic-edit', icon: <Type size={18} />, label: 'Text' },
+            { mode: 'link', icon: <Link2 size={18} />, label: 'Links' },
+            { mode: 'form-builder', icon: <CheckSquare size={18} />, label: 'Forms' },
+            { mode: 'image', icon: <ImageIcon size={18} />, label: 'Images' },
+            { mode: 'sign', icon: <FileSignature size={18} />, label: 'Sign' },
+            { mode: 'erase', icon: <Square size={18} />, label: 'Whiteout' },
+            { mode: 'draw', icon: <PenLine size={18} />, label: 'Annotate' },
+            { mode: 'rect', icon: <Shapes size={18} />, label: 'Shapes' },
+            { mode: 'undo', icon: <Undo2 size={18} />, label: 'Undo' },
+          ].map((t) => (
+            <div key={t.mode || t.label} className="relative">
+              <button
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (t.mode === 'undo') undo();
+                  else if (t.mode === 'image') document.getElementById('img-upload')?.click();
+                  else if (t.mode === 'form-builder') { setShowFormsMenu(!showFormsMenu); setShowAnnotateMenu(false); setShowSignMenu(false); }
+                  else if (t.mode === 'draw') { setShowAnnotateMenu(!showAnnotateMenu); setShowFormsMenu(false); setShowSignMenu(false); }
+                  else if (t.mode === 'sign') { setShowSignMenu(!showSignMenu); setShowFormsMenu(false); setShowAnnotateMenu(false); }
+                  else setMode(t.mode as EditorMode); 
+                }}
+                disabled={t.mode === 'undo' && historyStep === 0}
+                className={`flex items-center gap-2 px-4 py-2 rounded transition-all ${t.mode === 'undo' ? 'opacity-100' : ''} ${mode === t.mode || (t.mode === 'form-builder' && showFormsMenu) || (t.mode === 'draw' && showAnnotateMenu) || (t.mode === 'sign' && showSignMenu) ? 'bg-white text-[#333] shadow-sm' : 'text-slate-600 hover:bg-white/50 hover:text-[#333]'} disabled:opacity-30 disabled:cursor-not-allowed`}
+              >
+                <span className={mode === t.mode ? 'text-[#2196f3]' : 'text-[#333]'}>{t.icon}</span>
+                <span className={`text-sm font-medium ${mode === t.mode ? 'text-[#333]' : 'text-slate-600'}`}>{t.label}</span>
+                {['Forms', 'Images', 'Sign', 'Shapes', 'Links', 'Annotate'].includes(t.label) && <ChevronDown size={12} className="opacity-50 ml-1" />}
+              </button>
+
+              {/* ─── FORMS DROPDOWN MENU ─────────────────── */}
+              {t.mode === 'form-builder' && showFormsMenu && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[400px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] overflow-hidden text-left animate-in fade-in zoom-in-95 duration-200">
+                  {/* Section 1 */}
+                  <div className="p-4 border-b border-slate-100">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Add Text and Symbols</h4>
+                    <div className="flex items-center gap-8 px-4">
+                       <button onClick={() => { setMode('form-text'); setShowFormsMenu(false); }} className="text-2xl font-serif text-slate-700 hover:text-[#2196f3] transition-colors" title="I-Beam Text">IA</button>
+                       <button onClick={() => { setMode('symbol-cross'); setShowFormsMenu(false); }} className="text-xl text-slate-700 hover:text-[#2196f3] transition-colors"><X size={20} /></button>
+                       <button onClick={() => { setMode('symbol-check'); setShowFormsMenu(false); }} className="text-xl text-slate-700 hover:text-[#2196f3] transition-colors"><CheckCircle2 size={20} /></button>
+                       <button onClick={() => { setMode('symbol-dot'); setShowFormsMenu(false); }} className="text-xl text-slate-700 hover:text-[#2196f3] transition-colors"><Circle size={10} fill="currentColor" /></button>
+                    </div>
+                  </div>
+
+                  {/* Section 2 */}
+                  <div className="p-4 border-b border-slate-100 bg-slate-50/30">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Add New Form Fields</h4>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                       {[
+                         { m: 'form-text', label: 'Text', icon: 'TI' },
+                         { m: 'form-radio', label: 'Radio button', icon: <Circle size={14} /> },
+                         { m: 'form-text-multiline', label: 'Text multiline', icon: 'TT' },
+                         { m: 'form-check', label: 'Checkbox', icon: <CheckSquare size={14} /> },
+                         { m: 'form-select', label: 'Drop-down list', icon: <Layout size={14} /> },
+                         { m: 'form-signature', label: 'Signature box', icon: <FileSignature size={14} /> },
+                       ].map(field => (
+                         <button 
+                           key={field.m} 
+                           onClick={() => { setMode(field.m as EditorMode); setShowFormsMenu(false); }}
+                           className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3] transition-colors group"
+                         >
+                           <span className="w-6 h-6 flex items-center justify-center border border-slate-300 rounded-sm text-[10px] font-bold group-hover:border-[#2196f3]">{field.icon}</span>
+                           <span>{field.label}</span>
+                         </button>
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* Section 3 */}
+                  <div className="p-4 border-b border-slate-100">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Change Existing Form Fields</h4>
+                    <div className="flex flex-col gap-3">
+                       <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3]">
+                         <Pipette size={14} /> Form Edit mode
+                       </button>
+                       <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3]">
+                         <RotateCw size={14} className="rotate-90" /> Change tab order
+                       </button>
+                    </div>
+                  </div>
+
+                  {/* Section 4 */}
+                  <div className="p-4 bg-slate-50/50">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Share Publicly with Others</h4>
+                    <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3] font-medium w-full">
+                       <div className="p-1 px-2 border border-slate-300 rounded-sm"><UserIcon size={14} /></div>
+                       Publish for others to fill & sign
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── ANNOTATE DROPDOWN MENU ─────────────────── */}
+              {t.mode === 'draw' && showAnnotateMenu && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[320px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] overflow-hidden text-left animate-in fade-in zoom-in-95 duration-200">
+                  {/* Header / Toggle */}
+                  <div className="p-3 px-4 border-b border-slate-100 bg-white hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+                    <CheckSquare size={14} className="text-[#2196f3]" />
+                    <span className="text-sm font-medium text-slate-700">Show annotations</span>
+                  </div>
+
+                  {/* TEXT Section */}
+                  <div className="p-3 px-4 border-b border-slate-100">
+                    <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Text</h4>
+                    <div className="flex flex-col gap-3">
+                       {[
+                         { id: 'strikeout', label: 'Strike out', icon: <Minus size={16} />, colors: ['#f44336', '#2196f3', '#ffeb3b'] },
+                         { id: 'highlight', label: 'Highlight', icon: <Highlighter size={16} />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
+                         { id: 'underline', label: 'Underline', icon: <Minus size={16} className="mt-2" />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
+                       ].map(tool => (
+                         <div key={tool.id} className="flex items-center justify-between group">
+                            <button 
+                              onClick={() => { setMode(tool.id as EditorMode); setActiveColor(tool.colors[0]); setShowAnnotateMenu(false); }}
+                              className="flex items-center gap-3 text-sm text-slate-600 hover:text-[#2196f3] transition-colors"
+                            >
+                              <span className="opacity-60">{tool.icon}</span>
+                              <span>{tool.label}</span>
+                            </button>
+                            <div className="flex items-center gap-1.5">
+                               {tool.colors.map(c => (
+                                 <button 
+                                   key={c} 
+                                   onClick={() => { setMode(tool.id as EditorMode); setActiveColor(c); setShowAnnotateMenu(false); }}
+                                   style={{ backgroundColor: c }}
+                                   className="w-3.5 h-3.5 rounded-full border border-slate-200 hover:scale-125 transition-transform shadow-sm"
+                                 />
+                               ))}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* FREEHAND Section */}
+                  <div className="p-3 px-4">
+                    <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Freehand</h4>
+                    <div className="flex flex-col gap-3">
+                       {[
+                         { id: 'highlight', label: 'Highlight', icon: <Highlighter size={16} />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
+                         { id: 'draw', label: 'Draw', icon: <PenLine size={16} />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
+                       ].map(tool => (
+                         <div key={tool.id} className="flex items-center justify-between group">
+                            <button 
+                              onClick={() => { setMode(tool.id as EditorMode); setActiveColor(tool.colors[0]); setShowAnnotateMenu(false); }}
+                              className="flex items-center gap-3 text-sm text-slate-600 hover:text-[#2196f3] transition-colors"
+                            >
+                              <span className="opacity-60">{tool.icon}</span>
+                              <span>{tool.label}</span>
+                            </button>
+                            <div className="flex items-center gap-1.5">
+                               {tool.colors.map(c => (
+                                 <button 
+                                   key={c} 
+                                   onClick={() => { setMode(tool.id as EditorMode); setActiveColor(c); setShowAnnotateMenu(false); }}
+                                   style={{ backgroundColor: c }}
+                                   className="w-3.5 h-3.5 rounded-full border border-slate-200 hover:scale-125 transition-transform shadow-sm"
+                                 />
+                               ))}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── SIGN DROPDOWN MENU ─────────────────── */}
+              {t.mode === 'sign' && showSignMenu && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] p-4 text-center animate-in fade-in zoom-in-95 duration-200">
+                  {storedSignatures.length > 0 ? (
+                    <div className="space-y-4">
+                      {storedSignatures.map((sig, i) => (
+                        <div key={i} className="group relative border border-slate-100 hover:border-[#2196f3] p-2 rounded cursor-pointer transition-all" onClick={() => { setMode('sign'); setShowSignMenu(false); }}>
+                           <img src={sig} alt="Signature" className="max-h-16 mx-auto" />
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); setStoredSignatures(prev => prev.filter((_, idx) => idx !== i)); }}
+                             className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 bg-white rounded-full shadow-sm"
+                           >
+                             <X size={14} />
+                           </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-4 px-2 border-2 border-dashed border-slate-200 rounded mb-4">
+                        <FileSignature size={32} className="mx-auto text-slate-200" />
+                        <p className="text-xs text-slate-400 mt-2">No signatures saved</p>
+                    </div>
+                  )}
+                  
+                  <button 
+                    onClick={() => {
+                        setIsSigPadOpen(true);
+                        setShowSignMenu(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-[#2196f3] text-[#2196f3] rounded hover:bg-blue-50 transition-colors font-medium text-sm"
+                  >
+                    <Plus size={16} /> New Signature
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          <div className="w-px h-6 bg-slate-300 mx-1 self-center" />
+          
+          <button
+            onClick={(e) => { e.stopPropagation(); undo(); }}
+            className="flex items-center gap-2 px-4 py-2 rounded transition-all text-slate-600 hover:bg-white/50 hover:text-[#333]"
+          >
+            <Undo2 size={18} className="text-[#333]" />
+            <span className="text-sm font-medium">Undo</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-[#f3f3f3] flex flex-col items-center py-4 border-b border-slate-200 shrink-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowFindReplace(!showFindReplace); }}
+          className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-300 rounded shadow-sm text-sm font-medium text-[#333] hover:bg-slate-50 transition-all ml-40 self-start"
+        >
+          <Search size={14} /> Find & Replace
+        </button>
       </div>
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div 
-        className={`flex-1 overflow-auto bg-slate-200/50 p-12 scrollbar-none custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
+        className={`flex-1 overflow-auto bg-[#f3f3f3] p-12 custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
         ref={containerRef}
-        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px' }}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 100px 20px' }}
       >
+        {/* Floating Page Controls */}
+        <div className="flex items-center gap-3 mb-4 bg-white/80 backdrop-blur border border-slate-300 rounded shadow-md px-3 py-1.5 text-[#333]">
+           <span className="text-sm font-bold mr-2">{pageIndex + 1}</span>
+           <div className="w-px h-4 bg-slate-300" />
+           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded" title="Delete Page"><Trash2 size={16} /></button>
+           <button onClick={zoomOut} className="p-1 hover:bg-slate-200 rounded"><ZoomOut size={16} /></button>
+           <button onClick={zoomIn} className="p-1 hover:bg-slate-200 rounded"><ZoomIn size={16} /></button>
+           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded"><Undo2 size={16} /></button>
+           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded"><RotateCw size={16} /></button>
+           <div className="w-px h-4 bg-slate-300" />
+           <button className="flex items-center gap-2 px-3 py-1 bg-[#4096ff] text-white rounded text-xs font-bold hover:bg-[#1677ff] transition-all">
+             <FilePlus2 size={14} /> Insert page here
+           </button>
+        </div>
         {/* The PDF page — width scales naturally so coordinate math stays correct */}
         <div
+          className="sejda-shadow-large"
           style={{
             position: 'relative',
             width: `${794 * zoom}px`,
             flexShrink: 0,
-            boxShadow: '0 30px 60px -12px rgba(0,0,0,0.5), 0 18px 36px -18px rgba(0,0,0,0.5)',
-            borderRadius: '4px',
+            borderRadius: '2px',
             overflow: 'hidden'
           }}
         >
+          {/* Apply Changes Button (Sejda style) */}
+          <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full flex justify-center">
+             <button 
+               onClick={(e) => { e.stopPropagation(); onFinalSave?.(elements); }}
+               className="bg-[#11b67a] hover:bg-[#0da26a] text-white px-10 py-3 rounded-md text-xl font-bold shadow-xl flex items-center gap-2 transform hover:scale-105 transition-all duration-300 pointer-events-auto"
+             >
+               Apply changes <ArrowRight size={24} />
+             </button>
+          </div>
           <div
-            className={`relative bg-white shadow-2xl animate-fade-in select-none touch-none ${
+            className={`relative bg-white animate-fade-in select-none touch-none ${
               mode === 'text' || mode === 'magic-edit' ? 'cursor-text' :
               mode === 'picker' ? 'cursor-crosshair' :
               ['draw', 'line', 'erase', 'rect', 'circle', 'highlight', 'strikeout', 'underline'].includes(mode) ? 'cursor-crosshair' :
@@ -1429,7 +1469,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       <input
                         type="text"
                         value={el.text || ''}
-                        placeholder="Type here..."
+                        placeholder="Type your text"
+                        autoFocus={isActive && el.text === ''}
                         onChange={ev => updateElement(el.id, { text: ev.target.value })}
                         onClick={ev => ev.stopPropagation()}
                         className="w-full bg-transparent border-none outline-none p-0 m-0"
@@ -1683,6 +1724,43 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Sejda Style Apply Bar */}
+      <div className="shrink-0 bg-[#f3f3f3] border-t border-slate-200 py-6 flex justify-center sticky bottom-0 z-[200]">
+        <button
+          onClick={() => onFinalSave?.(elements)}
+          className="flex items-center gap-3 px-8 py-3 bg-[#11b67a] hover:bg-[#0da26a] text-white rounded-md text-xl font-bold shadow-lg transition-all transform hover:scale-[1.02] active:scale-95"
+        >
+          Apply changes <ChevronRight size={24} />
+        </button>
+      </div>
+      {/* ─── NEW SIGNATURE PAD MODAL ─────────────────── */}
+      {isSigPadOpen && (
+        <SignaturePad 
+          onSave={(base64, shouldSave) => {
+            if (shouldSave) {
+              setStoredSignatures(prev => [...prev, base64]);
+            }
+            // Add signature as an element at center of current view
+            const newEl: EditElement = {
+              id: `sig-${Date.now()}`,
+              type: 'image',
+              pageIndex,
+              x: 400,
+              y: 400,
+              width: 200,
+              height: 100,
+              imageUrl: base64,
+              opacity: 1
+            };
+            setElements([...elements, newEl]);
+            setActiveElementId(newEl.id);
+            setMode('select');
+            setIsSigPadOpen(false);
+          }}
+          onCancel={() => setIsSigPadOpen(false)}
+        />
       )}
     </div>
   );
