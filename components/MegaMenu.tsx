@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { X, Search, Zap, FileText, Image, ShieldCheck, ArrowRight, Star } from 'lucide-react';
+import { X, Search, Zap, FileText, Image, ShieldCheck, ArrowRight, Star, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ToolCard } from './ToolCard';
 
 interface MegaMenuProps {
     isOpen: boolean;
@@ -17,13 +16,32 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
     const [searchQuery, setSearchQuery] = React.useState('');
     const menuRef = React.useRef<HTMLDivElement>(null);
 
-    // Filter tools based on search
+    // Grouping logic for PDF tools
+    const getGroupedTools = () => {
+        if (category !== 'pdf') return { 'All Tools': filteredTools };
+
+        const groups: Record<string, any[]> = {
+            'Convert from PDF': filteredTools.filter(t => ['pdf-to-word', 'pdf-to-excel', 'pdf-to-ppt', 'pdf-to-jpg', 'pdf-to-html', 'pdf-to-text'].includes(t.slug)),
+            'Convert to PDF': filteredTools.filter(t => ['pdf-to-word', 'word-to-pdf', 'jpg-to-pdf', 'html-to-pdf', 'url-to-pdf', 'epub-to-pdf', 'mobi-to-pdf'].includes(t.slug)),
+            'Edit & Organize': filteredTools.filter(t => ['edit-pdf', 'merge-pdf', 'split-pdf', 'rotate-pdf', 'delete-pages', 'organize-pdf', 'compress-pdf', 'pdf-page-numbers-online'].includes(t.slug)),
+            'Security & Sign': filteredTools.filter(t => ['sign-pdf', 'protect-pdf', 'unlock-pdf', 'redact-pdf', 'sanitize-pdf', 'verified-notary'].includes(t.slug))
+        };
+
+        // Any remaining tools go to 'Other'
+        const groupedSlugs = Object.values(groups).flat().map(t => t.slug);
+        const other = filteredTools.filter(t => !groupedSlugs.includes(t.slug));
+        if (other.length > 0) groups['General & AI'] = other;
+
+        return groups;
+    };
+
     const filteredTools = tools.filter(tool => 
         (tool.h1 || tool.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (tool.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Handle ESC key
+    const grouped = getGroupedTools();
+
     React.useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -58,27 +76,27 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in transition-all duration-300">
             {/* Backdrop */}
             <div 
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-2xl" 
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl" 
                 onClick={onClose}
             />
 
             {/* Content Container */}
             <div 
                 ref={menuRef}
-                className="relative w-full max-w-7xl max-h-[90vh] glass-panel rounded-[3rem] shadow-2xl overflow-hidden flex flex-col border border-white/50"
+                className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col border border-white/40"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-slate-200/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-5">
+                        <div className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-200">
                             {getCategoryIcon()}
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{getCategoryTitle()}</h2>
-                            <p className="text-slate-500 font-medium text-sm">Explore all features and automation tools</p>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{getCategoryTitle()}</h2>
+                            <p className="text-slate-500 font-medium text-xs uppercase tracking-widest opacity-70">List Access Layout</p>
                         </div>
                     </div>
                     
@@ -89,8 +107,8 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
                             </div>
                             <input 
                                 type="text"
-                                placeholder="Search tools..."
-                                className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium w-64"
+                                placeholder="..."
+                                className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium w-64"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 autoFocus
@@ -98,55 +116,59 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
                         </div>
                         <button 
                             onClick={onClose}
-                            className="p-3 hover:bg-slate-100 rounded-2xl transition-colors text-slate-400 hover:text-slate-900"
+                            className="p-2.5 hover:bg-slate-200 rounded-xl transition-all text-slate-400 hover:text-slate-900"
                         >
                             <X size={24} />
                         </button>
                     </div>
                 </div>
 
-                {/* Grid */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50/30">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {filteredTools.map((tool) => (
-                            <Link 
-                                key={tool.slug}
-                                to={getLocalizedPath(tool.slug)}
-                                onClick={onClose}
-                                className="group block"
-                            >
-                                <div className="premium-card p-6 h-full flex flex-col hover:border-blue-200 transition-all">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-50 group-hover:scale-110 transition-transform">
-                                            {tool.icon ? <tool.icon className="text-blue-600" size={20} /> : <FileText className="text-blue-600" size={20} />}
-                                        </div>
-                                        <ArrowRight className="text-slate-200 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" size={16} />
-                                    </div>
-                                    <h3 className="font-black text-slate-900 mb-1 group-hover:text-blue-600 transition-colors uppercase text-xs tracking-widest">{tool.h1 || tool.title}</h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed font-medium">{tool.description || 'Advanced automation tool'}</p>
+                {/* List Body */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-10">
+                        {Object.entries(grouped).map(([groupName, groupTools]) => (
+                            <div key={groupName} className="flex flex-col">
+                                <h3 className="text-[10px] font-black text-blue-600 border-b border-blue-100 pb-2 mb-4 uppercase tracking-[0.2em]">{groupName}</h3>
+                                <div className="flex flex-col gap-1">
+                                    {groupTools.map((tool) => (
+                                        <Link 
+                                            key={tool.slug}
+                                            to={getLocalizedPath(tool.slug)}
+                                            onClick={onClose}
+                                            className="group flex items-center gap-3 px-3 py-2 -mx-3 rounded-lg hover:bg-slate-50 transition-all"
+                                        >
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                {tool.icon ? <tool.icon size={16} /> : <FileText size={16} />}
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
+                                                {tool.h1 || tool.title}
+                                            </span>
+                                            <ChevronRight size={14} className="ml-auto opacity-0 -translate-x-2 group-hover:opacity-40 group-hover:translate-x-0 transition-all text-slate-400" />
+                                        </Link>
+                                    ))}
                                 </div>
-                            </Link>
+                            </div>
                         ))}
                     </div>
 
                     {filteredTools.length === 0 && (
                         <div className="text-center py-20">
-                            <p className="text-slate-400 text-lg font-medium">No tools found matching your search.</p>
+                            <p className="text-slate-400 text-lg font-medium tracking-tight">No tools found matching your search.</p>
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-6 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-green-500" /> SECURE</span>
-                        <span className="flex items-center gap-1.5"><Star size={14} className="text-yellow-500" /> TOP-RATED</span>
+                <div className="p-5 px-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                        <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500" /> SECURE HANDLER</span>
+                        <span className="flex items-center gap-2"><Star size={14} className="text-blue-500" /> TOP-RATED WORKSPACE</span>
                     </div>
                     <button 
                         onClick={onClose}
-                        className="text-sm font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest"
+                        className="text-[10px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
-                        Back to Home
+                        Back to Home <ArrowRight size={14} />
                     </button>
                 </div>
             </div>
