@@ -105,7 +105,8 @@ type EditorMode =
   | 'symbol-check'
   | 'symbol-dot'
   | 'comment'
-  | 'font-picker';
+  | 'font-picker'
+  | 'watermark';
 
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
   { mode: 'select',     label: 'Select',    icon: <MousePointer2 size={16} />, tooltip: 'Select and move elements' },
@@ -325,8 +326,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         undo();
         return;
       }
-      // Ctrl+Shift+Z / Cmd+Shift+Z: Redo
+      // Ctrl+Shift+Z or Ctrl+Y: Redo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      // Ctrl+Y: Redo (alternative)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
         e.preventDefault();
         redo();
         return;
@@ -758,6 +765,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             { mode: 'erase', icon: <Square size={18} />, label: 'Whiteout' },
             { mode: 'draw', icon: <PenLine size={18} />, label: 'Annotate' },
             { mode: 'rect', icon: <Shapes size={18} />, label: 'Shapes' },
+            { mode: 'watermark', icon: <Pen size={18} />, label: 'Watermark' },
             { mode: 'undo', icon: <Undo2 size={18} />, label: 'Undo' },
           ].map((t) => (
             <div key={t.mode || t.label} className="relative">
@@ -766,6 +774,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   e.stopPropagation(); 
                   if (t.mode === 'undo') undo();
                   else if (t.mode === 'image') document.getElementById('img-upload')?.click();
+                  else if (t.mode === 'watermark') {
+                    const wText = window.prompt('Enter watermark text (e.g. CONFIDENTIAL, DRAFT):');
+                    if (wText) {
+                      const wm: EditElement = { id: `wm-${Date.now()}`, type: 'text', pageIndex, x: 200, y: 440, width: 600, height: 120, color: '#c0c0c0', text: wText, size: 80, opacity: 0.25, rotation: -35, fontName: 'Helvetica' };
+                      commit([...elements, wm]);
+                      setMode('select');
+                    }
+                  }
                   else if (t.mode === 'form-builder') { setShowFormsMenu(!showFormsMenu); setShowAnnotateMenu(false); setShowSignMenu(false); }
                   else if (t.mode === 'draw') { setShowAnnotateMenu(!showAnnotateMenu); setShowFormsMenu(false); setShowSignMenu(false); }
                   else if (t.mode === 'sign') { setShowSignMenu(!showSignMenu); setShowFormsMenu(false); setShowAnnotateMenu(false); }

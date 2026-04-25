@@ -1,15 +1,25 @@
 import * as React from 'react';
-import { PenTool, CheckCircle2, Download, Image as ImageIcon, Layout, X, Zap } from 'lucide-react';
+import { PenTool, CheckCircle2, Download, Image as ImageIcon, Layout, X, Zap, AlertTriangle, FileWarning, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Button } from './Button';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
-import { PdfThumbnailSidebar } from './PdfThumbnailSidebar';
 import { SmartRedactButton } from './SmartRedactButton';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions } from '../utils/pdfHelpers';
+
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface PdfEditorUIProps {
   file: File;
   onCancel: () => void;
 }
+
+const PROCESSING_STAGES = [
+  'Loading PDF engine...',
+  'Parsing document structure...',
+  'Rendering page thumbnails...',
+  'Extracting text layers...',
+  'Preparing workspace...',
+];
 
 export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [images, setImages] = React.useState<string[]>([]);
@@ -18,14 +28,75 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [activePage, setActivePage] = React.useState<number>(0);
   const [textItems, setTextItems] = React.useState<PdfTextItem[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [isScanning, setIsScanning] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [progressStage, setProgressStage] = React.useState(0);
   const [successMsg, setSuccessMsg] = React.useState('');
   const [errorMsg, setErrorMsg] = React.useState('');
+  const [fileSizeError, setFileSizeError] = React.useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+  const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
 
+  // ── File Size Validation ──────────────────────────────────────────
   React.useEffect(() => {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileSizeError(`File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`);
+    }
+  }, [file]);
+
+  // ── Unsaved changes warning ───────────────────────────────────────
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // ── localStorage Session Restore ─────────────────────────────────
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(sessionKey);
+      if (saved) {
+        const parsed: EditElement[] = JSON.parse(saved);
+        if (parsed.length > 0) {
+          setElements(parsed);
+          setHasUnsavedChanges(true);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not restore session:', e);
+    }
+  }, [sessionKey]);
+
+  const saveSession = (els: EditElement[]) => {
+    try {
+      localStorage.setItem(sessionKey, JSON.stringify(els));
+    } catch (e) {
+      console.warn('Could not save session:', e);
+    }
+  };
+
+  const clearSession = () => {
+    try { localStorage.removeItem(sessionKey); } catch (e) { /* ignore */ }
+  };
+
+  // ── PDF Processing with progress stages ──────────────────────────
+  React.useEffect(() => {
+    if (fileSizeError) return;
     let mounted = true;
+    let stageInterval: ReturnType<typeof setInterval>;
+
     const processPdf = async () => {
       setIsProcessing(true);
+      setProgressStage(0);
+
+      stageInterval = setInterval(() => {
+        setProgressStage(prev => Math.min(prev + 1, PROCESSING_STAGES.length - 1));
+      }, 600);
+
       try {
         const { images: imgs, dimensions: dims } = await pdfToImages(file);
         if (mounted) {
@@ -39,96 +110,210 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           setErrorMsg(`Failed to render PDF: ${message}`);
         }
       } finally {
+        clearInterval(stageInterval);
         if (mounted) setIsProcessing(false);
       }
     };
     processPdf();
-    return () => { mounted = false; };
-  }, [file]);
+    return () => {
+      mounted = false;
+      clearInterval(stageInterval);
+    };
+  }, [file, fileSizeError]);
 
-  // Fetch text items for the active page to enable 'Direct Edit'
+  // ── Fetch text items for active page ─────────────────────────────
   React.useEffect(() => {
     const fetchText = async () => {
       try {
         const items = await getTextItems(file, activePage);
         setTextItems(items);
       } catch (e) {
-        console.warn("Could not fetch text items", e);
+        console.warn('Could not fetch text items', e);
       }
     };
     fetchText();
   }, [file, activePage]);
 
   const handleApplyAll = async (latestElements?: EditElement[]) => {
-    setIsProcessing(true);
+    setIsSaving(true);
     setSuccessMsg('');
     setErrorMsg('');
     try {
       const elementsToUse = latestElements || elements;
       const res = await editPdf(file, elementsToUse);
       downloadBlob(res, `edited-${file.name}`);
-      setSuccessMsg("PDF Successfully Edited and Downloaded!");
+      setSuccessMsg('PDF Successfully Edited and Downloaded!');
+      clearSession();
+      setHasUnsavedChanges(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error occurred';
       setErrorMsg(`Failed to save edits: ${message}`);
     } finally {
-      setIsProcessing(false);
+      setIsSaving(false);
     }
   };
 
-  if (images.length === 0 && isProcessing) {
+  // ── File Size Error Screen ────────────────────────────────────────
+  if (fileSizeError) {
     return (
-      <div className="fixed inset-0 bg-slate-50 z-50 flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white animate-bounce shadow-xl">
-           <Layout size={32} />
+      <div className="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center p-8">
+        <div className="w-20 h-20 bg-red-100 rounded-3xl flex items-center justify-center mb-6">
+          <FileWarning size={40} className="text-red-500" />
         </div>
-        <h3 className="mt-6 text-2xl font-black text-slate-800">Processing Your Document</h3>
-        <p className="text-slate-500 font-medium">Preparing the workstation...</p>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">File Too Large</h2>
+        <p className="text-slate-500 text-center max-w-md mb-2">{fileSizeError}</p>
+        <p className="text-slate-400 text-sm text-center mb-8">Please compress your PDF or use a smaller file. You can use our <strong>Compress PDF</strong> tool first.</p>
+        <button onClick={onCancel} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">
+          Back to Tools
+        </button>
       </div>
     );
   }
 
-  const pageEditsCount = images.reduce((acc, _, i) => {
-    acc[i] = elements.filter(el => el.pageIndex === i).length;
-    return acc;
-  }, {} as Record<number, number>);
+  // ── Processing Screen ─────────────────────────────────────────────
+  if (images.length === 0 && isProcessing) {
+    const progress = Math.round(((progressStage + 1) / PROCESSING_STAGES.length) * 100);
+    return (
+      <div className="fixed inset-0 bg-[#f8f9fb] z-[9999] flex flex-col items-center justify-center p-8">
+        <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-blue-200 mb-8">
+          <Layout size={36} className="animate-pulse" />
+        </div>
+        <h3 className="text-2xl font-black text-slate-800 mb-2">Preparing Your Document</h3>
+        <p className="text-slate-400 font-medium text-sm mb-8">{PROCESSING_STAGES[progressStage]}</p>
+
+        {/* Progress bar */}
+        <div className="w-full max-w-sm bg-slate-200 rounded-full h-2 overflow-hidden mb-3">
+          <div
+            className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-xs text-slate-400 font-bold">{progress}% complete</p>
+
+        <p className="text-xs text-slate-300 mt-6">
+          File: <span className="font-medium">{file.name}</span> &nbsp;·&nbsp; {(file.size / 1024 / 1024).toFixed(1)} MB
+        </p>
+      </div>
+    );
+  }
+
+  // ── Error Screen ──────────────────────────────────────────────────
+  if (errorMsg && images.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center p-8">
+        <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mb-6">
+          <AlertTriangle size={40} className="text-amber-500" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">Could Not Open PDF</h2>
+        <p className="text-slate-500 text-center max-w-md mb-8">{errorMsg}</p>
+        <button onClick={onCancel} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">
+          Try Another File
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-[#f3f3f3] z-[9999] flex flex-col overflow-hidden animate-fade-in font-sans">
-      {/* Sejda Style Header */}
-      <header className="bg-white border-b border-slate-200 shrink-0 z-50 py-6">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
-           <h1 className="text-3xl font-bold text-[#333] mb-1">Online PDF editor</h1>
-           <p className="text-slate-500 text-lg">Edit PDF files for free. Fill & sign PDF</p>
+    <div className="fixed inset-0 bg-[#f3f3f3] z-[9999] flex flex-col overflow-hidden font-sans">
+
+      {/* ── Saving Overlay ── */}
+      {isSaving && (
+        <div className="absolute inset-0 z-[500] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 border border-slate-100">
+            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+            <p className="font-black text-slate-700 text-lg">Applying Changes...</p>
+            <p className="text-slate-400 text-sm">Generating your edited PDF, please wait.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Header ── */}
+      <header className="bg-white border-b border-slate-200 shrink-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button onClick={onCancel} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors text-sm font-bold">
+            <ChevronLeft size={18} /> Back
+          </button>
+          <div className="text-center">
+            <h1 className="text-xl font-black text-[#333]">Online PDF Editor</h1>
+            <p className="text-slate-400 text-xs">
+              {file.name} &nbsp;·&nbsp; {images.length} page{images.length !== 1 ? 's' : ''} &nbsp;·&nbsp; {(file.size / 1024 / 1024).toFixed(1)} MB
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {hasUnsavedChanges && (
+              <span className="text-xs text-amber-600 font-bold bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">● Unsaved</span>
+            )}
+            <button
+              onClick={() => handleApplyAll(elements)}
+              className="flex items-center gap-2 px-5 py-2 bg-[#11b67a] hover:bg-[#0da26a] text-white rounded-lg font-bold text-sm transition-all"
+            >
+              Apply changes <ChevronRightIcon size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Main Workspace */}
+      {/* ── Notifications ── */}
+      {successMsg && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-4">
+          <CheckCircle2 size={18} /> {successMsg}
+          <button onClick={() => setSuccessMsg('')} className="ml-4 opacity-60 hover:opacity-100"><X size={14} /></button>
+        </div>
+      )}
+      {errorMsg && images.length > 0 && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[300] bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-4">
+          <AlertTriangle size={18} /> {errorMsg}
+          <button onClick={() => setErrorMsg('')} className="ml-4 opacity-60 hover:opacity-100"><X size={14} /></button>
+        </div>
+      )}
+
+      {/* ── Main Workspace ── */}
       <div className="flex-1 flex overflow-hidden">
+
+        {/* Page Thumbnail Sidebar */}
+        {images.length > 1 && (
+          <aside className="w-28 bg-white border-r border-slate-200 flex flex-col overflow-y-auto py-4 gap-3 items-center shrink-0 custom-scrollbar">
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setActivePage(i)}
+                className={`group relative w-20 shrink-0 transition-all ${activePage === i ? 'ring-2 ring-blue-500 shadow-lg' : 'ring-1 ring-slate-200 hover:ring-blue-300'} rounded overflow-hidden`}
+              >
+                <img src={img} alt={`Page ${i + 1}`} className="w-full object-cover" />
+                <div className={`absolute bottom-0 left-0 right-0 text-center text-[9px] font-black py-0.5 ${activePage === i ? 'bg-blue-600 text-white' : 'bg-black/50 text-white'}`}>
+                  {i + 1}
+                </div>
+                {/* Edit count badge */}
+                {elements.filter(el => el.pageIndex === i).length > 0 && (
+                  <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-black rounded-full flex items-center justify-center shadow">
+                    {elements.filter(el => el.pageIndex === i).length}
+                  </div>
+                )}
+              </button>
+            ))}
+          </aside>
+        )}
+
         {/* Editor Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
-           {successMsg && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold flex items-center gap-2 animate-in slide-in-from-top-10">
-                 <CheckCircle2 size={18} /> {successMsg}
-                 <button onClick={() => setSuccessMsg('')} className="ml-4 opacity-50 hover:opacity-100"><X size={14}/></button>
-              </div>
-           )}
-
-           <PdfEditorCanvas
-             image={images[activePage]}
-             dimensions={dimensions[activePage]}
-             pageIndex={activePage}
-             initialElements={elements.filter(el => el.pageIndex === activePage)}
-             onSave={(newElements) => {
-               const otherPages = elements.filter(el => el.pageIndex !== activePage);
-               setElements([...otherPages, ...newElements]);
-             }}
-             onFinalSave={handleApplyAll}
-             onCancel={onCancel}
-             isEmbedded={true}
-             textItems={textItems}
-             file={file}
-           />
+          <PdfEditorCanvas
+            image={images[activePage]}
+            dimensions={dimensions[activePage]}
+            pageIndex={activePage}
+            initialElements={elements.filter(el => el.pageIndex === activePage)}
+            onSave={(newElements) => {
+              const otherPages = elements.filter(el => el.pageIndex !== activePage);
+              const merged = [...otherPages, ...newElements];
+              setElements(merged);
+              saveSession(merged);
+              setHasUnsavedChanges(true);
+            }}
+            onFinalSave={handleApplyAll}
+            onCancel={onCancel}
+            isEmbedded={true}
+            textItems={textItems}
+            file={file}
+          />
         </main>
       </div>
     </div>
