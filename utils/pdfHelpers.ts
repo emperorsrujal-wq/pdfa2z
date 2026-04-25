@@ -580,7 +580,13 @@ export const sampleBackgroundColor = async (
 
 export type EditElementType = 
   'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'audio' | 
-  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-text' | 'form-select' | 'link' | 'sticky-note';
+  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature';
+
+export type EditorMode =
+  | 'select' | 'text' | 'draw' | 'erase' | 'smart-erase' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'picker' | 'magic-edit' | 'font-picker'
+  | 'highlight' | 'strikeout' | 'underline' | 'link' | 'ellipse' | 'forms' | 'sign' | 'signature' | 'sticky-note' | 'find-replace'
+  | 'ocr' | 'convert' | 'page-tools' | 'form-builder' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'comment';
+
 
 export type FormFieldType = 'text' | 'checkbox' | 'dropdown';
 
@@ -689,8 +695,14 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
       }
 
       const font = await pdfDoc.embedFont(fontToEmbed); 
+      const textWidth = font.widthOfTextAtSize(el.text, fontSize);
+      
+      let drawX = actualX;
+      if (el.textAlign === 'center') drawX = actualX - (textWidth / 2);
+      else if (el.textAlign === 'right') drawX = actualX - textWidth;
+
       page.drawText(el.text, {
-        x: actualX,
+        x: drawX,
         y: actualY - fontSize,
         size: fontSize,
         font,
@@ -698,6 +710,16 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         opacity: elOpacity,
         rotate: elRotation,
       });
+
+      if (el.isUnderline) {
+        page.drawLine({
+          start: { x: drawX, y: actualY - fontSize - 2 },
+          end: { x: drawX + textWidth, y: actualY - fontSize - 2 },
+          color: elColor,
+          thickness: 1,
+          opacity: elOpacity,
+        });
+      }
     } else if (el.type === 'highlight') {
       page.drawRectangle({
         x: actualX,
@@ -845,10 +867,8 @@ export const notImplementedPlaceholder = async (file: File, format: string): Pro
 };
 
 export const pdfToPpt = async (file: File): Promise<Blob> => {
-  // Basic implementation: Extract text and put in a text file but call it PPT
-  // Real implementation requires PptxGenJS
   const text = await extractTextFromPdf(file);
-  return new Blob([text], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+  return convertPdfToPptx(text);
 };
 
 export interface RedactionArea {
@@ -1194,4 +1214,28 @@ export const findTextPositions = async (pdfBytes: Uint8Array, pageIndex: number,
   });
 
   return foundAreas;
+};
+
+/**
+ * Adds Bates Numbering to a PDF document for legal compliance
+ */
+export const addBatesNumbering = async (pdfBytes: ArrayBuffer, prefix: string = 'ABC-', startNumber: number = 1): Promise<Uint8Array> => {
+  const { PDFDocument, rgb, StandardFonts } = (window as any).PDFLib;
+  const doc = await PDFDocument.load(pdfBytes);
+  const pages = doc.getPages();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  
+  pages.forEach((page: any, i: number) => {
+    const batesNumber = `${prefix}${String(startNumber + i).padStart(6, '0')}`;
+    const { width } = page.getSize();
+    page.drawText(batesNumber, {
+      x: width - 120,
+      y: 20,
+      size: 10,
+      font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  });
+  
+  return await doc.save();
 };

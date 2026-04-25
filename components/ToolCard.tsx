@@ -1,51 +1,67 @@
 import * as React from 'react';
-import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface ToolCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  colorClass?: string;
   onClick?: () => void;
   to?: string;
-  colorClass: string;
   popular?: boolean;
-  className?: string;
 }
 
-export const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon, onClick, to, colorClass, popular, className = '' }) => {
-  // Extract color base for light background usage
-  const baseColor = colorClass.split(' ')[0].replace('bg-', '').replace('-600', '');
+/** Strip HTML tags like <em> from strings for safe plain-text rendering */
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '');
 
-  const CardWrapper = to ? Link : 'div';
-  const wrapperProps = to ? { to, onClick } : { onClick };
-
+export const ToolCard: React.FC<ToolCardProps> = ({
+  title,
+  description,
+  icon,
+  colorClass = 'bg-blue-600 text-white',
+  onClick,
+  popular = false,
+}) => {
   return (
-    <CardWrapper
-      {...(wrapperProps as any)}
-      className={`group relative flex flex-col items-start p-6 premium-card cursor-pointer h-full ${className}`}
+    <div
+      onClick={onClick}
+      className="tool-card p-5 flex flex-col gap-3 group cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
-      {popular && (
-        <span className="absolute top-6 right-6 text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-600 px-2.5 py-1 rounded-full border border-blue-200/50">
-          Popular
-        </span>
-      )}
-
-      <div className={`mb-6 p-4 rounded-2xl ${colorClass.includes('text-white') ? colorClass : `${colorClass.split(' ')[0]} bg-opacity-10 text-${baseColor}-600`} transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg group-hover:shadow-blue-500/20`}>
-        {React.cloneElement(icon as React.ReactElement<any>, { size: 28 })}
+      {/* Icon */}
+      <div className="relative">
+        <div
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl ${colorClass}`}
+          style={{ boxShadow: '0 8px 20px -4px currentColor' }}
+        >
+          {icon}
+        </div>
+        {popular && (
+          <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-amber-900 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+            HOT
+          </span>
+        )}
       </div>
 
-      <h3 className="text-xl font-black text-slate-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors tracking-tight">
-        {title}
-      </h3>
-
-      <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-6 flex-1 font-medium">
-        {description}
-      </p>
-
-      <div className="flex items-center text-[10px] font-black uppercase tracking-widest text-blue-600 opacity-40 group-hover:opacity-100 transition-all duration-300">
-        Launch Tool <ArrowRight size={14} className="ml-1.5 transition-transform group-hover:translate-x-1" />
+      {/* Text */}
+      <div className="flex flex-col gap-1 flex-1">
+        <h3 className="font-bold text-slate-800 text-sm leading-tight group-hover:text-blue-600 transition-colors duration-200">
+          {stripHtml(title)}
+        </h3>
+        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+          {description}
+        </p>
       </div>
-    </CardWrapper>
+
+      {/* Arrow indicator */}
+      <div className="flex justify-end">
+        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all duration-300 group-hover:translate-x-0.5">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
   );
 };

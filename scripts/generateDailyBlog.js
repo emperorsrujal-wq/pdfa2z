@@ -4,14 +4,48 @@ import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import { GoogleGenAI } from '@google/genai';
 
+// ── Configuration ───────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ── Configuration ───────────────────────────────────────────────────────────
-const GEMINI_API_KEY = 'AIzaSyALQpm0gSZg9y-OWSSMh7ysJlWdqU9uDPY';
+// Optional: Load .env file
+try {
+  const { default: dotenv } = await import('dotenv');
+  dotenv.config();
+} catch (e) {
+  // Dotenv not available, try manual parse of .env.local
+  try {
+    const envLocalPath = path.join(__dirname, '../.env.local');
+    if (fs.existsSync(envLocalPath)) {
+      const envContent = fs.readFileSync(envLocalPath, 'utf-8');
+      envContent.split('\n').forEach(line => {
+        const [key, ...value] = line.split('=');
+        if (key && value) {
+          process.env[key.trim()] = value.join('=').trim();
+        }
+      });
+    }
+  } catch (err) {
+    // Manual parse failed
+  }
+}
+
+let GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 const MODEL = 'gemini-2.5-flash';
 const BLOG_DATA_PATH = path.join(__dirname, '../utils/blogData.ts');
 const SITEMAP_SCRIPT = path.join(__dirname, 'generateSitemap.js');
+
+if (!GEMINI_API_KEY) {
+  console.error('❌ ERROR: Gemini API Key not found!');
+  console.error('Your previous key was disabled because it was leaked in the source code.');
+  console.error('');
+  console.error('FIX:');
+  console.error('1. Generate a NEW key at: https://aistudio.google.com/app/apikey');
+  console.error('2. Create a file named .env.local in the project root');
+  console.error('3. Add this line: VITE_GEMINI_API_KEY=your_new_key_here');
+  console.error('');
+  process.exit(1);
+}
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 

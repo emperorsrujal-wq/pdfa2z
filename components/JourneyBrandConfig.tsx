@@ -45,7 +45,7 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
     initialConfig || loadBrandConfig() || DEFAULT_BRAND_CONFIG
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout' | 'industry'>('colors');
   const [saved, setSaved] = useState(false);
 
   const handleConfigChange = (field: keyof BrandConfig, value: any) => {
@@ -532,6 +532,12 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
             onClick={() => setActiveTab('advanced')}
           >
             Advanced
+          </button>
+          <button
+            className={`brand-tab ${activeTab === 'industry' ? 'active' : ''}`}
+            onClick={() => setActiveTab('industry')}
+          >
+            Industry
           </button>
         </div>
 
@@ -1199,6 +1205,83 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
               </p>
             </div>
           </>
+        )}
+
+        {/* INDUSTRY TAB */}
+        {activeTab === 'industry' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="brand-form-group">
+              <label className="brand-form-label">Professional Vertical</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+                {[
+                  { id: 'mortgage', label: 'Mortgage & Lending', icon: '🏠' },
+                  { id: 'legal', label: 'Legal & Compliance', icon: '⚖️' },
+                  { id: 'real-estate', label: 'Real Estate', icon: '🏢' },
+                  { id: 'banking', label: 'Banking & KYC', icon: '🏦' },
+                  { id: 'business', label: 'General Business', icon: '💼' },
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleConfigChange('industryPreset', item.id)}
+                    style={{
+                      padding: '16px',
+                      background: config.industryPreset === item.id ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.02)',
+                      border: config.industryPreset === item.id ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '16px',
+                      color: '#fff',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>{item.icon}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800 }}>{item.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Compliance & Security</label>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <label className="brand-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={config.isPipedaCompliant}
+                    onChange={(e) => handleConfigChange('isPipedaCompliant', e.target.checked)}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div className="brand-checkbox-label">PIPEDA / GDPR Compliance Mode</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>Enforce strict data purge and encrypted audit logs.</div>
+                  </div>
+                </label>
+
+                <label className="brand-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={config.isAuditEnabled}
+                    onChange={(e) => handleConfigChange('isAuditEnabled', e.target.checked)}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div className="brand-checkbox-label">Enhanced Audit Trail</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>Append a legally-binding Certificate of Completion with IP/GPS data.</div>
+                  </div>
+                </label>
+
+                <label className="brand-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={config.showSecurityBadges}
+                    onChange={(e) => handleConfigChange('showSecurityBadges', e.target.checked)}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div className="brand-checkbox-label">Display Trust Badges</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>Show SOC2, HIPAA, and Encryption badges to clients.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="brand-button-group">

@@ -76,6 +76,11 @@ export interface BrandConfig {
   // Enterprise Features
   crmMappingEnabled?: boolean; // Enable CRM Auto-Mapping
   abTestingEnabled?: boolean;  // Enable A/B testing variants
+  
+  // Industry Vertical Features
+  industryPreset?: 'mortgage' | 'legal' | 'real-estate' | 'banking' | 'business';
+  isPipedaCompliant?: boolean; // Compliance flag
+  isAuditEnabled?: boolean;   // Enhanced audit trail
 }
 
 /**
@@ -183,6 +188,9 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   localizedContent: {},
   crmMappingEnabled: false,
   abTestingEnabled: false,
+  industryPreset: 'business',
+  isPipedaCompliant: false,
+  isAuditEnabled: true,
   ...autoDetectRegionalSettings(),
 };
 

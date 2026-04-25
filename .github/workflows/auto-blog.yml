@@ -26,6 +26,8 @@ jobs:
 
       - name: Generate daily blog post
         run: node scripts/generateDailyBlog.js
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
 
       - name: Commit and push if changes exist
         run: |
