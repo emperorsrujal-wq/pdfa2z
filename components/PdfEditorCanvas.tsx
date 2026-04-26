@@ -37,17 +37,17 @@ import {
   Plus,
   ChevronRight,
 } from 'lucide-react';
-import { OCRPanel } from './OCRPanel';
 import { ConversionPanel } from './ConversionPanel';
 import { PageToolsPanel } from './PageToolsPanel';
 import { FormBuilder } from './FormBuilder';
 import { AuditLog } from './AuditLog';
 import { SignaturePad } from './SignaturePad';
 import { suggestFormValues } from '../services/geminiService';
+import { EditElement, PageDimensions, pdfToImages, insertBlankPage, removePages, editPdf, downloadBlob, sampleBackgroundColor, getTextItems, findTextPositions, RedactionArea, performOCR, extractStyleAtPoint, PdfTextItem } from '../utils/pdfHelpers';
+import { ObjectToolbar } from './ObjectToolbar';
 import { Tooltip } from './Tooltip';
 import { FindReplace } from './FindReplace';
 import { OCRPanel } from './OCRPanel';
-import { EditElement, PageDimensions, EditorMode, pdfToImages, insertBlankPage, removePages, editPdf, downloadBlob, sampleBackgroundColor, getTextItems, findTextPositions, RedactionArea, performOCR } from '../utils/pdfHelpers';
 
 interface PdfEditorCanvasProps {
   image: string;
@@ -69,6 +69,7 @@ interface PdfEditorCanvasProps {
   docId?: string;
   onInsertPage?: () => void;
   onDeletePage?: () => void;
+  setElements: React.Dispatch<React.SetStateAction<EditElement[]>>;
 }
 
 type EditorMode =
@@ -218,15 +219,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [auditEntries, setAuditEntries] = React.useState<any[]>([]);
 
   const [showColorPicker, setShowColorPicker] = React.useState(false);
-  const [showFindReplace, setShowFindReplace] = React.useState(false);
   const [showFormsMenu, setShowFormsMenu] = React.useState(false);
   const [showAnnotateMenu, setShowAnnotateMenu] = React.useState(false);
   const [showSignMenu, setShowSignMenu] = React.useState(false);
   const [showShapesMenu, setShowShapesMenu] = React.useState(false);
   const [isSigPadOpen, setIsSigPadOpen] = React.useState(false);
   const [storedSignatures, setStoredSignatures] = React.useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [replaceTerm, setReplaceTerm] = React.useState('');
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
@@ -271,7 +269,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const updateElement = (id: string, updates: Partial<EditElement>) => {
     const next = elements.map(el => (el.id === id ? { ...el, ...updates } : el));
-    setElements(next);
+    commit(next);
     onSave(next);
   };
 
@@ -1043,14 +1041,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         </div>
       </div>
 
-      <div className="bg-[#f3f3f3] flex flex-col items-center py-4 border-b border-slate-200 shrink-0">
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowFindReplace(!showFindReplace); }}
-          className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-300 rounded shadow-sm text-sm font-medium text-[#333] hover:bg-slate-50 transition-all ml-40 self-start"
-        >
-          <Search size={14} /> Find & Replace
-        </button>
-      </div>
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div 
@@ -1786,62 +1776,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         />
       )}
 
-      {/* Find & Replace Modal */}
-      {showFindReplace && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-black text-slate-800 uppercase tracking-tight text-lg">Find & Replace</h3>
-              <button 
-                onClick={() => setShowFindReplace(false)}
-                className="p-1 hover:bg-slate-100 rounded-lg transition-all"
-              >
-                <Trash2 size={18} className="text-slate-400" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Find Text</label>
-                <input 
-                  type="text" 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  placeholder="e.g. Contract"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
-              </div>
-              
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Replace With</label>
-                <input 
-                  type="text" 
-                  value={replaceTerm}
-                  onChange={e => setReplaceTerm(e.target.value)}
-                  placeholder="e.g. Agreement"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                />
-              </div>
-              
-              <div className="pt-4 flex gap-3">
-                <button 
-                  onClick={() => setShowFindReplace(false)}
-                  className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest text-[11px]"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleFindReplace}
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all uppercase tracking-widest text-[11px]"
-                >
-                  Replace All
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Sejda Style Apply Bar */}
       <div className="shrink-0 bg-[#f3f3f3] border-t border-slate-200 py-6 flex justify-center sticky bottom-0 z-[200]">
         <button
@@ -1870,7 +1804,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               imageUrl: base64,
               opacity: 1
             };
-            setElements([...elements, newEl]);
+            commit([...elements, newEl]);
             setActiveElementId(newEl.id);
             setMode('select');
             setIsSigPadOpen(false);

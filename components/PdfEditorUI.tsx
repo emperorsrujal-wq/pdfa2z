@@ -429,6 +429,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             file={currentFile}
             onInsertPage={handleInsertPage}
             onDeletePage={handleDeletePage}
+            setElements={setElements}
           />
         </main>
       </div>

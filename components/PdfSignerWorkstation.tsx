@@ -41,6 +41,32 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
   onPrevPage
 }) => {
   const [elements, setElements] = React.useState<EditElement[]>([]);
+  const [history, setHistory] = React.useState<EditElement[][]>([[]]);
+  const [historyStep, setHistoryStep] = React.useState(0);
+
+  const commit = (next: EditElement[]) => {
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(next);
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+    setElements(next);
+  };
+
+  const undo = () => {
+    if (historyStep > 0) {
+      const prev = history[historyStep - 1];
+      setElements(prev);
+      setHistoryStep(historyStep - 1);
+    }
+  };
+
+  const redo = () => {
+    if (historyStep < history.length - 1) {
+      const next = history[historyStep + 1];
+      setElements(next);
+      setHistoryStep(historyStep + 1);
+    }
+  };
   const [isMobileModalOpen, setIsMobileModalOpen] = React.useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = React.useState(false);
   const [isSigPadOpen, setIsSigPadOpen] = React.useState(false);
@@ -68,7 +94,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
       color: '#000000',
       opacity: 1
     };
-    setElements([...elements, newEl]);
+    commit([...elements, newEl]);
   };
 
   const handleSignatureSave = (base64: string) => {
@@ -80,7 +106,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
       imageUrl: base64,
       opacity: 1
     };
-    setElements([...elements, newEl]);
+    commit([...elements, newEl]);
     setIsSigPadOpen(false);
     setPendingFieldType(null);
   };
@@ -103,7 +129,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
         opacity: 0.2
       }));
 
-      setElements([...elements, ...newFields]);
+      commit([...elements, ...newFields]);
       // alert(`AI detected ${found.length} possible signing areas!`);
     } catch (e) {
       console.error(e);
@@ -236,11 +262,17 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
                  <PdfEditorCanvas 
                    image={image}
                    pageIndex={pageIndex}
-                   initialElements={elements}
+                   elements={elements}
+                   historyStep={historyStep}
+                   canRedo={historyStep < history.length - 1}
+                   onCommit={commit}
+                   onUndo={undo}
+                   onRedo={redo}
                    onSave={(els) => setElements(els)}
                    onCancel={() => {}} // Internal cancel handled differently
                    isEmbedded={true}
                    file={file}
+                   setElements={setElements}
                  />
               </div>
 
