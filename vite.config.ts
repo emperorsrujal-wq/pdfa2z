@@ -36,17 +36,48 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Split Firebase into its own chunk (~520 kB)
+          // Firebase (~520 kB)
           if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
             return 'firebase';
           }
-          // Split i18next and related locale helpers (~75 kB)
+          // i18next locale helpers (~75 kB)
           if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
             return 'i18n';
           }
-          // Split lucide-react icons (~250 kB)
+          // Lucide icons (~250 kB)
           if (id.includes('node_modules/lucide-react')) {
             return 'icons';
+          }
+          // Google Gemini AI SDK
+          if (id.includes('node_modules/@google/genai') || id.includes('node_modules/@google/generative-ai')) {
+            return 'gemini';
+          }
+          // PDF processing libraries
+          if (id.includes('node_modules/pdf-lib')) {
+            return 'pdf-lib';
+          }
+          if (id.includes('node_modules/pdfjs-dist')) {
+            return 'pdfjs';
+          }
+          // OCR
+          if (id.includes('node_modules/tesseract.js') || id.includes('node_modules/tesseract-wasm')) {
+            return 'ocr';
+          }
+          // Office document conversion
+          if (
+            id.includes('node_modules/docx') ||
+            id.includes('node_modules/exceljs') ||
+            id.includes('node_modules/pptxgenjs')
+          ) {
+            return 'office-convert';
+          }
+          // Compression / zip
+          if (id.includes('node_modules/jszip') || id.includes('node_modules/fflate')) {
+            return 'zip';
+          }
+          // Stripe
+          if (id.includes('node_modules/@stripe')) {
+            return 'stripe';
           }
           // React and router stay in the main bundle — splitting React causes useState binding issues
         },

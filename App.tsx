@@ -10,28 +10,27 @@ import { TOOLS_REGISTRY } from './utils/seoData';
 import { useTranslation } from 'react-i18next';
 import { EliteBackground } from './components/EliteBackground';
 
-// ── Imports (Non-lazy for emergency stability) ───────────────────────────────
 import { Home } from './pages/Home';
 import { ToolSeoContent } from './components/ToolSeoContent';
+import { Breadcrumbs } from './components/Breadcrumbs';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const About = React.lazy(() => import('./pages/About').then(m => ({ default: m.About })));
 const Contact = React.lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
 const Privacy = React.lazy(() => import('./pages/Privacy').then(m => ({ default: m.Privacy })));
 const Terms = React.lazy(() => import('./pages/Terms').then(m => ({ default: m.Terms })));
-import { ImageGenerator } from './components/ImageGenerator';
-import { ImageEditor } from './components/ImageEditor';
-import { PdfSuite } from './components/PdfSuite';
-import { ImageToolkit } from './components/ImageToolkit';
-import { AiWriter } from './components/AiWriter';
-import { VideoSuite } from './components/VideoSuite';
 const Blog = React.lazy(() => import('./pages/Blog').then(m => ({ default: m.Blog })));
 const BlogPost = React.lazy(() => import('./pages/BlogPost').then(m => ({ default: m.BlogPost })));
-import { Breadcrumbs } from './components/Breadcrumbs';
-import { ErrorBoundary } from './components/ErrorBoundary';
 const NotFound = React.lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
-import { NotarizeApp } from './pages/NotarizeApp';
-import { PDFJourneyBuilder } from './components/PDFJourneyBuilder';
-import { Dashboard } from './pages/Dashboard';
+const ImageGenerator = React.lazy(() => import('./components/ImageGenerator').then(m => ({ default: m.ImageGenerator })));
+const ImageEditor = React.lazy(() => import('./components/ImageEditor').then(m => ({ default: m.ImageEditor })));
+const PdfSuite = React.lazy(() => import('./components/PdfSuite').then(m => ({ default: m.PdfSuite })));
+const ImageToolkit = React.lazy(() => import('./components/ImageToolkit').then(m => ({ default: m.ImageToolkit })));
+const AiWriter = React.lazy(() => import('./components/AiWriter').then(m => ({ default: m.AiWriter })));
+const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => ({ default: m.VideoSuite })));
+const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
+const PDFJourneyBuilder = React.lazy(() => import('./components/PDFJourneyBuilder').then(m => ({ default: m.PDFJourneyBuilder })));
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 
 export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -229,7 +228,9 @@ const AppContent: React.FC = () => {
 
       {/* Notarize page has its own full-page layout — render outside site shell */}
       {activeTool === ToolType.NOTARIZE ? (
-        <NotarizeApp subPath={notarizeSubPath} />
+        <React.Suspense fallback={<ToolLoader />}>
+          <NotarizeApp subPath={notarizeSubPath} />
+        </React.Suspense>
       ) : (
         <Layout currentLang={lang}>
           <div className="py-8">

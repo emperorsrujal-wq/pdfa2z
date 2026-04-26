@@ -4,6 +4,7 @@ import { Upload, Download, ArrowRight, ArrowLeft, Image as ImageIcon, Scaling, R
 import { Button } from './Button.tsx';
 import { ToolCard } from './ToolCard.tsx';
 import { fileToBase64 } from '../utils.ts';
+import { GoogleGenAI } from '@google/genai';
 import { upscaleImage, editImage, generateText, magicTransform } from '../services/geminiService.ts';
 import { performOCR } from '../services/ocrService.ts';
 import { Copy, Download as DownloadIcon } from 'lucide-react';
@@ -432,10 +433,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           // Use AI to detect and blur faces
           const prompt = `Detect all human faces in this image and return ONLY a JSON array of bounding boxes: [{"x": percentage, "y": percentage, "w": percentage, "h": percentage}]. Coordinates should be 0-100 relative to image size. Example: [{"x": 10, "y": 20, "w": 5, "h": 5}]. If no faces, return [].`;
           // Use the image-aware generateText by embedding in prompt (workaround for API limitations)
-          const ai = await import('../services/geminiService').then(m => {
-            const GoogleGenAI = require("@google/genai").GoogleGenAI;
-            return new GoogleGenAI({ apiKey: localStorage.getItem('gemini_api_key') || (import.meta as any).env.VITE_GEMINI_API_KEY });
-          });
+          const ai = new GoogleGenAI({ apiKey: localStorage.getItem('gemini_api_key') || (import.meta as any).env.VITE_GEMINI_API_KEY });
           const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: {
