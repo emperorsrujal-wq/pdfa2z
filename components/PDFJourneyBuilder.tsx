@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { validateField, FieldValidationConfig, getFormatHint, getFieldError } from "../utils/journeyFieldValidation";
-import { saveJourneyLead, getLeadsForOwner, JourneyLead, updateLeadStatus, addToSyncQueue, processSyncQueue } from "../services/leadService";
+import { saveJourneyLead, getLeadsForOwner, JourneyLead, updateLeadStatus, addToSyncQueue, processSyncQueue, deleteLead } from "../services/leadService";
 import { getCurrentUser } from "../services/authService";
 import { downloadJourneyQR } from "../utils/journeyQR";
 import { trackJourneyEvent, getJourneyStats, JourneyStats } from "../services/analyticsService";
@@ -1035,7 +1035,6 @@ export const PDFJourneyBuilder: React.FC = () => {
                         onClick={async (e) => { 
                           e.stopPropagation(); 
                           if (confirm('Delete lead?')) {
-                            const { deleteLead } = await import("../services/leadService");
                             await deleteLead(l.id!);
                             setLeads(p => p.filter(x => x.id !== l.id));
                           }
