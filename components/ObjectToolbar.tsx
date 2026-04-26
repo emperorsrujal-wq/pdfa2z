@@ -188,9 +188,16 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               <ChevronDown size={10} className="text-[#888]" />
             </button>
             {showFontPicker && (
-              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] shadow-2xl z-[400] w-48 animate-in fade-in slide-in-from-bottom-2">
+              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] shadow-2xl z-[400] w-48 animate-in fade-in slide-in-from-bottom-2 py-1 rounded-sm">
                 {FONTS.map(f => (
-                  <button key={f.value} onClick={() => { onUpdate(element.id, { fontName: f.value }); setShowFontPicker(false); }} className={`w-full text-left px-4 py-2 text-sm font-medium ${element.fontName === f.value ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}>{f.name}</button>
+                  <button 
+                    key={f.value} 
+                    onClick={() => { onUpdate(element.id, { fontName: f.value }); setShowFontPicker(false); }} 
+                    className={`w-full text-left px-4 py-2 text-sm font-medium ${element.fontName === f.value ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 text-slate-600'}`}
+                    style={{ fontFamily: f.value.includes('Times') ? 'serif' : f.value.includes('Courier') ? 'monospace' : 'sans-serif' }}
+                  >
+                    {f.name}
+                  </button>
                 ))}
               </div>
             )}

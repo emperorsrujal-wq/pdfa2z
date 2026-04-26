@@ -24,6 +24,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [images, setImages] = React.useState<string[]>([]);
   const [dimensions, setDimensions] = React.useState<PageDimensions[]>([]);
   const [elements, setElements] = React.useState<EditElement[]>([]);
+  const [history, setHistory] = React.useState<EditElement[][]>([[]]);
+  const [historyStep, setHistoryStep] = React.useState(0);
   const [activePage, setActivePage] = React.useState<number>(0);
   const [textItems, setTextItems] = React.useState<PdfTextItem[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -65,6 +67,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
         const parsed: EditElement[] = JSON.parse(saved);
         if (parsed.length > 0) {
           setElements(parsed);
+          setHistory([parsed]);
+          setHistoryStep(0);
           setHasUnsavedChanges(true);
         }
       }
@@ -135,6 +139,56 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     };
     fetchText();
   }, [currentFile, activePage]);
+
+  // ── History Management ───────────────────────────────────────────
+  const commit = (next: EditElement[]) => {
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(next);
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+    setElements(next);
+    saveSession(next);
+    setHasUnsavedChanges(true);
+  };
+
+  const undo = () => {
+    if (historyStep > 0) {
+      const prev = history[historyStep - 1];
+      setElements(prev);
+      setHistoryStep(historyStep - 1);
+      saveSession(prev);
+    }
+  };
+
+  const redo = () => {
+    if (historyStep < history.length - 1) {
+      const next = history[historyStep + 1];
+      setElements(next);
+      setHistoryStep(historyStep + 1);
+      saveSession(next);
+    }
+  };
+
+  // ── Keyboard Shortcuts ───────────────────────────────────────────
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') {
+          if (e.shiftKey) {
+            if (historyStep < history.length - 1) redo();
+          } else {
+            if (historyStep > 0) undo();
+          }
+          e.preventDefault();
+        } else if (e.key === 'y') {
+          if (historyStep < history.length - 1) redo();
+          e.preventDefault();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history, historyStep]);
 
   const handleApplyAll = async (latestElements?: EditElement[]) => {
     setIsSaving(true);
@@ -241,15 +295,31 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   // ── Error Screen ──────────────────────────────────────────────────
   if (errorMsg && images.length === 0) {
     return (
-      <div className="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center p-8">
-        <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mb-6">
-          <AlertTriangle size={40} className="text-amber-500" />
+      <div className="fixed inset-0 bg-[#fefce8] z-[9999] flex flex-col items-center justify-center p-8">
+        <div className="w-24 h-24 bg-amber-100 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-xl shadow-amber-200/50">
+          <AlertTriangle size={48} className="text-amber-500" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">Could Not Open PDF</h2>
-        <p className="text-slate-500 text-center max-w-md mb-8">{errorMsg}</p>
-        <button onClick={onCancel} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">
-          Try Another File
-        </button>
+        <h2 className="text-3xl font-black text-slate-900 mb-4">Oops! Document Error</h2>
+        <p className="text-slate-600 text-center max-w-md mb-10 leading-relaxed font-medium">
+          {errorMsg}
+          <span className="block mt-4 text-sm text-slate-400 font-normal italic">
+            Tip: Some secured or corrupted PDFs may not open. Try another file or ensure it's not password protected.
+          </span>
+        </p>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => { setErrorMsg(''); setFileSizeError(''); onCancel(); }} 
+            className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+          >
+            Go Back
+          </button>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-10 py-4 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Refresh Page
+          </button>
+        </div>
       </div>
     );
   }
@@ -342,13 +412,15 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             dimensions={dimensions[activePage]}
             pageIndex={activePage}
             totalPages={images.length}
-            initialElements={elements.filter(el => el.pageIndex === activePage)}
+            elements={elements}
+            historyStep={historyStep}
+            canRedo={historyStep < history.length - 1}
+            onCommit={commit}
+            onUndo={undo}
+            onRedo={redo}
             onSave={(newElements) => {
-              const otherPages = elements.filter(el => el.pageIndex !== activePage);
-              const merged = [...otherPages, ...newElements];
-              setElements(merged);
-              saveSession(merged);
-              setHasUnsavedChanges(true);
+              // This is now handled by commit() mostly, but kept for compatibility
+              // if PdfEditorCanvas still manages some local temp state
             }}
             onFinalSave={handleApplyAll}
             onCancel={onCancel}
