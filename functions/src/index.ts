@@ -16,6 +16,9 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
+import pdfParse from 'pdf-parse';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import ExcelJS from 'exceljs';
 import { createOneNotarySession, verifyOneNotarySignature, OneNotaryWebhookPayload } from './onenotaryClient';
 import { FirestoreSession, FirestorePayment } from './types';
 
@@ -29,7 +32,7 @@ app.use(cors({ origin: true }));
 
 // ── Raw body for Stripe webhook signature verification ─────────────────────
 app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
-app.use(express.json());
+app.use(express.json({ limit: '9mb' }));
 
 // ── Lazy Stripe init ────────────────────────────────────────────────────────
 let _stripe: any;
@@ -435,6 +438,107 @@ app.post('/webhooks/stripe', async (req, res) => {
   }
 
   return res.json({ received: true });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PDF CONVERSION ROUTES  (POST /api/convert/word  |  /api/convert/excel)
+//  Requires Firebase Auth. Accepts { pdf: "<base64>" } JSON body (max ~7 MB).
+// ════════════════════════════════════════════════════════════════════════════
+
+app.post('/convert/word', authenticate, async (req: any, res) => {
+  try {
+    const { pdf } = req.body as { pdf?: string };
+    if (!pdf || typeof pdf !== 'string') {
+      return res.status(400).json({ error: 'Missing "pdf" base64 field' });
+    }
+
+    const buffer = Buffer.from(pdf, 'base64');
+    const { text } = await pdfParse(buffer);
+
+    const docParagraphs: Paragraph[] = [];
+    let block: string[] = [];
+
+    const flush = () => {
+      if (!block.length) return;
+      const t = block.join(' ').trim();
+      if (!t) { block = []; return; }
+      const isHeading =
+        t.length < 100 &&
+        !t.endsWith('.') &&
+        block.length === 1 &&
+        (t === t.toUpperCase() || (t.split(' ').length < 8 && /^[A-Z]/.test(t)));
+      docParagraphs.push(
+        new Paragraph({
+          children: [new TextRun({ text: t, size: isHeading ? 28 : 22 })],
+          heading: isHeading ? HeadingLevel.HEADING_2 : undefined,
+          spacing: { after: 200 },
+        })
+      );
+      block = [];
+    };
+
+    for (const line of text.split('\n')) {
+      if (line.trim() === '') { flush(); } else { block.push(line.trim()); }
+    }
+    flush();
+
+    if (!docParagraphs.length) {
+      docParagraphs.push(new Paragraph({ children: [new TextRun(text)] }));
+    }
+
+    const doc = new Document({ creator: 'PDFA2Z', sections: [{ children: docParagraphs }] });
+    const output = await Packer.toBuffer(doc);
+    return res.json({ file: output.toString('base64'), filename: 'converted.docx' });
+  } catch (err: any) {
+    functions.logger.error('PDF→Word error', err);
+    return res.status(500).json({ error: err.message || 'Conversion failed' });
+  }
+});
+
+app.post('/convert/excel', authenticate, async (req: any, res) => {
+  try {
+    const { pdf } = req.body as { pdf?: string };
+    if (!pdf || typeof pdf !== 'string') {
+      return res.status(400).json({ error: 'Missing "pdf" base64 field' });
+    }
+
+    const buffer = Buffer.from(pdf, 'base64');
+    const { text } = await pdfParse(buffer);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'PDFA2Z';
+    const sheet = workbook.addWorksheet('PDF Data');
+
+    let firstTableRow = true;
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      // Two or more consecutive spaces → column boundary (common in PDF table layouts)
+      const cells = trimmed.split(/  +/).map((c: string) => c.trim()).filter(Boolean);
+      const row = sheet.addRow(cells.length > 1 ? cells : [trimmed]);
+      if (cells.length > 1 && firstTableRow) {
+        row.font = { bold: true };
+        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3EEFF' } };
+        firstTableRow = false;
+      }
+    }
+
+    // Auto-size columns (cap at 50 chars wide)
+    (sheet.columns as ExcelJS.Column[]).forEach((col) => {
+      let maxLen = 8;
+      col.eachCell?.({ includeEmpty: false }, (cell) => {
+        const len = cell.value ? String(cell.value).length : 0;
+        if (len > maxLen) maxLen = len;
+      });
+      col.width = Math.min(maxLen + 2, 50);
+    });
+
+    const output = await workbook.xlsx.writeBuffer();
+    return res.json({ file: Buffer.from(output as unknown as ArrayBuffer).toString('base64'), filename: 'converted.xlsx' });
+  } catch (err: any) {
+    functions.logger.error('PDF→Excel error', err);
+    return res.status(500).json({ error: err.message || 'Conversion failed' });
+  }
 });
 
 // ── Export ────────────────────────────────────────────────────────────────────

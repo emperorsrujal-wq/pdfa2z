@@ -13,6 +13,7 @@ import { Redactor } from './Redactor';
 import { PdfEditorUI } from './PdfEditorUI';
 import { BatchProcessor } from './BatchProcessor';
 import { uploadToLibrary } from '../services/documentService';
+import { serverConvertToWord, serverConvertToExcel } from '../services/conversionService';
 import { useAuth } from '../context/AuthContext';
 import { ToolCategory } from '../types';
 
@@ -214,12 +215,26 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `unlocked-${files[0].name}`);
       }
       else if (mode === 'TO_WORD') {
-        const blob = await pdfToWord(files[0]);
-        downloadBlob(blob, `converted.doc`);
+        if (user) {
+          const blob = await serverConvertToWord(files[0]);
+          downloadBlob(blob, files[0].name.replace(/\.pdf$/i, '.docx'));
+          setSuccessMsg('Converted to Word (.docx) — formatting preserved!');
+        } else {
+          const blob = await pdfToWord(files[0]);
+          downloadBlob(blob, files[0].name.replace(/\.pdf$/i, '.doc'));
+          setSuccessMsg('Basic conversion done. Sign in for full DOCX with formatting.');
+        }
       }
       else if (mode === 'TO_EXCEL') {
-        const blob = await pdfToExcel(files[0]);
-        downloadBlob(blob, `converted.csv`);
+        if (user) {
+          const blob = await serverConvertToExcel(files[0]);
+          downloadBlob(blob, files[0].name.replace(/\.pdf$/i, '.xlsx'));
+          setSuccessMsg('Converted to Excel (.xlsx) with table detection!');
+        } else {
+          const blob = await pdfToExcel(files[0]);
+          downloadBlob(blob, files[0].name.replace(/\.pdf$/i, '.csv'));
+          setSuccessMsg('Basic CSV exported. Sign in for structured Excel (.xlsx).');
+        }
       }
       else if (mode === 'TO_HTML') {
         const blob = await pdfToHtml(files[0]);
@@ -993,6 +1008,16 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   <input type="password" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Enter PDF Password" className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
                 )}
 
+                {(mode === 'TO_WORD' || mode === 'TO_EXCEL') && !user && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-start gap-3">
+                    <Lock size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
+                    <span>
+                      <strong>Sign in for better output</strong> — logged-in users get proper{' '}
+                      {mode === 'TO_WORD' ? 'DOCX with formatting' : 'Excel with table detection'}.
+                      Guest mode exports plain text only.
+                    </span>
+                  </div>
+                )}
                 <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">Process File</Button>
               </>
             )}
