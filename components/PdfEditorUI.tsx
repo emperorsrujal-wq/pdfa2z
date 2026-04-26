@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { PenTool, CheckCircle2, Download, Image as ImageIcon, Layout, X, Zap, AlertTriangle, FileWarning, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
-import { Button } from './Button';
+import { CheckCircle2, Layout, X, AlertTriangle, FileWarning, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
-import { SmartRedactButton } from './SmartRedactButton';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;
@@ -36,9 +34,12 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
   const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
 
-  // ── File Size Validation ──────────────────────────────────────────
+  // ── File Validation ───────────────────────────────────────────────
   React.useEffect(() => {
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      setFileSizeError(`Invalid file type: "${file.name}" is not a PDF. Please upload a .pdf file.`);
+    } else if (file.size > MAX_FILE_SIZE_BYTES) {
       setFileSizeError(`File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`);
     }
   }, [file]);

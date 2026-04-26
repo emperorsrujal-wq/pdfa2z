@@ -4,7 +4,6 @@ import {
   ZoomIn,
   ZoomOut,
   Undo2,
-  Redo2,
   Trash2,
   FilePlus2,
   MousePointer2,
@@ -27,19 +26,13 @@ import {
   Download,
   Layout,
   ChevronDown,
-  History as HistoryIcon,
   User as UserIcon,
-  Package,
   Pipette,
   RotateCw,
   PenLine,
   Pen,
   Link2,
   Circle,
-  Sparkles,
-  ScanText,
-  Replace,
-  Link,
   X,
   Plus,
   ChevronRight,
@@ -51,9 +44,8 @@ import { FormBuilder } from './FormBuilder';
 import { AuditLog } from './AuditLog';
 import { SignaturePad } from './SignaturePad';
 import { suggestFormValues } from '../services/geminiService';
-import { EditElement, EditElementType, extractStyleAtPoint, getTextItems, PdfTextItem, sampleBackgroundColor } from '../utils/pdfHelpers';
+import { EditElement, extractStyleAtPoint, PdfTextItem } from '../utils/pdfHelpers';
 import { ObjectToolbar } from './ObjectToolbar';
-import { Tooltip } from './Tooltip';
 
 interface PdfEditorCanvasProps {
   image: string;
@@ -137,6 +129,26 @@ const SEJDA_COLORS = [
   '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
 ];
 
+const HIGHLIGHT_COLORS = ['#FFE600', '#00FF00', '#FFB6C1', '#ADD8E6'];
+
+const PRO_COLORS = [
+  '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
+  '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
+  '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9dadb',
+  '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
+  '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
+];
+
+const BASIC_SHAPES = [
+  { id: 'rect',    label: 'Rectangle',       icon: <Square size={15} /> },
+  { id: 'ellipse', label: 'Circle / Ellipse', icon: <CircleIcon size={15} /> },
+] as const;
+
+const LINE_SHAPES = [
+  { id: 'line',  label: 'Line',  icon: <Minus size={15} /> },
+  { id: 'arrow', label: 'Arrow', icon: <ArrowRight size={15} /> },
+] as const;
+
 function getFontFamily(fontName?: string) {
   if (fontName === 'Times-Roman') return '"Times New Roman", Times, serif';
   if (fontName === 'Helvetica') return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
@@ -153,8 +165,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   initialElements,
   onSave,
   onFinalSave,
-  onCancel,
-  isEmbedded = false,
+  onCancel: _onCancel,
+  isEmbedded: _isEmbedded,
   textItems = [],
   file,
   docId,
@@ -165,16 +177,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const [mode, setMode] = React.useState<EditorMode>('magic-edit');
   const [activeColor, setActiveColor] = React.useState('#000000');
-  const [activeFont, setActiveFont] = React.useState('Helvetica');
   const [activeFontSize, setActiveFontSize] = React.useState(14);
-
-  const PRO_COLORS = [
-    '#000000', '#424242', '#636363', '#9c9c9c', '#cecece', '#e7e7e7', '#ffffff',
-    '#ff0000', '#ff9c00', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#9c00ff',
-    '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9dadb',
-    '#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6',
-    '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3'
-  ];
+  const [activeBrushSize, setActiveBrushSize] = React.useState(3);
   const [zoom, setZoom] = React.useState(1);
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
@@ -193,8 +197,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   // Tier 3 Collaboration States
   const [comments, setComments] = React.useState<any[]>([]);
-  const [activeUsers, setActiveUsers] = React.useState<string[]>([]);
-  const [isLive, setIsLive] = React.useState(false);
 
   // Tier 3 Audit States
   const [showAudit, setShowAudit] = React.useState(false);
@@ -205,6 +207,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [showFormsMenu, setShowFormsMenu] = React.useState(false);
   const [showAnnotateMenu, setShowAnnotateMenu] = React.useState(false);
   const [showSignMenu, setShowSignMenu] = React.useState(false);
+  const [showShapesMenu, setShowShapesMenu] = React.useState(false);
   const [isSigPadOpen, setIsSigPadOpen] = React.useState(false);
   const [storedSignatures, setStoredSignatures] = React.useState<string[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -212,13 +215,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
-  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     setElements(initialElements);
     setHistory([initialElements]);
     setHistoryStep(0);
-  }, [initialElements, pageIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex]);
 
   const commit = (next: EditElement[]) => {
     const newHistory = history.slice(0, historyStep + 1);
@@ -280,6 +283,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     onSave(next);
   };
 
+  const commitUpdate = (id: string, updates: Partial<EditElement>) => {
+    const next = elements.map(el => (el.id === id ? { ...el, ...updates } : el));
+    commit(next);
+  };
+
   const deleteElement = (id: string) => {
     const next = elements.filter(el => el.id !== id);
     commit(next);
@@ -317,83 +325,19 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     commit(next);
   };
 
-  // Keyboard shortcuts
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Z / Cmd+Z: Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-        return;
-      }
-      // Ctrl+Shift+Z or Ctrl+Y: Redo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
-        e.preventDefault();
-        redo();
-        return;
-      }
-      // Ctrl+Y: Redo (alternative)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        e.preventDefault();
-        redo();
-        return;
-      }
-      // Ctrl+D / Cmd+D: Duplicate
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeElementId) {
-        e.preventDefault();
-        const element = elements.find(el => el.id === activeElementId);
-        if (element) duplicateElement(element);
-        return;
-      }
-      // Delete: Delete selected element
-      if (e.key === 'Delete' && activeElementId) {
-        e.preventDefault();
-        deleteElement(activeElementId);
-        return;
-      }
-      // Escape: Deselect
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setActiveElementId(null);
-        return;
-      }
-      // Arrow keys: Move selected element (5px increments)
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && activeElementId) {
-        e.preventDefault();
-        const element = elements.find(el => el.id === activeElementId);
-        if (element) {
-          let newX = element.x;
-          let newY = element.y;
-          const step = e.shiftKey ? 20 : 5; // Shift for larger moves
-          if (e.key === 'ArrowUp') newY = Math.max(0, newY - step);
-          if (e.key === 'ArrowDown') newY = Math.min(1000, newY + step);
-          if (e.key === 'ArrowLeft') newX = Math.max(0, newX - step);
-          if (e.key === 'ArrowRight') newX = Math.min(1000, newX + step);
-          updateElement(activeElementId, { x: newX, y: newY });
-        }
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeElementId, elements, historyStep]);
 
   // Tier 3: Collaboration Sync
   React.useEffect(() => {
     if (!docId) return;
 
-    setIsLive(true);
     const mPromise = import('../services/collaborationService');
-    
+
     let unsubState: () => void;
     let unsubComments: () => void;
 
     mPromise.then(m => {
       unsubState = m.syncDocumentState(docId, (state) => {
-        // Only update if the timestamp is newer or we don't have local state
         setElements(state.elements);
-        setActiveUsers(state.activeUsers);
       });
 
       unsubComments = m.listenForComments(docId, (newComments) => {
@@ -481,7 +425,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       try {
         const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
         bgColor = style.backgroundColor || '#FFFFFF';
-        bgColor = style.backgroundColor || '#FFFFFF';
         fontColor = style.color || activeColor;
       } catch (e) {
         console.warn("Color sampling failed, using defaults", e);
@@ -525,6 +468,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         setMode('select');
         return;
       }
+      if (mode === 'sign') return;
     // All drag-draw modes
     setIsDrawing(true);
     setDragStart(pos);
@@ -538,7 +482,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     const pos = getPos(e);
     setDragEnd(pos);
     if (mode === 'draw') setCurrentPath(prev => [...prev, pos]);
-    else if (mode === 'line') setCurrentPath([dragStart!, pos]);
+    else if (mode === 'line' || mode === 'arrow') setCurrentPath([dragStart!, pos]);
   };
 
   const handlePointerUp = () => {
@@ -552,11 +496,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     const h = Math.abs(dragStart.y - dragEnd.y);
 
     if (mode === 'draw' && currentPath.length > 1) {
-      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: 3, path: currentPath, opacity: 1 };
+      const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: activeBrushSize, path: currentPath, opacity: 1 };
       commit([...elements, newEl]);
-    } else if (mode === 'line' && currentPath.length === 2) {
+    } else if ((mode === 'line' || mode === 'arrow') && currentPath.length === 2) {
       const [p1, p2] = currentPath;
-      const newEl: EditElement = { id: `line-${Date.now()}`, type: 'line', pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: activeColor, strokeWidth: 3, opacity: 1 };
+      const newEl: EditElement = { id: `line-${Date.now()}`, type: mode as any, pageIndex, x: p1.x, y: p1.y, width: p2.x - p1.x, height: p2.y - p1.y, color: activeColor, strokeWidth: activeBrushSize, opacity: 1 };
       commit([...elements, newEl]);
     } else if (w > 3 && h > 3) {
       let newEl: EditElement | null = null;
@@ -571,7 +515,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
-        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: '#FFE600', opacity: 0.4 };
+        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 0.4 };
       } else if (mode === 'strikeout') {
         newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: '#EF4444', opacity: 1 };
       } else if (mode === 'underline') {
@@ -601,11 +545,40 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = re => {
-      const base64 = re.target?.result as string;
-      const newEl: EditElement = { id: `img-${Date.now()}`, type: 'image', pageIndex, x: 300, y: 300, width: 250, height: 180, imageUrl: base64, opacity: 1 };
-      commit([...elements, newEl]);
-      setActiveElementId(newEl.id);
-      setMode('select');
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const max_size = 1200;
+        if (width > max_size || height > max_size) {
+          if (width > height) {
+            height *= max_size / width;
+            width = max_size;
+          } else {
+            width *= max_size / height;
+            height = max_size;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Aspect ratio handling for default width/height
+        const aspect = width / height;
+        const defaultWidth = 250;
+        const defaultHeight = defaultWidth / aspect;
+
+        const newEl: EditElement = { id: `img-${Date.now()}`, type: 'image', pageIndex, x: 300, y: 300, width: defaultWidth, height: defaultHeight, imageUrl: base64, opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+      };
+      img.src = re.target?.result as string;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -613,6 +586,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const zoomIn = () => setZoom(z => Math.min(z + 0.25, 3));
   const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
+
+  const closeAllMenus = () => {
+    setShowFormsMenu(false);
+    setShowAnnotateMenu(false);
+    setShowSignMenu(false);
+    setShowShapesMenu(false);
+  };
 
   // --- Phase 2: Power-User Keyboard Shortcuts ---
   React.useEffect(() => {
@@ -651,10 +631,26 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         }
       }
 
-      // Undo (Ctrl+Z)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      // Undo (Ctrl+Z without Shift)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
+        return;
+      }
+
+      // Redo (Ctrl+Shift+Z or Ctrl+Y)
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Duplicate selected element (Ctrl+D)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeElementId) {
+        e.preventDefault();
+        const el = elements.find(item => item.id === activeElementId);
+        if (el) duplicateElement(el);
+        return;
       }
 
       // Escape (Clear Selection)
@@ -666,7 +662,34 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeElementId, elements, commit, undo, updateElement]);
+  }, [activeElementId, elements, commit, undo, redo, updateElement, duplicateElement]);
+
+  const arrowElements = React.useMemo(
+    () => elements.filter(el => el.type === 'arrow'),
+    [elements]
+  );
+
+  const textLayerDivs = React.useMemo(
+    () => textItems.map((item, idx) => (
+      <div
+        key={`vtl-${idx}`}
+        className="absolute whitespace-nowrap text-transparent selection:bg-blue-500/30 selection:text-transparent cursor-text"
+        style={{
+          left: `${item.x / 10}%`,
+          top: `${item.y / 10}%`,
+          width: `${item.width / 10}%`,
+          height: `${item.height / 10}%`,
+          fontSize: `${(item.fontSize / 1000) * 100}%`,
+          userSelect: 'text',
+          transform: `rotate(${(item as any).rotation || 0}deg)`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {item.str}
+      </div>
+    )),
+    [textItems]
+  );
 
   const selectionRect =
     isDrawing && dragStart && dragEnd
@@ -740,7 +763,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f3f3f3] overflow-hidden select-none relative" onClick={() => setActiveElementId(null)}>
+    <div className="flex flex-col h-full w-full bg-[#f3f3f3] overflow-hidden relative" onClick={() => { setActiveElementId(null); closeAllMenus(); }}>
       {/* ─── WHITEOUT WARNING BANNER ─────────────────── */}
       {mode === 'erase' && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[200] max-w-2xl w-full px-4 animate-in slide-in-from-top-4 duration-300">
@@ -782,13 +805,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       setMode('select');
                     }
                   }
-                  else if (t.mode === 'form-builder') { setShowFormsMenu(!showFormsMenu); setShowAnnotateMenu(false); setShowSignMenu(false); }
-                  else if (t.mode === 'draw') { setShowAnnotateMenu(!showAnnotateMenu); setShowFormsMenu(false); setShowSignMenu(false); }
-                  else if (t.mode === 'sign') { setShowSignMenu(!showSignMenu); setShowFormsMenu(false); setShowAnnotateMenu(false); }
-                  else setMode(t.mode as EditorMode); 
+                  else if (t.mode === 'form-builder') { closeAllMenus(); setShowFormsMenu(!showFormsMenu); }
+                  else if (t.mode === 'draw') { closeAllMenus(); setShowAnnotateMenu(!showAnnotateMenu); }
+                  else if (t.mode === 'sign') { closeAllMenus(); setShowSignMenu(!showSignMenu); }
+                  else if (t.mode === 'rect') { closeAllMenus(); setShowShapesMenu(!showShapesMenu); }
+                  else setMode(t.mode as EditorMode);
                 }}
                 disabled={t.mode === 'undo' && historyStep === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded transition-all ${t.mode === 'undo' ? 'opacity-100' : ''} ${mode === t.mode || (t.mode === 'form-builder' && showFormsMenu) || (t.mode === 'draw' && showAnnotateMenu) || (t.mode === 'sign' && showSignMenu) ? 'bg-white text-[#333] shadow-sm' : 'text-slate-600 hover:bg-white/50 hover:text-[#333]'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                className={`flex items-center gap-2 px-4 py-2 rounded transition-all ${t.mode === 'undo' ? 'opacity-100' : ''} ${mode === t.mode || (t.mode === 'form-builder' && showFormsMenu) || (t.mode === 'draw' && showAnnotateMenu) || (t.mode === 'sign' && showSignMenu) || (t.mode === 'rect' && (showShapesMenu || ['rect','circle','ellipse','line','arrow'].includes(mode))) ? 'bg-white text-[#333] shadow-sm' : 'text-slate-600 hover:bg-white/50 hover:text-[#333]'} disabled:opacity-30 disabled:cursor-not-allowed`}
               >
                 <span className={mode === t.mode ? 'text-[#2196f3]' : 'text-[#333]'}>{t.icon}</span>
                 <span className={`text-sm font-medium ${mode === t.mode ? 'text-[#333]' : 'text-slate-600'}`}>{t.label}</span>
@@ -931,13 +955,55 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 </div>
               )}
 
+              {/* ─── SHAPES DROPDOWN MENU ─────────────────── */}
+              {t.mode === 'rect' && showShapesMenu && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[220px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] overflow-hidden text-left animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-3 px-4 border-b border-slate-100">
+                    <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Basic Shapes</h4>
+                    <div className="flex flex-col gap-2">
+                      {BASIC_SHAPES.map(s => (
+                        <button
+                          key={s.id}
+                          onClick={() => { setMode(s.id as EditorMode); setShowShapesMenu(false); }}
+                          className={`flex items-center gap-3 text-sm px-2 py-1.5 rounded hover:bg-slate-50 transition-colors ${mode === s.id ? 'text-[#2196f3] bg-blue-50' : 'text-slate-600'}`}
+                        >
+                          <span className="opacity-70">{s.icon}</span>
+                          <span>{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 px-4">
+                    <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3">Lines</h4>
+                    <div className="flex flex-col gap-2">
+                      {LINE_SHAPES.map(s => (
+                        <button
+                          key={s.id}
+                          onClick={() => { setMode(s.id as EditorMode); setShowShapesMenu(false); }}
+                          className={`flex items-center gap-3 text-sm px-2 py-1.5 rounded hover:bg-slate-50 transition-colors ${mode === s.id ? 'text-[#2196f3] bg-blue-50' : 'text-slate-600'}`}
+                        >
+                          <span className="opacity-70">{s.icon}</span>
+                          <span>{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ─── SIGN DROPDOWN MENU ─────────────────── */}
               {t.mode === 'sign' && showSignMenu && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] p-4 text-center animate-in fade-in zoom-in-95 duration-200">
                   {storedSignatures.length > 0 ? (
                     <div className="space-y-4">
                       {storedSignatures.map((sig, i) => (
-                        <div key={i} className="group relative border border-slate-100 hover:border-[#2196f3] p-2 rounded cursor-pointer transition-all" onClick={() => { setMode('sign'); setShowSignMenu(false); }}>
+                        <div key={i} className="group relative border border-slate-100 hover:border-[#2196f3] p-2 rounded cursor-pointer transition-all" onClick={() => {
+                          const newEl: EditElement = { id: `sig-${Date.now()}`, type: 'image', pageIndex, x: 300, y: 400, width: 200, height: 100, imageUrl: sig, opacity: 1 };
+                          commit([...elements, newEl]);
+                          setActiveElementId(newEl.id);
+                          setMode('select');
+                          setShowSignMenu(false);
+                        }}>
                            <img src={sig} alt="Signature" className="max-h-16 mx-auto" />
                            <button 
                              onClick={(e) => { e.stopPropagation(); setStoredSignatures(prev => prev.filter((_, idx) => idx !== i)); }}
@@ -991,11 +1057,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         <div className="flex items-center gap-3 mb-4 bg-white/80 backdrop-blur border border-slate-300 rounded shadow-md px-3 py-1.5 text-[#333]">
            <span className="text-sm font-bold mr-2">{pageIndex + 1}</span>
            <div className="w-px h-4 bg-slate-300" />
-           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded" title="Delete Page"><Trash2 size={16} /></button>
-           <button onClick={zoomOut} className="p-1 hover:bg-slate-200 rounded"><ZoomOut size={16} /></button>
-           <button onClick={zoomIn} className="p-1 hover:bg-slate-200 rounded"><ZoomIn size={16} /></button>
-           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded"><Undo2 size={16} /></button>
-           <button onClick={() => {}} className="p-1 hover:bg-slate-200 rounded"><RotateCw size={16} /></button>
+           <button onClick={zoomOut} className="p-1 hover:bg-slate-200 rounded" title="Zoom out"><ZoomOut size={16} /></button>
+           <button onClick={zoomIn} className="p-1 hover:bg-slate-200 rounded" title="Zoom in"><ZoomIn size={16} /></button>
+           <button onClick={undo} disabled={historyStep === 0} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Undo (Ctrl+Z)"><Undo2 size={16} /></button>
+           <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Redo (Ctrl+Y)"><RotateCw size={16} /></button>
            <div className="w-px h-4 bg-slate-300" />
            <button className="flex items-center gap-2 px-3 py-1 bg-[#4096ff] text-white rounded text-xs font-bold hover:bg-[#1677ff] transition-all">
              <FilePlus2 size={14} /> Insert page here
@@ -1013,11 +1078,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           }}
         >
           <div
-            className={`relative bg-white animate-fade-in select-none touch-none ${
+            className={`relative bg-white animate-fade-in touch-none ${
+              ['draw', 'line', 'erase', 'smart-erase', 'rect', 'circle', 'ellipse', 'highlight', 'strikeout', 'underline', 'arrow', 'link'].includes(mode) ? 'select-none cursor-crosshair' :
               mode === 'text' || mode === 'magic-edit' ? 'cursor-text' :
-              mode === 'picker' ? 'cursor-crosshair' :
-              ['draw', 'line', 'erase', 'rect', 'circle', 'highlight', 'strikeout', 'underline'].includes(mode) ? 'cursor-crosshair' :
-              mode === 'select' ? 'cursor-default' : 'cursor-default'
+              mode === 'picker' ? 'select-none cursor-crosshair' :
+              mode === 'select' ? 'cursor-default' : 'select-none cursor-default'
             }`}
             style={{ 
               aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : '1 / 1.414', 
@@ -1064,8 +1129,27 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               </div>
             ))}
 
+            {textLayerDivs.length > 0 && (
+              <div
+                className="absolute inset-0 z-[2]"
+                style={{ pointerEvents: mode === 'select' ? 'auto' : 'none' }}
+              >
+                {textLayerDivs}
+              </div>
+            )}
+
             {/* SVG overlay (paths, lines, draw preview) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+              <defs>
+                {arrowElements.map(el => (
+                  <marker key={`arrow-${el.id}`} id={`arrowhead-${el.id}`} markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill={el.color} />
+                  </marker>
+                ))}
+                <marker id="preview-arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill={activeColor} />
+                </marker>
+              </defs>
               {elements.map(el => {
                 if (el.type === 'path' && el.path) {
                   const pts = el.path.map(p => `${(p.x / 1000) * 100}%,${(p.y / 1000) * 100}%`).join(' ');
@@ -1073,6 +1157,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 }
                 if (el.type === 'line') {
                   return <line key={el.id} x1={`${el.x / 10}%`} y1={`${el.y / 10}%`} x2={`${(el.x + (el.width || 0)) / 10}%`} y2={`${(el.y + (el.height || 0)) / 10}%`} stroke={el.color} strokeWidth={el.strokeWidth ? `${el.strokeWidth / 10}%` : '0.3%'} opacity={el.opacity} />;
+                }
+                if (el.type === 'arrow') {
+                  return <line key={el.id} x1={`${el.x / 10}%`} y1={`${el.y / 10}%`} x2={`${(el.x + (el.width || 0)) / 10}%`} y2={`${(el.y + (el.height || 0)) / 10}%`} stroke={el.color} strokeWidth={el.strokeWidth ? `${el.strokeWidth / 10}%` : '0.3%'} opacity={el.opacity} markerEnd={`url(#arrowhead-${el.id})`} />;
                 }
                 return null;
               })}
@@ -1084,11 +1171,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   fill="none" stroke={activeColor} strokeWidth="0.3%" strokeLinecap="round" strokeLinejoin="round"
                 />
               )}
-              {isDrawing && mode === 'line' && currentPath.length === 2 && (
+              {isDrawing && (mode === 'line' || mode === 'arrow') && currentPath.length === 2 && (
                 <line
                   x1={`${currentPath[0].x / 10}%`} y1={`${currentPath[0].y / 10}%`}
                   x2={`${currentPath[1].x / 10}%`} y2={`${currentPath[1].y / 10}%`}
-                  stroke={activeColor} strokeWidth="0.3%"
+                  stroke={activeColor} strokeWidth={`${activeBrushSize / 10}%`}
+                  markerEnd={mode === 'arrow' ? 'url(#preview-arrowhead)' : undefined}
                 />
               )}
 
@@ -1182,7 +1270,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   )}
                   {/* Object property bar */}
                   {isActive && (
-                    <ObjectToolbar element={el} onUpdate={updateElement} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
+                    <ObjectToolbar element={el} onUpdate={commitUpdate} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
                   )}
 
                   {/* Selection handles */}
@@ -1479,6 +1567,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                           fontFamily: getFontFamily(el.fontName),
                           fontWeight: el.isBold ? 'bold' : 'normal',
                           fontStyle: el.isItalic ? 'italic' : 'normal',
+                          textDecoration: [el.isUnderline ? 'underline' : '', el.isStrikeout ? 'line-through' : ''].filter(Boolean).join(' ') || 'none',
+                          textAlign: el.textAlign || 'left',
                           lineHeight: 1.2,
                           whiteSpace: 'nowrap',
                           height: '100%',
@@ -1536,7 +1626,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
               <div className="grid grid-cols-7 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                {PRO_COLORS.map(c => (
+                {(mode === 'highlight' ? HIGHLIGHT_COLORS : PRO_COLORS).map(c => (
                   <button 
                     key={c}
                     onClick={() => setActiveColor(c)}
@@ -1546,6 +1636,24 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Brush Size for Drawing Tools & Lines */}
+            {(['draw', 'line', 'arrow'].includes(mode)) && (
+              <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
+                 <div className="h-6 w-px bg-slate-200" />
+                 <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Brush Size</span>
+                    <input 
+                      type="range" 
+                      min="1" max="20" 
+                      value={activeBrushSize} 
+                      onChange={e => setActiveBrushSize(parseInt(e.target.value))}
+                      className="w-20 accent-indigo-600"
+                    />
+                    <span className="text-[11px] font-black text-indigo-600">{activeBrushSize}px</span>
+                 </div>
+              </div>
+            )}
 
             {/* Typography Logic for Text Tools */}
             {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (

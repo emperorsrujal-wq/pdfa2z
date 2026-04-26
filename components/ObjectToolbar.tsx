@@ -14,6 +14,11 @@ import {
   Type,
   Palette,
   Link2,
+  Underline,
+  Strikethrough,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   Square,
   Circle,
 } from 'lucide-react';
@@ -108,7 +113,42 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
           >
             I
           </button>
-          
+          {/* Underline */}
+          <button
+            onClick={() => onUpdate(element.id, { isUnderline: !element.isUnderline })}
+            className={`flex items-center justify-center w-10 h-8 ${element.isUnderline ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 border-r border-[#eee] transition-colors`}
+          >
+            <Underline size={16} />
+          </button>
+          {/* Strikethrough */}
+          <button
+            onClick={() => onUpdate(element.id, { isStrikeout: !element.isStrikeout })}
+            className={`flex items-center justify-center w-10 h-8 ${element.isStrikeout ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 border-r border-[#eee] transition-colors`}
+          >
+            <Strikethrough size={16} />
+          </button>
+          {/* Align Left */}
+          <button
+            onClick={() => onUpdate(element.id, { textAlign: 'left' })}
+            className={`flex items-center justify-center w-8 h-8 ${(element.textAlign ?? 'left') === 'left' ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 transition-colors`}
+          >
+            <AlignLeft size={14} />
+          </button>
+          {/* Align Center */}
+          <button
+            onClick={() => onUpdate(element.id, { textAlign: 'center' })}
+            className={`flex items-center justify-center w-8 h-8 ${element.textAlign === 'center' ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 transition-colors`}
+          >
+            <AlignCenter size={14} />
+          </button>
+          {/* Align Right */}
+          <button
+            onClick={() => onUpdate(element.id, { textAlign: 'right' })}
+            className={`flex items-center justify-center w-8 h-8 border-r border-[#eee] ${element.textAlign === 'right' ? 'text-indigo-600 bg-indigo-50' : 'text-[#333]'} hover:bg-slate-50 transition-colors`}
+          >
+            <AlignRight size={14} />
+          </button>
+
           {/* Size (T arrow icon) */}
           <div className="relative">
             <button

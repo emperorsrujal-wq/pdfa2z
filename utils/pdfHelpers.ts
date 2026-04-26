@@ -579,7 +579,7 @@ export const sampleBackgroundColor = async (
 };
 
 export type EditElementType = 
-  'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'audio' | 
+  'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'arrow' | 'audio' | 
   'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature';
 
 export type EditorMode =
@@ -619,6 +619,7 @@ export interface EditElement {
   isBold?: boolean;
   isItalic?: boolean;
   isUnderline?: boolean;
+  isStrikeout?: boolean;
   textAlign?: 'left' | 'center' | 'right'; // text alignment
   
   // Path/Line specific
@@ -769,14 +770,34 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         opacity: elOpacity,
         rotate: elRotation,
       });
-    } else if (el.type === 'line') {
+    } else if (el.type === 'line' || el.type === 'arrow') {
+      const thickness = el.strokeWidth ? (el.strokeWidth / 1000) * width : 2;
+      const endX = actualX + elWidth;
+      const endY = actualY - elHeight;
+
       page.drawLine({
         start: { x: actualX, y: actualY },
-        end: { x: actualX + elWidth, y: actualY - elHeight },
+        end: { x: endX, y: endY },
         color: elColor,
-        thickness: el.strokeWidth ? (el.strokeWidth / 1000) * width : 2,
+        thickness,
         opacity: elOpacity,
       });
+
+      if (el.type === 'arrow') {
+        const angle = Math.atan2(endY - actualY, endX - actualX);
+        const headLen = 10 + thickness * 1.5;
+
+        page.drawLine({
+          start: { x: endX, y: endY },
+          end: { x: endX - headLen * Math.cos(angle - Math.PI / 6), y: endY - headLen * Math.sin(angle - Math.PI / 6) },
+          color: elColor, thickness, opacity: elOpacity,
+        });
+        page.drawLine({
+          start: { x: endX, y: endY },
+          end: { x: endX - headLen * Math.cos(angle + Math.PI / 6), y: endY - headLen * Math.sin(angle + Math.PI / 6) },
+          color: elColor, thickness, opacity: elOpacity,
+        });
+      }
     } else if (el.type === 'path' && el.path && el.path.length > 0) {
       const thickness = el.strokeWidth || 5;
       const actualThickness = (thickness / 1000) * width;
@@ -812,6 +833,14 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
       page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
       if (el.text) {
         page.drawText(el.text, { x: actualX + 5, y: actualY - 15, size: 8, color: rgb(0, 0, 0) });
+      }
+    } else if (el.type === 'sticky-note') {
+      const noteColor = el.bgColor ? hexToRgbPdf(el.bgColor) : rgb(1, 0.94, 0.54);
+      page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: noteColor, borderColor: rgb(0.8, 0.7, 0.2), borderWidth: 1, opacity: elOpacity });
+      if (el.text) {
+        const noteFont = await pdfDoc.embedFont('Helvetica');
+        const fontSize = Math.min((el.size || 12) * (width / 794), elHeight - 8);
+        page.drawText(el.text, { x: actualX + 5, y: actualY - fontSize - 4, size: Math.max(fontSize, 6), font: noteFont, color: elColor, maxWidth: elWidth - 10 });
       }
     } else if (el.type === 'link' && el.linkUrl) {
       // Add a clickable link annotation
