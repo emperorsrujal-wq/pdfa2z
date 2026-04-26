@@ -7,7 +7,10 @@
       "Bash(git commit -m 'feat: add dark mode to critical layout components *)",
       "Bash(git commit -m 'fix: improve TypeScript type safety in PDF Editor utilities *)",
       "Bash(git commit -m 'feat: add essential loading and feedback components *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
