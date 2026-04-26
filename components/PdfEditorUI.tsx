@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { CheckCircle2, Layout, X, AlertTriangle, FileWarning, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { PdfEditorCanvas } from './PdfEditorCanvas';
-import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions } from '../utils/pdfHelpers';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -20,6 +20,7 @@ const PROCESSING_STAGES = [
 ];
 
 export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
+  const [currentFile, setCurrentFile] = React.useState<File>(file);
   const [images, setImages] = React.useState<string[]>([]);
   const [dimensions, setDimensions] = React.useState<PageDimensions[]>([]);
   const [elements, setElements] = React.useState<EditElement[]>([]);
@@ -126,14 +127,14 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   React.useEffect(() => {
     const fetchText = async () => {
       try {
-        const items = await getTextItems(file, activePage);
+        const items = await getTextItems(currentFile, activePage);
         setTextItems(items);
       } catch (e) {
         console.warn('Could not fetch text items', e);
       }
     };
     fetchText();
-  }, [file, activePage]);
+  }, [currentFile, activePage]);
 
   const handleApplyAll = async (latestElements?: EditElement[]) => {
     setIsSaving(true);
@@ -141,7 +142,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     setErrorMsg('');
     try {
       const elementsToUse = latestElements || elements;
-      const res = await editPdf(file, elementsToUse);
+      const res = await editPdf(currentFile, elementsToUse);
       downloadBlob(res, `edited-${file.name}`);
       setSuccessMsg('PDF Successfully Edited and Downloaded!');
       clearSession();
@@ -154,16 +155,55 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     }
   };
 
-  // ── File Size Error Screen ────────────────────────────────────────
+  const handleInsertPage = async () => {
+    try {
+      const bytes = await insertBlankPage(currentFile, activePage);
+      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      setCurrentFile(newFile);
+      const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
+      setImages(imgs);
+      setDimensions(dims);
+      setElements(prev => prev.map(el =>
+        el.pageIndex > activePage ? { ...el, pageIndex: el.pageIndex + 1 } : el
+      ));
+      setActivePage(activePage + 1);
+      setHasUnsavedChanges(true);
+    } catch (e) {
+      console.warn('Could not insert page', e);
+    }
+  };
+
+  const handleDeletePage = async () => {
+    if (images.length <= 1) return;
+    try {
+      const bytes = await removePages(currentFile, [activePage + 1]);
+      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      setCurrentFile(newFile);
+      const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
+      setImages(imgs);
+      setDimensions(dims);
+      setElements(prev => prev
+        .filter(el => el.pageIndex !== activePage)
+        .map(el => el.pageIndex > activePage ? { ...el, pageIndex: el.pageIndex - 1 } : el)
+      );
+      setActivePage(Math.min(activePage, imgs.length - 1));
+      setHasUnsavedChanges(true);
+    } catch (e) {
+      console.warn('Could not delete page', e);
+    }
+  };
+
+  // ── File Error Screen ─────────────────────────────────────────────
   if (fileSizeError) {
+    const isTypeError = fileSizeError.includes('not a PDF');
     return (
       <div className="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center p-8">
         <div className="w-20 h-20 bg-red-100 rounded-3xl flex items-center justify-center mb-6">
           <FileWarning size={40} className="text-red-500" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">File Too Large</h2>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">{isTypeError ? 'Invalid File Type' : 'File Too Large'}</h2>
         <p className="text-slate-500 text-center max-w-md mb-2">{fileSizeError}</p>
-        <p className="text-slate-400 text-sm text-center mb-8">Please compress your PDF or use a smaller file. You can use our <strong>Compress PDF</strong> tool first.</p>
+        {!isTypeError && <p className="text-slate-400 text-sm text-center mb-8">Please compress your PDF or use a smaller file. You can use our <strong>Compress PDF</strong> tool first.</p>}
         <button onClick={onCancel} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">
           Back to Tools
         </button>
@@ -301,6 +341,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             image={images[activePage]}
             dimensions={dimensions[activePage]}
             pageIndex={activePage}
+            totalPages={images.length}
             initialElements={elements.filter(el => el.pageIndex === activePage)}
             onSave={(newElements) => {
               const otherPages = elements.filter(el => el.pageIndex !== activePage);
@@ -313,7 +354,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             onCancel={onCancel}
             isEmbedded={true}
             textItems={textItems}
-            file={file}
+            file={currentFile}
+            onInsertPage={handleInsertPage}
+            onDeletePage={handleDeletePage}
           />
         </main>
       </div>

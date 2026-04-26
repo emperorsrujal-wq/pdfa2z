@@ -287,6 +287,16 @@ export const rotatePdf = async (file: File, rotation: number): Promise<Uint8Arra
   return pdfDoc.save();
 };
 
+export const insertBlankPage = async (file: File, afterIndex: number): Promise<Uint8Array> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const pages = pdfDoc.getPages();
+  const ref = pages[Math.min(afterIndex, pages.length - 1)];
+  const { width, height } = ref.getSize();
+  pdfDoc.insertPage(afterIndex + 1, [width, height]);
+  return pdfDoc.save();
+};
+
 export const removePages = async (file: File, pagesToRemove: number[]): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);

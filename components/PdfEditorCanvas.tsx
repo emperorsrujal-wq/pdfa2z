@@ -51,6 +51,7 @@ interface PdfEditorCanvasProps {
   image: string;
   dimensions?: { width: number, height: number };
   pageIndex: number;
+  totalPages?: number;
   initialElements: EditElement[];
   onSave: (elements: EditElement[]) => void;
   onFinalSave?: (elements: EditElement[]) => void;
@@ -59,6 +60,8 @@ interface PdfEditorCanvasProps {
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
+  onInsertPage?: () => void;
+  onDeletePage?: () => void;
 }
 
 type EditorMode =
@@ -162,6 +165,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   image,
   dimensions,
   pageIndex,
+  totalPages = 1,
   initialElements,
   onSave,
   onFinalSave,
@@ -170,6 +174,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   textItems = [],
   file,
   docId,
+  onInsertPage,
+  onDeletePage,
 }) => {
   const [elements, setElements] = React.useState<EditElement[]>(initialElements);
   const [history, setHistory] = React.useState<EditElement[][]>([initialElements]);
@@ -1062,8 +1068,22 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
            <button onClick={undo} disabled={historyStep === 0} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Undo (Ctrl+Z)"><Undo2 size={16} /></button>
            <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Redo (Ctrl+Y)"><RotateCw size={16} /></button>
            <div className="w-px h-4 bg-slate-300" />
-           <button className="flex items-center gap-2 px-3 py-1 bg-[#4096ff] text-white rounded text-xs font-bold hover:bg-[#1677ff] transition-all">
-             <FilePlus2 size={14} /> Insert page here
+           <span className="text-xs text-slate-400 font-medium">{pageIndex + 1} / {totalPages}</span>
+           <div className="w-px h-4 bg-slate-300" />
+           <button
+             onClick={() => onInsertPage?.()}
+             className="flex items-center gap-2 px-3 py-1 bg-[#4096ff] text-white rounded text-xs font-bold hover:bg-[#1677ff] transition-all"
+             title="Insert blank page after this page"
+           >
+             <FilePlus2 size={14} /> Insert page
+           </button>
+           <button
+             onClick={() => onDeletePage?.()}
+             disabled={totalPages <= 1}
+             className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+             title="Delete this page"
+           >
+             <Trash2 size={14} /> Delete page
            </button>
         </div>
         {/* The PDF page — width scales naturally so coordinate math stays correct */}
