@@ -37,6 +37,35 @@
         document.documentElement.classList.add(theme);
       } catch (e) {}
     })();
+
+    // Handle Vite/SystemJS chunk load errors (MIME type mismatch or 404)
+    window.addEventListener('error', function(e) {
+      if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+        const url = e.target.src || e.target.href;
+        if (url && url.includes('/assets/')) {
+          console.warn('Asset load failed, possibly due to a new deployment. Reloading...', url);
+          // Only reload if we haven't reloaded in the last 10 seconds to avoid infinite loops
+          const lastReload = sessionStorage.getItem('last_asset_reload');
+          const now = Date.now();
+          if (!lastReload || now - parseInt(lastReload) > 10000) {
+            sessionStorage.setItem('last_asset_reload', now.toString());
+            window.location.reload();
+          }
+        }
+      }
+    }, true);
+
+    window.addEventListener('unhandledrejection', function(e) {
+      if (e.reason && (e.reason.name === 'ChunkLoadError' || (e.reason.message && e.reason.message.includes('Failed to fetch dynamically imported module')))) {
+        var lastReload = sessionStorage.getItem('last_asset_reload');
+        var now = Date.now();
+        if (!lastReload || now - parseInt(lastReload) > 10000) {
+          sessionStorage.setItem('last_asset_reload', now.toString());
+          console.warn('Chunk load failed. Reloading...');
+          window.location.reload();
+        }
+      }
+    });
   </script>
 </head>
 

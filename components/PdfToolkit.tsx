@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { Upload, Download, ArrowRight, ArrowLeft, File as FileIcon, Scissors, Layers, PenTool, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, Hash, FileSpreadsheet, FileCode, RotateCw, FileX, FileText, FileImage, Lock, Unlock, Mail, Trash2, Sliders, Target, CheckCircle2, Copy, Download as DownloadIcon, FileType, Book, Link, Package, Printer, Globe, Info, ChevronLeft, ChevronRight, Zap, Image as ImageIcon, ShieldAlert } from 'lucide-react';
+import JSZip from 'jszip';
 import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
 import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea } from '../utils/pdfHelpers.ts';
@@ -41,6 +42,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const [rotationAngle, setRotationAngle] = React.useState<number>(90);
   const [error, setError] = React.useState<string | null>(null);
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = React.useState('');
 
   // Organize State
   const [organizedPages, setOrganizedPages] = React.useState<{ index: number, rotation: number, isDeleted: boolean, originalIndex: number }[]>([]);
@@ -93,6 +95,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setSuccessMsg(null);
     setTargetSizeMB('1.0');
     setCompressionMode('preset');
+    setConfirmPassword('');
     setSigningPage(null);
     setOrganizedPages([]);
     setRedactionAreas([]);
@@ -184,6 +187,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       else if (mode === 'IMG_TO_PDF') {
         const res = await imagesToPdf(files);
         downloadBlob(res, 'converted.pdf');
+        setSuccessMsg(`${files.length} image${files.length > 1 ? 's' : ''} converted to PDF!`);
       }
       else if (mode === 'ROTATE') {
         const res = await rotatePdf(files[0], rotationAngle);
@@ -199,8 +203,11 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `numbered-${files[0].name}`);
       }
       else if (mode === 'PROTECT') {
+        if (!inputValue.trim()) throw new Error('Please enter a password.');
+        if (confirmPassword && inputValue !== confirmPassword) throw new Error('Passwords do not match. Please re-enter.');
         const res = await protectPdf(files[0], inputValue);
         downloadBlob(res, `protected-${files[0].name}`);
+        setSuccessMsg('PDF password-protected successfully!');
       }
       else if (mode === 'UNLOCK') {
         const res = await unlockPdf(files[0], inputValue);
@@ -923,7 +930,25 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
             ) : (
               <>
                 {/* GENERIC UI FOR OTHER TOOLS */}
-                {files.length > 0 && (
+                {files.length > 0 && mode === 'MERGE' ? (
+                  <div className="space-y-2">
+                    {files.map((f, i) => (
+                      <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 font-black text-sm min-w-[2rem] text-center">{i + 1}</div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm truncate text-slate-700">{f.name}</p>
+                            <p className="text-xs text-slate-400">{formatFileSize(f.size)}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => removeFile(i)} className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={18} /></button>
+                      </div>
+                    ))}
+                    <button onClick={() => fileInputRef.current?.click()} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 font-bold text-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      + Add More PDFs
+                    </button>
+                  </div>
+                ) : files.length > 0 && (
                   <div className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-3 overflow-hidden">
                       <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><FileIcon size={20} /></div>
@@ -955,8 +980,17 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   </div>
                 )}
 
-                {(mode === 'PROTECT' || mode === 'UNLOCK') && (
-                  <input type="password" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Enter Password" className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+                {mode === 'PROTECT' && (
+                  <div className="space-y-3">
+                    <input type="password" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Enter Password" className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className={`w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 shadow-sm ${confirmPassword && inputValue !== confirmPassword ? 'border-red-400 focus:ring-red-400' : 'focus:ring-indigo-500'}`} />
+                    {confirmPassword && inputValue !== confirmPassword && (
+                      <p className="text-xs text-red-500 font-bold">Passwords do not match</p>
+                    )}
+                  </div>
+                )}
+                {mode === 'UNLOCK' && (
+                  <input type="password" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Enter PDF Password" className="w-full bg-white border rounded-2xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
                 )}
 
                 <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">Process File</Button>
@@ -1006,6 +1040,43 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 <div className="p-6 overflow-y-auto max-h-[500px] bg-white">
                   <pre className="whitespace-pre-wrap text-sm text-slate-700 font-mono leading-relaxed">{resultText}</pre>
                 </div>
+              </div>
+            )}
+
+            {resultImages.length > 0 && mode === 'TO_IMAGE' && (
+              <div className="space-y-4 animate-fade-in mt-4">
+                <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl font-bold text-center flex items-center justify-center gap-2">
+                  <CheckCircle2 size={20} /> {resultImages.length} page{resultImages.length > 1 ? 's' : ''} converted to images
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {resultImages.map((img, i) => (
+                    <div key={i} className="relative group border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                      <img src={img} className="w-full object-contain" alt={`Page ${i + 1}`} />
+                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded font-bold">Page {i + 1}</div>
+                      <a
+                        href={img}
+                        download={`${files[0]?.name.replace(/\.pdf$/i, '') || 'page'}-${i + 1}.png`}
+                        className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                      >
+                        <Download size={16} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={async () => {
+                    const zip = new JSZip();
+                    const baseName = files[0]?.name.replace(/\.pdf$/i, '') || 'pages';
+                    resultImages.forEach((img, i) => {
+                      zip.file(`${baseName}-page-${i + 1}.png`, img.split(',')[1], { base64: true });
+                    });
+                    const content = await zip.generateAsync({ type: 'blob' });
+                    downloadBlob(content, `${baseName}-images.zip`);
+                  }}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-100"
+                >
+                  <Download size={18} /> Download All Pages (ZIP)
+                </button>
               </div>
             )}
 

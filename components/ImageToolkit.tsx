@@ -192,11 +192,67 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           ctx.stroke();
         }
 
+        else if (mode === 'FLIP') {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.save();
+          if (flipDirection === 'horizontal') {
+            ctx.scale(-1, 1);
+            ctx.drawImage(img, -w, 0, w, h);
+          } else {
+            ctx.scale(1, -1);
+            ctx.drawImage(img, 0, -h, w, h);
+          }
+          ctx.restore();
+        }
+        else if (mode === 'PIXELATE') {
+          canvas.width = w;
+          canvas.height = h;
+          const size = Math.max(1, pixelateSize);
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d')!;
+          const pw = Math.max(1, Math.floor(w / size));
+          const ph = Math.max(1, Math.floor(h / size));
+          tempCanvas.width = pw;
+          tempCanvas.height = ph;
+          tempCtx.drawImage(img, 0, 0, pw, ph);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(tempCanvas, 0, 0, pw, ph, 0, 0, w, h);
+        }
+        else if (mode === 'INVERT') {
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          ctx.globalCompositeOperation = 'difference';
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalCompositeOperation = 'source-over';
+        }
         else if (mode === 'SHARPEN') {
           canvas.width = w;
           canvas.height = h;
           ctx.drawImage(img, 0, 0, w, h);
-          // Simple sharpen convolution placeholder
+          const imageData = ctx.getImageData(0, 0, w, h);
+          const src = imageData.data;
+          const out = new Uint8ClampedArray(src.length);
+          const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              for (let c = 0; c < 3; c++) {
+                let sum = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                  for (let kx = -1; kx <= 1; kx++) {
+                    const px = Math.min(Math.max(x + kx, 0), w - 1);
+                    const py = Math.min(Math.max(y + ky, 0), h - 1);
+                    sum += src[(py * w + px) * 4 + c] * kernel[(ky + 1) * 3 + (kx + 1)];
+                  }
+                }
+                out[(y * w + x) * 4 + c] = Math.min(255, Math.max(0, sum));
+              }
+              out[(y * w + x) * 4 + 3] = src[(y * w + x) * 4 + 3];
+            }
+          }
+          ctx.putImageData(new ImageData(out, w, h), 0, 0);
         }
         else if (mode === 'BLACK_WHITE') {
           canvas.width = w;
@@ -337,7 +393,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     setIsProcessing(true);
     setError(null);
     try {
-      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT', 'BLUR_IMG', 'SHARPEN', 'BLACK_WHITE'].includes(mode)) {
+      if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT', 'BLUR_IMG', 'SHARPEN', 'BLACK_WHITE', 'ADD_TEXT', 'PROFILE_MAKER'].includes(mode)) {
         const res = await processClientSide();
         setProcessedUrl(res);
       } else if (mode === 'SPLIT_IMAGE') {
@@ -953,7 +1009,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           )}
 
           <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
-            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT', 'SPLIT_IMAGE'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
+            {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT', 'SPLIT_IMAGE', 'ADD_TEXT', 'PROFILE_MAKER', 'SHARPEN', 'BLACK_WHITE', 'BLUR_IMG', 'FILTER'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {successMsg && <p className="text-green-600 text-sm font-bold text-center animate-fade-in flex items-center justify-center gap-2"><CheckCircle size={16} /> {successMsg}</p>}
           {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
