@@ -114,10 +114,12 @@ export const JourneyFileUpload: React.FC<JourneyFileUploadProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList) => {
     setIsLoading(true);
+    setFileError(null);
 
     const newFiles: FileData[] = [];
 
@@ -126,14 +128,14 @@ export const JourneyFileUpload: React.FC<JourneyFileUploadProps> = ({
 
       // Check max files limit
       if (value.length + newFiles.length >= maxFiles) {
-        alert(`Maximum ${maxFiles} files allowed`);
+        setFileError(`Maximum ${maxFiles} files allowed`);
         break;
       }
 
       // Validate file
       const validation = validateFile(file, acceptedTypes, maxSize);
       if (!validation.valid) {
-        alert(`${file.name}: ${validation.error}`);
+        setFileError(`${file.name}: ${validation.error}`);
         continue;
       }
 
@@ -162,7 +164,7 @@ export const JourneyFileUpload: React.FC<JourneyFileUploadProps> = ({
       };
 
       reader.onerror = () => {
-        alert(`Failed to read ${file.name}`);
+        setFileError(`Failed to read ${file.name}`);
       };
 
       reader.readAsArrayBuffer(file);
@@ -260,7 +262,7 @@ export const JourneyFileUpload: React.FC<JourneyFileUploadProps> = ({
         </p>
       )}
 
-      {error && (
+      {(error || fileError) && (
         <p
           style={{
             fontSize: 12,
@@ -269,7 +271,7 @@ export const JourneyFileUpload: React.FC<JourneyFileUploadProps> = ({
             margin: '8px 0 0 0',
           }}
         >
-          ⚠ {error}
+          ⚠ {error || fileError}
         </p>
       )}
 

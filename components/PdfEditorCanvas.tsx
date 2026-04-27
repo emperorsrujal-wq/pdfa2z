@@ -368,8 +368,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const handlePointerDown = async (e: React.MouseEvent | React.TouchEvent) => {
     const pos = getPos(e);
-    if (mode === 'select') {
+    // Clicking empty canvas while something is selected → deselect first, don't create a new element
+    if (activeElementId) {
       setActiveElementId(null);
+      return;
+    }
+    if (mode === 'select') {
       return;
     }
     if (mode === 'ocr') {
@@ -394,21 +398,25 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     }
     if (mode === 'picker' || mode === 'font-picker') {
       const style = await extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image);
+      const sampledColor = style.backgroundColor || '#FFFFFF';
       if (activeElementId) {
+        const activeEl = elements.find(e => e.id === activeElementId);
         if (mode === 'picker') {
-          updateElement(activeElementId, { color: style.backgroundColor });
+          if (activeEl?.type === 'rect' || activeEl?.type === 'ellipse' || activeEl?.type === 'circle') {
+            updateElement(activeElementId, { color: sampledColor, bgColor: sampledColor });
+          } else {
+            updateElement(activeElementId, { color: sampledColor });
+          }
         } else {
-          updateElement(activeElementId, { 
-            fontName: style.fontName, 
-            size: style.fontSize 
-          });
+          updateElement(activeElementId, { fontName: style.fontName, size: style.fontSize });
         }
-        setMode('select');
+      } else {
+        setActiveColor(sampledColor);
       }
+      setMode('select');
       return;
     }
     if (mode === 'erase') {
-      setActiveColor('#FFFFFF');
       setIsDrawing(true);
       setDragStart(pos);
       setDragEnd(pos);
@@ -508,12 +516,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
         let bg = activeColor;
-        if (mode === 'erase') bg = '#FFFFFF'; 
-        else if (mode === 'smart-erase') {
+        if (mode === 'smart-erase') {
           const temp = (window as any)._smartBg;
           bg = temp?.bgColor || '#FFFFFF';
         }
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: mode === 'erase' ? '#FFFFFF' : activeColor, bgColor: bg, opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: activeColor, bgColor: bg, opacity: 1 };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
@@ -818,7 +825,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     else if (t.mode === 'draw') { closeAllMenus(); setShowAnnotateMenu(!showAnnotateMenu); }
                     else if (t.mode === 'sign') { closeAllMenus(); setShowSignMenu(!showSignMenu); }
                     else if (t.mode === 'rect') { closeAllMenus(); setShowShapesMenu(!showShapesMenu); }
-                    else setMode(t.mode as EditorMode);
+                    else {
+                      if (t.mode === 'erase') setActiveColor('#FFFFFF');
+                      setMode(t.mode as EditorMode);
+                    }
                   }}
                   disabled={(t.mode === 'undo' && historyStep === 0) || (t.mode === 'redo' && !canRedo)}
                   className={`flex items-center gap-2 px-4 py-2 rounded transition-all ${t.mode === 'undo' ? 'opacity-100' : ''} ${mode === t.mode || (t.mode === 'form-builder' && showFormsMenu) || (t.mode === 'draw' && showAnnotateMenu) || (t.mode === 'sign' && showSignMenu) || (t.mode === 'rect' && (showShapesMenu || ['rect','circle','ellipse','line','arrow'].includes(mode))) ? 'bg-white text-[#333] shadow-sm' : 'text-slate-600 hover:bg-white/50 hover:text-[#333]'} disabled:opacity-30 disabled:cursor-not-allowed`}
@@ -1225,9 +1235,15 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     minHeight: 10,
                   }}
                   onPointerDown={ev => {
-                    if (mode !== 'select') return;
+                    // Allow selection from the matching tool mode, not just 'select'
+                    const isSelectable =
+                      mode === 'select' ||
+                      (mode === 'erase' && el.type === 'rect') ||
+                      ((mode === 'magic-edit' || mode === 'text') && el.type === 'text');
+                    if (!isSelectable) return;
                     ev.stopPropagation();
                     setActiveElementId(el.id);
+                    if (mode !== 'select') return; // No drag in tool modes — just select
                     const startX = ev.clientX, startY = ev.clientY;
                     const startXPos = el.x, startYPos = el.y;
                     const onMove = (me: PointerEvent) => {
@@ -1283,11 +1299,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     <ObjectToolbar element={el} onUpdate={commitUpdate} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
                   )}
 
-                  {/* Selection handles */}
+                  {/* Selection border — visible whenever this element is active */}
+                  {isActive && (
+                    <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
+                  )}
+
+                  {/* Resize / rotate handles — only available in select mode */}
                   {isActive && mode === 'select' && (
                     <>
-                      <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
-                      
                       {/* Rotation Handle */}
                       <div 
                         className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot"
@@ -1612,87 +1631,155 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         )}
 
-        {/* --- Contextual Tool Options Bar (Professional additions) --- */}
-        {mode !== 'select' && !activeElementId && (
-          <div className="flex items-center gap-6 px-8 py-3 bg-white border-t border-slate-200 animate-in slide-in-from-top-1 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-50 overflow-x-auto custom-scrollbar">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
-                <Layout size={14} />
+        {/* --- Contextual Properties / Tool Options Bar --- */}
+        {(mode !== 'select' || !!activeElementId) && (() => {
+          const activeEl = activeElementId ? elements.find(e => e.id === activeElementId) : null;
+          return (
+            <div className="flex items-center gap-3 px-6 py-2 bg-white border-t border-slate-200 z-50 overflow-x-auto custom-scrollbar min-h-[48px] shrink-0">
+              {/* Label */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="p-1 bg-indigo-50 rounded text-indigo-600"><Layout size={13} /></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                  {activeEl ? 'Properties' : 'Tool Settings'}
+                </span>
+                <div className="h-4 w-px bg-slate-200 mx-1" />
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tool Settings</span>
-              <div className="h-4 w-px bg-slate-200 mx-2" />
+
+              {/* ── ACTIVE ELEMENT PROPERTIES ── */}
+              {activeEl ? (
+                <>
+                  {/* Eyedropper */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setMode('picker'); }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
+                  >
+                    <Pipette size={13} />
+                    {activeEl.type === 'text' ? 'Sample text color' : 'Sample fill color'}
+                  </button>
+
+                  {/* TEXT element properties */}
+                  {activeEl.type === 'text' && (
+                    <>
+                      <div className="h-5 w-px bg-slate-200 shrink-0" />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400">Color</span>
+                        <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                          {SEJDA_COLORS.slice(0, 14).map(c => (
+                            <button key={c}
+                              onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { color: c }); }}
+                              className={`w-4 h-4 rounded-sm border transition-all ${activeEl.color === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="h-5 w-px bg-slate-200 shrink-0" />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400">Size</span>
+                        <select value={activeEl.size || 14}
+                          onChange={e => commitUpdate(activeEl.id, { size: parseInt(e.target.value) })}
+                          onClick={ev => ev.stopPropagation()}
+                          className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 cursor-pointer">
+                          {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
+                        </select>
+                      </div>
+                      <div className="h-5 w-px bg-slate-200 shrink-0" />
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isBold: !activeEl.isBold }); }}
+                          className={`w-7 h-7 font-bold text-sm rounded transition-colors ${activeEl.isBold ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>B</button>
+                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isItalic: !activeEl.isItalic }); }}
+                          className={`w-7 h-7 italic text-sm rounded transition-colors ${activeEl.isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>I</button>
+                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isUnderline: !activeEl.isUnderline }); }}
+                          className={`w-7 h-7 underline text-sm rounded transition-colors ${activeEl.isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>U</button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* RECT / SHAPE / WHITEOUT element properties */}
+                  {(activeEl.type === 'rect' || activeEl.type === 'ellipse' || activeEl.type === 'circle') && (
+                    <>
+                      <div className="h-5 w-px bg-slate-200 shrink-0" />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400">Fill</span>
+                        <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                          {SEJDA_COLORS.slice(0, 14).map(c => (
+                            <button key={c}
+                              onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { color: c, bgColor: c }); }}
+                              className={`w-4 h-4 rounded-sm border transition-all ${(activeEl.bgColor || activeEl.color) === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Delete — pushed to the right */}
+                  <div className="ml-auto shrink-0">
+                    <button onClick={ev => { ev.stopPropagation(); deleteElement(activeEl.id); }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold transition-all">
+                      <Trash2 size={13} />Delete
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* ── TOOL SETTINGS (no element selected) ── */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setMode('picker'); }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
+                  >
+                    <Pipette size={13} />Pick from Document
+                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
+                    <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                      {(mode === 'highlight' ? HIGHLIGHT_COLORS : PRO_COLORS).map(c => (
+                        <button key={c}
+                          onClick={e => { e.stopPropagation(); setActiveColor(c); }}
+                          className={`w-4 h-4 rounded-sm border transition-all ${activeColor === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {['draw', 'line', 'arrow'].includes(mode) && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="h-5 w-px bg-slate-200" />
+                      <span className="text-[10px] font-bold text-slate-400">Brush</span>
+                      <input type="range" min="1" max="20" value={activeBrushSize}
+                        onChange={e => setActiveBrushSize(parseInt(e.target.value))}
+                        className="w-20 accent-indigo-600" />
+                      <span className="text-[11px] font-black text-indigo-600">{activeBrushSize}px</span>
+                    </div>
+                  )}
+
+                  {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="h-5 w-px bg-slate-200" />
+                      <span className="text-[10px] font-bold text-slate-400">Size</span>
+                      <select value={activeFontSize}
+                        onChange={e => setActiveFontSize(parseInt(e.target.value))}
+                        onClick={ev => ev.stopPropagation()}
+                        className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 cursor-pointer">
+                        {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {mode === 'erase' && (
+                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 shrink-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-tight">Eraser Active</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-            
-            {/* Sampling Tool (Eye Dropper) */}
-            <button
-               onClick={() => setMode('picker')}
-               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
-            >
-               <Pipette size={14} />
-               <span className="text-[10px] font-bold">Pick from Document</span>
-            </button>
-
-            {/* Common Color Selector (Grid) */}
-            <div className="flex items-center gap-3 shrink-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
-              <div className="grid grid-cols-7 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                {(mode === 'highlight' ? HIGHLIGHT_COLORS : PRO_COLORS).map(c => (
-                  <button 
-                    key={c}
-                    onClick={() => setActiveColor(c)}
-                    className={`w-4 h-4 rounded-sm border transition-all ${activeColor === c ? 'border-indigo-600 scale-125 z-10 shadow-sm' : 'border-slate-300/50 hover:scale-110'}`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Brush Size for Drawing Tools & Lines */}
-            {(['draw', 'line', 'arrow'].includes(mode)) && (
-              <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
-                 <div className="h-6 w-px bg-slate-200" />
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Brush Size</span>
-                    <input 
-                      type="range" 
-                      min="1" max="20" 
-                      value={activeBrushSize} 
-                      onChange={e => setActiveBrushSize(parseInt(e.target.value))}
-                      className="w-20 accent-indigo-600"
-                    />
-                    <span className="text-[11px] font-black text-indigo-600">{activeBrushSize}px</span>
-                 </div>
-              </div>
-            )}
-
-            {/* Typography Logic for Text Tools */}
-            {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
-              <div className="flex items-center gap-4 animate-in fade-in transition-all shrink-0">
-                 <div className="h-6 w-px bg-slate-200" />
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Size</span>
-                    <select 
-                      value={activeFontSize}
-                      onChange={e => setActiveFontSize(parseInt(e.target.value))}
-                      className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 transition-all cursor-pointer shadow-sm"
-                    >
-                      {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
-                    </select>
-                 </div>
-              </div>
-            )}
-
-            {mode === 'erase' && (
-              <div className="flex items-center gap-3 animate-in fade-in transition-all shrink-0">
-                <div className="h-6 w-px bg-slate-200" />
-                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-tight">Eraser Active</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
@@ -1729,12 +1816,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       {showPageTools && (
         <PageToolsPanel 
           onClose={() => setShowPageTools(false)}
-          onRotate={(angle) => {
-            alert(`Rotating page ${pageIndex + 1} by ${angle} degrees (Simulation)`);
+          onRotate={(_angle) => {
             setShowPageTools(false);
           }}
-          onCrop={(rect) => {
-            alert(`Cropping target: ${JSON.stringify(rect)} (Simulation)`);
+          onCrop={(_rect) => {
             setShowPageTools(false);
           }}
         />
@@ -1764,9 +1849,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 return el;
               });
               commit(next);
-              alert("AI suggested values applied to form fields!");
             } catch (e) {
-              alert("AI filling failed. Please check your API key.");
+              console.error("AI form fill failed:", e);
             } finally {
               setIsAiFilling(false);
               setShowFormBuilder(false);

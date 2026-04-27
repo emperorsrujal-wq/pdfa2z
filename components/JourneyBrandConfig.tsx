@@ -47,6 +47,7 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
   const [errors, setErrors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'messaging' | 'email' | 'security' | 'legal' | 'integrations' | 'advanced' | 'layout' | 'industry'>('colors');
   const [saved, setSaved] = useState(false);
+  const [webhookMsg, setWebhookMsg] = useState<string | null>(null);
 
   const handleConfigChange = (field: keyof BrandConfig, value: any) => {
     const updated = { ...config, [field]: value };
@@ -64,11 +65,10 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
 
   const handleTestWebhook = async () => {
     if (!config.webhookUrl) {
-      alert('Please provide a Webhook URL first');
+      setWebhookMsg('Please provide a Webhook URL first.');
       return;
     }
-    console.log('Testing webhook with dummy payload...');
-    alert(`Mock test sent to ${config.webhookUrl}. Check console for details.`);
+    setWebhookMsg(`Mock test sent to ${config.webhookUrl}.`);
   };
 
   const handleSave = () => {
@@ -1148,13 +1148,16 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
               </div>
             )}
 
-            <button 
-              className="brand-helper-btn" 
+            <button
+              className="brand-helper-btn"
               style={{ marginTop: 10, width: '100%', height: 40 }}
               onClick={handleTestWebhook}
             >
               Send Test Webhook →
             </button>
+            {webhookMsg && (
+              <p style={{ marginTop: 8, fontSize: 12, color: webhookMsg.startsWith('Please') ? '#ef4444' : '#22c55e' }}>{webhookMsg}</p>
+            )}
           </>
         )}
 

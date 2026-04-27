@@ -77,7 +77,6 @@ export const Redactor: React.FC<RedactorProps> = ({ image, pageIndex, existingAr
             const piiList = await scanForPII(text);
             
             if (piiList.length === 0) {
-                console.log("No PII detected on this page.");
                 return;
             }
 

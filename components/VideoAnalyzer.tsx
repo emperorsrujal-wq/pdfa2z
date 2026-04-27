@@ -27,9 +27,8 @@ export const VideoAnalyzer: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
 
-      // Simple validation for browser environment
       if (selectedFile.size > 20 * 1024 * 1024) {
-        alert("For this demo, please use videos under 20MB.");
+        setMessages([{ id: 'err-size', role: 'model', text: 'Video file is too large. Please use a video under 20 MB.', timestamp: Date.now() }]);
         return;
       }
 

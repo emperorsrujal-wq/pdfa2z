@@ -533,9 +533,8 @@ export const PDFJourneyBuilder: React.FC = () => {
         ...p,
         localizedContent: { ...p.localizedContent, [lang]: translated }
       }));
-      alert(`Journey successfully translated to ${lang}!`);
     } catch (e) {
-      alert("Translation failed. Please check your AI settings.");
+      setError("Translation failed. Please check your AI settings.");
     }
     setIsTranslating(false);
   };

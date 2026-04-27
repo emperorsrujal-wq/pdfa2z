@@ -711,7 +711,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   <button onClick={reset}><Trash2 size={18} className="text-slate-300" /></button>
                 </div>
                 <Button disabled className="w-full py-6 bg-slate-400 opacity-50 cursor-not-allowed uppercase font-black tracking-widest">
-                  Server Enging Coming Soon
+                  Server Engine Coming Soon
                 </Button>
               </div>
             )}
