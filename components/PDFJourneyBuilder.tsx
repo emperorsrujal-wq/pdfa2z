@@ -538,19 +538,66 @@ const CSS = `
   .jb-add-field-picker { background: #0a0f1c; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-top: 6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .jb-add-type-btn { padding: 10px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color: #64748b; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s; }
   .jb-add-type-btn:hover { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); color: #f59e0b; }
+  /* ── WELCOME SCREEN ─────────────────────────────────────── */
+  .jb-welcome-card { background: rgba(10,15,28,0.98); border: 1px solid rgba(245,158,11,0.12); border-radius: 28px; padding: 60px 48px; max-width: 560px; width: 100%; position: relative; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.05) inset; animation: jbSlideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+  .jb-welcome-glow { position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%); pointer-events: none; }
+  .jb-welcome-logo { width: 56px; height: 56px; background: linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.05) 100%); border: 1px solid rgba(245,158,11,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; font-size: 24px; }
+  .jb-welcome-title { font-family: var(--brand-heading-font); font-size: 36px; font-weight: 900; line-height: 1.1; margin-bottom: 16px; color: var(--brand-text); }
+  .jb-welcome-desc { font-size: 15px; color: var(--brand-text-secondary); line-height: 1.65; margin-bottom: 40px; }
+  .jb-welcome-meta { display: flex; gap: 24px; margin-bottom: 40px; }
+  .jb-welcome-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .jb-welcome-meta-label { font-size: 9px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.08em; }
+  .jb-welcome-meta-value { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+  .jb-start-btn { width: 100%; padding: 20px 32px; background: var(--brand-primary); color: #000; border: none; border-radius: 14px; font-size: 16px; font-weight: 900; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 12px; letter-spacing: 0.01em; }
+  .jb-start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(245,158,11,0.35); }
+  .jb-start-btn:active { transform: none; }
+
+  /* ── EXIT INTENT OVERLAY ─────────────────────────────────── */
+  .jb-exit-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(12px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; animation: jbSlideInRight 0.25s; }
+  .jb-exit-card { background: #0a0f1c; border: 1px solid rgba(245,158,11,0.2); border-radius: 24px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 40px 100px rgba(0,0,0,0.6); text-align: center; }
+  .jb-exit-icon { font-size: 48px; margin-bottom: 16px; }
+  .jb-exit-title { font-size: 24px; font-weight: 900; color: #e2e8f0; margin-bottom: 8px; }
+  .jb-exit-sub { font-size: 14px; color: #64748b; margin-bottom: 28px; line-height: 1.5; }
+  .jb-exit-input { width: 100%; background: rgba(15,23,42,0.9); border: 1.5px solid rgba(71,85,105,0.4); border-radius: 10px; padding: 12px 16px; color: #e2e8f0; font-size: 15px; outline: none; box-sizing: border-box; margin-bottom: 12px; }
+  .jb-exit-input:focus { border-color: var(--brand-primary); }
+  .jb-exit-save-btn { width: 100%; padding: 14px; background: var(--brand-primary); color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; margin-bottom: 10px; transition: all 0.2s; }
+  .jb-exit-save-btn:hover { opacity: 0.9; }
+  .jb-exit-continue-btn { background: none; border: none; color: #475569; font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .jb-exit-saved { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 16px; color: #10b981; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+
+  /* ── CONDITIONAL LOGIC BUILDER ───────────────────────────── */
+  .jb-logic-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.04); }
+  .jb-cond-row { display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 5px; margin-bottom: 6px; align-items: center; }
+  .jb-cond-select { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 6px 8px; color: #cbd5e1; font-size: 11px; outline: none; width: 100%; }
+  .jb-cond-select:focus { border-color: var(--brand-primary); }
+  .jb-cond-value { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 6px 8px; color: #cbd5e1; font-size: 11px; outline: none; width: 100%; }
+  .jb-cond-value:focus { border-color: var(--brand-primary); }
+  .jb-cond-remove { background: none; border: none; color: #334155; cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 4px; transition: all 0.15s; flex-shrink: 0; }
+  .jb-cond-remove:hover { background: rgba(248,113,113,0.1); color: #f87171; }
+  .jb-logic-btns { display: flex; gap: 5px; margin-top: 6px; }
+  .jb-logic-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #475569; font-size: 10px; font-weight: 800; cursor: pointer; transition: all 0.15s; }
+  .jb-logic-btn.active { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: #f59e0b; }
+  .jb-add-cond-btn { background: none; border: none; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; padding: 4px 0; margin-top: 4px; display: flex; align-items: center; gap: 4px; transition: color 0.15s; }
+  .jb-add-cond-btn:hover { color: #f59e0b; }
+  .jb-remove-logic-btn { background: none; border: none; color: #334155; font-size: 10px; cursor: pointer; margin-top: 8px; text-decoration: underline; display: block; }
+  .jb-remove-logic-btn:hover { color: #f87171; }
+
   @media (max-width: 640px) {
     .jb-step-label { display: none; }
     .jb-step-circle { width: 24px; height: 24px; font-size: 9px; }
     .jb-step-item:not(:last-child)::after { top: 11px; }
     .jb-yes-no { gap: 10px; }
     .jb-yes-no-btn { padding: 16px 12px; font-size: 15px; }
+    .jb-welcome-card { padding: 40px 28px; border-radius: 0; position: fixed; inset: 0; max-width: none; border: none; overflow-y: auto; }
+    .jb-welcome-title { font-size: 28px; }
+    .jb-cond-row { grid-template-columns: 1fr 1fr; }
   }
 `;
 
 // --- Main Component -----------------------------------------------------------
 
 export const PDFJourneyBuilder: React.FC = () => {
-  const [stage, setStage] = useState<"upload" | "detecting" | "configure" | "wizard" | "review" | "complete">("upload");
+  const [stage, setStage] = useState<"upload" | "detecting" | "configure" | "welcome" | "wizard" | "review" | "complete">("upload");
   const [libsReady, setLibsReady] = useState(false);
   const [libError, setLibError] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
@@ -598,6 +645,9 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
   const [dragFieldIdx, setDragFieldIdx] = useState<{ stepId: string; idx: number } | null>(null);
   const [showAddField, setShowAddField] = useState<string | null>(null);
+  const [showExitIntent, setShowExitIntent] = useState(false);
+  const [exitEmail, setExitEmail] = useState('');
+  const [exitSaved, setExitSaved] = useState(false);
 
   useEffect(() => {
     // Detect template from URL
@@ -846,6 +896,19 @@ export const PDFJourneyBuilder: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeydown);
   }, [stage, currentStep, activeFieldIndex, formData, steps, brandConfig.isFocusedMode]);
 
+  useEffect(() => {
+    if (stage !== 'wizard' || exitSaved) return;
+    let triggered = false;
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY < 30 && !triggered) {
+        triggered = true;
+        setShowExitIntent(true);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [stage, exitSaved]);
+
   const fillAndDownload = async () => {
     setIsProcessing(true);
     try {
@@ -936,7 +999,7 @@ export const PDFJourneyBuilder: React.FC = () => {
     setStage("complete"); setIsProcessing(false);
   };
 
-  const reset = () => { setStage("upload"); setFormData({}); setSteps([]); setFileName(""); setFilledUrl(null); };
+  const reset = () => { setStage("upload"); setFormData({}); setSteps([]); setFileName(""); setFilledUrl(null); setShowExitIntent(false); setExitSaved(false); setExitEmail(''); };
 
   const restoreDraft = () => {
     if (!draft) return;
@@ -1263,7 +1326,7 @@ export const PDFJourneyBuilder: React.FC = () => {
                 >
                   <Share2 size={14} /> Distribute
                 </button>
-                <button className="jb-btn jb-btn-gold" style={{ width: 'auto', padding: '8px 24px' }} onClick={() => { setStage("wizard"); setCurrentStep(0); }}>Go Live {"->"}</button>
+                <button className="jb-btn jb-btn-gold" style={{ width: 'auto', padding: '8px 24px' }} onClick={() => { setStage("welcome"); setCurrentStep(0); setShowExitIntent(false); setExitSaved(false); }}>Go Live {"->"}</button>
               </div>
             </div>
             <div className="jb-canvas">
@@ -1362,6 +1425,83 @@ export const PDFJourneyBuilder: React.FC = () => {
                                         style={{ marginTop: 0, flex: 1 }}
                                       />
                                     </div>
+
+                                    {/* ── Conditional Logic Builder ── */}
+                                    {(() => {
+                                      const allFields = steps.flatMap(st => st.fields).filter(af => af.id !== f.id);
+                                      const group = f.conditions?.[0];
+                                      const updateCond = (newGroup: import('../utils/journeyConditionals').ConditionGroup | null) => {
+                                        updateField(s.id, f.id, { conditions: newGroup ? [newGroup] : [] });
+                                      };
+                                      return (
+                                        <div className="jb-logic-section">
+                                          <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                                            Conditional Logic
+                                          </div>
+                                          {!group ? (
+                                            <button className="jb-add-cond-btn" onClick={() => updateCond({ logic: 'AND', conditions: [{ field: allFields[0]?.id || '', operator: 'equals', value: '' }] })}>
+                                              + Add show/hide rule
+                                            </button>
+                                          ) : (
+                                            <>
+                                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 6 }}>Show this field when:</div>
+                                              {group.conditions.map((cond, ci) => (
+                                                <div key={ci} className="jb-cond-row">
+                                                  <select
+                                                    className="jb-cond-select"
+                                                    value={cond.field}
+                                                    onChange={e => {
+                                                      const nc = [...group.conditions]; nc[ci] = { ...nc[ci], field: e.target.value };
+                                                      updateCond({ ...group, conditions: nc });
+                                                    }}
+                                                  >
+                                                    <option value="">Select field…</option>
+                                                    {allFields.map(af => <option key={af.id} value={af.id}>{af.label}</option>)}
+                                                  </select>
+                                                  <select
+                                                    className="jb-cond-select"
+                                                    value={cond.operator}
+                                                    onChange={e => {
+                                                      const nc = [...group.conditions]; nc[ci] = { ...nc[ci], operator: e.target.value as any };
+                                                      updateCond({ ...group, conditions: nc });
+                                                    }}
+                                                  >
+                                                    <option value="equals">is</option>
+                                                    <option value="notEquals">is not</option>
+                                                    <option value="contains">contains</option>
+                                                    <option value="greaterThan">&gt;</option>
+                                                    <option value="lessThan">&lt;</option>
+                                                  </select>
+                                                  <input
+                                                    className="jb-cond-value"
+                                                    value={cond.value || ''}
+                                                    placeholder="value"
+                                                    onChange={e => {
+                                                      const nc = [...group.conditions]; nc[ci] = { ...nc[ci], value: e.target.value };
+                                                      updateCond({ ...group, conditions: nc });
+                                                    }}
+                                                  />
+                                                  <button className="jb-cond-remove" onClick={() => {
+                                                    const nc = group.conditions.filter((_, i) => i !== ci);
+                                                    if (nc.length === 0) updateCond(null); else updateCond({ ...group, conditions: nc });
+                                                  }}>×</button>
+                                                </div>
+                                              ))}
+                                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                                                <button className="jb-add-cond-btn" onClick={() => updateCond({ ...group, conditions: [...group.conditions, { field: allFields[0]?.id || '', operator: 'equals', value: '' }] })}>
+                                                  + condition
+                                                </button>
+                                                <div className="jb-logic-btns">
+                                                  <button className={`jb-logic-btn${group.logic === 'AND' ? ' active' : ''}`} onClick={() => updateCond({ ...group, logic: 'AND' })}>AND</button>
+                                                  <button className={`jb-logic-btn${group.logic === 'OR' ? ' active' : ''}`} onClick={() => updateCond({ ...group, logic: 'OR' })}>OR</button>
+                                                </div>
+                                              </div>
+                                              <button className="jb-remove-logic-btn" onClick={() => updateCond(null)}>Remove rules</button>
+                                            </>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 )}
                               </div>
@@ -1418,11 +1558,59 @@ export const PDFJourneyBuilder: React.FC = () => {
         </div>
       )}
 
+      {/* ── WELCOME SCREEN ───────────────────────────────────────── */}
+      {stage === "welcome" && (
+        <div className="jb-root">
+          <div className="jb-welcome-card">
+            <div className="jb-welcome-glow" />
+            {brandConfig.logoUrl
+              ? <img src={brandConfig.logoUrl} style={{ height: brandConfig.logoHeight || 40, marginBottom: 32 }} alt="logo" />
+              : <div className="jb-welcome-logo">📋</div>
+            }
+            <h1 className="jb-welcome-title">
+              {brandConfig.journeyTitle || steps[0]?.title || fileName.replace('.pdf', '')}
+            </h1>
+            {brandConfig.journeySubtitle && (
+              <p className="jb-welcome-desc">{brandConfig.journeySubtitle}</p>
+            )}
+            {!brandConfig.journeySubtitle && (
+              <p className="jb-welcome-desc">
+                Fill out this form to complete your request. Your information is protected with 256-bit encryption.
+              </p>
+            )}
+            <div className="jb-welcome-meta">
+              <div className="jb-welcome-meta-item">
+                <span className="jb-welcome-meta-label">Steps</span>
+                <span className="jb-welcome-meta-value">{steps.length}</span>
+              </div>
+              <div className="jb-welcome-meta-item">
+                <span className="jb-welcome-meta-label">Est. Time</span>
+                <span className="jb-welcome-meta-value">~{Math.max(1, Math.ceil(steps.reduce((a, s) => a + s.fields.length, 0) * 0.5))} min</span>
+              </div>
+              <div className="jb-welcome-meta-item">
+                <span className="jb-welcome-meta-label">Fields</span>
+                <span className="jb-welcome-meta-value">{steps.reduce((a, s) => a + s.fields.length, 0)}</span>
+              </div>
+            </div>
+            <button className="jb-start-btn" onClick={() => { setStage('wizard'); setCurrentStep(0); setActiveFieldIndex(0); }}>
+              <span>Start</span>
+              <span style={{ fontSize: 20 }}>→</span>
+            </button>
+            {brandConfig.showSecurityBadges !== false && (
+              <div style={{ marginTop: 24, opacity: 0.5 }}>
+                <SecurityTrust horizontal enabledBadges={brandConfig.enabledSecurityBadges} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {stage === "wizard" && (() => {
         const isRtl = ['ar', 'he'].includes(currentLanguage);
         const t = (key: string) => (JOURNEY_TRANSLATIONS[currentLanguage as Language] || JOURNEY_TRANSLATIONS.en)[key];
         
         return (
+          <>
           <div className="jb-root" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="jb-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -1539,6 +1727,45 @@ export const PDFJourneyBuilder: React.FC = () => {
             })()}
             </div>
           </div>
+
+          {/* Exit Intent Modal */}
+          {showExitIntent && (
+            <div className="jb-exit-overlay">
+              <div className="jb-exit-card">
+                <div className="jb-exit-icon">✋</div>
+                <div className="jb-exit-title">Wait — don't lose your progress!</div>
+                <div className="jb-exit-sub">Enter your email and we'll save your answers so you can continue right where you left off.</div>
+                {exitSaved ? (
+                  <div className="jb-exit-saved">✓ Progress saved! Check your email to resume.</div>
+                ) : (
+                  <input
+                    className="jb-exit-input"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={exitEmail}
+                    onChange={e => setExitEmail(e.target.value)}
+                    autoFocus
+                  />
+                )}
+                {!exitSaved && (
+                  <button
+                    className="jb-exit-save-btn"
+                    onClick={() => {
+                      if (!exitEmail) return;
+                      localStorage.setItem(`jb_resume_${exitEmail}`, JSON.stringify({ fileName, steps, formData, currentStep, activeFieldIndex }));
+                      setExitSaved(true);
+                    }}
+                  >
+                    Save my progress →
+                  </button>
+                )}
+                <button className="jb-exit-continue-btn" onClick={() => setShowExitIntent(false)}>
+                  {exitSaved ? 'Close' : 'Continue without saving'}
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         );
       })()}
 

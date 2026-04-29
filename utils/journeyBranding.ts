@@ -25,6 +25,7 @@ export interface BrandConfig {
   // Branding & Messaging
   companyName?: string;       // Display company name
   journeyTitle?: string;      // Override journey title
+  journeySubtitle?: string;   // Welcome screen subtitle / description
   footerText?: string;        // Custom footer text
   successMessage?: string;    // Custom thank you/success message
   successSubtitle?: string;   // Success screen subtitle
