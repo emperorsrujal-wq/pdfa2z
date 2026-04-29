@@ -788,8 +788,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       )}
 
       {/* ─── CENTRIC TOOLBAR (Sejda style) ─────────────────── */}
-      <div className="shrink-0 flex items-center justify-center bg-white border-b border-slate-200 shadow-sm z-[150] py-4">
-        <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm">
+      <div className="shrink-0 flex items-center bg-white border-b border-slate-200 shadow-sm z-[150] py-2 px-2 overflow-x-auto">
+        <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm mx-auto flex-shrink-0">
           {[
             { mode: 'magic-edit', icon: <Type size={18} />, label: 'Text', tooltip: 'Add or edit text' },
             { mode: 'link', icon: <Link2 size={18} />, label: 'Links', tooltip: 'Add clickable links' },
@@ -1065,7 +1065,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
            <button onClick={zoomOut} className="p-1 hover:bg-slate-200 rounded" title="Zoom out"><ZoomOut size={16} /></button>
            <button onClick={zoomIn} className="p-1 hover:bg-slate-200 rounded" title="Zoom in"><ZoomIn size={16} /></button>
            <button onClick={undo} disabled={historyStep === 0} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Undo (Ctrl+Z)"><Undo2 size={16} /></button>
-           <button onClick={redo} disabled={historyStep >= history.length - 1} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Redo (Ctrl+Y)"><RotateCw size={16} /></button>
+           <button onClick={redo} disabled={!canRedo} className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Redo (Ctrl+Y)"><RotateCw size={16} /></button>
            <div className="w-px h-4 bg-slate-300" />
            <span className="text-xs text-slate-400 font-medium">{pageIndex + 1} / {totalPages}</span>
            <div className="w-px h-4 bg-slate-300" />
@@ -1630,9 +1630,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
              <div className="absolute left-0 top-1/2 -translate-y-1/2 bg-indigo-500 text-white text-[8px] px-1 rounded font-bold [writing-mode:vertical-lr]">CENTER</div>
           </div>
         )}
+      </div>
 
-        {/* --- Contextual Properties / Tool Options Bar --- */}
-        {(mode !== 'select' || !!activeElementId) && (() => {
+      {/* ─── PROPERTIES / TOOL SETTINGS BAR — always visible, outside scroll ─── */}
+      {(mode !== 'select' || !!activeElementId) && (() => {
           const activeEl = activeElementId ? elements.find(e => e.id === activeElementId) : null;
           return (
             <div className="flex items-center gap-3 px-6 py-2 bg-white border-t border-slate-200 z-50 overflow-x-auto custom-scrollbar min-h-[48px] shrink-0">
@@ -1779,8 +1780,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               )}
             </div>
           );
-        })()}
-      </div>
+      })()}
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
