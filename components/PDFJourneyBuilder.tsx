@@ -40,6 +40,9 @@ export interface Field {
   maxLength?: number;
   helpText?: string;
   example?: string;
+  placeholder?: string;
+  min?: number;
+  max?: number;
   conditions?: ConditionGroup[];
   acceptedTypes?: string[];
   maxSize?: number;
@@ -92,6 +95,20 @@ const autoStepTitle = (fields: Field[], n: number) => {
   if (ns.some((x) => /date/.test(x))) return "Date & Confirmation";
   return `Section ${n}`;
 };
+
+const FIELD_TYPES: { type: string; label: string; emoji: string }[] = [
+  { type: 'text',      label: 'Short Text',  emoji: 'T' },
+  { type: 'email',     label: 'Email',       emoji: '@' },
+  { type: 'phone',     label: 'Phone',       emoji: '☎' },
+  { type: 'number',    label: 'Number',      emoji: '#' },
+  { type: 'date',      label: 'Date',        emoji: '📅' },
+  { type: 'select',    label: 'Choice',      emoji: '⚡' },
+  { type: 'yes-no',    label: 'Yes / No',    emoji: '?' },
+  { type: 'rating',    label: 'Rating',      emoji: '★' },
+  { type: 'scale',     label: 'Scale',       emoji: '━' },
+  { type: 'checkbox',  label: 'Checkbox',    emoji: '☑' },
+  { type: 'signature', label: 'Signature',   emoji: '✍' },
+];
 
 const FALLBACK_STEPS: Step[] = [
   {
@@ -209,6 +226,7 @@ function SignatureModal({ onSign, onCancel, allowType }: { onSign: (v: string) =
 // ─── Field Renderer ───────────────────────────────────────────────────────────
 
 function FieldInput({ field, value, onChange, error }: { field: Field; value: any; onChange: (v: any) => void; error?: string | null }) {
+  const [hoverStar, setHoverStar] = React.useState(0);
   const base: React.CSSProperties = {
     width: "100%",
     background: "rgba(15,23,42,0.9)",
@@ -222,6 +240,18 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
     boxShadow: error ? "0 0 0 3px rgba(248, 113, 113, 0.1)" : "none",
   };
 
+  const footer = (
+    <>
+      {(field.helpText || field.validationType) && (
+        <p style={{ fontSize: 11, color: "#64748b", marginTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+          <span>{field.helpText}</span>
+          {field.validationType && <span style={{ opacity: 0.7, fontStyle: 'italic' }}>{getFormatHint(field.validationType)}</span>}
+        </p>
+      )}
+      {error && <p style={{ fontSize: 11, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{error}</p>}
+    </>
+  );
+
   if (field.type === "checkbox") {
     return (
       <div>
@@ -233,42 +263,125 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
       </div>
     );
   }
-  if (field.type === "select") {
+
+  if (field.type === "yes-no") {
     return (
-      <select value={value || ""} onChange={(e) => onChange(e.target.value)} style={{ ...base, cursor: "pointer" }}>
-        <option value="">- Select -</option>
-        {field.options.map((o) => ( <option key={o} value={o}>{o}</option> ))}
-      </select>
-    );
-  }
-  if (field.type === "signature") {
-    return (
-      <div 
-        onClick={() => onChange('OPEN_SIGN_MODAL')}
-        style={{ ...base, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderStyle: value ? 'solid' : 'dashed', borderColor: value ? 'var(--brand-primary)' : 'rgba(71,85,105,0.45)' }}
-      >
-        {value ? (
-          <img src={value} style={{ maxHeight: '100%', maxWidth: '100%' }} />
-        ) : (
-          <div style={{ textAlign: 'center' }}>
-            <PenTool size={20} style={{ color: 'var(--brand-primary)', marginBottom: 4 }} />
-            <div style={{ fontSize: 12, color: '#64748b' }}>Click to Sign</div>
-          </div>
-        )}
+      <div>
+        <div className="jb-yes-no">
+          <button className={`jb-yes-no-btn yes${value === 'Yes' ? ' selected' : ''}`} onClick={() => onChange('Yes')}>👍 Yes</button>
+          <button className={`jb-yes-no-btn no${value === 'No' ? ' selected' : ''}`} onClick={() => onChange('No')}>👎 No</button>
+        </div>
+        {footer}
       </div>
     );
   }
-  if (field.type === "date") return <input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} style={base} />;
+
+  if (field.type === "rating") {
+    const max = field.max || 5;
+    return (
+      <div>
+        <div className="jb-stars">
+          {Array.from({ length: max }, (_, i) => i + 1).map(n => (
+            <span
+              key={n}
+              className={`jb-star${(hoverStar || value || 0) >= n ? ' active' : ''}`}
+              onMouseEnter={() => setHoverStar(n)}
+              onMouseLeave={() => setHoverStar(0)}
+              onClick={() => onChange(n)}
+            >★</span>
+          ))}
+        </div>
+        {value ? <p style={{ fontSize: 11, color: 'var(--brand-primary)', marginTop: 6, fontWeight: 700 }}>{value} / {max} stars</p> : null}
+        {footer}
+      </div>
+    );
+  }
+
+  if (field.type === "scale") {
+    const min = field.min ?? 1;
+    const max = field.max ?? 10;
+    const minLabel = field.options?.[0] || 'Not at all';
+    const maxLabel = field.options?.[1] || 'Absolutely';
+    return (
+      <div className="jb-scale">
+        <div className="jb-scale-value">{value ?? ''}</div>
+        <input
+          type="range" min={min} max={max} step={1}
+          value={value ?? min}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{ width: '100%' }}
+        />
+        <div className="jb-scale-labels"><span>{minLabel}</span><span>{maxLabel}</span></div>
+        {footer}
+      </div>
+    );
+  }
+
+  if (field.type === "select") {
+    if (field.options.length > 0 && field.options.length <= 8) {
+      return (
+        <div>
+          <div className="jb-choice-grid">
+            {field.options.map(o => (
+              <button key={o} className={`jb-choice-btn${value === o ? ' selected' : ''}`} onClick={() => onChange(o)}>{o}</button>
+            ))}
+          </div>
+          {footer}
+        </div>
+      );
+    }
+    return (
+      <div>
+        <select value={value || ""} onChange={(e) => onChange(e.target.value)} style={{ ...base, cursor: "pointer" }}>
+          <option value="">- Select -</option>
+          {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        {footer}
+      </div>
+    );
+  }
+
+  if (field.type === "signature") {
+    return (
+      <div>
+        <div
+          onClick={() => onChange('OPEN_SIGN_MODAL')}
+          style={{ ...base, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderStyle: value ? 'solid' : 'dashed', borderColor: value ? 'var(--brand-primary)' : 'rgba(71,85,105,0.45)' }}
+        >
+          {value ? (
+            <img src={value} style={{ maxHeight: '100%', maxWidth: '100%' }} />
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <PenTool size={20} style={{ color: 'var(--brand-primary)', marginBottom: 4 }} />
+              <div style={{ fontSize: 12, color: '#64748b' }}>Click to Sign</div>
+            </div>
+          )}
+        </div>
+        {footer}
+      </div>
+    );
+  }
+
+  if (field.type === "date") {
+    return (
+      <div>
+        <input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} style={base} />
+        {footer}
+      </div>
+    );
+  }
+
+  const inputType = field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : field.type === 'phone' ? 'tel' : 'text';
   return (
     <div>
       <div style={{ position: 'relative' }}>
-        <input 
-          type="text" 
-          value={value || ""} 
-          placeholder={field.example || `Enter ${field.label.toLowerCase()}`} 
-          onChange={(e) => onChange(e.target.value)} 
-          style={base} 
-          maxLength={field.maxLength} 
+        <input
+          type={inputType}
+          value={value || ""}
+          placeholder={field.placeholder || field.example || `Enter ${field.label.toLowerCase()}`}
+          onChange={(e) => onChange(e.target.value)}
+          style={base}
+          maxLength={field.maxLength}
         />
         {field.maxLength && (
           <div style={{ position: 'absolute', bottom: -18, right: 0, fontSize: 9, fontWeight: 700, color: (value?.length || 0) > field.maxLength * 0.9 ? 'var(--brand-error)' : '#64748b' }}>
@@ -276,13 +389,7 @@ function FieldInput({ field, value, onChange, error }: { field: Field; value: an
           </div>
         )}
       </div>
-      {(field.helpText || field.validationType) && (
-        <p style={{ fontSize: 11, color: "#64748b", marginTop: field.maxLength ? 12 : 6, display: 'flex', justifyContent: 'space-between' }}>
-          <span>{field.helpText}</span>
-          {field.validationType && <span style={{ opacity: 0.7, fontStyle: 'italic' }}>{getFormatHint(field.validationType)}</span>}
-        </p>
-      )}
-      {error && <p style={{ fontSize: 11, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{error}</p>}
+      {footer}
     </div>
   );
 }
@@ -357,6 +464,87 @@ const CSS = `
   .field-enter { opacity: 0; transform: translateY(20px); }
   .field-enter-active { opacity: 1; transform: translateY(0); }
   .field-exit { opacity: 0; transform: translateY(-20px); }
+
+  /* ── STEP PROGRESS ───────────────────────────────────────── */
+  .jb-step-progress { display: flex; align-items: flex-start; margin-bottom: 36px; }
+  .jb-step-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .jb-step-item:not(:last-child)::after { content: ''; position: absolute; top: 15px; left: 50%; width: 100%; height: 2px; background: rgba(255,255,255,0.07); z-index: 0; }
+  .jb-step-item.done::after { background: var(--brand-primary); opacity: 0.6; }
+  .jb-step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #475569; background: rgba(0,0,0,0.4); z-index: 1; position: relative; transition: all 0.3s; flex-shrink: 0; }
+  .jb-step-item.done .jb-step-circle { background: var(--brand-primary); border-color: var(--brand-primary); color: #000; }
+  .jb-step-item.active .jb-step-circle { border-color: var(--brand-primary); color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(245,158,11,0.15); }
+  .jb-step-label { font-size: 9px; font-weight: 700; color: #334155; margin-top: 6px; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jb-step-item.active .jb-step-label { color: var(--brand-primary); }
+  .jb-step-item.done .jb-step-label { color: #64748b; }
+
+  /* ── STEP ANIMATIONS ─────────────────────────────────────── */
+  @keyframes jbSlideInRight { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes jbSlideInLeft  { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: translateX(0); } }
+  .jb-anim-forward  { animation: jbSlideInRight 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
+  .jb-anim-backward { animation: jbSlideInLeft  0.32s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* ── CHOICE BUTTONS ──────────────────────────────────────── */
+  .jb-choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 4px; }
+  .jb-choice-btn { padding: 14px 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1.5px solid rgba(71,85,105,0.25); color: #cbd5e1; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s; text-align: center; width: 100%; }
+  .jb-choice-btn:hover { border-color: rgba(245,158,11,0.5); color: var(--brand-primary); background: rgba(245,158,11,0.04); }
+  .jb-choice-btn.selected { background: rgba(245,158,11,0.1); border-color: var(--brand-primary); color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(245,158,11,0.08); }
+
+  /* ── YES/NO ──────────────────────────────────────────────── */
+  .jb-yes-no { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .jb-yes-no-btn { padding: 22px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1.5px solid rgba(71,85,105,0.25); color: #cbd5e1; font-size: 17px; font-weight: 800; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .jb-yes-no-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .jb-yes-no-btn.yes.selected { background: rgba(16,185,129,0.12); border-color: #10b981; color: #10b981; }
+  .jb-yes-no-btn.no.selected  { background: rgba(248,113,113,0.12); border-color: #f87171; color: #f87171; }
+
+  /* ── RATING STARS ────────────────────────────────────────── */
+  .jb-stars { display: flex; gap: 6px; }
+  .jb-star { font-size: 38px; cursor: pointer; transition: transform 0.12s; line-height: 1; color: rgba(255,255,255,0.1); user-select: none; }
+  .jb-star.active { color: var(--brand-primary); }
+  .jb-star:hover { transform: scale(1.2); }
+
+  /* ── SCALE SLIDER ────────────────────────────────────────── */
+  .jb-scale { display: flex; flex-direction: column; gap: 10px; }
+  .jb-scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; font-weight: 600; }
+  .jb-scale-value { font-size: 40px; font-weight: 900; color: var(--brand-primary); text-align: center; min-height: 50px; line-height: 1.1; }
+  .jb-scale input[type=range] { width: 100%; accent-color: var(--brand-primary); cursor: pointer; }
+
+  /* ── KEYBOARD HINT ───────────────────────────────────────── */
+  .jb-key-hint { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #334155; font-weight: 600; }
+  .jb-key-badge { padding: 2px 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 5px; font-size: 10px; background: rgba(255,255,255,0.02); }
+
+  /* ── EDITOR FIELD PANEL ──────────────────────────────────── */
+  .jb-field-panel { border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 6px; overflow: hidden; background: rgba(0,0,0,0.2); transition: border-color 0.2s; }
+  .jb-field-panel.dragging { opacity: 0.4; }
+  .jb-field-panel:hover { border-color: rgba(245,158,11,0.15); }
+  .jb-field-panel-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; }
+  .jb-drag-handle { color: #1e293b; cursor: grab; display: flex; align-items: center; padding: 2px; }
+  .jb-drag-handle:active { cursor: grabbing; }
+  .jb-field-type-badge { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 20px; background: rgba(245,158,11,0.08); color: #f59e0b; flex-shrink: 0; margin-left: auto; }
+  .jb-field-panel-body { padding: 0 12px 12px; border-top: 1px solid rgba(255,255,255,0.04); animation: jbSlideInRight 0.2s; }
+  .jb-field-label-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px; color: #e2e8f0; font-size: 13px; outline: none; margin-top: 12px; box-sizing: border-box; }
+  .jb-field-label-input:focus { border-color: var(--brand-primary); }
+  .jb-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; }
+  .jb-type-btn { padding: 7px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color: #475569; font-size: 10px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .jb-type-btn:hover { border-color: rgba(245,158,11,0.2); color: #94a3b8; }
+  .jb-type-btn.active { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #f59e0b; }
+  .jb-field-toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 11px; color: #64748b; }
+  .jb-toggle-switch { width: 32px; height: 18px; background: rgba(255,255,255,0.1); border-radius: 9px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+  .jb-toggle-switch.on { background: var(--brand-primary); }
+  .jb-toggle-switch::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+  .jb-toggle-switch.on::after { transform: translateX(14px); }
+  .jb-drop-indicator { border: 2px dashed rgba(245,158,11,0.35); border-radius: 12px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(245,158,11,0.6); margin-bottom: 6px; }
+  .jb-add-field-btn { width: 100%; padding: 10px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 10px; background: transparent; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .jb-add-field-btn:hover { border-color: rgba(245,158,11,0.3); color: #f59e0b; background: rgba(245,158,11,0.03); }
+  .jb-add-field-picker { background: #0a0f1c; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-top: 6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .jb-add-type-btn { padding: 10px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color: #64748b; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .jb-add-type-btn:hover { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); color: #f59e0b; }
+  @media (max-width: 640px) {
+    .jb-step-label { display: none; }
+    .jb-step-circle { width: 24px; height: 24px; font-size: 9px; }
+    .jb-step-item:not(:last-child)::after { top: 11px; }
+    .jb-yes-no { gap: 10px; }
+    .jb-yes-no-btn { padding: 16px 12px; font-size: 15px; }
+  }
 `;
 
 // --- Main Component -----------------------------------------------------------
@@ -405,6 +593,11 @@ export const PDFJourneyBuilder: React.FC = () => {
   const stepStartTimeRef = useRef<number>(0);
   const [isComplianceMode, setIsComplianceMode] = useState(false);
   const [variant, setVariant] = useState<'v1' | 'v2'>('v1');
+  const [stepDir, setStepDir] = useState<'forward' | 'backward'>('forward');
+  const [stepKey, setStepKey] = useState(0);
+  const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
+  const [dragFieldIdx, setDragFieldIdx] = useState<{ stepId: string; idx: number } | null>(null);
+  const [showAddField, setShowAddField] = useState<string | null>(null);
 
   useEffect(() => {
     // Detect template from URL
@@ -585,11 +778,13 @@ export const PDFJourneyBuilder: React.FC = () => {
       }
       setFieldErrors({});
       if (activeFieldIndex < visible.length - 1) {
+        setStepDir('forward'); setStepKey(k => k + 1);
         setActiveFieldIndex(activeFieldIndex + 1);
       } else {
         if (currentStep < steps.length - 1) {
           const duration = Math.floor((Date.now() - stepStartTimeRef.current) / 1000);
           trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id, duration, variant });
+          setStepDir('forward'); setStepKey(k => k + 1);
           setCurrentStep(p => p + 1);
           stepStartTimeRef.current = Date.now();
           setActiveFieldIndex(0);
@@ -602,6 +797,7 @@ export const PDFJourneyBuilder: React.FC = () => {
         if (currentStep < steps.length - 1) {
           const duration = Math.floor((Date.now() - stepStartTimeRef.current) / 1000);
           trackJourneyEvent(fileName || 'unnamed', 'step_complete', { stepId: step.id, duration, variant });
+          setStepDir('forward'); setStepKey(k => k + 1);
           setCurrentStep(p => p + 1);
           stepStartTimeRef.current = Date.now();
           setActiveFieldIndex(0);
@@ -621,17 +817,19 @@ export const PDFJourneyBuilder: React.FC = () => {
   const handleBack = () => {
     if (brandConfig.isFocusedMode) {
       if (activeFieldIndex > 0) {
+        setStepDir('backward'); setStepKey(k => k + 1);
         setActiveFieldIndex(activeFieldIndex - 1);
       } else if (currentStep > 0) {
         const prevStep = steps[currentStep - 1];
         const fieldConditions: Record<string, ConditionGroup[]> = {};
         prevStep.fields.forEach(f => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
         const visible = getVisibleFields(prevStep.fields, formData, fieldConditions);
+        setStepDir('backward'); setStepKey(k => k + 1);
         setCurrentStep(p => p - 1);
         setActiveFieldIndex(visible.length - 1);
       }
     } else {
-      if (currentStep > 0) setCurrentStep(p => p - 1);
+      if (currentStep > 0) { setStepDir('backward'); setStepKey(k => k + 1); setCurrentStep(p => p - 1); }
     }
   };
 
@@ -1078,40 +1276,138 @@ export const PDFJourneyBuilder: React.FC = () => {
                     <div className="jb-card" style={{ maxWidth: 600 }}>
                       {isEditorMode ? (
                         <>
-                          <input style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, fontWeight: 800, width: '100%', marginBottom: 20 }} value={s?.title} onChange={e => updateStep(s.id, { title: e.target.value })} />
-                          {s?.fields.map(f => (
-                            <div key={f.id} style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 12, marginBottom: 10 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                                <span style={{ fontSize: 10, color: '#64748b' }}>{f.type.toUpperCase()}</span>
-                                <Trash2 size={12} onClick={() => removeFieldFromStep(s.id, f.id)} style={{ cursor: 'pointer' }} />
+                          {/* Step title editor */}
+                          <input
+                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, fontWeight: 800, width: '100%', marginBottom: 24, outline: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}
+                            value={s?.title}
+                            onChange={e => updateStep(s.id, { title: e.target.value })}
+                            placeholder="Step title..."
+                          />
+
+                          {/* Draggable field panels */}
+                          {s?.fields.map((f, fi) => {
+                            const isExpanded = expandedFieldId === f.id;
+                            const isDraggingThis = dragFieldIdx?.stepId === s.id && dragFieldIdx?.idx === fi;
+                            return (
+                              <div
+                                key={f.id}
+                                className={`jb-field-panel${isDraggingThis ? ' dragging' : ''}`}
+                                draggable
+                                onDragStart={() => setDragFieldIdx({ stepId: s.id, idx: fi })}
+                                onDragOver={e => { e.preventDefault(); }}
+                                onDrop={() => {
+                                  if (!dragFieldIdx || dragFieldIdx.stepId !== s.id || dragFieldIdx.idx === fi) { setDragFieldIdx(null); return; }
+                                  const newFields = [...s.fields];
+                                  const [moved] = newFields.splice(dragFieldIdx.idx, 1);
+                                  newFields.splice(fi, 0, moved);
+                                  updateStep(s.id, { fields: newFields });
+                                  setDragFieldIdx(null);
+                                }}
+                                onDragEnd={() => setDragFieldIdx(null)}
+                              >
+                                <div className="jb-field-panel-header" onClick={() => setExpandedFieldId(isExpanded ? null : f.id)}>
+                                  <span className="jb-drag-handle" onMouseDown={e => e.stopPropagation()}>⠿</span>
+                                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.label}</span>
+                                  <span className="jb-field-type-badge">{f.type}</span>
+                                  <Trash2 size={12} style={{ color: '#334155', cursor: 'pointer', marginLeft: 8, flexShrink: 0 }} onClick={e => { e.stopPropagation(); removeFieldFromStep(s.id, f.id); if (expandedFieldId === f.id) setExpandedFieldId(null); }} />
+                                  <ChevronDown size={12} style={{ color: '#475569', marginLeft: 6, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                                </div>
+                                {isExpanded && (
+                                  <div className="jb-field-panel-body">
+                                    <input
+                                      className="jb-field-label-input"
+                                      value={f.label}
+                                      onChange={e => updateField(s.id, f.id, { label: e.target.value })}
+                                      placeholder="Field label..."
+                                    />
+                                    <input
+                                      className="jb-field-label-input"
+                                      value={f.placeholder || ''}
+                                      onChange={e => updateField(s.id, f.id, { placeholder: e.target.value })}
+                                      placeholder="Placeholder / hint text..."
+                                      style={{ marginTop: 6 }}
+                                    />
+                                    <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginTop: 12, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Field Type</div>
+                                    <div className="jb-type-grid">
+                                      {FIELD_TYPES.map(ft => (
+                                        <button key={ft.type} className={`jb-type-btn${f.type === ft.type ? ' active' : ''}`} onClick={() => updateField(s.id, f.id, { type: ft.type })}>
+                                          <div style={{ fontSize: 14, marginBottom: 2 }}>{ft.emoji}</div>
+                                          <div>{ft.label}</div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                    {['select', 'yes-no'].includes(f.type) && (
+                                      <div style={{ marginTop: 10 }}>
+                                        <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Options (one per line)</div>
+                                        <textarea
+                                          className="jb-field-label-input"
+                                          rows={3}
+                                          value={(f.options || []).join('\n')}
+                                          onChange={e => updateField(s.id, f.id, { options: e.target.value.split('\n').filter(Boolean) })}
+                                          placeholder="Option 1&#10;Option 2&#10;Option 3"
+                                          style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="jb-field-toggle">
+                                      <span>Required</span>
+                                      <div className={`jb-toggle-switch${f.required ? ' on' : ''}`} onClick={() => updateField(s.id, f.id, { required: !f.required })} />
+                                    </div>
+                                    <div className="jb-field-toggle" style={{ marginTop: 6 }}>
+                                      <input
+                                        className="jb-field-label-input"
+                                        value={f.helpText || ''}
+                                        onChange={e => updateField(s.id, f.id, { helpText: e.target.value })}
+                                        placeholder="Help text (optional)..."
+                                        style={{ marginTop: 0, flex: 1 }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                              <input className="brand-input" value={f.label} onChange={e => updateField(s.id, f.id, { label: e.target.value })} style={{ marginBottom: 0 }} />
+                            );
+                          })}
+
+                          {/* Add Field */}
+                          <button className="jb-add-field-btn" onClick={() => setShowAddField(showAddField === s.id ? null : s.id)}>
+                            <Plus size={14} /> Add Field
+                          </button>
+                          {showAddField === s.id && (
+                            <div className="jb-add-field-picker">
+                              {FIELD_TYPES.map(ft => (
+                                <button key={ft.type} className="jb-add-type-btn" onClick={() => {
+                                  const newField: Field = { id: `f_${Date.now()}`, name: `field_${Date.now()}`, label: ft.label, type: ft.type, options: [], required: false };
+                                  updateStep(s.id, { fields: [...(s.fields || []), newField] });
+                                  setExpandedFieldId(newField.id);
+                                  setShowAddField(null);
+                                }}>
+                                  <div style={{ fontSize: 16, marginBottom: 2 }}>{ft.emoji}</div>
+                                  <div>{ft.label}</div>
+                                </button>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </>
                       ) : (
                         <>
+                          {/* LIVE PREVIEW — renders actual inputs */}
                           {brandConfig.logoUrl && <img src={brandConfig.logoUrl} style={{ height: brandConfig.logoHeight || 32, marginBottom: 24, display: 'block', margin: '0 auto' }} />}
-                          <h2 className="jb-title" style={{ color: 'var(--brand-text)' }}>{brandConfig.journeyTitle || s?.title}</h2>
+                          <h2 className="jb-title" style={{ color: 'var(--brand-text)', marginBottom: 24 }}>{brandConfig.journeyTitle || s?.title}</h2>
                           {s && (() => {
                             const visible = getVisibleFields(s.fields, formData, fieldConditions);
-                            if (brandConfig.isFocusedMode) {
-                              const f = visible[0]; // Show first field in preview
-                              if (!f) return null;
-                              return (
-                                <div key={f.id} className="jb-field" style={{ marginBottom: 16 }}>
-                                  <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}</label>
-                                  <div style={{ height: 44, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }} />
-                                </div>
-                              );
-                            }
-                            return visible.map(f => (
-                              <div key={f.id} className="jb-field" style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}</label>
-                                <div style={{ height: 44, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }} />
+                            const previewFields = brandConfig.isFocusedMode ? visible.slice(0, 1) : visible;
+                            return previewFields.map(f => (
+                              <div key={f.id} className="jb-field" style={{ marginBottom: 20, opacity: 0.8, pointerEvents: 'none' }}>
+                                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>
+                                  {f.label}{f.required && <span style={{ color: 'var(--brand-error)', marginLeft: 3 }}>*</span>}
+                                </label>
+                                <FieldInput field={f} value={undefined} onChange={() => {}} error={null} />
                               </div>
                             ));
                           })()}
+                          <div style={{ marginTop: 20, opacity: 0.4 }}>
+                            <div className="jb-btn jb-btn-gold" style={{ pointerEvents: 'none' }}>Continue →</div>
+                          </div>
                         </>
                       )}
                     </div>
@@ -1154,75 +1450,88 @@ export const PDFJourneyBuilder: React.FC = () => {
               const fieldConditions: Record<string, ConditionGroup[]> = {};
               s.fields.forEach((f: any) => { if (f.conditions) fieldConditions[f.id] = f.conditions; });
               
+              const isLastStep = currentStep === activeSteps.length - 1;
+              const visible = getVisibleFields(s.fields, formData, fieldConditions);
+              const isLastField = activeFieldIndex === visible.length - 1;
+              const showReview = brandConfig.isFocusedMode ? (isLastField && isLastStep) : isLastStep;
+              const AUTO_ADVANCE_TYPES = ['select', 'yes-no', 'rating'];
+
               return (
                 <>
-                  <div className="jb-pills" style={{ marginBottom: 30, display: 'flex', gap: 6 }}>
-                    {activeSteps.map((_, i) => <div key={i} className="jb-pill" style={{ height: 4, flex: 1, borderRadius: 2, background: i <= currentStep ? 'var(--brand-primary)' : 'rgba(255,255,255,0.1)' }} />)}
-                  </div>
-                  <h2 className="jb-title">{brandConfig.journeyTitle || s.title}</h2>
-                  <div style={{ marginTop: 24, minHeight: brandConfig.isFocusedMode ? 280 : 'auto', position: 'relative' }}>
-                    {(() => {
-                      const visible = getVisibleFields(s.fields, formData, fieldConditions);
-                      if (brandConfig.isFocusedMode) {
+                  {/* Numbered step progress */}
+                  {activeSteps.length > 1 && (
+                    <div className="jb-step-progress">
+                      {activeSteps.map((st: any, i: number) => (
+                        <div key={i} className={`jb-step-item${i < currentStep ? ' done' : i === currentStep ? ' active' : ''}`}>
+                          <div className="jb-step-circle">
+                            {i < currentStep ? '✓' : i + 1}
+                          </div>
+                          <div className="jb-step-label">{st.title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Animated step content */}
+                  <div key={stepKey} className={stepDir === 'forward' ? 'jb-anim-forward' : 'jb-anim-backward'}>
+                    <h2 className="jb-title" style={{ marginBottom: 4 }}>
+                      {brandConfig.isFocusedMode
+                        ? (visible[activeFieldIndex]?.label || s.title)
+                        : (brandConfig.journeyTitle || s.title)}
+                    </h2>
+                    {brandConfig.isFocusedMode && (
+                      <div style={{ fontSize: 12, color: '#475569', fontWeight: 700, marginBottom: 28, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        {activeFieldIndex + 1} / {visible.length}
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: brandConfig.isFocusedMode ? 0 : 24, minHeight: brandConfig.isFocusedMode ? 200 : 'auto', position: 'relative' }}>
+                      {brandConfig.isFocusedMode ? (() => {
                         const f = visible[activeFieldIndex];
                         if (!f) return null;
                         return (
-                          <div key={f.id} className="field-container">
-                             <div className="jb-field" style={{ marginBottom: 20 }}>
-                                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--brand-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                  {currentLanguage === 'en' ? 'Question' : {es:'Pregunta', fr:'Question', de:'Frage'}[currentLanguage] || 'Question'} {activeFieldIndex + 1} of {visible.length}
-                                </div>
-                                <label style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-text)', display: 'block', marginBottom: 12, lineHeight: 1.2 }}>{f.label}{f.required && '*'}</label>
-                                <FieldInput 
-                                  field={f} 
-                                  value={formData[f.id]} 
-                                  onChange={v => {
-                                    setField(f.id, v);
-                                    // Auto-transition for single selection
-                                    if (['select', 'checkbox'].includes(f.type) && v) {
-                                      setTimeout(handleNext, 400);
-                                    }
-                                  }} 
-                                  error={fieldErrors[f.id]} 
-                                />
-                             </div>
+                          <div className="jb-field" style={{ marginBottom: 20 }}>
+                            <FieldInput
+                              field={f}
+                              value={formData[f.id]}
+                              onChange={v => {
+                                setField(f.id, v);
+                                if (AUTO_ADVANCE_TYPES.includes(f.type) && v) setTimeout(handleNext, 350);
+                              }}
+                              error={fieldErrors[f.id]}
+                            />
                           </div>
                         );
-                      }
-                      return visible.map(f => (
+                      })() : visible.map(f => (
                         <div key={f.id} className="jb-field" style={{ marginBottom: 20 }}>
-                          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>{f.label}{f.required && '*'}</label>
+                          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-text-secondary)', display: 'block', marginBottom: 8 }}>
+                            {f.label}{f.required && <span style={{ color: 'var(--brand-error)', marginLeft: 3 }}>*</span>}
+                          </label>
                           <FieldInput field={f} value={formData[f.id]} onChange={v => setField(f.id, v)} error={fieldErrors[f.id]} />
                         </div>
-                      ));
-                    })()}
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Trust and Time Estimator */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 24, paddingTop: 20 }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {brandConfig.showSecurityBadges !== false && (
-                          <SecurityTrust 
-                            horizontal 
-                            enabledBadges={brandConfig.enabledSecurityBadges} 
-                            className="opacity-70 scale-90 origin-left" 
-                          />
-                        )}
-                        <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textAlign: 'right', flex: 1 }}>
-                          <span style={{ color: 'var(--brand-primary)' }}>EST. REMAINING: </span>
-                          {Math.max(1, Math.ceil((steps.length - currentStep) * 0.8))} MINS
-                        </div>
-                     </div>
+                  {/* Footer: trust + keyboard hint + nav */}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 28, paddingTop: 18 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      {brandConfig.showSecurityBadges !== false && (
+                        <SecurityTrust horizontal enabledBadges={brandConfig.enabledSecurityBadges} className="opacity-70 scale-90 origin-left" />
+                      )}
+                      <div className="jb-key-hint" style={{ marginLeft: 'auto' }}>
+                        <span className="jb-key-badge">↵ Enter</span>
+                        <span style={{ color: '#334155' }}>to continue</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="jb-btn-row" style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+                  <div className="jb-btn-row" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
                     {(currentStep > 0 || (brandConfig.isFocusedMode && activeFieldIndex > 0)) && (
                       <button className="jb-btn jb-btn-ghost" style={{ flex: 1 }} onClick={handleBack}>{t('back')}</button>
                     )}
                     <button className="jb-btn jb-btn-gold" style={{ flex: 2 }} onClick={handleNext}>
-                      {brandConfig.isFocusedMode 
-                        ? (activeFieldIndex === getVisibleFields(s.fields, formData, fieldConditions).length - 1 && currentStep === activeSteps.length - 1 ? t('review') : t('continue'))
-                        : (currentStep === activeSteps.length - 1 ? t('review') : t('continue'))}
+                      {showReview ? t('review') : t('continue')}
                     </button>
                   </div>
                 </>
