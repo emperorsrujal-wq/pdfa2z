@@ -14,7 +14,7 @@ interface SEOProps {
 
 const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
-export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang = 'en', tool }) => {
+export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema, parentSlug, currentLang: _currentLang = 'en', tool }) => {
   const siteUrl = 'https://pdfa2z.com';
 
   // Smart Canonicalization Logic:
@@ -35,6 +35,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
   const ogImage = `${siteUrl}/pwa-512x512.png`;
   const ogWidth = "512";
   const ogHeight = "512";
+  const ogImageAlt = `PDFA2Z - ${title}`;
 
   // Generate Hreflang Tags
   const hreflangs = [
@@ -77,6 +78,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       {/* Standard Meta */}
       <meta name="description" content={finalDescription} />
       <meta name="keywords" content={keywords} />
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
       {/* Canonical */}
       <link rel="canonical" href={fullCanonical} />
@@ -92,9 +94,11 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       <meta property="og:url" content={fullCanonical} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="PDFA2Z" />
+      <meta property="og:locale" content="en_US" />
       <meta property="og:image" content={ogImage} />
       <meta property="og:image:width" content={ogWidth} />
       <meta property="og:image:height" content={ogHeight} />
+      <meta property="og:image:alt" content={ogImageAlt} />
 
       {/* Twitter Tags */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -103,6 +107,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={finalDescription} />
       <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content={ogImageAlt} />
 
       {/* Schema */}
       {schema && (
@@ -119,13 +124,25 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
 const generateOrganizationSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": "https://pdfa2z.com/#organization",
   "name": "PDFA2Z",
   "url": "https://pdfa2z.com",
-  "logo": "https://pdfa2z.com/icon.svg",
-  "description": "Professional-grade PDF and image tools powered by AI. Merge, compress, convert, and analyze documents completely client-side.",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://pdfa2z.com/icon.svg",
+    "width": 512,
+    "height": 512
+  },
+  "description": "100+ free online PDF and image tools. Merge, compress, convert, edit and more — no signup required.",
+  "foundingDate": "2024",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "url": "https://pdfa2z.com/contact",
+    "availableLanguage": ["English", "Spanish", "French", "Hindi"]
+  },
   "sameAs": [
-    "https://twitter.com/pdfa2z",
-    "https://github.com/pdfa2z"
+    "https://twitter.com/pdfa2z"
   ]
 });
 
@@ -214,21 +231,34 @@ export const generateToolSchema = (tool: any) => {
     "@type": "Article",
     "headline": tool.title,
     "description": tool.description,
-    "image": `https://pdfa2z.com/pwa-512x512.png`,
+    "image": {
+      "@type": "ImageObject",
+      "url": "https://pdfa2z.com/pwa-512x512.png",
+      "width": 512,
+      "height": 512
+    },
     "author": {
       "@type": "Person",
-      "name": "PDFA2Z Expert"
+      "name": "PDFA2Z Editorial Team",
+      "url": "https://pdfa2z.com/about"
     },
     "publisher": {
       "@type": "Organization",
+      "@id": "https://pdfa2z.com/#organization",
       "name": "PDFA2Z",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://pdfa2z.com/pwa-512x512.png"
+        "url": "https://pdfa2z.com/icon.svg",
+        "width": 512,
+        "height": 512
       }
     },
-    "datePublished": "2026-02-26",
-    "dateModified": new Date().toISOString().split('T')[0]
+    "datePublished": tool.datePublished || new Date().toISOString().split('T')[0],
+    "dateModified": tool.dateModified || new Date().toISOString().split('T')[0],
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://pdfa2z.com/${tool.slug}`
+    }
   } : null;
 
   const organizationSchema = tool.slug === '' ? generateOrganizationSchema() : null;

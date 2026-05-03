@@ -65,6 +65,8 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   const [showColorPicker, setShowColorPicker] = React.useState<null | 'color' | 'bg' | 'border'>(null);
   const [showFontPicker, setShowFontPicker] = React.useState(false);
   const [showSizePicker, setShowSizePicker] = React.useState(false);
+  const [showLinkInput, setShowLinkInput] = React.useState(false);
+  const [linkInputVal, setLinkInputVal] = React.useState('');
 
   const ColorDropdown = ({ selected, onSelect, title }: { selected?: string, onSelect: (color: string) => void, title: string }) => (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-[#ccc] p-[10px] shadow-2xl z-[400] w-[280px] animate-in fade-in slide-in-from-bottom-2">
@@ -166,10 +168,35 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </div>
             </button>
             {showSizePicker && (
-              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] p-1 shadow-2xl z-[400] grid grid-cols-3 gap-0.5 w-32 animate-in fade-in slide-in-from-bottom-2">
-                {SIZES.map(s => (
-                  <button key={s} onClick={() => { onUpdate(element.id, { size: s }); setShowSizePicker(false); }} className={`p-1.5 text-xs font-bold ${element.size === s ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>{s}</button>
-                ))}
+              <div className="absolute bottom-full left-0 mb-4 bg-white border border-[#ccc] shadow-2xl z-[400] w-36 animate-in fade-in slide-in-from-bottom-2 rounded-sm overflow-hidden">
+                <div className="p-1.5 border-b border-[#eee]">
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    max="200"
+                    defaultValue={element.size ?? 14}
+                    placeholder="Custom…"
+                    className="w-full px-2 py-1 text-xs font-bold text-indigo-600 border border-slate-200 rounded outline-none"
+                    onClick={e => e.stopPropagation()}
+                    onKeyDown={e => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') {
+                        const v = parseFloat((e.target as HTMLInputElement).value);
+                        if (!isNaN(v) && v > 0) { onUpdate(element.id, { size: v }); setShowSizePicker(false); }
+                      }
+                    }}
+                    onBlur={e => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v > 0) onUpdate(element.id, { size: v });
+                    }}
+                  />
+                </div>
+                <div className="p-1 grid grid-cols-3 gap-0.5">
+                  {SIZES.map(s => (
+                    <button key={s} onClick={() => { onUpdate(element.id, { size: s }); setShowSizePicker(false); }} className={`p-1.5 text-xs font-bold ${element.size === s ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>{s}</button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -222,15 +249,40 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
           </div>
 
           {/* Link */}
-          <button 
-            onClick={() => {
-              const url = prompt("Enter link URL:", element.linkUrl || "");
-              if (url !== null) onUpdate(element.id, { linkUrl: url });
-            }}
-            className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors"
-          >
-            <Link2 size={18} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => { setLinkInputVal(element.linkUrl || ''); setShowLinkInput(v => !v); setShowFontPicker(false); setShowSizePicker(false); setShowColorPicker(null); }}
+              className={`flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] transition-colors ${showLinkInput ? 'bg-blue-50 text-blue-600' : ''}`}
+            >
+              <Link2 size={18} />
+            </button>
+            {showLinkInput && (
+              <div className="absolute bottom-full left-0 mb-2 bg-white border border-[#ccc] rounded-lg shadow-2xl p-3 z-[500] w-64" onClick={e => e.stopPropagation()}>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Hyperlink URL</p>
+                <input
+                  type="url"
+                  value={linkInputVal}
+                  onChange={e => setLinkInputVal(e.target.value)}
+                  placeholder="https://example.com"
+                  autoFocus
+                  className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:border-blue-500 mb-2"
+                  onKeyDown={e => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') { onUpdate(element.id, { linkUrl: linkInputVal }); setShowLinkInput(false); }
+                    if (e.key === 'Escape') setShowLinkInput(false);
+                  }}
+                />
+                <div className="flex gap-1.5">
+                  <button onClick={() => { onUpdate(element.id, { linkUrl: linkInputVal }); setShowLinkInput(false); }}
+                    className="flex-1 py-1 bg-[#2196f3] text-white rounded text-xs font-bold hover:bg-[#1976d2] transition-colors">Apply</button>
+                  {element.linkUrl && (
+                    <button onClick={() => { onUpdate(element.id, { linkUrl: '' }); setShowLinkInput(false); }}
+                      className="px-2 py-1 border border-slate-200 text-red-500 rounded text-xs hover:bg-red-50 transition-colors">Remove</button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Move handle */}
           <button className="flex items-center justify-center w-10 h-8 text-[#333] hover:bg-slate-50 border-r border-[#eee] cursor-move transition-colors">

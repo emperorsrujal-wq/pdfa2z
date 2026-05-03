@@ -77,7 +77,9 @@ export interface BrandConfig {
   // Enterprise Features
   crmMappingEnabled?: boolean; // Enable CRM Auto-Mapping
   abTestingEnabled?: boolean;  // Enable A/B testing variants
-  
+  completionRedirectUrl?: string; // Redirect to this URL after successful submission
+  isQuizMode?: boolean; // Enable quiz/scoring mode with score reveal
+
   // Industry Vertical Features
   industryPreset?: 'mortgage' | 'legal' | 'real-estate' | 'banking' | 'business';
   isPipedaCompliant?: boolean; // Compliance flag

@@ -588,9 +588,9 @@ export const sampleBackgroundColor = async (
   });
 };
 
-export type EditElementType = 
-  'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'arrow' | 'audio' | 
-  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature';
+export type EditElementType =
+  'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'arrow' | 'audio' |
+  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature' | 'page-rotation';
 
 export type EditorMode =
   | 'select' | 'text' | 'draw' | 'erase' | 'smart-erase' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'picker' | 'magic-edit' | 'font-picker'
@@ -667,6 +667,15 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
   for (const el of elements) {
     const pages = pdfDoc.getPages();
     if (el.pageIndex < 0 || el.pageIndex >= pages.length) continue;
+
+    // Handle page-level transforms before any drawing
+    if (el.type === 'page-rotation') {
+      const targetPage = pages[el.pageIndex];
+      const normalised = (((el.rotation || 0) % 360) + 360) % 360;
+      targetPage.setRotation(degrees(normalised));
+      continue;
+    }
+
     const page = pages[el.pageIndex];
     const { width, height } = page.getSize();
     

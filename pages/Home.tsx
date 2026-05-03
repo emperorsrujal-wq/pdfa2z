@@ -4,7 +4,7 @@ import {
   Search, Star, Layers, Zap, Edit3, Wand2, FileText,
   Image as LucideImage, Video, PenTool, Scissors, Sparkles,
   BookOpen, ArrowRight, ShieldCheck, Lock, Clock, Globe2,
-  ChevronRight, TrendingUp
+  TrendingUp
 } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
 import { ToolType } from '../types';
@@ -40,27 +40,6 @@ export const Home: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [searchFocused, setSearchFocused] = React.useState(false);
-
-  const navigateToTool = (tool: ToolType, subMode?: any) => {
-    const entry = Object.values(TOOLS_REGISTRY).find(t => {
-      if (t.type !== tool) return false;
-      if (tool === ToolType.PDF_SUITE) return t.mode === (subMode || 'MENU');
-      if (tool === ToolType.IMAGE_TOOLKIT) return t.mode === (subMode || 'MENU');
-      if (tool === ToolType.VIDEO_SUITE) return t.mode === (subMode || 'DOWNLOAD');
-      return true;
-    }) || Object.values(TOOLS_REGISTRY).find(t => t.type === tool);
-
-    if (entry) {
-      const currentLang = i18n.language.split('-')[0];
-      const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-      navigate(`${langPrefix}/${entry.slug}`);
-    } else if (tool === ToolType.AI_WRITER) {
-      const currentLang = i18n.language.split('-')[0];
-      const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-      navigate(`${langPrefix}/ai-writer`);
-    }
-    window.scrollTo(0, 0);
-  };
 
   const seoData = TOOLS_REGISTRY['home'];
   const localizedSeoData = i18n.language !== 'en' && seoData.translations?.[i18n.language]
@@ -199,18 +178,18 @@ export const Home: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/80 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-[0.15em] mb-10 animate-float backdrop-blur-sm shadow-sm">
             <Sparkles size={13} />
-            Next-Gen Document Workstation
+            100+ Free Tools · No Signup Required
           </div>
 
           {/* Headline */}
           <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-6 tracking-[-0.03em] leading-[0.92]">
-            <span className="hero-gradient-text">Automated.</span>
+            <span className="hero-gradient-text">Free PDF</span>
             <br />
-            <span className="text-gradient-blue">Compliant Journeys.</span>
+            <span className="text-gradient-blue">&amp; Image Tools.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-            The specialized PDF platform for <span className="text-indigo-600 font-bold">Mortgage Agents, Lawyers, and Banks</span>. Turn complex onboarding into automated, legally binding journeys.
+            Merge, compress, convert, edit, and sign PDFs. Remove backgrounds, resize images and more. <span className="text-indigo-600 font-bold">100+ tools, completely free.</span> No account needed.
           </p>
 
           {/* Industry Selection */}

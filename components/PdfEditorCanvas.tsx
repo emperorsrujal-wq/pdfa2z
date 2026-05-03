@@ -26,7 +26,6 @@ import {
   Download,
   Layout,
   ChevronDown,
-  User as UserIcon,
   Pipette,
   RotateCw,
   PenLine,
@@ -193,7 +192,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 }) => {
   const [mode, setMode] = React.useState<EditorMode>('magic-edit');
   const [activeColor, setActiveColor] = React.useState('#000000');
-  const [activeFontSize, setActiveFontSize] = React.useState(14);
+  const [activeFontSize, setActiveFontSize] = React.useState<number>(14);
   const [activeBrushSize, setActiveBrushSize] = React.useState(3);
   const [zoom, setZoom] = React.useState(1);
 
@@ -225,6 +224,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [showShapesMenu, setShowShapesMenu] = React.useState(false);
   const [isSigPadOpen, setIsSigPadOpen] = React.useState(false);
   const [storedSignatures, setStoredSignatures] = React.useState<string[]>([]);
+
+  // Feature states
+  const [showAnnotations, setShowAnnotations] = React.useState(true);
+  const [smartEraseBg, setSmartEraseBg] = React.useState<string>('#FFFFFF');
+  const [pendingLinkArea, setPendingLinkArea] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [pendingLinkUrl, setPendingLinkUrl] = React.useState('https://');
+  const [showWatermarkPanel, setShowWatermarkPanel] = React.useState(false);
+  const [watermarkText, setWatermarkText] = React.useState('CONFIDENTIAL');
+  const [watermarkOpacity, setWatermarkOpacity] = React.useState(0.25);
+  const [watermarkColor, setWatermarkColor] = React.useState('#c0c0c0');
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
@@ -356,6 +365,36 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     };
   }, [docId]);
 
+  const confirmLink = () => {
+    if (!pendingLinkArea) return;
+    const url = pendingLinkUrl.trim();
+    if (!url || url === 'https://') return;
+    const { x, y, w, h } = pendingLinkArea;
+    const newEl: EditElement = { id: `link-${Date.now()}`, type: 'link', pageIndex, x, y, width: w, height: h, linkUrl: url, opacity: 1 };
+    commit([...elements, newEl]);
+    setActiveElementId(newEl.id);
+    setMode('select');
+    setPendingLinkArea(null);
+    setPendingLinkUrl('https://');
+  };
+
+  const applyWatermark = () => {
+    const wm: EditElement = {
+      id: `wm-${Date.now()}`, type: 'text', pageIndex,
+      x: 150, y: 440, width: 700, height: 120,
+      color: watermarkColor, text: watermarkText,
+      size: 80, opacity: watermarkOpacity, rotation: -35, fontName: 'Helvetica',
+    };
+    commit([...elements, wm]);
+    setShowWatermarkPanel(false);
+    setMode('select');
+  };
+
+  const getPageRotationDeg = () => {
+    const rotEl = elements.find(e => e.id === '__page_rotation__');
+    return rotEl?.rotation || 0;
+  };
+
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     if (!pageRef.current) return { x: 0, y: 0 };
     const rect = pageRef.current.getBoundingClientRect();
@@ -422,6 +461,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       setDragEnd(pos);
       return;
     }
+    if (mode === 'smart-erase') {
+      setIsDrawing(true);
+      setDragStart(pos);
+      setDragEnd(pos);
+      // Sample the actual background color at the click point
+      sampleBackgroundColor(image, (pos.x / 1000) * 794, (pos.y / 1000) * 1123)
+        .then(color => setSmartEraseBg(color))
+        .catch(() => setSmartEraseBg('#FFFFFF'));
+      return;
+    }
     if (mode === 'image') {
       document.getElementById('img-upload')?.click();
       return;
@@ -470,12 +519,39 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         return;
       }
       if (mode === 'comment') {
-        const text = prompt("Enter your comment:");
-        if (text && docId) {
-          import('../services/collaborationService').then(m => m.addComment(docId, {
-            text, x: pos.x, y: pos.y, pageIndex
-          }));
-        }
+        // Comment creates a draggable sticky note (works without collaboration service)
+        const newEl: EditElement = { id: `note-${Date.now()}`, type: 'sticky-note', pageIndex, x: pos.x, y: pos.y, width: 150, height: 100, color: '#000000', bgColor: '#FEF08A', text: '', size: 12, opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'symbol-cross' || mode === 'symbol-check' || mode === 'symbol-dot') {
+        const sym = mode === 'symbol-cross' ? '✕' : mode === 'symbol-check' ? '✓' : '•';
+        const sz = mode === 'symbol-dot' ? 16 : 20;
+        const newEl: EditElement = { id: `sym-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 30, height: 30, color: activeColor, text: sym, size: sz, opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        return;
+      }
+      if (mode === 'form-radio') {
+        const newEl: EditElement = { id: `radio-${Date.now()}`, type: 'form-radio', pageIndex, x: pos.x, y: pos.y, width: 30, height: 30, color: '#000000', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'form-text-multiline') {
+        const newEl: EditElement = { id: `ta-${Date.now()}`, type: 'form-textarea', pageIndex, x: pos.x, y: pos.y, width: 200, height: 80, color: '#000000', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'form-signature') {
+        const newEl: EditElement = { id: `sigbox-${Date.now()}`, type: 'signature', pageIndex, x: pos.x, y: pos.y, width: 200, height: 60, color: '#475569', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
         setMode('select');
         return;
       }
@@ -515,12 +591,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     } else if (w > 3 && h > 3) {
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
-        let bg = activeColor;
-        if (mode === 'smart-erase') {
-          const temp = (window as any)._smartBg;
-          bg = temp?.bgColor || '#FFFFFF';
-        }
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: activeColor, bgColor: bg, opacity: 1 };
+        let bg = mode === 'erase' ? '#FFFFFF' : activeColor;
+        if (mode === 'smart-erase') bg = smartEraseBg;
+        const fillColor = mode === 'erase' ? '#FFFFFF' : (mode === 'smart-erase' ? smartEraseBg : activeColor);
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, opacity: 1 };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
@@ -532,10 +606,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       } else if (mode === 'ellipse') {
         newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'link') {
-        const url = prompt("Enter link URL (e.g., https://example.com):");
-        if (url) {
-          newEl = { id: `link-${Date.now()}`, type: 'link', pageIndex, x, y, width: w, height: h, linkUrl: url, opacity: 1 };
-        }
+        // Show inline link input modal instead of prompt()
+        setPendingLinkArea({ x, y, w, h });
+        setPendingLinkUrl('https://');
+        setMode('select');
       }
       if (newEl) {
         commit([...elements, newEl]);
@@ -814,12 +888,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     else if (t.mode === 'find-replace') setMode('find-replace');
                     else if (t.mode === 'image') document.getElementById('img-upload')?.click();
                     else if (t.mode === 'watermark') {
-                      const wText = window.prompt('Enter watermark text (e.g. CONFIDENTIAL, DRAFT):');
-                      if (wText) {
-                        const wm: EditElement = { id: `wm-${Date.now()}`, type: 'text', pageIndex, x: 200, y: 440, width: 600, height: 120, color: '#c0c0c0', text: wText, size: 80, opacity: 0.25, rotation: -35, fontName: 'Helvetica' };
-                        commit([...elements, wm]);
-                        setMode('select');
-                      }
+                      setShowWatermarkPanel(true);
                     }
                     else if (t.mode === 'form-builder') { closeAllMenus(); setShowFormsMenu(!showFormsMenu); }
                     else if (t.mode === 'draw') { closeAllMenus(); setShowAnnotateMenu(!showAnnotateMenu); }
@@ -878,21 +947,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   <div className="p-4 border-b border-slate-100">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Change Existing Form Fields</h4>
                     <div className="flex flex-col gap-3">
-                       <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3]">
-                         <Pipette size={14} /> Form Edit mode
-                       </button>
-                       <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3]">
-                         <RotateCw size={14} className="rotate-90" /> Change tab order
+                       <button onClick={() => { setMode('select'); setShowFormsMenu(false); }} className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3]">
+                         <Pipette size={14} /> Select &amp; Edit fields
                        </button>
                     </div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50/50">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Share Publicly with Others</h4>
-                    <button className="flex items-center gap-3 text-sm text-slate-700 hover:text-[#2196f3] font-medium w-full">
-                       <div className="p-1 px-2 border border-slate-300 rounded-sm"><UserIcon size={14} /></div>
-                       Publish for others to fill & sign
-                    </button>
                   </div>
                 </div>
               )}
@@ -900,9 +958,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               {/* ─── ANNOTATE DROPDOWN MENU ─────────────────── */}
               {t.mode === 'draw' && showAnnotateMenu && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[320px] bg-white border border-slate-200 shadow-2xl rounded-sm z-[200] overflow-hidden text-left animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-3 px-4 border-b border-slate-100 bg-white hover:bg-slate-50 cursor-pointer flex items-center gap-2">
-                    <CheckSquare size={14} className="text-[#2196f3]" />
-                    <span className="text-sm font-medium text-slate-700">Show annotations</span>
+                  <div className="p-3 px-4 border-b border-slate-100 bg-white hover:bg-slate-50 cursor-pointer flex items-center gap-2"
+                    onClick={() => { setShowAnnotations(v => !v); setShowAnnotateMenu(false); }}>
+                    <CheckSquare size={14} className={showAnnotations ? 'text-[#2196f3]' : 'text-slate-400'} />
+                    <span className="text-sm font-medium text-slate-700">{showAnnotations ? 'Hide annotations' : 'Show annotations'}</span>
                   </div>
 
                   <div className="p-3 px-4 border-b border-slate-100">
@@ -1214,7 +1273,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
             {/* DOM elements (text, rect, image, etc.) */}
             {elements.map(el => {
-              if (!['text', 'rect', 'circle', 'image', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text', 'form-select', 'sticky-note'].includes(el.type)) return null;
+              const ANNOTATION_TYPES = ['highlight', 'strikeout', 'underline', 'sticky-note', 'path'];
+              if (!showAnnotations && ANNOTATION_TYPES.includes(el.type)) return null;
+              if (!['text', 'rect', 'circle', 'image', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text', 'form-select', 'sticky-note', 'form-radio', 'form-textarea', 'signature', 'link'].includes(el.type)) return null;
               const isActive = activeElementId === el.id;
 
               return (
@@ -1288,6 +1349,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     window.addEventListener('pointermove', onMove);
                     window.addEventListener('pointerup', onUp);
                   }}
+                  onMouseDown={ev => ev.stopPropagation()}
+                  onTouchStart={ev => ev.stopPropagation()}
                   onClick={ev => ev.stopPropagation()}
                 >
                   {/* Magic Edit Overlay (Targeting feedback) */}
@@ -1580,6 +1643,38 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       />
                     </div>
                   )}
+                  {el.type === 'form-radio' && (
+                    <div
+                      className="w-full h-full border-2 border-slate-700 rounded-full bg-white flex items-center justify-center cursor-pointer select-none"
+                      onClick={ev => { ev.stopPropagation(); updateElement(el.id, { isChecked: !el.isChecked }); }}
+                    >
+                      {el.isChecked && <div className="w-1/2 h-1/2 bg-slate-700 rounded-full" />}
+                    </div>
+                  )}
+                  {el.type === 'form-textarea' && (
+                    <div className="w-full h-full flex items-start p-1 bg-white border border-slate-300 rounded shadow-inner">
+                      <textarea
+                        value={el.text || ''}
+                        placeholder="Multiline text…"
+                        onChange={ev => updateElement(el.id, { text: ev.target.value })}
+                        onClick={ev => ev.stopPropagation()}
+                        className="w-full h-full bg-transparent border-none outline-none p-0 m-0 text-slate-800 resize-none"
+                        style={{ fontSize: `${((el.size || 12) / 1000) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                  {el.type === 'signature' && (
+                    <div className="w-full h-full border-2 border-dashed border-slate-400 rounded bg-sky-50/30 flex flex-col items-center justify-center pointer-events-none">
+                      <FileSignature size={14} className="text-slate-300" />
+                      <span className="text-[9px] text-slate-400 mt-0.5 font-medium">Sign here</span>
+                    </div>
+                  )}
+                  {el.type === 'link' && (
+                    <div className="w-full h-full border border-dashed border-blue-400 bg-blue-500/10 flex items-center justify-center gap-1 group" title={el.linkUrl || 'Link'}>
+                      <LinkIcon size={10} className="text-blue-400 opacity-70 shrink-0" />
+                      {el.linkUrl && <span className="text-[8px] text-blue-400 opacity-0 group-hover:opacity-100 truncate max-w-[80%] transition-opacity">{el.linkUrl}</span>}
+                    </div>
+                  )}
                   {el.type === 'text' && (
                     <div className="w-full h-full flex items-start">
                       <input
@@ -1677,12 +1772,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       <div className="h-5 w-px bg-slate-200 shrink-0" />
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className="text-[10px] font-bold text-slate-400">Size</span>
-                        <select value={activeEl.size || 14}
-                          onChange={e => commitUpdate(activeEl.id, { size: parseInt(e.target.value) })}
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="1"
+                          max="200"
+                          value={activeEl.size ?? 14}
+                          onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) commitUpdate(activeEl.id, { size: v }); }}
                           onClick={ev => ev.stopPropagation()}
-                          className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 cursor-pointer">
-                          {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
-                        </select>
+                          onKeyDown={ev => ev.stopPropagation()}
+                          className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 w-20"
+                        />
                       </div>
                       <div className="h-5 w-px bg-slate-200 shrink-0" />
                       <div className="flex items-center gap-0.5 shrink-0">
@@ -1761,12 +1861,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="h-5 w-px bg-slate-200" />
                       <span className="text-[10px] font-bold text-slate-400">Size</span>
-                      <select value={activeFontSize}
-                        onChange={e => setActiveFontSize(parseInt(e.target.value))}
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        max="200"
+                        value={activeFontSize}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setActiveFontSize(v); }}
                         onClick={ev => ev.stopPropagation()}
-                        className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 cursor-pointer">
-                        {[8, 10, 12, 14, 16, 18, 24, 30, 36, 48, 64, 72].map(s => <option key={s} value={s}>{s}px</option>)}
-                      </select>
+                        onKeyDown={ev => ev.stopPropagation()}
+                        className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 w-20"
+                      />
                     </div>
                   )}
 
@@ -1781,6 +1886,74 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             </div>
           );
       })()}
+
+      {/* ─── LINK INPUT MODAL ──────────────────────────────── */}
+      {pendingLinkArea && (
+        <div className="fixed inset-0 bg-black/50 z-[800] flex items-center justify-center" onClick={() => setPendingLinkArea(null)}>
+          <div className="bg-white rounded-xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-700 mb-1">Add Hyperlink</h3>
+            <p className="text-xs text-slate-400 mb-3">Draw the link area on the PDF, then enter the destination URL.</p>
+            <input
+              type="url"
+              value={pendingLinkUrl}
+              onChange={e => setPendingLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              autoFocus
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 mb-4"
+              onKeyDown={e => { if (e.key === 'Enter') confirmLink(); if (e.key === 'Escape') setPendingLinkArea(null); }}
+            />
+            <div className="flex gap-2">
+              <button onClick={confirmLink} className="flex-1 py-2 bg-[#2196f3] text-white rounded-lg text-sm font-bold hover:bg-[#1976d2] transition-colors">Add Link</button>
+              <button onClick={() => setPendingLinkArea(null)} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── WATERMARK PANEL ──────────────────────────────── */}
+      {showWatermarkPanel && (
+        <div className="fixed inset-0 bg-black/50 z-[800] flex items-center justify-center" onClick={() => setShowWatermarkPanel(false)}>
+          <div className="bg-white rounded-xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-700 mb-4">Add Watermark</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Watermark Text</label>
+                <input
+                  type="text"
+                  value={watermarkText}
+                  onChange={e => setWatermarkText(e.target.value)}
+                  placeholder="e.g. CONFIDENTIAL, DRAFT"
+                  autoFocus
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Color</label>
+                <div className="flex gap-2 flex-wrap">
+                  {['#c0c0c0', '#ff000040', '#0000ff40', '#00800040', '#00000060'].map(c => (
+                    <button key={c} onClick={() => setWatermarkColor(c)}
+                      className={`w-7 h-7 rounded-full border-2 transition-all ${watermarkColor === c ? 'border-indigo-600 scale-110' : 'border-transparent'}`}
+                      style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Opacity: {Math.round(watermarkOpacity * 100)}%</label>
+                <input type="range" min="5" max="80" value={Math.round(watermarkOpacity * 100)}
+                  onChange={e => setWatermarkOpacity(parseInt(e.target.value) / 100)}
+                  className="w-full accent-indigo-600" />
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg text-center text-sm font-bold italic" style={{ color: watermarkColor, opacity: watermarkOpacity * 3, transform: 'rotate(-15deg)', fontSize: 20 }}>
+                {watermarkText || 'Preview'}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={applyWatermark} className="flex-1 py-2 bg-[#2196f3] text-white rounded-lg text-sm font-bold hover:bg-[#1976d2] transition-colors">Apply Watermark</button>
+              <button onClick={() => setShowWatermarkPanel(false)} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -1814,12 +1987,18 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         />
       )}
       {showPageTools && (
-        <PageToolsPanel 
+        <PageToolsPanel
           onClose={() => setShowPageTools(false)}
-          onRotate={(_angle) => {
+          onRotate={(angle) => {
+            const currentRot = getPageRotationDeg();
+            const newRot = (((currentRot + angle) % 360) + 360) % 360;
+            const filtered = elements.filter(e => e.id !== '__page_rotation__');
+            const rotEl: EditElement = { id: '__page_rotation__', type: 'page-rotation', pageIndex, x: 0, y: 0, rotation: newRot };
+            commit(newRot !== 0 ? [...filtered, rotEl] : filtered);
             setShowPageTools(false);
           }}
           onCrop={(_rect) => {
+            // Crop not yet supported in canvas overlay mode
             setShowPageTools(false);
           }}
         />

@@ -47,6 +47,8 @@ export interface Field {
   acceptedTypes?: string[];
   maxSize?: number;
   maxFiles?: number;
+  correctAnswer?: string;
+  points?: number;
 }
 
 export interface Step {
@@ -130,57 +132,85 @@ const FALLBACK_STEPS: Step[] = [
   },
 ];
 
-// --- Signature Canvas --------------------------------------------------------
+// --- Signature Canvas v2 -----------------------------------------------------
+
+const SIG_FONTS = [
+  { name: 'Dancing Script', label: 'Elegant' },
+  { name: 'Caveat', label: 'Casual' },
+  { name: 'Sacramento', label: 'Formal' },
+];
+const SIG_COLORS = ['#0f172a', '#1e40af', '#166534', '#991b1b', '#4c1d95'];
 
 function SignatureModal({ onSign, onCancel, allowType }: { onSign: (v: string) => void; onCancel: () => void; allowType?: boolean }) {
   const [tab, setTab] = useState<'draw' | 'type'>('draw');
   const [typedName, setTypedName] = useState('');
+  const [sigColor, setSigColor] = useState(SIG_COLORS[0]);
+  const [sigFont, setSigFont] = useState(SIG_FONTS[0].name);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
+  const undoStack = useRef<ImageData[]>([]);
+
+  // Load signature fonts
+  useEffect(() => {
+    const url = 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Caveat:wght@700&family=Sacramento&display=swap';
+    if (!document.querySelector(`link[href="${url}"]`)) {
+      const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
+    }
+  }, []);
 
   useEffect(() => {
     if (tab === 'draw') {
       const c = canvasRef.current;
       if (c) {
-        const ctx = c.getContext("2d");
-        if (ctx) {
-          ctx.lineCap = "round"; ctx.lineWidth = 2.5; ctx.strokeStyle = "#000";
-        }
+        const ctx = c.getContext('2d');
+        if (ctx) { ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.5; ctx.strokeStyle = sigColor; }
       }
     }
-  }, [tab]);
+  }, [tab, sigColor]);
 
   const getPos = (e: any) => {
     const c = canvasRef.current; if (!c) return null;
     const r = c.getBoundingClientRect();
+    const scaleX = c.width / r.width; const scaleY = c.height / r.height;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - r.left, y: clientY - r.top };
+    return { x: (clientX - r.left) * scaleX, y: (clientY - r.top) * scaleY };
   };
 
-  const start = (e: any) => { drawing.current = true; last.current = getPos(e); };
+  const start = (e: any) => {
+    const c = canvasRef.current; const ctx = c?.getContext('2d');
+    if (c && ctx) undoStack.current.push(ctx.getImageData(0, 0, c.width, c.height));
+    drawing.current = true; last.current = getPos(e);
+  };
   const move = (e: any) => {
     if (!drawing.current || !last.current) return;
-    const c = canvasRef.current; const ctx = c?.getContext("2d");
+    const c = canvasRef.current; const ctx = c?.getContext('2d');
     const pos = getPos(e);
     if (ctx && pos) {
+      ctx.strokeStyle = sigColor;
       ctx.beginPath(); ctx.moveTo(last.current.x, last.current.y); ctx.lineTo(pos.x, pos.y); ctx.stroke();
       last.current = pos;
     }
     e.preventDefault();
   };
-  const stop = () => { drawing.current = false; };
-  const clear = () => { const c = canvasRef.current; c?.getContext("2d")?.clearRect(0, 0, c.width, c.height); };
+  const stop = () => { drawing.current = false; last.current = null; };
+  const clear = () => { const c = canvasRef.current; if (c) { c.getContext('2d')?.clearRect(0, 0, c.width, c.height); undoStack.current = []; } };
+  const undo = () => {
+    const c = canvasRef.current; const ctx = c?.getContext('2d');
+    if (ctx && undoStack.current.length > 0) ctx.putImageData(undoStack.current.pop()!, 0, 0);
+  };
 
   const handleAdopt = () => {
     if (tab === 'draw') {
       const c = canvasRef.current; if (c) onSign(c.toDataURL());
     } else {
-      const c = document.createElement('canvas'); c.width = 400; c.height = 100;
+      const c = document.createElement('canvas'); c.width = 500; c.height = 120;
       const ctx = c.getContext('2d');
       if (ctx) {
-        ctx.font = 'italic 48px "Brush Script MT", cursive';
+        ctx.font = `600 56px "${sigFont}", cursive`;
+        ctx.fillStyle = sigColor;
+        ctx.textBaseline = 'middle';
         ctx.fillText(typedName || 'Signature', 20, 60);
         onSign(c.toDataURL());
       }
@@ -189,28 +219,46 @@ function SignatureModal({ onSign, onCancel, allowType }: { onSign: (v: string) =
 
   return (
     <div className="jb-modal-overlay" style={{ background: 'rgba(0,0,0,0.85)' }}>
-      <div className="jb-modal" style={{ width: '100%', maxWidth: 500 }}>
-        <div style={{ padding: 24 }}>
+      <div className="jb-modal" style={{ width: '100%', maxWidth: 520 }}>
+        <div style={{ padding: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, color: '#fff' }}>Sign Document</h3>
-              <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Draw or type your legal signature</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Your signature is legally binding</p>
             </div>
             <X size={20} onClick={onCancel} style={{ cursor: 'pointer', color: '#64748b' }} />
           </div>
 
           <div className="jb-toggle-group" style={{ marginBottom: 20 }}>
-            <button className={`jb-toggle-btn ${tab === 'draw' ? 'active' : ''}`} onClick={() => setTab('draw')}>Draw</button>
-            {allowType && <button className={`jb-toggle-btn ${tab === 'type' ? 'active' : ''}`} onClick={() => setTab('type')}>Type</button>}
+            <button className={`jb-toggle-btn ${tab === 'draw' ? 'active' : ''}`} onClick={() => setTab('draw')}>✏ Draw</button>
+            {allowType !== false && <button className={`jb-toggle-btn ${tab === 'type' ? 'active' : ''}`} onClick={() => setTab('type')}>T Type</button>}
+          </div>
+
+          {/* Color swatches */}
+          <div className="jb-sig-colors">
+            {SIG_COLORS.map(c => (
+              <div key={c} className={`jb-sig-color${sigColor === c ? ' active' : ''}`} style={{ background: c }} onClick={() => setSigColor(c)} />
+            ))}
           </div>
 
           {tab === 'draw' ? (
             <div style={{ position: 'relative' }}>
-              <canvas ref={canvasRef} width={450} height={160} onMouseDown={start} onMouseMove={move} onMouseUp={stop} onMouseLeave={stop} onTouchStart={start} onTouchMove={move} onTouchEnd={stop} style={{ width: '100%', height: 160, background: '#fff', borderRadius: 12, border: '2px dashed #e2e8f0', cursor: 'crosshair', touchAction: 'none' }} />
+              <canvas ref={canvasRef} width={460} height={160} onMouseDown={start} onMouseMove={move} onMouseUp={stop} onMouseLeave={stop} onTouchStart={start} onTouchMove={move} onTouchEnd={stop} style={{ width: '100%', height: 160, background: '#fff', borderRadius: 12, border: '2px dashed #e2e8f0', cursor: 'crosshair', touchAction: 'none', display: 'block' }} />
+              <button className="jb-sig-undo-btn" onClick={undo}>↩ Undo</button>
               <button onClick={clear} style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', fontSize: 11, color: '#64748b', cursor: 'pointer' }}>Clear</button>
             </div>
           ) : (
-            <input type="text" placeholder="Type your name..." value={typedName} onChange={e => setTypedName(e.target.value)} style={{ width: '100%', height: 60, fontSize: 24, padding: 16, background: '#fff', border: '2px solid #e2e8f0', borderRadius: 12, outline: 'none', fontFamily: '"Brush Script MT", cursive' }} />
+            <>
+              <div className="jb-sig-fonts">
+                {SIG_FONTS.map(f => (
+                  <button key={f.name} className={`jb-sig-font-btn${sigFont === f.name ? ' active' : ''}`} style={{ fontFamily: `"${f.name}", cursive` }} onClick={() => setSigFont(f.name)}>{f.label}</button>
+                ))}
+              </div>
+              <input type="text" placeholder="Type your full name..." value={typedName} onChange={e => setTypedName(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: 'rgba(15,23,42,0.9)', border: '1.5px solid rgba(71,85,105,0.4)', borderRadius: 10, color: '#e2e8f0', fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 14 }} />
+              <div className="jb-sig-type-preview" style={{ fontFamily: `"${sigFont}", cursive`, color: sigColor }}>
+                {typedName || 'Your Signature'}
+              </div>
+            </>
           )}
 
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
@@ -582,6 +630,79 @@ const CSS = `
   .jb-remove-logic-btn { background: none; border: none; color: #334155; font-size: 10px; cursor: pointer; margin-top: 8px; text-decoration: underline; display: block; }
   .jb-remove-logic-btn:hover { color: #f87171; }
 
+  /* ── PDF PREVIEW PANEL ─────────────────────────────────── */
+  .jb-wizard-dual { display: flex; gap: 32px; align-items: flex-start; width: 100%; max-width: 960px; margin: 0 auto; }
+  .jb-pdf-preview-panel { width: 260px; flex-shrink: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.07); position: sticky; top: 0; }
+  .jb-pdf-preview-panel img { width: 100%; display: block; }
+  .jb-pdf-preview-label { padding: 10px 14px; background: rgba(255,255,255,0.03); font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; border-top: 1px solid rgba(255,255,255,0.04); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── PROGRESS BAR ───────────────────────────────────────── */
+  .jb-progress-bar-wrap { margin-bottom: 20px; }
+  .jb-progress-label { font-size: 10px; color: #475569; font-weight: 700; text-align: right; margin-bottom: 6px; letter-spacing: 0.04em; }
+  .jb-progress-track { height: 3px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+  .jb-progress-fill { height: 100%; background: var(--brand-primary); border-radius: 999px; transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* ── AUTO-SAVE TOAST ───────────────────────────────────── */
+  .jb-autosave { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: #10b981; opacity: 0; transition: opacity 0.4s; letter-spacing: 0.04em; }
+  .jb-autosave.visible { opacity: 1; }
+  .jb-autosave-dot { width: 5px; height: 5px; border-radius: 50%; background: #10b981; }
+
+  /* ── QUIZ SCORE RING ────────────────────────────────────── */
+  .jb-score-ring-wrap { position: relative; width: 160px; height: 160px; margin: 0 auto 32px; }
+  .jb-score-ring-svg { transform: rotate(-90deg); }
+  .jb-score-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+  .jb-score-ring-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); }
+  .jb-score-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .jb-score-pct { font-size: 36px; font-weight: 900; color: #e2e8f0; line-height: 1; }
+  .jb-score-grade { font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 99px; margin-top: 4px; }
+
+  /* ── PDF PAGE NAV ───────────────────────────────────────── */
+  .jb-pdf-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-top: 1px solid rgba(255,255,255,0.04); }
+  .jb-pdf-nav-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #64748b; border-radius: 6px; padding: 3px 8px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+  .jb-pdf-nav-btn:hover:not(:disabled) { color: #e2e8f0; border-color: rgba(255,255,255,0.25); }
+  .jb-pdf-nav-btn:disabled { opacity: 0.25; cursor: default; }
+  .jb-pdf-nav-label { font-size: 10px; font-weight: 700; color: #475569; }
+
+  /* ── SIGNATURE V2 ───────────────────────────────────────── */
+  .jb-sig-colors { display: flex; gap: 8px; margin-bottom: 14px; }
+  .jb-sig-color { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+  .jb-sig-color.active { border-color: #f59e0b; transform: scale(1.2); }
+  .jb-sig-fonts { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .jb-sig-font-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; font-size: 16px; cursor: pointer; transition: all 0.15s; }
+  .jb-sig-font-btn.active { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.06); }
+  .jb-sig-type-preview { background: #fff; border-radius: 12px; padding: 20px 24px; min-height: 80px; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #1e293b; }
+  .jb-sig-undo-btn { position: absolute; top: 10px; left: 10px; background: none; border: none; font-size: 11px; color: #64748b; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .jb-sig-undo-btn:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+
+  /* ── FIELD HEATMAP ─────────────────────────────────────── */
+  .jb-field-heat { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .jb-heat-high { background: #10b981; box-shadow: 0 0 4px rgba(16,185,129,0.6); }
+  .jb-heat-mid { background: #f59e0b; box-shadow: 0 0 4px rgba(245,158,11,0.6); }
+  .jb-heat-low { background: #f87171; box-shadow: 0 0 4px rgba(248,113,113,0.6); }
+  .jb-heat-none { background: #1e293b; }
+  .jb-heat-pct { font-size: 9px; font-weight: 700; color: #475569; flex-shrink: 0; min-width: 24px; text-align: right; }
+
+  /* ── DUPLICATE BUTTON ───────────────────────────────────── */
+  .jb-dup-btn { background: none; border: none; color: #334155; cursor: pointer; padding: 2px 4px; border-radius: 4px; font-size: 11px; transition: color 0.15s; flex-shrink: 0; line-height: 1; }
+  .jb-dup-btn:hover { color: #94a3b8; }
+
+  /* ── RESUME LINK ────────────────────────────────────────── */
+  .jb-exit-resume-box { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 10px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+  .jb-exit-resume-url { font-size: 10px; color: #64748b; flex: 1; word-break: break-all; text-align: left; }
+  .jb-exit-copy-btn { background: rgba(16,185,129,0.15); border: none; border-radius: 6px; padding: 5px 10px; color: #10b981; font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+
+  /* ── STEP SIDEBAR DRAG ──────────────────────────────────── */
+  .jb-step-drag-handle { cursor: grab; color: #334155; font-size: 13px; flex-shrink: 0; }
+  .jb-step-drag-handle:active { cursor: grabbing; }
+  .jb-step-delete-btn { background: none; border: none; color: transparent; cursor: pointer; padding: 2px 4px; border-radius: 4px; flex-shrink: 0; transition: color 0.15s; font-size: 11px; line-height: 1; }
+  .jb-side-item:hover .jb-step-delete-btn { color: #334155; }
+  .jb-step-delete-btn:hover { color: #f87171 !important; }
+  .jb-side-item.drag-over { background: rgba(245,158,11,0.08); border-left-color: rgba(245,158,11,0.4); }
+
+  @media (max-width: 768px) {
+    .jb-pdf-preview-panel { display: none; }
+    .jb-wizard-dual { max-width: 520px; }
+  }
   @media (max-width: 640px) {
     .jb-step-label { display: none; }
     .jb-step-circle { width: 24px; height: 24px; font-size: 9px; }
@@ -648,16 +769,49 @@ export const PDFJourneyBuilder: React.FC = () => {
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitEmail, setExitEmail] = useState('');
   const [exitSaved, setExitSaved] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [dragStepId, setDragStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
+  const [exitResumeUrl, setExitResumeUrl] = useState('');
+  const [exitCopied, setExitCopied] = useState(false);
+  const [quizScore, setQuizScore] = useState<{ total: number; max: number; pct: number; grade: string } | null>(null);
+  const [autoSavedAt, setAutoSavedAt] = useState<number | null>(null);
+  const [pdfPage, setPdfPage] = useState(1);
+  const [pdfTotalPages, setPdfTotalPages] = useState(1);
+  const pdfDocRef = useRef<any>(null);
 
   useEffect(() => {
     // Detect template from URL
     const params = new URLSearchParams(window.location.search);
     const template = params.get('template');
     if (template && stage === 'upload') {
-      // Logic to trigger template load (already supported by TemplateGallery)
       setShowTemplateGallery(true);
     }
-  }, [stage]);
+    // Resume from saved session
+    const resumeToken = params.get('resume');
+    if (resumeToken) {
+      const saved = localStorage.getItem(`jb_resume_${resumeToken}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSteps(parsed.steps || []);
+          setFormData(parsed.formData || {});
+          setFileName(parsed.fileName || '');
+          setCurrentStep(parsed.currentStep || 0);
+          setActiveFieldIndex(parsed.activeFieldIndex || 0);
+          setStage('wizard');
+        } catch { /* ignore bad data */ }
+      }
+    }
+    // URL param prefill: ?fieldName=value auto-fills wizard fields
+    const prefill: Record<string, string> = {};
+    params.forEach((value, key) => {
+      if (!['resume', 'template'].includes(key)) prefill[key] = value;
+    });
+    if (Object.keys(prefill).length > 0) {
+      setFormData(p => ({ ...prefill, ...p }));
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -727,7 +881,11 @@ export const PDFJourneyBuilder: React.FC = () => {
       startTimeRef.current = Date.now();
       stepStartTimeRef.current = Date.now();
       trackJourneyEvent(fileName || 'unnamed', 'start', { variant });
-      
+      // Track wizard start for heatmap analytics
+      if (fileName) {
+        const k = `jb_starts_${fileName}`;
+        localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0')) + 1));
+      }
       // Auto-detect browser language and switch if translation exists
       const browserLang = navigator.language.split("-")[0];
       if (brandConfig.localizedContent?.[browserLang]) {
@@ -799,7 +957,11 @@ export const PDFJourneyBuilder: React.FC = () => {
     }
     const updated = { ...formData, [id]: value };
     setFormData(updated);
-    if (stage === 'wizard') saveDraft(updated);
+    if (stage === 'wizard') {
+      saveDraft(updated);
+      const engKey = `jb_eng_${fileName}_${id}`;
+      localStorage.setItem(engKey, String((parseInt(localStorage.getItem(engKey) || '0')) + 1));
+    }
   };
 
   const validateCurrentStep = () => {
@@ -909,6 +1071,33 @@ export const PDFJourneyBuilder: React.FC = () => {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, [stage, exitSaved]);
 
+  useEffect(() => {
+    if ((stage === 'welcome' || stage === 'wizard') && pdfBytes) {
+      (async () => {
+        try {
+          const pdfjsLib = (window as any).pdfjsLib;
+          if (!pdfjsLib) return;
+          if (!pdfDocRef.current) {
+            pdfDocRef.current = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+            setPdfTotalPages(pdfDocRef.current.numPages);
+          }
+          const pdfDoc = pdfDocRef.current;
+          const pageNum = Math.min(Math.max(pdfPage, 1), pdfDoc.numPages);
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 0.7 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d')!;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          setPdfPreviewUrl(canvas.toDataURL('image/jpeg', 0.82));
+        } catch (e) {
+          console.warn('PDF preview render failed', e);
+        }
+      })();
+    }
+  }, [stage, pdfBytes, pdfPage]);
+
   const fillAndDownload = async () => {
     setIsProcessing(true);
     try {
@@ -996,10 +1185,38 @@ export const PDFJourneyBuilder: React.FC = () => {
         }
       }
     } catch (e) { console.error(e); }
+
+    if (brandConfig.isQuizMode) {
+      const scoredFields = steps.flatMap(s => s.fields).filter(f => f.correctAnswer && f.points);
+      let total = 0, max = 0;
+      scoredFields.forEach(f => {
+        max += f.points!;
+        if (String(formData[f.id] || '').toLowerCase().trim() === String(f.correctAnswer).toLowerCase().trim()) total += f.points!;
+      });
+      const pct = max > 0 ? Math.round((total / max) * 100) : 0;
+      const grade = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F';
+      setQuizScore({ total, max, pct, grade });
+    }
+
     setStage("complete"); setIsProcessing(false);
+    if (brandConfig.completionRedirectUrl) {
+      setTimeout(() => { window.location.href = brandConfig.completionRedirectUrl!; }, 2500);
+    }
   };
 
-  const reset = () => { setStage("upload"); setFormData({}); setSteps([]); setFileName(""); setFilledUrl(null); setShowExitIntent(false); setExitSaved(false); setExitEmail(''); };
+  useEffect(() => {
+    if (stage === 'wizard' && Object.keys(formData).length > 0) {
+      setAutoSavedAt(Date.now());
+      const timer = setTimeout(() => setAutoSavedAt(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [formData]);
+
+  const reset = () => {
+    setStage("upload"); setFormData({}); setSteps([]); setFileName(""); setFilledUrl(null);
+    setShowExitIntent(false); setExitSaved(false); setExitEmail(''); setPdfPreviewUrl(null);
+    setPdfPage(1); setPdfTotalPages(1); pdfDocRef.current = null; setQuizScore(null);
+  };
 
   const restoreDraft = () => {
     if (!draft) return;
@@ -1014,6 +1231,32 @@ export const PDFJourneyBuilder: React.FC = () => {
   };
   const removeFieldFromStep = (sId: string, fId: string) => {
     setSteps(p => p.map(s => s.id === sId ? { ...s, fields: s.fields.filter(f => f.id !== fId) } : s));
+  };
+
+  const duplicateField = (sId: string, fId: string) => {
+    setSteps(p => p.map(s => {
+      if (s.id !== sId) return s;
+      const idx = s.fields.findIndex(f => f.id === fId);
+      if (idx < 0) return s;
+      const copy = { ...s.fields[idx], id: `f${Date.now()}`, label: s.fields[idx].label + ' (copy)' };
+      const fields = [...s.fields];
+      fields.splice(idx + 1, 0, copy);
+      return { ...s, fields };
+    }));
+  };
+
+  const duplicateStep = (sId: string) => {
+    const src = steps.find(x => x.id === sId);
+    if (!src) return;
+    const newId = `s${Date.now()}`;
+    const copy: Step = { ...src, id: newId, title: src.title + ' (copy)', fields: src.fields.map(f => ({ ...f, id: `f${Date.now()}_${Math.random().toString(36).slice(2)}` })) };
+    setSteps(p => {
+      const idx = p.findIndex(x => x.id === sId);
+      const arr = [...p];
+      arr.splice(idx + 1, 0, copy);
+      return arr;
+    });
+    setActiveStepId(newId);
   };
 
   return (
@@ -1097,8 +1340,34 @@ export const PDFJourneyBuilder: React.FC = () => {
                     <Plus size={14} onClick={addStep} style={{ cursor: 'pointer' }} />
                   </div>
                   {steps.map(s => (
-                    <div key={s.id} className={`jb-side-item${activeStepId === s.id ? " active" : ""}`} onClick={() => setActiveStepId(s.id)}>
-                      <LayoutIcon size={14} /> <span style={{ flex: 1 }}>{s.title}</span> <span>{s.fields.length}</span>
+                    <div
+                      key={s.id}
+                      className={`jb-side-item${activeStepId === s.id ? " active" : ""}${dragOverStepId === s.id ? " drag-over" : ""}`}
+                      draggable
+                      onDragStart={() => setDragStepId(s.id)}
+                      onDragOver={e => { e.preventDefault(); if (dragStepId && dragStepId !== s.id) setDragOverStepId(s.id); }}
+                      onDragLeave={() => setDragOverStepId(null)}
+                      onDrop={() => {
+                        if (!dragStepId || dragStepId === s.id) { setDragStepId(null); setDragOverStepId(null); return; }
+                        const from = steps.findIndex(x => x.id === dragStepId);
+                        const to = steps.findIndex(x => x.id === s.id);
+                        const reordered = [...steps];
+                        const [moved] = reordered.splice(from, 1);
+                        reordered.splice(to, 0, moved);
+                        setSteps(reordered);
+                        setDragStepId(null); setDragOverStepId(null);
+                      }}
+                      onDragEnd={() => { setDragStepId(null); setDragOverStepId(null); }}
+                      onClick={() => setActiveStepId(s.id)}
+                    >
+                      <span className="jb-step-drag-handle" onMouseDown={e => e.stopPropagation()}>⠿</span>
+                      <LayoutIcon size={12} style={{ flexShrink: 0 }} />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+                      <span style={{ fontSize: 10, flexShrink: 0 }}>{s.fields.length}</span>
+                      <button className="jb-dup-btn" title="Duplicate step" onClick={e => { e.stopPropagation(); duplicateStep(s.id); }}>⧉</button>
+                      {steps.length > 1 && (
+                        <button className="jb-step-delete-btn" title="Delete step" onClick={e => { e.stopPropagation(); removeStep(s.id); if (activeStepId === s.id) setActiveStepId(steps.find(x => x.id !== s.id)?.id || null); }}>✕</button>
+                      )}
                     </div>
                   ))}
                   <div style={{ padding: 10, marginTop: 10 }}>
@@ -1339,12 +1608,19 @@ export const PDFJourneyBuilder: React.FC = () => {
                     <div className="jb-card" style={{ maxWidth: 600 }}>
                       {isEditorMode ? (
                         <>
-                          {/* Step title editor */}
+                          {/* Step title + description editor */}
                           <input
-                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, fontWeight: 800, width: '100%', marginBottom: 24, outline: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}
+                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, fontWeight: 800, width: '100%', marginBottom: 8, outline: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}
                             value={s?.title}
                             onChange={e => updateStep(s.id, { title: e.target.value })}
                             placeholder="Step title..."
+                          />
+                          <textarea
+                            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, width: '100%', marginBottom: 20, outline: 'none', resize: 'none', fontFamily: 'inherit', lineHeight: 1.5 }}
+                            rows={2}
+                            value={s?.description || ''}
+                            onChange={e => updateStep(s.id, { description: e.target.value })}
+                            placeholder="Step description (optional)..."
                           />
 
                           {/* Draggable field panels */}
@@ -1371,8 +1647,21 @@ export const PDFJourneyBuilder: React.FC = () => {
                                 <div className="jb-field-panel-header" onClick={() => setExpandedFieldId(isExpanded ? null : f.id)}>
                                   <span className="jb-drag-handle" onMouseDown={e => e.stopPropagation()}>⠿</span>
                                   <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.label}</span>
+                                  {(() => {
+                                    const totalStarts = parseInt(localStorage.getItem(`jb_starts_${fileName}`) || '0');
+                                    const touches = parseInt(localStorage.getItem(`jb_eng_${fileName}_${f.id}`) || '0');
+                                    const pct = totalStarts > 0 ? Math.round((touches / totalStarts) * 100) : null;
+                                    const cls = pct === null ? 'jb-heat-none' : pct >= 70 ? 'jb-heat-high' : pct >= 40 ? 'jb-heat-mid' : 'jb-heat-low';
+                                    return (
+                                      <>
+                                        <span className={`jb-field-heat ${cls}`} title={pct !== null ? `${pct}% completion rate` : 'No data yet'} />
+                                        {pct !== null && <span className="jb-heat-pct">{pct}%</span>}
+                                      </>
+                                    );
+                                  })()}
                                   <span className="jb-field-type-badge">{f.type}</span>
-                                  <Trash2 size={12} style={{ color: '#334155', cursor: 'pointer', marginLeft: 8, flexShrink: 0 }} onClick={e => { e.stopPropagation(); removeFieldFromStep(s.id, f.id); if (expandedFieldId === f.id) setExpandedFieldId(null); }} />
+                                  <button className="jb-dup-btn" title="Duplicate field" onClick={e => { e.stopPropagation(); duplicateField(s.id, f.id); }}>⧉</button>
+                                  <Trash2 size={12} style={{ color: '#334155', cursor: 'pointer', marginLeft: 4, flexShrink: 0 }} onClick={e => { e.stopPropagation(); removeFieldFromStep(s.id, f.id); if (expandedFieldId === f.id) setExpandedFieldId(null); }} />
                                   <ChevronDown size={12} style={{ color: '#475569', marginLeft: 6, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                                 </div>
                                 {isExpanded && (
@@ -1425,6 +1714,27 @@ export const PDFJourneyBuilder: React.FC = () => {
                                         style={{ marginTop: 0, flex: 1 }}
                                       />
                                     </div>
+
+                                    {/* ── Quiz Mode Settings ── */}
+                                    {brandConfig.isQuizMode && ['select', 'yes-no', 'text', 'number'].includes(f.type) && (
+                                      <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(245,158,11,0.05)', borderRadius: 8, border: '1px solid rgba(245,158,11,0.1)' }}>
+                                        <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>🎯 Quiz Settings</div>
+                                        <input
+                                          className="jb-field-label-input"
+                                          value={f.correctAnswer || ''}
+                                          onChange={e => updateField(s.id, f.id, { correctAnswer: e.target.value })}
+                                          placeholder="Correct answer..."
+                                          style={{ marginBottom: 6 }}
+                                        />
+                                        <input
+                                          className="jb-field-label-input"
+                                          type="number"
+                                          value={f.points ?? ''}
+                                          onChange={e => updateField(s.id, f.id, { points: parseInt(e.target.value) || 0 })}
+                                          placeholder="Points (e.g. 10)"
+                                        />
+                                      </div>
+                                    )}
 
                                     {/* ── Conditional Logic Builder ── */}
                                     {(() => {
@@ -1612,7 +1922,21 @@ export const PDFJourneyBuilder: React.FC = () => {
         return (
           <>
           <div className="jb-root" dir={isRtl ? 'rtl' : 'ltr'}>
-            <div className="jb-card">
+            <div className="jb-wizard-dual">
+            {pdfPreviewUrl && (
+              <div className="jb-pdf-preview-panel">
+                <img src={pdfPreviewUrl} alt="Document preview" />
+                <div className="jb-pdf-preview-label">📄 {fileName}</div>
+                {pdfTotalPages > 1 && (
+                  <div className="jb-pdf-nav">
+                    <button className="jb-pdf-nav-btn" onClick={() => setPdfPage(p => Math.max(1, p - 1))} disabled={pdfPage <= 1}>‹</button>
+                    <span className="jb-pdf-nav-label">Page {pdfPage} / {pdfTotalPages}</span>
+                    <button className="jb-pdf-nav-btn" onClick={() => setPdfPage(p => Math.min(pdfTotalPages, p + 1))} disabled={pdfPage >= pdfTotalPages}>›</button>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="jb-card" style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div className="jb-brand"><span className="jb-brand-pip" /> {brandConfig.companyName || "pdfa2z"}</div>
               {brandConfig.localizedContent && Object.keys(brandConfig.localizedContent).length > 0 && (
@@ -1644,10 +1968,20 @@ export const PDFJourneyBuilder: React.FC = () => {
               const showReview = brandConfig.isFocusedMode ? (isLastField && isLastStep) : isLastStep;
               const AUTO_ADVANCE_TYPES = ['select', 'yes-no', 'rating'];
 
+              const progressPct = Math.round((currentStep / activeSteps.length) * 100);
+
               return (
                 <>
+                  {/* Smooth percentage progress bar */}
+                  <div className="jb-progress-bar-wrap">
+                    <div className="jb-progress-label">Step {currentStep + 1} of {activeSteps.length} &middot; {progressPct}%</div>
+                    <div className="jb-progress-track">
+                      <div className="jb-progress-fill" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>
+
                   {/* Numbered step progress */}
-                  {activeSteps.length > 1 && (
+                  {activeSteps.length > 1 && activeSteps.length <= 6 && (
                     <div className="jb-step-progress">
                       {activeSteps.map((st: any, i: number) => (
                         <div key={i} className={`jb-step-item${i < currentStep ? ' done' : i === currentStep ? ' active' : ''}`}>
@@ -1667,6 +2001,9 @@ export const PDFJourneyBuilder: React.FC = () => {
                         ? (visible[activeFieldIndex]?.label || s.title)
                         : (brandConfig.journeyTitle || s.title)}
                     </h2>
+                    {!brandConfig.isFocusedMode && s.description && (
+                      <p style={{ fontSize: 14, color: '#64748b', marginBottom: 20, marginTop: 4, lineHeight: 1.6 }}>{s.description}</p>
+                    )}
                     {brandConfig.isFocusedMode && (
                       <div style={{ fontSize: 12, color: '#475569', fontWeight: 700, marginBottom: 28, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         {activeFieldIndex + 1} / {visible.length}
@@ -1701,15 +2038,21 @@ export const PDFJourneyBuilder: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Footer: trust + keyboard hint + nav */}
+                  {/* Footer: trust + auto-save + keyboard hint + nav */}
                   <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 28, paddingTop: 18 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                       {brandConfig.showSecurityBadges !== false && (
                         <SecurityTrust horizontal enabledBadges={brandConfig.enabledSecurityBadges} className="opacity-70 scale-90 origin-left" />
                       )}
-                      <div className="jb-key-hint" style={{ marginLeft: 'auto' }}>
-                        <span className="jb-key-badge">↵ Enter</span>
-                        <span style={{ color: '#334155' }}>to continue</span>
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className={`jb-autosave${autoSavedAt ? ' visible' : ''}`}>
+                          <span className="jb-autosave-dot" />
+                          Saved
+                        </div>
+                        <div className="jb-key-hint">
+                          <span className="jb-key-badge">↵ Enter</span>
+                          <span style={{ color: '#334155' }}>to continue</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1725,6 +2068,7 @@ export const PDFJourneyBuilder: React.FC = () => {
                 </>
               );
             })()}
+            </div>
             </div>
           </div>
 
@@ -1752,12 +2096,23 @@ export const PDFJourneyBuilder: React.FC = () => {
                     className="jb-exit-save-btn"
                     onClick={() => {
                       if (!exitEmail) return;
-                      localStorage.setItem(`jb_resume_${exitEmail}`, JSON.stringify({ fileName, steps, formData, currentStep, activeFieldIndex }));
+                      const token = exitEmail.replace(/[^a-z0-9]/gi, '_');
+                      localStorage.setItem(`jb_resume_${token}`, JSON.stringify({ fileName, steps, formData, currentStep, activeFieldIndex }));
+                      const resumeUrl = `${window.location.origin}${window.location.pathname}?resume=${encodeURIComponent(token)}`;
+                      setExitResumeUrl(resumeUrl);
                       setExitSaved(true);
                     }}
                   >
                     Save my progress →
                   </button>
+                )}
+                {exitSaved && exitResumeUrl && (
+                  <div className="jb-exit-resume-box">
+                    <span className="jb-exit-resume-url">{exitResumeUrl}</span>
+                    <button className="jb-exit-copy-btn" onClick={() => { navigator.clipboard.writeText(exitResumeUrl); setExitCopied(true); setTimeout(() => setExitCopied(false), 2000); }}>
+                      {exitCopied ? '✓ Copied' : 'Copy link'}
+                    </button>
+                  </div>
                 )}
                 <button className="jb-exit-continue-btn" onClick={() => setShowExitIntent(false)}>
                   {exitSaved ? 'Close' : 'Continue without saving'}
@@ -1783,15 +2138,46 @@ export const PDFJourneyBuilder: React.FC = () => {
       {stage === "complete" && (
         <div className="jb-root" style={{ background: 'var(--brand-bg)' }}>
           <div className="jb-card animate-in zoom-in-95 duration-500" style={{ textAlign: "center", maxWidth: 500 }}>
-            <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 24px' }}>
-               <div style={{ position: 'absolute', inset: 0, background: 'var(--brand-primary)', opacity: 0.1, borderRadius: '50%', filter: 'blur(10px)' }} />
-               <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                  <CheckCircle2 size={40} />
-               </div>
-            </div>
 
-            <h1 className="jb-title" style={{ fontSize: 32, marginBottom: 8 }}>{brandConfig.successMessage || "Journey Complete!"}</h1>
-            <p className="jb-sub" style={{ marginBottom: 32 }}>{brandConfig.successSubtitle || "Your compliant document is ready for download."}</p>
+            {/* Quiz Score Reveal */}
+            {brandConfig.isQuizMode && quizScore ? (() => {
+              const circumference = 2 * Math.PI * 54;
+              const gradeColors: Record<string, string> = { A: '#10b981', B: '#34d399', C: '#f59e0b', D: '#fb923c', F: '#f87171' };
+              const gradeColor = gradeColors[quizScore.grade] || '#64748b';
+              return (
+                <>
+                  <div className="jb-score-ring-wrap">
+                    <svg className="jb-score-ring-svg" width="160" height="160" viewBox="0 0 160 160">
+                      <circle className="jb-score-ring-bg" cx="80" cy="80" r="54" />
+                      <circle className="jb-score-ring-fill" cx="80" cy="80" r="54"
+                        stroke={gradeColor}
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference - (quizScore.pct / 100) * circumference}
+                      />
+                    </svg>
+                    <div className="jb-score-ring-center">
+                      <div className="jb-score-pct">{quizScore.pct}%</div>
+                      <div className="jb-score-grade" style={{ background: `${gradeColor}20`, color: gradeColor }}>{quizScore.grade}</div>
+                    </div>
+                  </div>
+                  <h1 className="jb-title" style={{ fontSize: 28, marginBottom: 8 }}>
+                    {quizScore.pct >= 70 ? '🎉 Great job!' : quizScore.pct >= 50 ? '👍 Not bad!' : '📚 Keep practicing!'}
+                  </h1>
+                  <p className="jb-sub" style={{ marginBottom: 32 }}>You scored <strong style={{ color: gradeColor }}>{quizScore.total} / {quizScore.max} points</strong></p>
+                </>
+              );
+            })() : (
+              <>
+                <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 24px' }}>
+                   <div style={{ position: 'absolute', inset: 0, background: 'var(--brand-primary)', opacity: 0.1, borderRadius: '50%', filter: 'blur(10px)' }} />
+                   <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                      <CheckCircle2 size={40} />
+                   </div>
+                </div>
+                <h1 className="jb-title" style={{ fontSize: 32, marginBottom: 8 }}>{brandConfig.successMessage || "Journey Complete!"}</h1>
+                <p className="jb-sub" style={{ marginBottom: 32 }}>{brandConfig.successSubtitle || "Your compliant document is ready for download."}</p>
+              </>
+            )}
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
                <div style={{ padding: 20, background: 'rgba(255,255,255,0.02)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)' }}>

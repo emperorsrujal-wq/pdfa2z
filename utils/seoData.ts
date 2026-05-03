@@ -1,13 +1,13 @@
 import { ToolType } from '../types.ts';
-import { 
-  Home, Info, Mail, Shield, FileSearch, ShieldCheck, Layers, Route, Scissors, 
-  Minimize2, FileText, MessageSquare, Zap, UserMinus, PenTool, Download, 
-  Video, Wand2, RotateCw, RefreshCw, Lock, Unlock, Table, Image, FileType, Code, Hash, 
-  Trash2, Paintbrush, Stamp, Hammer, Maximize2, EyeOff, LayoutTemplate, 
-  ImageMinus, FilePlus, Grid, User, PlusCircle, 
-  Type, Move, FileSpreadsheet, FileCode, FileDigit, Scan, ListOrdered, 
-  FileStack, FileLock, ImagePlus, Smile, Search, LucideIcon,
-  Wrench, FileEdit, ImageDown, ScanText, Sparkles
+import {
+  Home, Info, Mail, Shield, FileSearch, ShieldCheck, Layers, Route, Scissors,
+  Minimize2, FileText, MessageSquare, Zap, UserMinus, PenTool, Download,
+  Video, RotateCw, RefreshCw, Lock, Unlock, Table, Image, FileType, Code, Hash,
+  Trash2, Paintbrush, Stamp, Maximize2, EyeOff, LayoutTemplate,
+  ImageMinus, Grid, User, PlusCircle,
+  Move, FileSpreadsheet, FileCode, ListOrdered, Type,
+  FileStack, Smile, LucideIcon,
+  Wrench, FileEdit, ImageDown, Sparkles
 } from 'lucide-react';
 
 export interface ToolSEO {
@@ -33,32 +33,49 @@ export interface ToolSEO {
 export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'home': {
     slug: '',
-    title: 'PDFA2Z - Professional PDF Journeys & Compliant Automation',
-    description: 'The specialized PDF platform for Mortgage Agents, Lawyers, and Banks. Automate client onboarding, e-signatures, and legally-binding PDF journeys with PIPEDA/GDPR compliance.',
-    h1: 'Automated. Compliant Journeys.',
-    intro: 'PDFA2Z turns complex onboarding into automated, legally binding journeys. Tailored for high-stakes industries like Mortgage, Legal, and Real Estate.',
+    title: 'Free Online PDF & Image Tools — PDFA2Z | 100+ Tools, No Signup',
+    description: 'The #1 free online PDF and image tool suite. Merge PDF, compress, convert to Word/Excel, edit, split, sign, remove background, resize images and 100+ more tools. No signup, instant access.',
+    h1: 'Free Online PDF & Image Tools',
+    intro: 'PDFA2Z gives you 100+ free online PDF and image tools — no signup, no watermarks, no limits. Merge, compress, convert, edit, sign PDFs. Remove backgrounds, resize, compress images. All in your browser.',
     steps: [],
-    faqs: [],
+    faqs: [
+      { q: 'Are all tools really free?', a: 'Yes. Every PDF and image tool on PDFA2Z is 100% free with no signup required.' },
+      { q: 'Is my data safe?', a: 'All file processing runs locally in your browser or is deleted from our servers immediately after processing. We never store your documents.' },
+      { q: 'What PDF tools are available?', a: 'We offer 50+ PDF tools including merge, split, compress, convert to Word/Excel/PPT, edit, sign, watermark, protect, unlock, rotate, and more.' },
+      { q: 'What image tools are available?', a: 'We offer 30+ image tools including background removal, resize, compress, crop, rotate, upscale, face blur, collage maker, and more.' },
+    ],
     type: ToolType.DASHBOARD,
     icon: Home,
+    features: [
+      '100+ Free Tools',
+      'No Signup Required',
+      'Merge PDF Online',
+      'Compress PDF',
+      'PDF to Word',
+      'Remove Background',
+      'Resize Image',
+      'AI-Powered Tools',
+      'Secure & Private',
+      'Browser-Based Processing',
+    ],
     translations: {
       es: {
-        title: 'PDFA2Z - Herramientas Gratuitas de PDF e IA',
-        description: 'Herramientas todo en uno para PDF e imágenes. Combinar, dividir, comprimir y generar contenido con IA.',
-        h1: 'Herramientas Profesionales de PDF e Imagen',
-        intro: 'PDFA2Z ofrece un conjunto completo de utilidades para gestionar sus documentos e imágenes. Sin registro.'
+        title: 'Herramientas PDF e Imagen Gratis en Línea — PDFA2Z | +100 Herramientas',
+        description: 'La suite #1 de herramientas PDF e imagen gratuitas. Combinar, comprimir, convertir a Word, editar, firmar PDFs. Eliminar fondos, redimensionar imágenes y más. Sin registro.',
+        h1: 'Herramientas PDF e Imagen Gratis en Línea',
+        intro: 'PDFA2Z te ofrece más de 100 herramientas gratuitas para PDF e imágenes. Sin registro, sin marcas de agua. Todo en tu navegador.'
       },
       fr: {
-        title: 'PDFA2Z - Outils PDF et IA Gratuits en Ligne',
-        description: 'Outils PDF et Image tout-en-un. Fusionner, diviser, compresser et générer du contenu avec l\'IA.',
-        h1: 'Outils PDF et Image Professionnels',
-        intro: 'PDFA2Z propose une suite complète d\'utilitaires pour gérer vos documents et images. Aucun abonnement requis.'
+        title: 'Outils PDF et Image Gratuits en Ligne — PDFA2Z | +100 Outils',
+        description: 'La suite #1 d\'outils PDF et image gratuits. Fusionner, compresser, convertir en Word, éditer, signer des PDF. Supprimer l\'arrière-plan, redimensionner des images. Sans inscription.',
+        h1: 'Outils PDF et Image Gratuits en Ligne',
+        intro: 'PDFA2Z vous propose plus de 100 outils PDF et image gratuits. Sans inscription, sans filigrane. Tout dans votre navigateur.'
       },
       hi: {
-        title: 'PDFA2Z - मुफ्त ऑनलाइन PDF और AI टूल्स',
-        description: 'ऑल-इन-वन PDF और इमेज टूल्स। AI के साथ PDF मर्ज, स्प्लिट, कंप्रेस और कंटेंट जेनरेट करें।',
-        h1: 'प्रोफेशनल PDF और इमेज टूल्स',
-        intro: 'PDFA2Z आपके दस्तावेज़ों और छवियों को प्रबंधित करने के लिए उपयोगिताओं का एक पूरा सूट प्रदान करता है।'
+        title: 'मुफ्त ऑनलाइन PDF और इमेज टूल्स — PDFA2Z | 100+ टूल्स',
+        description: '#1 मुफ्त ऑनलाइन PDF और इमेज टूल्स सूट। PDF मर्ज, कंप्रेस, Word में कन्वर्ट, एडिट, साइन करें। बैकग्राउंड हटाएं, इमेज रीसाइज़ करें और 100+ और टूल्स। कोई साइनअप नहीं।',
+        h1: 'मुफ्त ऑनलाइन PDF और इमेज टूल्स',
+        intro: 'PDFA2Z आपको 100+ मुफ्त PDF और इमेज टूल्स देता है। कोई साइनअप नहीं, कोई वाटरमार्क नहीं। सब कुछ आपके ब्राउज़र में।'
       }
     }
   },
@@ -223,9 +240,9 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'split-pdf': {
     slug: 'split-pdf',
-    title: 'Split PDF - Extract Pages & Separate Documents Online',
-    description: 'Split PDF files into individual pages or extract specific ranges. Free online PDF splitter to separate PDF documents instantly.',
-    h1: 'Split PDF Document',
+    title: 'Free Split PDF Online — Extract & Separate Pages Instantly',
+    description: 'Free online PDF splitter. Split PDF files into individual pages or extract specific page ranges instantly. No signup, no watermark. Secure and fast.',
+    h1: 'Free Split PDF Online',
     intro: 'Need to extract specific pages from a large PDF? Our Split PDF tool lets you separate PDF documents by range or extract every page into a new file.',
     steps: [
       'Upload your PDF document to the splitter.',
@@ -369,8 +386,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-chat': {
     slug: 'pdf-chat',
-    title: 'Chat with PDF - AI Document Assistant',
-    description: 'Upload any PDF and chat with it using AI. Ask questions, get summaries, and extract insights from your documents instantly.',
+    title: 'Free Chat with PDF — AI-Powered PDF Q&A Assistant Online',
+    description: 'Free AI-powered PDF chat tool. Upload any PDF and ask questions, get summaries, and extract key insights instantly. No signup required.',
     h1: 'Chat with PDF using AI',
     intro: 'Turn your static documents into an interactive conversation. Upload research papers, contracts, or manuals and get instant answers without reading hundreds of pages.',
     steps: [
@@ -599,20 +616,36 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'rotate-pdf': {
     slug: 'rotate-pdf',
-    title: 'Rotate PDF - Rotate PDF Pages Online',
-    description: 'Rotate PDF pages permanently. Save your PDF with new orientation.',
-    h1: 'Rotate PDF Pages',
-    intro: 'Rotate specific pages or the entire document.',
-    steps: ['Upload PDF', 'Select rotation angle', 'Download rotated PDF'],
-    faqs: [],
+    title: 'Free Rotate PDF Online — Rotate Pages 90°, 180°, 270°',
+    description: 'Free online PDF rotation tool. Rotate individual PDF pages or the entire document by 90, 180, or 270 degrees permanently. No signup required.',
+    h1: 'Free Rotate PDF Online',
+    intro: 'Fix upside-down or sideways PDF pages instantly. Rotate specific pages or the entire document and save the new orientation permanently.',
+    steps: [
+      'Upload your PDF file.',
+      'Select which pages to rotate (all or specific pages).',
+      'Choose 90°, 180°, or 270° rotation.',
+      'Download your permanently rotated PDF.'
+    ],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, rotating PDFs on PDFA2Z is completely free with no signup required.' },
+      { q: 'Will rotation be permanent?', a: 'Yes, the rotation is embedded into the PDF file, not just a viewer setting.' },
+      { q: 'Can I rotate individual pages?', a: 'Yes, you can select specific pages to rotate while leaving others unchanged.' }
+    ],
+    features: [
+      'Rotate 90°, 180°, 270°',
+      'Rotate All or Specific Pages',
+      'Permanent Rotation',
+      'No Quality Loss',
+      'No Signup Needed'
+    ],
     type: ToolType.PDF_SUITE,
     icon: RotateCw,
     mode: 'ROTATE'
   },
   'protect-pdf': {
     slug: 'protect-pdf',
-    title: 'Protect PDF - Encrypt PDF with Password',
-    description: 'Secure your PDF files with military-grade AES encryption. Add a password to prevent unauthorized access.',
+    title: 'Free PDF Password Protector — Encrypt PDF with AES Online',
+    description: 'Free online PDF password protection. Encrypt your PDF with 256-bit AES to prevent unauthorized access. Secure, instant, and no signup required.',
     h1: 'Password Protect PDF',
     intro: 'Keep your sensitive documents safe. Add a strong password to your PDF files so only authorized people can view them.',
     steps: [
@@ -640,8 +673,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'unlock-pdf': {
     slug: 'unlock-pdf',
-    title: 'Unlock PDF - Remove Password Online',
-    description: 'Remove security restrictions and passwords from PDFs you own. Decrypt secured PDF files instantly.',
+    title: 'Free Unlock PDF — Remove PDF Password & Restrictions Online',
+    description: 'Free online PDF unlocker. Remove passwords and security restrictions from PDF files you own. Decrypt secured PDFs instantly, no signup needed.',
     h1: 'Unlock PDF',
     intro: 'Forgot the editing password? Or want to remove the password from a file you access frequently? Use our Unlock PDF tool to create an unprotected copy.',
     steps: [
@@ -667,8 +700,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-to-excel': {
     slug: 'pdf-to-excel',
-    title: 'PDF to Excel Converter - Convert PDF to XLS/XLSX Online',
-    description: 'Convert PDF to Excel spreadsheets online for free. Extract tables from PDF to Excel (XLSX) automatically. Best PDF to Excel converter.',
+    title: 'Free PDF to Excel Converter — Extract Tables to XLSX Online',
+    description: 'Free PDF to Excel converter. Convert PDF to Excel (XLSX/XLS) online — automatically extracts tables and data. No signup, no watermark. Best free PDF to Excel tool.',
     h1: 'Convert PDF to Excel',
     intro: 'Stop retyping data manually! Our PDF to Excel converter automatically detects tables in your document and converts them into editable Excel spreadsheets (.xlsx).',
     steps: [
@@ -694,8 +727,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'jpg-to-pdf': {
     slug: 'jpg-to-pdf',
-    title: 'JPG to PDF - Convert Images to PDF Document',
-    description: 'Convert JPG, PNG, or BMP images to PDF online for free. Merge multiple images into one PDF file. Best JPG to PDF converter.',
+    title: 'Free JPG to PDF Converter — Convert Images to PDF Online',
+    description: 'Free JPG to PDF converter online. Convert JPG, PNG, WebP, or BMP images to PDF instantly. Merge multiple images into one PDF file. No signup, no watermark.',
     h1: 'Convert JPG to PDF',
     intro: 'Turn your images into a professional PDF document. Combine multiple JPGs into a single PDF file for easy sharing and archiving.',
     steps: [
@@ -721,8 +754,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'word-to-pdf': {
     slug: 'word-to-pdf',
-    title: 'Word to PDF Converter - Convert Docx to PDF',
-    description: 'Convert Microsoft Word documents to PDF online for free. Save Doc and Docx files as PDF instantly. Best Word to PDF converter.',
+    title: 'Free Word to PDF Converter — Convert DOC/DOCX to PDF Online',
+    description: 'Free Word to PDF converter online. Convert Microsoft Word DOC and DOCX files to PDF instantly. Preserves formatting, fonts, and layout. No signup required.',
     h1: 'Convert Word to PDF',
     intro: 'Create professional PDFs from your Word documents. Preserve your formatting, fonts, and layout exactly as they appear in Microsoft Word.',
     steps: [
@@ -743,84 +776,112 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-to-html': {
     slug: 'pdf-to-html',
-    title: 'PDF to HTML - Convert PDF to Web Page',
-    description: 'Convert PDF documents to HTML5 web pages.',
-    h1: 'Convert PDF to HTML',
-    intro: 'Make your PDF web-ready by converting to HTML.',
-    steps: ['Upload PDF', 'Convert', 'Download HTML'],
-    faqs: [],
+    title: 'Free PDF to HTML Converter — Convert PDF to Web Page Online',
+    description: 'Free PDF to HTML converter. Turn your PDF documents into HTML5 web pages instantly. Preserve text, images, and layout. No signup required.',
+    h1: 'Free PDF to HTML Converter',
+    intro: 'Make your PDF documents web-ready. Convert any PDF to a clean HTML5 web page that looks great in any browser, preserving your original content and layout.',
+    steps: ['Upload your PDF file.', 'Wait for the conversion to complete.', 'Download your HTML file or ZIP archive.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting PDF to HTML on PDFA2Z is completely free.' },
+      { q: 'Does it preserve images?', a: 'Yes, images from the PDF are included and embedded in the HTML output.' }
+    ],
+    features: ['Preserve Text & Images', 'HTML5 Output', 'No Signup', 'Fast Conversion', 'Secure Processing'],
     type: ToolType.PDF_SUITE,
     icon: Code,
     mode: 'TO_HTML'
   },
   'page-numbers': {
     slug: 'page-numbers',
-    title: 'Page Numbers - Add Numbers to PDF',
-    description: 'Insert page numbers into PDF document headers/footers.',
-    h1: 'Add Page Numbers to PDF',
-    intro: 'Number your PDF pages easily.',
-    steps: ['Upload PDF', 'Select position', 'Download numbered PDF'],
-    faqs: [],
+    title: 'Free Add Page Numbers to PDF — Online PDF Numbering Tool',
+    description: 'Free online tool to add page numbers to PDF files. Choose position (header/footer), starting number, and font style. No signup, instant download.',
+    h1: 'Add Page Numbers to PDF Free',
+    intro: 'Professionally number your PDF pages. Choose exactly where numbers appear — top or bottom, left, center, or right — and customize font and starting number.',
+    steps: ['Upload your PDF.', 'Choose number position (header or footer) and alignment.', 'Set starting page number and font size.', 'Download your numbered PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, adding page numbers to PDF is completely free on PDFA2Z.' },
+      { q: 'Can I start from a custom number?', a: 'Yes, you can set any starting number (e.g., start from page 5).' }
+    ],
+    features: ['Header & Footer Placement', 'Custom Start Number', 'Font Size Control', 'No Signup', 'Instant Download'],
     type: ToolType.PDF_SUITE,
     icon: Hash,
     mode: 'PAGE_NUMBERS'
   },
   'delete-pages': {
     slug: 'delete-pages',
-    title: 'Delete PDF Pages - Remove Pages Online',
-    description: 'Remove unwanted pages from PDF documents.',
-    h1: 'Delete Pages from PDF',
-    intro: 'Select and remove specific pages from your PDF.',
-    steps: ['Upload PDF', 'Enter page numbers', 'Download modified PDF'],
-    faqs: [],
+    title: 'Free Delete PDF Pages — Remove Unwanted Pages Online',
+    description: 'Free online tool to delete or remove pages from a PDF file. Select specific pages or page ranges to remove instantly. No signup, no watermark.',
+    h1: 'Free Delete Pages from PDF',
+    intro: 'Remove unwanted pages from your PDF in seconds. Select individual pages or ranges and download your clean, trimmed PDF immediately.',
+    steps: ['Upload your PDF file.', 'Select the page numbers you want to remove (e.g., 3, 5-8).', 'Click "Delete Pages".', 'Download your updated PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, deleting PDF pages is completely free on PDFA2Z.' },
+      { q: 'Can I delete multiple pages at once?', a: 'Yes, enter a comma-separated list or range (e.g., 1, 3-5, 8).' }
+    ],
+    features: ['Delete Individual Pages', 'Page Range Selection', 'Instant Processing', 'No Signup', 'No Watermark'],
     type: ToolType.PDF_SUITE,
     icon: Trash2,
     mode: 'DELETE_PAGES'
   },
   'grayscale-pdf': {
     slug: 'grayscale-pdf',
-    title: 'Grayscale PDF - Convert to Black & White',
-    description: 'Convert colored PDFs to grayscale/black and white.',
-    h1: 'Make PDF Grayscale',
-    intro: 'Save ink by converting PDFs to grayscale.',
-    steps: ['Upload PDF', 'Convert', 'Download B&W PDF'],
-    faqs: [],
+    title: 'Free Grayscale PDF — Convert PDF to Black & White Online',
+    description: 'Free online PDF grayscale converter. Convert colored PDF pages to black and white to save printer ink and reduce file size. No signup required.',
+    h1: 'Free Convert PDF to Grayscale',
+    intro: 'Save on printing costs by converting your PDF to black and white. Our free grayscale converter removes all colors from your PDF while keeping all text and images crisp.',
+    steps: ['Upload your color PDF.', 'Click "Convert to Grayscale".', 'Download your black and white PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting PDF to grayscale is completely free on PDFA2Z.' },
+      { q: 'Will text remain sharp?', a: 'Yes, text stays sharp and all content is preserved — only color is removed.' }
+    ],
+    features: ['Remove All Colors', 'Save Ink on Printing', 'Reduce File Size', 'No Signup', 'Instant Download'],
     type: ToolType.PDF_SUITE,
     icon: Paintbrush,
     mode: 'GRAYSCALE'
   },
   'watermark-pdf': {
     slug: 'watermark-pdf',
-    title: 'Watermark PDF - Add Stamp to PDF',
-    description: 'Add text or image watermarks to PDF documents.',
-    h1: 'Add Watermark to PDF',
-    intro: 'Protect your documents with custom watermarks.',
-    steps: ['Upload PDF', 'Enter text', 'Download watermarked PDF'],
-    faqs: [],
+    title: 'Free PDF Watermark Tool — Add Text or Image Watermark Online',
+    description: 'Free online PDF watermarking. Add custom text or image watermarks to your PDF to protect or brand your documents. Control opacity, size, and position. No signup.',
+    h1: 'Free Add Watermark to PDF',
+    intro: 'Brand and protect your PDF documents with custom watermarks. Add "CONFIDENTIAL", "DRAFT", or your logo to every page with full control over size, position, and opacity.',
+    steps: ['Upload your PDF.', 'Choose text or image watermark.', 'Set position, opacity, and font size.', 'Download your watermarked PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, adding watermarks to PDFs is completely free on PDFA2Z.' },
+      { q: 'Can I control the opacity?', a: 'Yes, you can adjust transparency from 10% to 100% so the watermark is subtle or bold.' }
+    ],
+    features: ['Text & Image Watermarks', 'Adjustable Opacity', 'Custom Position', 'Diagonal Stamp', 'No Signup'],
     type: ToolType.PDF_SUITE,
     icon: Stamp,
     mode: 'WATERMARK'
   },
   'repair-pdf': {
     slug: 'repair-pdf',
-    title: 'Repair PDF - Fix Corrupted PDF',
-    description: 'Recover data from damaged or corrupted PDF files.',
-    h1: 'Repair Broken PDF',
-    intro: 'Attempt to fix corrupted PDF files.',
-    steps: ['Upload file', 'Wait for repair', 'Download fixed PDF'],
-    faqs: [],
+    title: 'Free Repair PDF — Fix Corrupted PDF Files Online',
+    description: 'Free PDF repair tool. Fix corrupted, damaged, or broken PDF files that won\'t open. Recover and restore your documents instantly. No signup required.',
+    h1: 'Free Repair Corrupted PDF',
+    intro: 'Can\'t open your PDF? Our free repair tool attempts to recover and fix corrupted or damaged PDF files so you can access your documents again.',
+    steps: ['Upload your corrupted or broken PDF.', 'Our tool analyzes and attempts to repair the file.', 'Download your repaired PDF if recovery is successful.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, repairing PDF files is completely free on PDFA2Z.' },
+      { q: 'Can all PDFs be repaired?', a: 'We can repair most lightly corrupted PDFs. Severely damaged files may not be fully recoverable.' }
+    ],
+    features: ['Fix Corrupted PDFs', 'Recover Unreadable Files', 'No Data Loss', 'No Signup', 'Instant Processing'],
     type: ToolType.PDF_SUITE,
     icon: Wrench,
     mode: 'REPAIR'
   },
   'flatten-pdf': {
     slug: 'flatten-pdf',
-    title: 'Flatten PDF - Merge Layers',
-    description: 'Flatten PDF forms and layers into a single printable layer.',
-    h1: 'Flatten PDF Document',
-    intro: 'Make PDF forms non-editable by flattening them.',
-    steps: ['Upload PDF', 'Flatten', 'Download result'],
-    faqs: [],
+    title: 'Free Flatten PDF — Lock PDF Forms & Merge Layers Online',
+    description: 'Free PDF flattening tool. Flatten PDF forms, annotations, and layers into a single non-editable layer. Perfect for archiving and printing. No signup.',
+    h1: 'Free Flatten PDF Online',
+    intro: 'Lock down your filled PDF forms by flattening them. Prevents editing of form fields and merges all annotations and layers into a single printable layer.',
+    steps: ['Upload your PDF form or layered PDF.', 'Click "Flatten PDF".', 'Download the flattened, print-ready PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, flattening PDFs is completely free on PDFA2Z.' },
+      { q: 'What does flattening do?', a: 'It merges all interactive form fields, annotations, and layers into static content that cannot be edited.' }
+    ],
+    features: ['Flatten Form Fields', 'Lock Annotations', 'Merge Layers', 'Print-Ready Output', 'No Signup'],
     type: ToolType.PDF_SUITE,
     icon: Layers,
     mode: 'FLATTEN'
@@ -879,8 +940,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'convert-image': {
     slug: 'convert-image',
-    title: 'Image Converter - Convert JPG to PNG, WebP, GIF',
-    description: 'Convert images to JPG, PNG, WebP, BMP, or GIF online. Free image format converter for all your photos.',
+    title: 'Free Image Converter — Convert JPG to PNG, WebP, GIF Online',
+    description: 'Free online image converter. Convert JPG, PNG, WebP, HEIC, BMP, and GIF formats instantly. Batch convert multiple images at once. No signup required.',
     h1: 'Convert Image Format Online',
     intro: 'Need a different image format? Convert your photos instantly to JPG, PNG, WebP or other formats for compatibility with any device or website.',
     steps: [
@@ -905,9 +966,9 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'crop-image': {
     slug: 'crop-image',
-    title: 'Crop Image Online - Cut Photos Free',
-    description: 'Crop images to remove unwanted areas or change aspect ratio. Free online photo cropper.',
-    h1: 'Crop Image Online',
+    title: 'Free Crop Image Online — Cut & Trim Photos Instantly',
+    description: 'Free online image cropper. Crop JPG, PNG, and WebP photos to remove unwanted areas, change aspect ratio, or focus on your subject. No signup required.',
+    h1: 'Free Crop Image Online',
     intro: 'Trim your photos to focus on the subject. Use preset aspect ratios like 1:1 (Square), 16:9, or freeform crop.',
     steps: [
       'Upload your photo.',
@@ -929,21 +990,21 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'rotate-image': {
     slug: 'rotate-image',
-    title: 'Rotate Image - Flip & Rotate Photos',
-    description: 'Rotate images 90 degrees left or right, or flip them horizontally/vertically.',
-    h1: 'Rotate Image Online',
-    intro: 'Fix upside-down or sideways photos instantly. Rotate or mirror your images with a click.',
+    title: 'Free Rotate Image Online — Flip & Rotate Photos 90°/180°',
+    description: 'Free online image rotation tool. Rotate JPG, PNG, and WebP photos 90°, 180°, or 270°. Flip horizontally or vertically. Fix sideways photos instantly. No signup.',
+    h1: 'Free Rotate Image Online',
+    intro: 'Fix upside-down or sideways photos instantly. Rotate your images 90°, 180°, or 270° and flip horizontally or vertically — all with a single click.',
     steps: [
-      'Upload your image.',
-      'Use the buttons to rotate left/right or flip.',
-      'Click "download" when satisfied.'
+      'Upload your image (JPG, PNG, or WebP).',
+      'Use the rotation buttons to rotate 90° left, 90° right, or 180°.',
+      'Flip horizontally or vertically if needed.',
+      'Download your corrected image.'
     ],
-    features: [
-      '90° Rotation',
-      'Horizontal & Vertical Flip',
-      'Lossless Rotation'
+    features: ['90°, 180°, 270° Rotation', 'Horizontal & Vertical Flip', 'Lossless Rotation', 'No Signup', 'Instant Download'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, rotating images on PDFA2Z is completely free.' },
+      { q: 'Does rotating reduce quality?', a: 'No, image quality is fully preserved during rotation.' }
     ],
-    faqs: [],
     type: ToolType.IMAGE_TOOLKIT,
     icon: RotateCw,
     mode: 'ROTATE'
@@ -1027,8 +1088,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'compare-image': {
     slug: 'compare-image',
-    title: 'Image Comparison Tool - Before and After Slider',
-    description: 'Create interactive "Before and After" comparison images. Perfect for showcasing edits, renovations, or weight loss.',
+    title: 'Free Image Comparison Tool — Before & After Slider Online',
+    description: 'Free online before and after image comparison tool. Create interactive drag sliders to showcase edits, renovations, or transformations. No signup required.',
     h1: 'Compare Images Online',
     intro: 'Visualise the difference. Upload a "Before" and "After" image to generate a side-by-side comparison with a draggable slider.',
     steps: [
@@ -1052,8 +1113,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'face-blur': {
     slug: 'face-blur',
-    title: 'Face Blur - Anonymize Faces in Photos',
-    description: 'Automatically detect and blur faces in your photos to protect privacy. AI-powered face redaction tool.',
+    title: 'Free Face Blur Tool — Anonymize & Blur Faces in Photos Online',
+    description: 'Free AI-powered face blur tool. Automatically detect and blur faces in photos to protect privacy. Perfect for sharing photos publicly. No signup required.',
     h1: 'Blur Faces Online',
     intro: 'Privacy matters. Our AI automatically detects faces in your uploaded photos and applies a secure blur effect. Perfect for sharing public photos or news media.',
     steps: [
@@ -1078,8 +1139,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'upscale-image': {
     slug: 'upscale-image',
-    title: 'AI Image Upscaler - Enhance Photo Quality 4K',
-    description: 'Upscale low-resolution images to 2x or 4x without losing quality using AI. Fix blurry photos and enhance details instantly.',
+    title: 'Free AI Image Upscaler — Enhance Photo Quality to 4K Online',
+    description: 'Free AI-powered image upscaler. Upscale low-resolution photos to 2x or 4x HD quality without losing sharpness. Fix blurry images instantly. No signup required.',
     h1: 'Free AI Image Upscaler',
     intro: 'Don\'t let low-resolution photos ruin your project. Our AI Image Upscaler adds missing pixels and enhances clarity to give you crisp, high-definition results up to 4K resolution.',
     steps: [
@@ -1138,24 +1199,34 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'sign-pdf': {
     slug: 'sign-pdf',
-    title: 'Sign PDF - Add Signature Online',
-    description: 'Draw and add your signature to PDF documents for free.',
-    h1: 'Sign PDF Online',
-    intro: 'Create and add electronic signatures to your PDF.',
-    steps: ['Upload PDF', 'Draw Signature', 'Download Signed PDF'],
-    faqs: [],
+    title: 'Free Sign PDF Online — Add Electronic Signature to PDF',
+    description: 'Free online PDF signing. Draw, type, or upload your signature and add it to any PDF document. 100% free, no signup, legally valid e-signature tool.',
+    h1: 'Free Sign PDF Online',
+    intro: 'Sign any PDF document electronically in seconds. Draw your signature with a mouse or finger, type it, or upload an image of your signature. Download your signed PDF instantly.',
+    steps: ['Upload the PDF you need to sign.', 'Draw, type, or upload your signature.', 'Drag the signature to the correct position.', 'Download your signed PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, signing PDFs on PDFA2Z is completely free with no signup required.' },
+      { q: 'Is an e-signature legally valid?', a: 'Electronic signatures are legally recognized in most countries under e-signature laws (eIDAS, ESIGN Act, etc.).' },
+      { q: 'Can I sign multiple pages?', a: 'Yes, you can add your signature to any page in the document.' }
+    ],
+    features: ['Draw Signature', 'Type Signature', 'Upload Signature Image', 'Drag & Drop Placement', 'No Signup'],
     type: ToolType.PDF_SUITE,
     icon: PenTool,
     mode: 'SIGN'
   },
   'compress-image': {
     slug: 'compress-image',
-    title: 'Compress Image - Reduce Size',
-    description: 'Reduce image file size (JPG, PNG) without quality loss.',
-    h1: 'Compress Images',
-    intro: 'Optimize images for the web.',
-    steps: ['Upload Image', 'Compress', 'Download'],
-    faqs: [],
+    title: 'Free Image Compressor — Reduce JPG/PNG File Size Online',
+    description: 'Free online image compressor. Reduce JPG, PNG, and WebP file sizes by up to 90% without visible quality loss. Perfect for web optimization. No signup required.',
+    h1: 'Free Image Compressor Online',
+    intro: 'Make your images load faster without sacrificing quality. Our smart compression engine reduces file sizes up to 90% while keeping your photos looking sharp.',
+    steps: ['Upload your JPG, PNG, or WebP image.', 'Choose compression level (Balanced or Maximum).', 'Preview the quality vs size tradeoff.', 'Download your compressed image.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, compressing images on PDFA2Z is completely free with no signup.' },
+      { q: 'How much can I reduce size?', a: 'Typically 50-90% size reduction depending on the image and compression level.' },
+      { q: 'Will quality suffer?', a: 'Our Balanced mode keeps quality nearly identical to the original.' }
+    ],
+    features: ['Up to 90% Size Reduction', 'No Visible Quality Loss', 'JPG, PNG, WebP Support', 'Batch Compression', 'No Signup'],
     type: ToolType.IMAGE_TOOLKIT,
     icon: Minimize2,
     mode: 'COMPRESS'
@@ -1233,8 +1304,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'batch-resize': {
     slug: 'batch-resize',
-    title: 'Batch Image Resizer - Resize Multiple Images at Once',
-    description: 'Bulk resize JPG, PNG, and WebP images simultaneously. Save time by processing up to 50 images in one go.',
+    title: 'Free Batch Image Resizer — Resize Multiple Images at Once Online',
+    description: 'Free bulk image resizer. Resize 50+ JPG, PNG, and WebP images simultaneously. Set dimensions once, apply to all. Download as ZIP. No signup required.',
     h1: 'Bulk Resize Images Online',
     intro: 'Need to resize a whole album? Our batch processing tool handles multiple files instantly. Set your dimensions once and apply to all.',
     steps: [
@@ -1259,8 +1330,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'watermark-image': {
     slug: 'watermark-image',
-    title: 'Watermark Image Online - Add Logo or Text',
-    description: 'Protect your photography with custom watermarks. Add text copyrights or logo overlays to photos online.',
+    title: 'Free Watermark Image Online — Add Logo or Text to Photos',
+    description: 'Free online image watermarking tool. Protect your photography by adding text copyright or logo overlays to images. Adjustable opacity and position. No signup.',
     h1: 'Add Watermark to Photo',
     intro: 'Secure your creative work. Easily add transparency-adjusted logos or repeated text patterns to your images to prevent theft.',
     steps: [
@@ -1285,8 +1356,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'flip-image': {
     slug: 'flip-image',
-    title: 'Flip Image Online - Mirror Photo Horizontally',
-    description: 'Mirror photos horizontally or vertically. Create reflection effects or correct selfie orientation.',
+    title: 'Free Flip Image Online — Mirror Photo Horizontally or Vertically',
+    description: 'Free online image flipper. Mirror photos horizontally or vertically. Fix mirrored selfies, create reflections, and correct image orientation. No signup needed.',
     h1: 'Mirror Image Online',
     intro: 'Did your phone take a mirrored selfie? Fix it instantly with our Flip Image tool.',
     steps: [
@@ -1307,8 +1378,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pixelate-image': {
     slug: 'pixelate-image',
-    title: 'Pixelate Image Tool - Censor Photos Online',
-    description: 'Pixelate faces, license plates, or sensitive info. Create retro 8-bit style art effects.',
+    title: 'Free Pixelate Image — Censor & Blur Photos Online',
+    description: 'Free online pixelate tool. Blur or censor faces, license plates, or sensitive info in photos. Create retro 8-bit pixel art effects. No signup required.',
     h1: 'Pixelate Photo Online',
     intro: 'Hide sensitive details or create artistic pixel art. Adjust the block size to control the level of pixelation.',
     steps: [
@@ -1329,8 +1400,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'invert-image': {
     slug: 'invert-image',
-    title: 'Invert Colors Online - Negative Photo Effect',
-    description: 'Invert image colors to make a negative. Turn white to black and black to white instantly.',
+    title: 'Free Invert Image Colors — Negative Photo Effect Online',
+    description: 'Free online color inversion tool. Invert image colors to create a negative photo effect instantly. Turn white to black and vice versa. No signup required.',
     h1: 'Negative Image Generator',
     intro: 'Create a "camera negative" effect by inverting all colors in your photo. Useful for analyzing contrasts or artistic effects.',
     steps: [
@@ -1350,32 +1421,40 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'extract-images': {
     slug: 'extract-images',
-    title: 'Extract Images from PDF - Save All Images',
-    description: 'Extract all images from a PDF file and save them as a ZIP archive.',
-    h1: 'Extract Images from PDF',
-    intro: 'Get all images from your PDF document in high quality.',
-    steps: ['Upload PDF', 'Wait for extraction', 'Download ZIP file'],
-    faqs: [],
+    title: 'Free Extract Images from PDF — Save All PDF Images Online',
+    description: 'Free online PDF image extractor. Extract and save all images from a PDF file in their original quality as a ZIP archive. No signup required.',
+    h1: 'Free Extract Images from PDF',
+    intro: 'Save all photos and graphics embedded in your PDF. Our extractor pulls every image from the document and packages them in a single ZIP download.',
+    steps: ['Upload your PDF file.', 'Wait while we extract all embedded images.', 'Download all images as a ZIP archive.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, extracting images from PDF is completely free on PDFA2Z.' },
+      { q: 'What formats are the images saved as?', a: 'Images are saved in their original format (JPG, PNG, etc.) from the PDF.' }
+    ],
+    features: ['Extract All Images', 'Original Quality', 'ZIP Download', 'Supports All PDF Types', 'No Signup'],
     type: ToolType.PDF_SUITE,
     icon: ImageDown,
     mode: 'EXTRACT_IMAGES'
   },
   'reverse-pdf': {
     slug: 'reverse-pdf',
-    title: 'Reverse PDF - Reverse Page Order',
-    description: 'Reverse the order of pages in your PDF document instantly.',
-    h1: 'Reverse PDF Pages',
-    intro: 'Flip the order of pages in your PDF file.',
-    steps: ['Upload PDF', 'Click Process', 'Download reversed PDF'],
-    faqs: [],
+    title: 'Free Reverse PDF — Flip Page Order Online Instantly',
+    description: 'Free online PDF page reversal tool. Reverse the page order of any PDF document instantly. Perfect for fixing print order issues. No signup required.',
+    h1: 'Free Reverse PDF Page Order',
+    intro: 'Flip the page order of your PDF instantly. If your scanner produces pages in reverse order, this tool fixes it in one click.',
+    steps: ['Upload your PDF file.', 'Click "Reverse Pages".', 'Download your PDF with pages in the reversed order.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, reversing PDF pages is completely free on PDFA2Z.' },
+      { q: 'Does it affect the content?', a: 'No, only the order of pages changes. All content remains exactly the same.' }
+    ],
+    features: ['Instant Page Reversal', 'No Content Changes', 'Fix Scanner Output', 'No Signup', 'Fast Processing'],
     type: ToolType.PDF_SUITE,
     icon: ListOrdered,
     mode: 'REVERSE'
   },
   'edit-pdf': {
     slug: 'edit-pdf',
-    title: 'Edit PDF Online - Add Text and Draw on PDFs Free',
-    description: 'Free online PDF editor. Add text, draw shapes, and annotate your PDF files directly in your browser. Fast, secure, and interactive PDF editing.',
+    title: 'Free PDF Editor Online — Edit, Annotate & Draw on PDFs',
+    description: 'Free online PDF editor. Add text, draw shapes, highlight, whiteout, sign, and annotate PDF files directly in your browser. No signup, no installation needed.',
     h1: 'Edit PDF Files Online',
     intro: 'Add text, drawings, and annotations to your PDF documents instantly. Our interactive visual editor makes modifying your PDFs easier than ever.',
     steps: [
@@ -1400,10 +1479,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'crop-pdf': {
     slug: 'crop-pdf',
-    title: 'Crop PDF - Trim Margins Online',
-    description: 'Crop PDF pages to remove margins or white space.',
-    h1: 'Crop PDF Pages',
-    intro: 'Trim unwanted areas from your PDF pages.',
+    title: 'Free Crop PDF Online — Trim Margins & White Space Instantly',
+    description: 'Free online PDF cropping tool. Remove margins, white space, and unwanted borders from PDF pages. Set custom crop margins for all pages. No signup.',
+    h1: 'Free Crop PDF Pages Online',
+    intro: 'Remove excessive margins and white space from your PDF pages. Set precise crop margins to trim all pages uniformly and get a clean, professional result.',
     steps: ['Upload PDF', 'Set crop margin', 'Download cropped PDF'],
     faqs: [
       { q: 'Does it crop all pages?', a: 'Yes, the crop is applied to all pages.' }
@@ -1415,10 +1494,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-to-csv': {
     slug: 'pdf-to-csv',
-    title: 'PDF to CSV - Extract Data Tables',
-    description: 'Convert PDF data and tables to CSV format for Excel.',
-    h1: 'Convert PDF to CSV',
-    intro: 'Extract tables from PDF to CSV.',
+    title: 'Free PDF to CSV Converter — Extract Tables to CSV Online',
+    description: 'Free PDF to CSV converter. Extract data tables from PDF files and convert to CSV format compatible with Excel, Google Sheets, and more. No signup.',
+    h1: 'Free Convert PDF to CSV',
+    intro: 'Extract tabular data from your PDF and convert it to a CSV file you can open in Excel, Google Sheets, or any data tool. Stop copying data by hand.',
     steps: ['Upload PDF', 'Click Convert', 'Download CSV'],
     faqs: [
       { q: 'Can it handle scanned PDFs?', a: 'For scanned PDFs you might need an OCR tool.' }
@@ -1430,10 +1509,10 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'url-to-pdf': {
     slug: 'url-to-pdf',
-    title: 'URL to PDF - Convert Webpage to PDF',
-    description: 'Save any webpage as a PDF document.',
-    h1: 'Convert URL to PDF',
-    intro: 'Turn web pages into PDF documents.',
+    title: 'Free URL to PDF — Convert Any Webpage to PDF Online',
+    description: 'Free online webpage to PDF converter. Paste any URL and save the webpage as a PDF document instantly. Archive articles, save receipts, and share web content as PDF.',
+    h1: 'Free Convert URL to PDF',
+    intro: 'Save any webpage as a PDF document. Just paste the URL and we\'ll capture the full page — including images, styles, and layout — and convert it to a clean PDF.',
     steps: ['Open Webpage', 'Print (Ctrl+P)', 'Save as PDF'],
     faqs: [
       { q: 'Do I need software?', a: 'No, just your browser.' }
@@ -1445,8 +1524,8 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'html-to-pdf': {
     slug: 'html-to-pdf',
-    title: 'HTML to PDF - Convert HTML Code to PDF Online',
-    description: 'Convert raw HTML and CSS code into professional PDF documents. Instant preview and high-quality rendering.',
+    title: 'Free HTML to PDF Converter — Convert HTML Code to PDF Online',
+    description: 'Free online HTML to PDF converter. Paste HTML and CSS code and convert it into a professional PDF document instantly. Real-time preview. No signup required.',
     h1: 'Convert HTML Code to PDF',
     intro: 'Paste your HTML code and transform it into a high-fidelity PDF document instantly.',
     steps: [
@@ -1470,73 +1549,95 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'pdf-to-ppt': {
     slug: 'pdf-to-ppt',
-    title: 'PDF to PowerPoint - Convert PDF to PPTX',
-    description: 'Convert PDF presentations to editable PowerPoint slides.',
-    h1: 'Convert PDF to PowerPoint',
-    intro: 'Turn your PDF slides into PowerPoint presentations.',
-    steps: ['Upload PDF', 'Convert', 'Download PPTX'],
-    faqs: [],
-    features: ['Convert slides', 'Editable PPTX', 'Preserve text'],
+    title: 'Free PDF to PowerPoint Converter — Convert PDF to PPTX Online',
+    description: 'Free PDF to PowerPoint converter. Convert PDF slides to editable PPTX files online. Preserve text, layout, and images. No signup, instant download.',
+    h1: 'Free Convert PDF to PowerPoint',
+    intro: 'Turn your PDF presentations into fully editable PowerPoint files. Modify slides, update text, and present with confidence.',
+    steps: ['Upload your PDF presentation.', 'Wait for the conversion to PPTX.', 'Download your editable PowerPoint file.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting PDF to PowerPoint is completely free on PDFA2Z.' },
+      { q: 'Can I edit the slides after conversion?', a: 'Yes, the output is a fully editable PPTX file you can open in PowerPoint or Google Slides.' }
+    ],
+    features: ['Editable PPTX Output', 'Preserve Slide Layout', 'Fast Conversion', 'No Signup', 'Instant Download'],
     type: ToolType.PDF_SUITE,
     icon: FileType,
     mode: 'PDF_TO_PPT'
   },
   'ppt-to-pdf': {
     slug: 'ppt-to-pdf',
-    title: 'PowerPoint to PDF - Convert PPT to PDF',
-    description: 'Convert PowerPoint presentations (PPT, PPTX) to PDF.',
-    h1: 'Convert PowerPoint to PDF',
-    intro: 'Save your slides as a PDF document.',
-    steps: ['Upload PPT', 'Convert', 'Download PDF'],
-    faqs: [],
+    title: 'Free PowerPoint to PDF Converter — Convert PPT/PPTX to PDF',
+    description: 'Free online PowerPoint to PDF converter. Convert PPT and PPTX slides to PDF format while preserving your design, fonts, and images. No signup required.',
+    h1: 'Free Convert PowerPoint to PDF',
+    intro: 'Share your presentations universally by converting to PDF. Perfect for sending slides that look identical on any device.',
+    steps: ['Upload your PPT or PPTX file.', 'Wait for the conversion to complete.', 'Download your PDF file.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting PowerPoint to PDF is completely free on PDFA2Z.' },
+      { q: 'Will animations be preserved?', a: 'Animations are not preserved in PDF format — each slide is captured as a static page.' }
+    ],
+    features: ['Preserve Fonts & Layout', 'PPT & PPTX Support', 'Fast Conversion', 'No Signup', 'Universal PDF Output'],
     type: ToolType.PDF_SUITE,
     icon: FileType,
     mode: 'PPT_TO_PDF'
   },
   'epub-to-pdf': {
     slug: 'epub-to-pdf',
-    title: 'EPUB to PDF - Convert eBook to PDF',
-    description: 'Convert EPUB eBooks to universal PDF format.',
-    h1: 'Convert EPUB to PDF',
-    intro: 'Read your eBooks on any device by converting to PDF.',
-    steps: ['Upload EPUB', 'Convert', 'Download PDF'],
-    faqs: [],
+    title: 'Free EPUB to PDF Converter — Convert eBook to PDF Online',
+    description: 'Free online EPUB to PDF converter. Convert EPUB eBooks to universal PDF format so you can read them on any device. No signup, instant download.',
+    h1: 'Free Convert EPUB to PDF',
+    intro: 'Read your eBooks anywhere by converting EPUB to PDF. PDFs open on every device — smartphones, tablets, computers — without a special eBook reader app.',
+    steps: ['Upload your EPUB eBook file.', 'Wait for the conversion to PDF.', 'Download your PDF file.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting EPUB to PDF is completely free on PDFA2Z.' },
+      { q: 'Will the formatting be preserved?', a: 'Text, chapters, and images are preserved. Complex EPUB layouts may vary slightly.' }
+    ],
+    features: ['EPUB to PDF Conversion', 'Preserve Chapters & Text', 'Read on Any Device', 'No Signup', 'Instant Download'],
     type: ToolType.PDF_SUITE,
     icon: FileType,
     mode: 'EPUB_TO_PDF'
   },
   'mobi-to-pdf': {
     slug: 'mobi-to-pdf',
-    title: 'MOBI to PDF - Convert Kindle to PDF',
-    description: 'Convert MOBI files to PDF format.',
-    h1: 'Convert MOBI to PDF',
-    intro: 'Convert Kindle eBooks to PDF easily.',
-    steps: ['Upload MOBI', 'Convert', 'Download PDF'],
-    faqs: [],
+    title: 'Free MOBI to PDF Converter — Convert Kindle Books to PDF Online',
+    description: 'Free online MOBI to PDF converter. Convert Kindle MOBI eBooks to PDF format so they can be read on any device. No signup, instant conversion.',
+    h1: 'Free Convert MOBI to PDF',
+    intro: 'Convert your Kindle MOBI eBook files to universal PDF format. Read your books on any device without needing the Kindle app.',
+    steps: ['Upload your MOBI file.', 'Wait for conversion.', 'Download your PDF file.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting MOBI to PDF is completely free on PDFA2Z.' }
+    ],
+    features: ['MOBI & AZW3 Support', 'Preserve Text & Images', 'Read on Any Device', 'No Signup', 'Fast Conversion'],
     type: ToolType.PDF_SUITE,
     icon: FileType,
     mode: 'MOBI_TO_PDF'
   },
   'outlook-to-pdf': {
     slug: 'outlook-to-pdf',
-    title: 'Outlook to PDF - Convert MSG/EML to PDF',
-    description: 'Convert Outlook emails (MSG, EML) to PDF documents.',
-    h1: 'Convert Email to PDF',
-    intro: 'Save your emails as PDF files for archiving.',
-    steps: ['Upload File', 'Convert', 'Download PDF'],
-    faqs: [],
+    title: 'Free Email to PDF Converter — Convert MSG/EML to PDF Online',
+    description: 'Free online email to PDF converter. Convert Outlook MSG and EML email files to PDF for archiving, sharing, or printing. No signup required.',
+    h1: 'Free Convert Email to PDF',
+    intro: 'Archive and share your emails as PDFs. Convert Outlook MSG and EML files to clean PDF documents — preserving the email body, sender, and attachments summary.',
+    steps: ['Upload your MSG or EML email file.', 'Wait for conversion.', 'Download your email as a PDF.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, converting emails to PDF is completely free on PDFA2Z.' },
+      { q: 'What formats are supported?', a: 'We support MSG (Outlook) and EML (standard email) formats.' }
+    ],
+    features: ['MSG & EML Support', 'Preserve Email Formatting', 'Archive Emails as PDF', 'No Signup', 'Instant Download'],
     type: ToolType.PDF_SUITE,
     icon: Mail,
     mode: 'OUTLOOK_TO_PDF'
   },
   'pdf-to-text': {
     slug: 'pdf-to-text',
-    title: 'PDF to Text - Extract Plain Text',
-    description: 'Extract all text content from a PDF file.',
-    h1: 'Extract Text from PDF',
-    intro: 'Get the plain text from your PDF documents.',
-    steps: ['Upload PDF', 'Extract', 'Copy Text'],
-    faqs: [],
+    title: 'Free PDF to Text Extractor — Copy Plain Text from PDF Online',
+    description: 'Free online PDF to text converter. Extract all plain text content from any PDF file instantly. Copy, paste, or download the extracted text. No signup.',
+    h1: 'Free Extract Text from PDF',
+    intro: 'Pull all the text content from your PDF documents instantly. Whether you need to copy a few paragraphs or extract an entire document, our tool does it in seconds.',
+    steps: ['Upload your PDF file.', 'Wait while we extract all text content.', 'Copy the text or download it as a TXT file.'],
+    faqs: [
+      { q: 'Is it free?', a: 'Yes, extracting text from PDF is completely free on PDFA2Z.' },
+      { q: 'Does it work on scanned PDFs?', a: 'For scanned PDFs (images of text), please use our OCR tool for best results.' }
+    ],
+    features: ['Extract All Text', 'Download as TXT', 'Copy to Clipboard', 'No Signup', 'Instant Processing'],
     type: ToolType.PDF_SUITE,
     icon: FileText,
     mode: 'EXTRACT_TEXT'

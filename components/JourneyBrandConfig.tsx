@@ -740,6 +740,21 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
             </div>
 
             <div className="brand-form-group">
+              <label className="brand-form-label">Welcome Screen Subtitle</label>
+              <textarea
+                className="brand-input"
+                rows={3}
+                value={config.journeySubtitle || ''}
+                onChange={(e) => handleConfigChange('journeySubtitle', e.target.value)}
+                placeholder="e.g., Fill out this form to complete your request. Takes about 3 minutes."
+                style={{ resize: 'vertical', fontFamily: 'inherit' }}
+              />
+              <p className="brand-form-description">
+                Shown below the title on the welcome screen
+              </p>
+            </div>
+
+            <div className="brand-form-group">
               <label className="brand-form-label">Success Message</label>
               <input
                 type="text"
@@ -759,6 +774,20 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
                 onChange={(e) => handleConfigChange('successSubtitle', e.target.value)}
                 placeholder="Your form has been submitted successfully."
               />
+            </div>
+
+            <div className="brand-form-group">
+              <label className="brand-form-label">Completion Redirect URL</label>
+              <input
+                type="url"
+                className="brand-input"
+                value={config.completionRedirectUrl || ''}
+                onChange={(e) => handleConfigChange('completionRedirectUrl', e.target.value)}
+                placeholder="https://yoursite.com/thank-you"
+              />
+              <p className="brand-form-description">
+                Redirect users to this URL 2.5 seconds after successful submission (optional)
+              </p>
             </div>
 
             <div className="brand-form-group">
@@ -1002,6 +1031,20 @@ export const JourneyBrandConfig: React.FC<JourneyBrandConfigProps> = ({
                   <strong>Focused Mode (Typeform style)</strong>
                   <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
                     Shows one field at a time for higher mobile conversion rates.
+                  </div>
+                </label>
+              </div>
+              <div className="brand-checkbox" style={{ marginBottom: 4 }}>
+                <input
+                  type="checkbox"
+                  id="quiz-mode"
+                  checked={config.isQuizMode || false}
+                  onChange={(e) => handleConfigChange('isQuizMode', e.target.checked)}
+                />
+                <label htmlFor="quiz-mode" className="brand-checkbox-label">
+                  <strong>🎯 Quiz / Scoring Mode</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                    Assign correct answers and points per field. Shows animated score reveal on completion.
                   </div>
                 </label>
               </div>
