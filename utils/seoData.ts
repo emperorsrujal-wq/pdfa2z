@@ -7,7 +7,7 @@ import {
   ImageMinus, Grid, User, PlusCircle,
   Move, FileSpreadsheet, FileCode, ListOrdered, Type,
   FileStack, Smile, LucideIcon,
-  Wrench, FileEdit, ImageDown, Sparkles
+  Wrench, FileEdit, ImageDown, Sparkles, PenLine
 } from 'lucide-react';
 
 export interface ToolSEO {
@@ -210,6 +210,40 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
         faqs: [{ q: 'क्या यह मुफ्त है?', a: 'हाँ, पूरी तरह से मुफ्त।' }]
       }
     }
+  },
+  'remote-sign': {
+    slug: 'remote-sign',
+    title: 'Free Remote E-Signing — Send Contracts for Digital Signature Online',
+    description: 'Upload a PDF, add signers, place signature fields and send a secure signing link — no account required for signers. Free DocuSign alternative with audit trail.',
+    h1: 'Free Remote E-Signing',
+    intro: 'Send any PDF for legally binding e-signatures in minutes. Add multiple signers, place signature, initials, date and text fields, then send each signer a secure link. No DocuSign subscription needed.',
+    steps: [
+      'Upload your PDF contract or document.',
+      'Add signer names and email addresses.',
+      'Click to place signature, initials, date and text fields on each page.',
+      'Send — each signer receives a secure email link. No account required for signers.',
+      'Download the completed, signed PDF with a full audit trail.'
+    ],
+    faqs: [
+      { q: 'Is this a free DocuSign alternative?', a: 'Yes. PDFA2Z Remote Signing is completely free and lets you send unlimited documents for e-signature.' },
+      { q: 'Do signers need to create an account?', a: 'No. Signers receive a unique secure link via email and can sign directly in their browser — no login required.' },
+      { q: 'Is the electronic signature legally binding?', a: 'Yes. E-signatures created on PDFA2Z meet the requirements of ESIGN, eIDAS and similar legislation. A full audit trail with timestamps and IP addresses is recorded.' },
+      { q: 'Can I add multiple signers?', a: 'Yes. You can add up to 5 signers and choose sequential (one by one) or parallel (all at once) signing order.' },
+      { q: 'What field types can I place?', a: 'Signature, initials, date, text box, and checkbox fields are supported.' }
+    ],
+    features: [
+      'Free DocuSign Alternative',
+      'No Account Required for Signers',
+      'Legally Binding E-Signatures',
+      'Multi-Signer Support',
+      'Sequential & Parallel Signing',
+      'Full Audit Trail',
+      'Signature Draw or Type',
+      'Instant Email Delivery'
+    ],
+    type: ToolType.REMOTE_SIGN,
+    icon: PenLine,
+    unique: true,
   },
   'journey-builder': {
     slug: 'journey-builder',

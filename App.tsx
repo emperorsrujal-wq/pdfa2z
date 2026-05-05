@@ -31,6 +31,8 @@ const VideoSuite = React.lazy(() => import('./components/VideoSuite').then(m => 
 const NotarizeApp = React.lazy(() => import('./pages/NotarizeApp').then(m => ({ default: m.NotarizeApp })));
 const PDFJourneyBuilder = React.lazy(() => import('./components/PDFJourneyBuilder').then(m => ({ default: m.PDFJourneyBuilder })));
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const RemoteSign = React.lazy(() => import('./pages/RemoteSign').then(m => ({ default: m.RemoteSign })));
+const SignerPortal = React.lazy(() => import('./pages/SignerPortal').then(m => ({ default: m.SignerPortal })));
 
 export const SUPPORTED_LANGS = ['es', 'fr', 'hi'];
 
@@ -92,6 +94,12 @@ const AppContent: React.FC = () => {
       return pathParts.slice(startIdx + 1).join('/');
     }
     return '';
+  }, [pathParts]);
+
+  // /sign/:token — signer portal (full-page, outside Layout)
+  const signToken = React.useMemo(() => {
+    if (pathParts[0] === 'sign' && pathParts[1]) return pathParts[1];
+    return null;
   }, [pathParts]);
 
   React.useEffect(() => {
@@ -156,6 +164,11 @@ const AppContent: React.FC = () => {
       return;
     }
 
+    if (slug === 'remote-sign') {
+      setActiveTool(ToolType.REMOTE_SIGN);
+      return;
+    }
+
     // Known info pages
     if (['about', 'contact', 'privacy', 'terms'].includes(slug)) {
       setActiveTool(ToolType.INFO_PAGE);
@@ -190,6 +203,7 @@ const AppContent: React.FC = () => {
     switch (activeTool) {
       case ToolType.HOME: return <Home />;
       case ToolType.NOTARIZE: return null; // Handled by the outer guard below
+      case ToolType.REMOTE_SIGN: return <RemoteSign />;
       case ToolType.DASHBOARD: return <Dashboard />;
       case ToolType.IMAGE_GENERATOR: return <ImageGenerator />;
       case ToolType.IMAGE_EDITOR: return <ImageEditor />;
@@ -226,8 +240,12 @@ const AppContent: React.FC = () => {
         schema={generateToolSchema(seoData)}
       />
 
-      {/* Notarize page has its own full-page layout — render outside site shell */}
-      {activeTool === ToolType.NOTARIZE ? (
+      {/* Signer portal — full-page, no nav, token-based access */}
+      {signToken ? (
+        <React.Suspense fallback={<ToolLoader />}>
+          <SignerPortal token={signToken} />
+        </React.Suspense>
+      ) : activeTool === ToolType.NOTARIZE ? (
         <React.Suspense fallback={<ToolLoader />}>
           <NotarizeApp subPath={notarizeSubPath} />
         </React.Suspense>

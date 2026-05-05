@@ -21,6 +21,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import ExcelJS from 'exceljs';
 import { createOneNotarySession, verifyOneNotarySignature, OneNotaryWebhookPayload } from './onenotaryClient';
 import { FirestoreSession, FirestorePayment } from './types';
+import { esignRouter } from './esignRoutes';
 
 admin.initializeApp();
 const db      = admin.firestore();
@@ -540,6 +541,9 @@ app.post('/convert/excel', authenticate, async (req: any, res) => {
     return res.status(500).json({ error: err.message || 'Conversion failed' });
   }
 });
+
+// ── E-Sign routes ─────────────────────────────────────────────────────────────
+app.use('/esign', esignRouter);
 
 // ── Export ────────────────────────────────────────────────────────────────────
 export const api = functions.https.onRequest(app);
