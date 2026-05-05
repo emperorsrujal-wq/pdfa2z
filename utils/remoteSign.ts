@@ -238,6 +238,14 @@ export const submitSignedFields = async (
     body: JSON.stringify({ docId, signerId, allSigned }),
   }).catch(() => {});
 
+  if (allSigned) {
+    fetch(`${FUNCTIONS_BASE_URL}/esign/on-completed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ docId }),
+    }).catch(() => {});
+  }
+
   return allSigned;
 };
 
@@ -255,6 +263,13 @@ export const declineSigning = async (docId: string, signerId: string, reason: st
     updatedAt: serverTimestamp(),
     auditTrail: arrayUnion({ timestamp: Timestamp.now(), event: `Declined: ${reason}`, actor: signerEmail }),
   });
+
+  // Notify owner (fire-and-forget)
+  fetch(`${FUNCTIONS_BASE_URL}/esign/on-declined`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ docId, signerId }),
+  }).catch(() => {});
 };
 
 export const saveSignedPdf = async (docId: string, pdfBytes: Uint8Array): Promise<string> => {

@@ -1,8 +1,13 @@
 "use strict";
 /**
- * E-Sign email routes
- * POST /esign/send-invitations  — send signing invitations to all pending signers
- * POST /esign/on-signed         — notify owner + trigger next signer (sequential)
+ * E-Sign email routes & notification system
+ *
+ * Routes:
+ *   POST /esign/send-invitations   — initial invite to signers + owner confirmation
+ *   POST /esign/on-viewed          — notify owner when signer views
+ *   POST /esign/on-signed          — signer confirmation + owner alert + next in sequence
+ *   POST /esign/on-declined        — owner declined alert
+ *   POST /esign/on-completed       — final completion email to all parties with download link
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -38,80 +43,256 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendMail = sendMail;
+exports.buildInviteEmail = buildInviteEmail;
+exports.buildReminderEmail = buildReminderEmail;
+exports.buildSignerConfirmationEmail = buildSignerConfirmationEmail;
+exports.buildOwnerSentEmail = buildOwnerSentEmail;
+exports.buildOwnerSignedNotificationEmail = buildOwnerSignedNotificationEmail;
+exports.buildCompletedEmail = buildCompletedEmail;
+exports.buildDeclinedEmail = buildDeclinedEmail;
+exports.buildExpiryWarningEmail = buildExpiryWarningEmail;
 exports.createEsignRouter = createEsignRouter;
 const express_1 = require("express");
 const nodemailer = __importStar(require("nodemailer"));
-const functions = __importStar(require("firebase-functions")); // used for logger
-// ── Mailer (Amazon SES SMTP) ──────────────────────────────────────────────────
+const functions = __importStar(require("firebase-functions"));
+// ── Mailer ────────────────────────────────────────────────────────────────────
 function getTransporter() {
     var _a, _b, _c;
     const user = (_a = process.env.SES_SMTP_USER) !== null && _a !== void 0 ? _a : '';
     const pass = (_b = process.env.SES_SMTP_PASS) !== null && _b !== void 0 ? _b : '';
     const host = (_c = process.env.SES_SMTP_HOST) !== null && _c !== void 0 ? _c : 'email-smtp.us-east-1.amazonaws.com';
-    return nodemailer.createTransport({
-        host,
-        port: 587,
-        secure: false,
-        auth: { user, pass },
-    });
+    return nodemailer.createTransport({ host, port: 587, secure: false, auth: { user, pass } });
 }
-const FROM = '"PDFA2Z E-Sign" <remotesign@pdfa2z.com>';
+async function sendMail(to, subject, html) {
+    await getTransporter().sendMail({ from: '"PDFA2Z E-Sign" <remotesign@pdfa2z.com>', to, subject, html });
+}
 const SITE = 'https://pdfa2z.com';
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function inviteHtml(signerName, ownerName, docTitle, link, customMsg) {
-    return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
-    <div style="background:#2563eb;padding:32px 40px">
-      <p style="margin:0;color:#fff;font-size:22px;font-weight:900">PDFA2Z E-Sign</p>
-    </div>
-    <div style="padding:36px 40px">
-      <h1 style="margin:0 0 12px;font-size:20px;font-weight:800;color:#0f172a">You've been asked to sign a document</h1>
-      <p style="margin:0 0 24px;color:#64748b;font-size:15px;line-height:1.6">
-        <strong style="color:#0f172a">${ownerName}</strong> has sent you <strong style="color:#0f172a">${docTitle}</strong> for your signature.
-      </p>
-      ${customMsg ? `<div style="background:#f1f5f9;border-radius:10px;padding:16px 20px;margin:0 0 24px"><p style="margin:0;color:#334155;font-size:14px;line-height:1.6;font-style:italic">"${customMsg}"</p></div>` : ''}
-      <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:12px;text-decoration:none">
-        Review &amp; Sign Document →
-      </a>
-      <p style="margin:28px 0 0;color:#94a3b8;font-size:12px;line-height:1.6">
-        This link is unique to you. Do not share it.<br>
-        Powered by <a href="${SITE}" style="color:#2563eb;text-decoration:none">PDFA2Z</a> — Free E-Signing
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
+// ══════════════════════════════════════════════════════════════════════════════
+//  EMAIL TEMPLATES
+// ══════════════════════════════════════════════════════════════════════════════
+const css = `
+  body{margin:0;padding:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;}
+  .wrap{max-width:600px;margin:36px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(15,23,42,.10);}
+  .header{padding:32px 44px 28px;}
+  .logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .logo-box{width:38px;height:38px;background:rgba(255,255,255,.22);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .logo-text{color:#fff;font-size:13px;font-weight:900;letter-spacing:.02em;}
+  .logo-brand{color:#fff;font-size:17px;font-weight:900;opacity:.95;}
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+  .body{padding:36px 44px;}
+  .doc-card{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin:0 0 28px;}
+  .doc-title{font-size:17px;font-weight:800;color:#0f172a;margin:0 0 6px;}
+  .doc-meta{font-size:13px;color:#94a3b8;margin:0;}
+  .cta{display:inline-block;padding:15px 36px;border-radius:13px;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:.01em;}
+  .divider{border:none;border-top:1.5px solid #f1f5f9;margin:28px 0;}
+  .signers-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .signer-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:100px;font-size:13px;font-weight:600;color:#334155;}
+  .avatar{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;}
+  .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .footer{padding:20px 44px 28px;border-top:1.5px solid #f1f5f9;}
+  .footer p{margin:0;font-size:12px;color:#94a3b8;line-height:1.7;}
+  .footer a{color:#2563eb;text-decoration:none;}
+  @media(max-width:620px){.body,.header,.footer{padding-left:24px;padding-right:24px;}.cta{width:100%;text-align:center;box-sizing:border-box;}}
+`;
+function wrap(headerColor, headerContent, bodyContent) {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head>
+<body><div class="wrap">
+<div class="header" style="background:${headerColor};">${headerContent}</div>
+<div class="body">${bodyContent}</div>
+<div class="footer">
+  <p>This email was sent by <a href="${SITE}">PDFA2Z E-Sign</a> on behalf of a document sender. Electronic signatures created with PDFA2Z comply with ESIGN and eIDAS regulations and are legally binding. If you did not expect this email, you may safely ignore it.</p>
+</div>
+</div></body></html>`;
 }
-function completionHtml(ownerName, docTitle, allSigners) {
-    const signerList = allSigners.map(s => `<li style="margin:4px 0;color:#334155">${s.name} &lt;${s.email}&gt;</li>`).join('');
-    return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
-    <div style="background:#10b981;padding:32px 40px">
-      <p style="margin:0;color:#fff;font-size:22px;font-weight:900">PDFA2Z E-Sign</p>
-    </div>
-    <div style="padding:36px 40px">
-      <h1 style="margin:0 0 12px;font-size:20px;font-weight:800;color:#0f172a">Document fully signed ✓</h1>
-      <p style="margin:0 0 16px;color:#64748b;font-size:15px">Hi ${ownerName}, <strong style="color:#0f172a">${docTitle}</strong> has been signed by all parties:</p>
-      <ul style="margin:0 0 24px;padding-left:20px;font-size:14px">${signerList}</ul>
-      <p style="margin:0;color:#94a3b8;font-size:12px">Log in to <a href="${SITE}/remote-sign" style="color:#2563eb;text-decoration:none">PDFA2Z</a> to download the completed document.</p>
-    </div>
-  </div>
-</body>
-</html>`;
+function logo() {
+    return `<div class="logo">
+    <div class="logo-box"><span class="logo-text">A2Z</span></div>
+    <span class="logo-brand">PDFA2Z E&#8209;Sign</span>
+  </div>`;
 }
-// ── Router ────────────────────────────────────────────────────────────────────
+function docCard(title, pages, ownerName, order) {
+    return `<div class="doc-card">
+    <p class="doc-title">📄 ${title}</p>
+    <p class="doc-meta">${pages} page${pages !== 1 ? 's' : ''} &nbsp;·&nbsp; Requested by <strong style="color:#475569">${ownerName}</strong> &nbsp;·&nbsp; ${order} signing</p>
+  </div>`;
+}
+function ctaButton(label, href, color) {
+    return `<a href="${href}" class="cta" style="background:${color};color:#fff;">${label}</a>`;
+}
+function signerRow(signers) {
+    const statusColors = { pending: '#94a3b8', viewed: '#f59e0b', signed: '#10b981', declined: '#ef4444' };
+    return `<div class="signers-row">${signers.map(s => `
+    <span class="signer-chip">
+      <span class="avatar" style="background:${s.color}">${s.name.charAt(0).toUpperCase()}</span>
+      ${s.name}
+      <span class="status-dot" style="background:${statusColors[s.status] || '#94a3b8'}" title="${s.status}"></span>
+    </span>`).join('')}</div>`;
+}
+// ── 1. Signer Invitation ──────────────────────────────────────────────────────
+function buildInviteEmail(p) {
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">✍️ &nbsp;Signature Requested</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">You've been asked<br>to sign a document</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.signerName}</strong>, <strong style="color:#0f172a">${p.ownerName}</strong> has sent you a document for your electronic signature.</p>
+    ${docCard(p.docTitle, p.docPages, p.ownerName, p.signingOrder)}
+    ${p.customMsg ? `<div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:0 10px 10px 0;padding:14px 18px;margin:0 0 24px;"><p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;font-style:italic;">"${p.customMsg}"</p></div>` : ''}
+    ${ctaButton('Review &amp; Sign Document &rarr;', p.link, '#2563eb')}
+    <hr class="divider">
+    <p style="font-size:13px;font-weight:700;color:#64748b;margin:0 0 10px;">All signing parties</p>
+    ${signerRow(p.allSigners)}
+    <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;line-height:1.7;">🔒 Your signing link is private and unique to you. Never share it.<br>The link expires in accordance with the document settings.</p>`;
+    return wrap('linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%)', header, body);
+}
+// ── 2. Reminder (24h / recurring) ────────────────────────────────────────────
+function buildReminderEmail(p) {
+    const isFirst = p.reminderCount === 1;
+    const expireNote = p.expiresAt
+        ? `<p style="font-size:13px;color:#b45309;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:11px 16px;margin:20px 0 0;">⏳ This document expires on <strong>${p.expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong>. Please sign before then.</p>`
+        : '';
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">🔔 &nbsp;Reminder</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">${isFirst ? 'Your signature\nis still needed' : 'Friendly reminder\nto sign'}</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.signerName}</strong>, this is a${isFirst ? ' first' : ' friendly'} reminder that <strong style="color:#0f172a">${p.ownerName}</strong> is waiting for your signature on the document below.</p>
+    ${docCard(p.docTitle, p.docPages, p.ownerName, p.signingOrder)}
+    ${ctaButton('Sign Now &rarr;', p.link, '#d97706')}
+    ${expireNote}
+    <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;">If you'd like to decline, you can do so from within the signing portal. If you have questions, reply to this email or contact ${p.ownerName} directly.</p>`;
+    return wrap('linear-gradient(135deg,#b45309 0%,#d97706 60%,#f59e0b 100%)', header, body);
+}
+// ── 3. Signer — Signed Confirmation ──────────────────────────────────────────
+function buildSignerConfirmationEmail(p) {
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">✅ &nbsp;Signature Confirmed</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">You've successfully<br>signed the document</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.signerName}</strong>, your electronic signature has been recorded. Here are the details:</p>
+    <div class="doc-card">
+      <p class="doc-title">📄 ${p.docTitle}</p>
+      <p class="doc-meta">Requested by <strong style="color:#475569">${p.ownerName}</strong></p>
+      <p class="doc-meta" style="margin-top:6px;">Signed on <strong style="color:#475569">${p.signedAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong> at <strong style="color:#475569">${p.signedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</strong></p>
+    </div>
+    ${p.allSigned && p.downloadUrl
+        ? `<p style="font-size:15px;font-weight:700;color:#065f46;margin:0 0 16px;">🎉 All parties have signed! The document is complete.</p>${ctaButton('Download Signed Document &darr;', p.downloadUrl, '#059669')}`
+        : `<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px 20px;"><p style="margin:0;font-size:14px;color:#065f46;line-height:1.6;">Your signature has been submitted. The other signing parties will be notified. Once everyone has signed, you'll receive another email with the completed document.</p></div>`}
+    <p style="font-size:12px;color:#94a3b8;margin:24px 0 0;">A full audit trail is maintained securely. Your electronic signature is legally binding.</p>`;
+    return wrap('linear-gradient(135deg,#047857 0%,#059669 60%,#10b981 100%)', header, body);
+}
+// ── 4. Owner — Document Sent Confirmation ────────────────────────────────────
+function buildOwnerSentEmail(p) {
+    const signerList = p.signers.map((s, i) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:30px;height:30px;border-radius:50%;background:${s.color};display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;">${s.name.charAt(0)}</span>
+          <div>
+            <p style="margin:0;font-size:14px;font-weight:700;color:#0f172a;">${s.name}</p>
+            <p style="margin:0;font-size:12px;color:#64748b;">${s.email}</p>
+          </div>
+          ${p.signingOrder === 'sequential' ? `<span style="margin-left:auto;font-size:11px;font-weight:700;color:#94a3b8;background:#f1f5f9;padding:3px 9px;border-radius:100px;">Sign #${i + 1}</span>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">📤 &nbsp;Document Sent</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">Your document is out<br>for signature</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.ownerName}</strong>, signing invitations have been sent to all parties. You'll receive updates as each person signs.</p>
+    ${docCard(p.docTitle, p.docPages, p.ownerName, p.signingOrder)}
+    <p style="font-size:13px;font-weight:700;color:#64748b;margin:0 0 12px;">Signers (${p.signers.length})</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${signerList}</table>
+    ${p.expiresAt ? `<p style="font-size:13px;color:#64748b;margin:20px 0 0;">⏳ This document expires on <strong style="color:#0f172a">${p.expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong>. Signers will receive reminders.</p>` : ''}
+    <hr class="divider">
+    ${ctaButton('View Document Status &rarr;', `${SITE}/remote-sign`, '#2563eb')}`;
+    return wrap('linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%)', header, body);
+}
+// ── 5. Owner — Individual Signer Signed ──────────────────────────────────────
+function buildOwnerSignedNotificationEmail(p) {
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">✍️ &nbsp;Signature Received</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">${p.signerName}<br>has signed</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.ownerName}</strong>, <strong style="color:#0f172a">${p.signerName}</strong> (${p.signerEmail}) has signed <strong style="color:#0f172a">${p.docTitle}</strong>.</p>
+    <div style="display:flex;gap:20px;margin:0 0 24px;">
+      <div style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:18px 20px;text-align:center;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:#059669;">${p.totalSigners - p.remaining}</p>
+        <p style="margin:4px 0 0;font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.04em;">Signed</p>
+      </div>
+      <div style="flex:1;background:${p.remaining === 0 ? '#f0fdf4' : '#fff7ed'};border:1.5px solid ${p.remaining === 0 ? '#bbf7d0' : '#fed7aa'};border-radius:14px;padding:18px 20px;text-align:center;">
+        <p style="margin:0;font-size:28px;font-weight:900;color:${p.remaining === 0 ? '#059669' : '#ea580c'};">${p.remaining}</p>
+        <p style="margin:4px 0 0;font-size:12px;font-weight:700;color:${p.remaining === 0 ? '#065f46' : '#9a3412'};text-transform:uppercase;letter-spacing:.04em;">Remaining</p>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin:0 0 20px;">Signed on ${p.signedAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${p.signedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
+    ${ctaButton('View Document Status &rarr;', `${SITE}/remote-sign`, '#2563eb')}`;
+    return wrap('linear-gradient(135deg,#047857 0%,#059669 60%,#10b981 100%)', header, body);
+}
+// ── 6. All Parties — Document Completed ──────────────────────────────────────
+function buildCompletedEmail(p) {
+    const signerRows = p.signers.map(s => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <span style="width:28px;height:28px;border-radius:50%;background:${s.color};display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;vertical-align:middle;margin-right:10px;">${s.name.charAt(0)}</span>
+        <span style="font-size:14px;font-weight:700;color:#0f172a;vertical-align:middle;">${s.name}</span>
+        <span style="font-size:12px;color:#94a3b8;margin-left:8px;vertical-align:middle;">${s.email}</span>
+        <span style="float:right;font-size:12px;color:#059669;font-weight:700;vertical-align:middle;">✓ Signed${s.signedAt ? ' ' + s.signedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+      </td>
+    </tr>`).join('');
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">🎉 &nbsp;Fully Executed</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">Document fully<br>signed by all parties</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.recipientName}</strong>, ${p.isOwner ? 'your document' : 'the document'} <strong style="color:#0f172a">${p.docTitle}</strong> has been signed by all parties and is now legally executed.</p>
+    <div class="doc-card" style="background:#f0fdf4;border-color:#bbf7d0;">
+      <p class="doc-title" style="color:#065f46;">📄 ${p.docTitle}</p>
+      <p class="doc-meta">Completed on <strong style="color:#047857">${p.completedAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</strong></p>
+    </div>
+    <p style="font-size:13px;font-weight:700;color:#64748b;margin:0 0 12px;">Signing parties</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 28px;">${signerRows}</table>
+    ${ctaButton('⬇ Download Signed Document', p.downloadUrl, '#059669')}
+    <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;line-height:1.7;">A complete audit trail including timestamps, IP addresses, and signature data has been recorded and is attached to this document. ${p.isOwner ? `You can also access all your documents at <a href="${SITE}/remote-sign" style="color:#2563eb;text-decoration:none">pdfa2z.com/remote-sign</a>.` : 'Please keep this email for your records.'}</p>`;
+    return wrap('linear-gradient(135deg,#047857 0%,#059669 60%,#10b981 100%)', header, body);
+}
+// ── 7. Owner — Signer Declined ────────────────────────────────────────────────
+function buildDeclinedEmail(p) {
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">⚠️ &nbsp;Signing Declined</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">${p.signerName}<br>declined to sign</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.ownerName}</strong>, <strong style="color:#0f172a">${p.signerName}</strong> (${p.signerEmail}) has declined to sign <strong style="color:#0f172a">${p.docTitle}</strong>.</p>
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:20px 24px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.06em;">Reason provided</p>
+      <p style="margin:0;font-size:15px;color:#7f1d1d;font-style:italic;line-height:1.6;">"${p.reason}"</p>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin:0 0 24px;">Declined on ${p.declinedAt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${p.declinedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
+    ${ctaButton('View Document &rarr;', `${SITE}/remote-sign`, '#dc2626')}
+    <hr class="divider">
+    <p style="font-size:13px;color:#64748b;line-height:1.7;">You can void the document and create a new version, or reach out to ${p.signerName} to resolve their concerns before resending.</p>`;
+    return wrap('linear-gradient(135deg,#991b1b 0%,#dc2626 60%,#ef4444 100%)', header, body);
+}
+// ── 8. Expiry Warning (to signer) ─────────────────────────────────────────────
+function buildExpiryWarningEmail(p) {
+    const daysLeft = Math.ceil((p.expiresAt.getTime() - Date.now()) / 86400000);
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">⏳ &nbsp;Expiring Soon</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">Document expires<br>in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 24px;">Hi <strong style="color:#0f172a">${p.signerName}</strong>, the document below will expire on <strong style="color:#b45309">${p.expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong>. Please sign before it expires.</p>
+    ${docCard(p.docTitle, p.docPages, p.ownerName, p.signingOrder)}
+    ${ctaButton('Sign Before It Expires &rarr;', p.link, '#d97706')}
+    <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;">After the expiry date, this signing link will no longer be valid. Contact ${p.ownerName} if you need an extension.</p>`;
+    return wrap('linear-gradient(135deg,#92400e 0%,#b45309 60%,#d97706 100%)', header, body);
+}
+// ══════════════════════════════════════════════════════════════════════════════
+//  ROUTER
+// ══════════════════════════════════════════════════════════════════════════════
 function createEsignRouter(db) {
-    const esignRouter = (0, express_1.Router)();
-    // Send invitations
-    esignRouter.post('/send-invitations', async (req, res) => {
+    const router = (0, express_1.Router)();
+    // ── Send Invitations + Owner Confirmation ──────────────────────────────────
+    router.post('/send-invitations', async (req, res) => {
+        var _a, _b;
         const { docId } = req.body;
         if (!docId) {
             res.status(400).json({ error: 'docId required' });
@@ -124,25 +305,74 @@ function createEsignRouter(db) {
                 return;
             }
             const doc = snap.data();
-            const signers = doc.signingOrder === 'sequential'
-                ? [doc.signers.find((s) => s.status === 'pending')] // only first pending
-                : doc.signers.filter((s) => s.status === 'pending'); // all at once
-            const transporter = getTransporter();
-            await Promise.all(signers.filter(Boolean).map((signer) => transporter.sendMail({
-                from: FROM,
-                to: signer.email,
-                subject: `Action required: Please sign "${doc.title}"`,
-                html: inviteHtml(signer.name, doc.ownerName, doc.title, `${SITE}/sign/${signer.token}`, doc.customMessage || ''),
-            })));
-            res.json({ ok: true, sent: signers.filter(Boolean).length });
+            const toInvite = doc.signingOrder === 'sequential'
+                ? [doc.signers.find((s) => s.status === 'pending')]
+                : doc.signers.filter((s) => s.status === 'pending');
+            const expiry = ((_a = doc.expiresAt) === null || _a === void 0 ? void 0 : _a.seconds) ? new Date(doc.expiresAt.seconds * 1000) : undefined;
+            // Send invites to signers
+            await Promise.all(toInvite.filter(Boolean).map((signer) => {
+                var _a;
+                return sendMail(signer.email, `Action Required: Please sign "${doc.title}"`, buildInviteEmail({
+                    signerName: signer.name,
+                    ownerName: doc.ownerName,
+                    docTitle: doc.title,
+                    docPages: (_a = doc.pageCount) !== null && _a !== void 0 ? _a : 1,
+                    signingOrder: doc.signingOrder,
+                    link: `${SITE}/sign/${signer.token}`,
+                    customMsg: doc.customMessage,
+                    allSigners: doc.signers.map((s) => ({ name: s.name, color: s.color, status: s.status })),
+                }));
+            }));
+            // Send owner confirmation
+            await sendMail(doc.ownerEmail, `Your document "${doc.title}" has been sent for signature`, buildOwnerSentEmail({
+                ownerName: doc.ownerName,
+                docTitle: doc.title,
+                docPages: (_b = doc.pageCount) !== null && _b !== void 0 ? _b : 1,
+                signingOrder: doc.signingOrder,
+                signers: doc.signers.map((s) => ({ name: s.name, email: s.email, color: s.color, status: s.status })),
+                expiresAt: expiry,
+            }));
+            // Mark invite time on each signer
+            const now = Date.now();
+            const updatedSigners = doc.signers.map((s) => toInvite.find((t) => (t === null || t === void 0 ? void 0 : t.id) === s.id) ? Object.assign(Object.assign({}, s), { invitedAt: now, reminderCount: 0 }) : s);
+            await db.collection('sign_documents').doc(docId).update({ signers: updatedSigners });
+            res.json({ ok: true, sent: toInvite.filter(Boolean).length });
         }
         catch (err) {
-            functions.logger.error('send-invitations error', err);
+            functions.logger.error('send-invitations', err);
             res.status(500).json({ error: err.message });
         }
     });
-    // Called after a signer signs
-    esignRouter.post('/on-signed', async (req, res) => {
+    // ── Signer Viewed ──────────────────────────────────────────────────────────
+    router.post('/on-viewed', async (req, res) => {
+        const { docId, signerId } = req.body;
+        if (!docId) {
+            res.status(400).json({ error: 'docId required' });
+            return;
+        }
+        try {
+            const snap = await db.collection('sign_documents').doc(docId).get();
+            if (!snap.exists) {
+                res.status(200).json({ ok: true });
+                return;
+            }
+            const doc = snap.data();
+            const signer = doc.signers.find((s) => s.id === signerId);
+            if (!signer) {
+                res.status(200).json({ ok: true });
+                return;
+            }
+            // No email for viewed — avoids noise. Just ack.
+            res.json({ ok: true });
+        }
+        catch (err) {
+            functions.logger.error('on-viewed', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // ── Signer Signed ──────────────────────────────────────────────────────────
+    router.post('/on-signed', async (req, res) => {
+        var _a;
         const { docId, signerId, allSigned } = req.body;
         if (!docId) {
             res.status(400).json({ error: 'docId required' });
@@ -155,36 +385,133 @@ function createEsignRouter(db) {
                 return;
             }
             const doc = snap.data();
-            const transporter = getTransporter();
-            if (allSigned) {
-                // Notify owner
-                await transporter.sendMail({
-                    from: FROM,
-                    to: doc.ownerEmail,
-                    subject: `✓ "${doc.title}" has been fully signed`,
-                    html: completionHtml(doc.ownerName, doc.title, doc.signers.map((s) => ({ name: s.name, email: s.email }))),
-                });
+            const signer = doc.signers.find((s) => s.id === signerId);
+            if (!signer) {
+                res.status(404).json({ error: 'Signer not found' });
+                return;
             }
-            else if (doc.signingOrder === 'sequential') {
-                // Find next signer
+            const signedAt = new Date();
+            const remaining = doc.signers.filter((s) => s.id !== signerId && s.status !== 'signed').length;
+            // 1. Confirm to the signer who just signed
+            await sendMail(signer.email, allSigned ? `✅ All done — "${doc.title}" is fully signed` : `✅ Signature confirmed — "${doc.title}"`, buildSignerConfirmationEmail({
+                signerName: signer.name,
+                docTitle: doc.title,
+                ownerName: doc.ownerName,
+                signedAt,
+                allSigned,
+                downloadUrl: allSigned ? doc.signedPdfUrl : undefined,
+            }));
+            // 2. Notify owner
+            await sendMail(doc.ownerEmail, `${signer.name} signed "${doc.title}" — ${remaining} signature${remaining !== 1 ? 's' : ''} remaining`, buildOwnerSignedNotificationEmail({
+                ownerName: doc.ownerName,
+                docTitle: doc.title,
+                signerName: signer.name,
+                signerEmail: signer.email,
+                signedAt,
+                remaining,
+                totalSigners: doc.signers.length,
+            }));
+            // 3. Trigger next signer in sequential mode
+            if (!allSigned && doc.signingOrder === 'sequential') {
                 const justSigned = doc.signers.find((s) => s.id === signerId);
                 const nextSigner = doc.signers.find((s) => { var _a; return s.status === 'pending' && s.order === ((_a = justSigned === null || justSigned === void 0 ? void 0 : justSigned.order) !== null && _a !== void 0 ? _a : 0) + 1; });
                 if (nextSigner) {
-                    await transporter.sendMail({
-                        from: FROM,
-                        to: nextSigner.email,
-                        subject: `It's your turn to sign "${doc.title}"`,
-                        html: inviteHtml(nextSigner.name, doc.ownerName, doc.title, `${SITE}/sign/${nextSigner.token}`, doc.customMessage || ''),
-                    });
+                    await sendMail(nextSigner.email, `It's your turn to sign "${doc.title}"`, buildInviteEmail({
+                        signerName: nextSigner.name,
+                        ownerName: doc.ownerName,
+                        docTitle: doc.title,
+                        docPages: (_a = doc.pageCount) !== null && _a !== void 0 ? _a : 1,
+                        signingOrder: doc.signingOrder,
+                        link: `${SITE}/sign/${nextSigner.token}`,
+                        customMsg: doc.customMessage,
+                        allSigners: doc.signers.map((s) => ({ name: s.name, color: s.color, status: s.status })),
+                    }));
+                    const now = Date.now();
+                    const updatedSigners = doc.signers.map((s) => s.id === nextSigner.id ? Object.assign(Object.assign({}, s), { invitedAt: now, reminderCount: 0 }) : s);
+                    await db.collection('sign_documents').doc(docId).update({ signers: updatedSigners });
                 }
             }
             res.json({ ok: true });
         }
         catch (err) {
-            functions.logger.error('on-signed error', err);
+            functions.logger.error('on-signed', err);
             res.status(500).json({ error: err.message });
         }
     });
-    return esignRouter;
+    // ── Document Completed ─────────────────────────────────────────────────────
+    router.post('/on-completed', async (req, res) => {
+        const { docId } = req.body;
+        if (!docId) {
+            res.status(400).json({ error: 'docId required' });
+            return;
+        }
+        try {
+            const snap = await db.collection('sign_documents').doc(docId).get();
+            if (!snap.exists) {
+                res.status(404).json({ error: 'Document not found' });
+                return;
+            }
+            const doc = snap.data();
+            const completedAt = new Date();
+            const signersInfo = doc.signers.map((s) => ({
+                name: s.name, email: s.email, color: s.color,
+                signedAt: s.signedAt ? new Date(s.signedAt.seconds ? s.signedAt.seconds * 1000 : s.signedAt) : undefined,
+            }));
+            // Email owner + all signers
+            const recipients = [
+                { name: doc.ownerName, email: doc.ownerEmail, isOwner: true },
+                ...doc.signers.map((s) => ({ name: s.name, email: s.email, isOwner: false })),
+            ];
+            await Promise.all(recipients.map(r => sendMail(r.email, `🎉 "${doc.title}" — fully signed by all parties`, buildCompletedEmail({
+                recipientName: r.name,
+                isOwner: r.isOwner,
+                docTitle: doc.title,
+                signers: signersInfo,
+                downloadUrl: doc.signedPdfUrl || `${SITE}/remote-sign`,
+                completedAt,
+            }))));
+            res.json({ ok: true });
+        }
+        catch (err) {
+            functions.logger.error('on-completed', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // ── Signer Declined ────────────────────────────────────────────────────────
+    router.post('/on-declined', async (req, res) => {
+        var _a;
+        const { docId, signerId } = req.body;
+        if (!docId) {
+            res.status(400).json({ error: 'docId required' });
+            return;
+        }
+        try {
+            const snap = await db.collection('sign_documents').doc(docId).get();
+            if (!snap.exists) {
+                res.status(404).json({ error: 'Document not found' });
+                return;
+            }
+            const doc = snap.data();
+            const signer = doc.signers.find((s) => s.id === signerId);
+            if (!signer) {
+                res.status(200).json({ ok: true });
+                return;
+            }
+            await sendMail(doc.ownerEmail, `⚠️ ${signer.name} declined to sign "${doc.title}"`, buildDeclinedEmail({
+                ownerName: doc.ownerName,
+                docTitle: doc.title,
+                signerName: signer.name,
+                signerEmail: signer.email,
+                reason: signer.declineReason || 'No reason provided',
+                declinedAt: ((_a = signer.declinedAt) === null || _a === void 0 ? void 0 : _a.seconds) ? new Date(signer.declinedAt.seconds * 1000) : new Date(),
+            }));
+            res.json({ ok: true });
+        }
+        catch (err) {
+            functions.logger.error('on-declined', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+    return router;
 }
 //# sourceMappingURL=esignRoutes.js.map

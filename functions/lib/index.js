@@ -49,7 +49,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.api = void 0;
+exports.api = exports.esignReminder = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const express_1 = __importDefault(require("express"));
@@ -59,6 +59,8 @@ const docx_1 = require("docx");
 const exceljs_1 = __importDefault(require("exceljs"));
 const onenotaryClient_1 = require("./onenotaryClient");
 const esignRoutes_1 = require("./esignRoutes");
+var esignScheduler_1 = require("./esignScheduler");
+Object.defineProperty(exports, "esignReminder", { enumerable: true, get: function () { return esignScheduler_1.esignReminder; } });
 admin.initializeApp();
 const db = admin.firestore();
 const storage = admin.storage();

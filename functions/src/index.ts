@@ -22,6 +22,7 @@ import ExcelJS from 'exceljs';
 import { createOneNotarySession, verifyOneNotarySignature, OneNotaryWebhookPayload } from './onenotaryClient';
 import { FirestoreSession, FirestorePayment } from './types';
 import { createEsignRouter } from './esignRoutes';
+export { esignReminder } from './esignScheduler';
 
 admin.initializeApp();
 const db      = admin.firestore();
