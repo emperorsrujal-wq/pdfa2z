@@ -5,31 +5,25 @@
  */
 
 import { Router } from 'express';
-import * as admin from 'firebase-admin';
+import type { Firestore } from 'firebase-admin/firestore';
 import * as nodemailer from 'nodemailer';
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions'; // used for logger
 
-const db = admin.firestore();
-
-// ── Mailer ────────────────────────────────────────────────────────────────────
+// ── Mailer (Amazon SES SMTP) ──────────────────────────────────────────────────
 
 function getTransporter() {
-  let user: string, pass: string;
-  try {
-    const cfg = functions.config();
-    user = cfg.email?.user || process.env.EMAIL_USER || '';
-    pass = cfg.email?.pass || process.env.EMAIL_PASS || '';
-  } catch {
-    user = process.env.EMAIL_USER || '';
-    pass = process.env.EMAIL_PASS || '';
-  }
+  const user = process.env.SES_SMTP_USER ?? '';
+  const pass = process.env.SES_SMTP_PASS ?? '';
+  const host = process.env.SES_SMTP_HOST ?? 'email-smtp.us-east-1.amazonaws.com';
   return nodemailer.createTransport({
-    service: 'gmail',
+    host,
+    port: 587,
+    secure: false,
     auth: { user, pass },
   });
 }
 
-const FROM = '"PDFA2Z E-Sign" <noreply@pdfa2z.com>';
+const FROM = '"PDFA2Z E-Sign" <remotesign@pdfa2z.com>';
 const SITE = 'https://pdfa2z.com';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -87,16 +81,17 @@ function completionHtml(ownerName: string, docTitle: string, allSigners: { name:
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
-export const esignRouter = Router();
+export function createEsignRouter(db: Firestore) {
+const esignRouter = Router();
 
 // Send invitations
-esignRouter.post('/send-invitations', async (req, res) => {
+esignRouter.post('/send-invitations', async (req, res): Promise<void> => {
   const { docId } = req.body as { docId: string };
-  if (!docId) return res.status(400).json({ error: 'docId required' });
+  if (!docId) { res.status(400).json({ error: 'docId required' }); return; }
 
   try {
     const snap = await db.collection('sign_documents').doc(docId).get();
-    if (!snap.exists) return res.status(404).json({ error: 'Document not found' });
+    if (!snap.exists) { res.status(404).json({ error: 'Document not found' }); return; }
     const doc = snap.data()!;
 
     const signers: any[] = doc.signingOrder === 'sequential'
@@ -129,13 +124,13 @@ esignRouter.post('/send-invitations', async (req, res) => {
 });
 
 // Called after a signer signs
-esignRouter.post('/on-signed', async (req, res) => {
+esignRouter.post('/on-signed', async (req, res): Promise<void> => {
   const { docId, signerId, allSigned } = req.body as { docId: string; signerId: string; allSigned: boolean };
-  if (!docId) return res.status(400).json({ error: 'docId required' });
+  if (!docId) { res.status(400).json({ error: 'docId required' }); return; }
 
   try {
     const snap = await db.collection('sign_documents').doc(docId).get();
-    if (!snap.exists) return res.status(404).json({ error: 'Document not found' });
+    if (!snap.exists) { res.status(404).json({ error: 'Document not found' }); return; }
     const doc = snap.data()!;
     const transporter = getTransporter();
 
@@ -167,3 +162,6 @@ esignRouter.post('/on-signed', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+return esignRouter;
+}
