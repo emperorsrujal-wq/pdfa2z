@@ -88,6 +88,7 @@ export const RemoteSign: React.FC = () => {
   const [title, setTitle] = React.useState('');
   const [signingOrder, setSigningOrder] = React.useState<'sequential' | 'parallel'>('sequential');
   const [expiryDays, setExpiryDays] = React.useState(14);
+  const [reminderFreq, setReminderFreq] = React.useState<'daily' | '3days' | 'weekly' | 'none'>('3days');
   const [signers, setSigners] = React.useState<SignerConfig[]>([]);
   const [fields, setFields] = React.useState<SignField[]>([]);
   const [customMsg, setCustomMsg] = React.useState('');
@@ -183,6 +184,7 @@ export const RemoteSign: React.FC = () => {
       signingOrder,
       pageCount: pdfPageCount,
       expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
+      reminderFrequency: reminderFreq,
     });
     // Upload PDF with real docId
     const pdfUrl = await uploadPdfForSigning(docId, pdfBytes);
@@ -211,7 +213,7 @@ export const RemoteSign: React.FC = () => {
 
   const resetPrepState = () => {
     setStep(0); setPdfFile(null); setPdfBytes(null); setTitle('');
-    setSigners([]); setFields([]); setCustomMsg(''); setDraftId(null); setPdfPageCount(1);
+    setSigners([]); setFields([]); setCustomMsg(''); setDraftId(null); setPdfPageCount(1); setReminderFreq('3days');
   };
 
   const handleVoid = async (docId: string) => {
@@ -389,6 +391,16 @@ export const RemoteSign: React.FC = () => {
             <option value={60}>60 days</option>
           </select>
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-1.5">Auto-reminders to signers</label>
+        <select value={reminderFreq} onChange={e => setReminderFreq(e.target.value as any)}
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <option value="daily">Every day (urgent)</option>
+          <option value="3days">Every 3 days (recommended)</option>
+          <option value="weekly">Once a week (relaxed)</option>
+          <option value="none">No automatic reminders</option>
+        </select>
       </div>
 
       <button

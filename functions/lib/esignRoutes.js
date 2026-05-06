@@ -3,6 +3,8 @@
  * E-Sign email routes & notification system
  *
  * Routes:
+ *   POST /esign/request-otp        — generate & email a 6-digit OTP to the signer
+ *   POST /esign/verify-otp         — verify the OTP (3 attempts, 15-min TTL)
  *   POST /esign/send-invitations   — initial invite to signers + owner confirmation
  *   POST /esign/on-viewed          — notify owner when signer views
  *   POST /esign/on-signed          — signer confirmation + owner alert + next in sequence
@@ -51,6 +53,7 @@ exports.buildOwnerSentEmail = buildOwnerSentEmail;
 exports.buildOwnerSignedNotificationEmail = buildOwnerSignedNotificationEmail;
 exports.buildCompletedEmail = buildCompletedEmail;
 exports.buildDeclinedEmail = buildDeclinedEmail;
+exports.buildOtpEmail = buildOtpEmail;
 exports.buildExpiryWarningEmail = buildExpiryWarningEmail;
 exports.createEsignRouter = createEsignRouter;
 const express_1 = require("express");
@@ -272,6 +275,25 @@ function buildDeclinedEmail(p) {
     <p style="font-size:13px;color:#64748b;line-height:1.7;">You can void the document and create a new version, or reach out to ${p.signerName} to resolve their concerns before resending.</p>`;
     return wrap('linear-gradient(135deg,#991b1b 0%,#dc2626 60%,#ef4444 100%)', header, body);
 }
+// ── 0. OTP Verification Email ────────────────────────────────────────────────
+function buildOtpEmail(p) {
+    const digits = p.otp.split('').map(d => `<span style="display:inline-block;width:48px;height:60px;line-height:60px;text-align:center;font-size:28px;font-weight:900;color:#0f172a;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;margin:0 4px;">${d}</span>`).join('');
+    const header = `${logo()}
+    <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;">🔐 &nbsp;Verify Your Identity</span>
+    <h1 style="margin:16px 0 0;color:#fff;font-size:24px;font-weight:900;line-height:1.25;">Your one-time<br>verification code</h1>`;
+    const body = `
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 28px;">Hi <strong style="color:#0f172a">${p.signerName}</strong>, use the code below to verify your identity and access the document <strong style="color:#0f172a">"${p.docTitle}"</strong> from ${p.ownerName}.</p>
+    <div style="text-align:center;margin:0 0 28px;padding:28px 20px;background:#f8fafc;border-radius:16px;border:1.5px solid #e2e8f0;">
+      <div>${digits}</div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">⏱ This code expires in <strong style="color:#475569">15 minutes</strong></p>
+    </div>
+    <div class="doc-card">
+      <p class="doc-title">📄 ${p.docTitle}</p>
+      <p class="doc-meta">Requested by <strong style="color:#475569">${p.ownerName}</strong></p>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;line-height:1.7;">If you did not request this code, please ignore this email. Do not share this code with anyone. PDFA2Z will never ask for your code.</p>`;
+    return wrap('linear-gradient(135deg,#1d4ed8 0%,#2563eb 60%,#3b82f6 100%)', header, body);
+}
 // ── 8. Expiry Warning (to signer) ─────────────────────────────────────────────
 function buildExpiryWarningEmail(p) {
     const daysLeft = Math.ceil((p.expiresAt.getTime() - Date.now()) / 86400000);
@@ -288,8 +310,99 @@ function buildExpiryWarningEmail(p) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  ROUTER
 // ══════════════════════════════════════════════════════════════════════════════
+function maskEmail(email) {
+    const [local, domain] = email.split('@');
+    return `${local.charAt(0)}${'*'.repeat(Math.max(1, local.length - 2))}${local.charAt(local.length - 1)}@${domain}`;
+}
 function createEsignRouter(db) {
     const router = (0, express_1.Router)();
+    // ── Request OTP ────────────────────────────────────────────────────────────
+    router.post('/request-otp', async (req, res) => {
+        var _a;
+        const { token } = req.body;
+        if (!token) {
+            res.status(400).json({ error: 'token required' });
+            return;
+        }
+        try {
+            const tokenSnap = await db.collection('sign_tokens').doc(token).get();
+            if (!tokenSnap.exists) {
+                res.status(404).json({ error: 'Invalid link' });
+                return;
+            }
+            const { docId, signerId } = tokenSnap.data();
+            const docSnap = await db.collection('sign_documents').doc(docId).get();
+            if (!docSnap.exists) {
+                res.status(404).json({ error: 'Document not found' });
+                return;
+            }
+            const document = docSnap.data();
+            const signer = document.signers.find((s) => s.id === signerId);
+            if (!signer) {
+                res.status(404).json({ error: 'Signer not found' });
+                return;
+            }
+            // Rate-limit: block if OTP was sent in the last 60 seconds
+            const otpSnap = await db.collection('sign_otps').doc(token).get();
+            if (otpSnap.exists) {
+                const existing = otpSnap.data();
+                const sentAt = (_a = existing.sentAt) !== null && _a !== void 0 ? _a : 0;
+                if (Date.now() - sentAt < 60000) {
+                    res.status(429).json({ maskedEmail: maskEmail(signer.email), rateLimited: true });
+                    return;
+                }
+            }
+            const otp = String(Math.floor(100000 + Math.random() * 900000));
+            const expiresAt = Date.now() + 15 * 60 * 1000;
+            await db.collection('sign_otps').doc(token).set({ otp, expiresAt, attempts: 0, verified: false, sentAt: Date.now() });
+            await sendMail(signer.email, `${otp} is your PDFA2Z signing verification code`, buildOtpEmail({ signerName: signer.name, otp, docTitle: document.title, ownerName: document.ownerName }));
+            res.json({ maskedEmail: maskEmail(signer.email) });
+        }
+        catch (err) {
+            functions.logger.error('request-otp', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // ── Verify OTP ─────────────────────────────────────────────────────────────
+    router.post('/verify-otp', async (req, res) => {
+        const { token, otp } = req.body;
+        if (!token || !otp) {
+            res.status(400).json({ error: 'token and otp required' });
+            return;
+        }
+        try {
+            const otpSnap = await db.collection('sign_otps').doc(token).get();
+            if (!otpSnap.exists) {
+                res.status(400).json({ error: 'No OTP found. Request a new code.' });
+                return;
+            }
+            const data = otpSnap.data();
+            if (Date.now() > data.expiresAt) {
+                res.status(400).json({ error: 'Code expired. Request a new one.' });
+                return;
+            }
+            if (data.attempts >= 3) {
+                res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+                return;
+            }
+            if (data.verified) {
+                res.json({ ok: true });
+                return;
+            }
+            if (data.otp !== otp.trim()) {
+                await db.collection('sign_otps').doc(token).update({ attempts: data.attempts + 1 });
+                const remaining = 2 - data.attempts;
+                res.status(400).json({ error: `Incorrect code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` });
+                return;
+            }
+            await db.collection('sign_otps').doc(token).update({ verified: true });
+            res.json({ ok: true });
+        }
+        catch (err) {
+            functions.logger.error('verify-otp', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
     // ── Send Invitations + Owner Confirmation ──────────────────────────────────
     router.post('/send-invitations', async (req, res) => {
         var _a, _b;

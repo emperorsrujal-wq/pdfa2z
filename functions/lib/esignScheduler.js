@@ -44,14 +44,19 @@ exports.esignReminder = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const esignRoutes_1 = require("./esignRoutes");
-const FIRST_REMINDER_MS = 24 * 60 * 60 * 1000; // 24 hours
-const RECURRING_INTERVAL = 3 * 24 * 60 * 60 * 1000; // 3 days
-const EXPIRY_WARN_MS = 2 * 24 * 60 * 60 * 1000; // 48 hours before expiry
+const FIRST_REMINDER_MS = 24 * 60 * 60 * 1000;
+const EXPIRY_WARN_MS = 2 * 24 * 60 * 60 * 1000;
+const REMINDER_INTERVALS = {
+    daily: 1 * 24 * 60 * 60 * 1000,
+    '3days': 3 * 24 * 60 * 60 * 1000,
+    weekly: 7 * 24 * 60 * 60 * 1000,
+    none: Infinity,
+};
 exports.esignReminder = functions.pubsub
     .schedule('every 6 hours')
     .timeZone('UTC')
     .onRun(async () => {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const db = admin.firestore();
     const now = Date.now();
     const snap = await db.collection('sign_documents')
@@ -63,24 +68,25 @@ exports.esignReminder = functions.pubsub
         const doc = docSnap.data();
         const docId = docSnap.id;
         const expiry = ((_a = doc.expiresAt) === null || _a === void 0 ? void 0 : _a.seconds) ? doc.expiresAt.seconds * 1000 : null;
+        const recurringInterval = (_c = REMINDER_INTERVALS[(_b = doc.reminderFrequency) !== null && _b !== void 0 ? _b : '3days']) !== null && _c !== void 0 ? _c : REMINDER_INTERVALS['3days'];
         // Skip expired documents
         if (expiry && now > expiry)
             continue;
-        const signers = (_b = doc.signers) !== null && _b !== void 0 ? _b : [];
+        const signers = (_d = doc.signers) !== null && _d !== void 0 ? _d : [];
         const updatedSigners = [...signers];
         let needsUpdate = false;
         for (let i = 0; i < signers.length; i++) {
             const signer = signers[i];
             if (signer.status !== 'pending' && signer.status !== 'viewed')
                 continue;
-            const invitedAt = (_c = signer.invitedAt) !== null && _c !== void 0 ? _c : 0;
-            const lastReminder = (_d = signer.lastReminderAt) !== null && _d !== void 0 ? _d : invitedAt;
-            const reminderCount = (_e = signer.reminderCount) !== null && _e !== void 0 ? _e : 0;
+            const invitedAt = (_e = signer.invitedAt) !== null && _e !== void 0 ? _e : 0;
+            const lastReminder = (_f = signer.lastReminderAt) !== null && _f !== void 0 ? _f : invitedAt;
+            const reminderCount = (_g = signer.reminderCount) !== null && _g !== void 0 ? _g : 0;
             const elapsed = now - (lastReminder || invitedAt);
             const totalElapsed = now - invitedAt;
             // Determine if a reminder is due
             const isFirstReminderDue = reminderCount === 0 && totalElapsed >= FIRST_REMINDER_MS;
-            const isRecurringDue = reminderCount > 0 && elapsed >= RECURRING_INTERVAL;
+            const isRecurringDue = reminderCount > 0 && elapsed >= recurringInterval;
             const isExpiryWarningDue = expiry && !signer.expiryWarningSent && (expiry - now) <= EXPIRY_WARN_MS && (expiry - now) > 0;
             if (isExpiryWarningDue && expiry) {
                 functions.logger.info(`esignReminder: expiry warning → ${signer.email} for doc ${docId}`);
@@ -88,7 +94,7 @@ exports.esignReminder = functions.pubsub
                     signerName: signer.name,
                     ownerName: doc.ownerName,
                     docTitle: doc.title,
-                    docPages: (_f = doc.pageCount) !== null && _f !== void 0 ? _f : 1,
+                    docPages: (_h = doc.pageCount) !== null && _h !== void 0 ? _h : 1,
                     signingOrder: doc.signingOrder,
                     link: `https://pdfa2z.com/sign/${signer.token}`,
                     expiresAt: new Date(expiry),
@@ -105,7 +111,7 @@ exports.esignReminder = functions.pubsub
                     signerName: signer.name,
                     ownerName: doc.ownerName,
                     docTitle: doc.title,
-                    docPages: (_g = doc.pageCount) !== null && _g !== void 0 ? _g : 1,
+                    docPages: (_j = doc.pageCount) !== null && _j !== void 0 ? _j : 1,
                     signingOrder: doc.signingOrder,
                     link: `https://pdfa2z.com/sign/${signer.token}`,
                     reminderCount: count,

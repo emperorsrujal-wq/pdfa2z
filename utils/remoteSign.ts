@@ -11,6 +11,7 @@ export type FieldType = 'signature' | 'initials' | 'date' | 'text' | 'checkbox';
 export type SignerStatus = 'pending' | 'viewed' | 'signed' | 'declined';
 export type DocStatus = 'draft' | 'sent' | 'completed' | 'voided' | 'expired';
 export type SigningOrder = 'sequential' | 'parallel';
+export type ReminderFrequency = 'daily' | '3days' | 'weekly' | 'none';
 
 export const SIGNER_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
 
@@ -75,6 +76,7 @@ export interface SignDocument {
   updatedAt?: any;
   completedAt?: any;
   customMessage?: string;
+  reminderFrequency?: ReminderFrequency;
   signedPdfUrl?: string;
   auditTrail: AuditEvent[];
   pageCount: number;
@@ -86,6 +88,29 @@ export const generateToken = (): string =>
   Array.from(crypto.getRandomValues(new Uint8Array(24)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+
+// ── OTP helpers ──────────────────────────────────────────────────────────────
+
+export const requestOtp = async (token: string): Promise<{ maskedEmail: string }> => {
+  const res = await fetch(`${FUNCTIONS_BASE_URL}/esign/request-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const verifyOtp = async (token: string, otp: string): Promise<boolean> => {
+  const res = await fetch(`${FUNCTIONS_BASE_URL}/esign/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, otp }),
+  });
+  if (!res.ok) return false;
+  const data = await res.json();
+  return data.ok === true;
+};
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 

@@ -10,9 +10,15 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { sendMail, buildReminderEmail, buildExpiryWarningEmail } from './esignRoutes';
 
-const FIRST_REMINDER_MS  = 24 * 60 * 60 * 1000;     // 24 hours
-const RECURRING_INTERVAL = 3  * 24 * 60 * 60 * 1000; // 3 days
-const EXPIRY_WARN_MS     = 2  * 24 * 60 * 60 * 1000; // 48 hours before expiry
+const FIRST_REMINDER_MS  = 24 * 60 * 60 * 1000;
+const EXPIRY_WARN_MS     = 2  * 24 * 60 * 60 * 1000;
+
+const REMINDER_INTERVALS: Record<string, number> = {
+  daily:  1 * 24 * 60 * 60 * 1000,
+  '3days': 3 * 24 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+  none:   Infinity,
+};
 
 export const esignReminder = functions.pubsub
   .schedule('every 6 hours')
@@ -33,6 +39,7 @@ export const esignReminder = functions.pubsub
       const doc = docSnap.data();
       const docId = docSnap.id;
       const expiry: number | null = doc.expiresAt?.seconds ? doc.expiresAt.seconds * 1000 : null;
+      const recurringInterval = REMINDER_INTERVALS[doc.reminderFrequency ?? '3days'] ?? REMINDER_INTERVALS['3days'];
 
       // Skip expired documents
       if (expiry && now > expiry) continue;
@@ -53,7 +60,7 @@ export const esignReminder = functions.pubsub
 
         // Determine if a reminder is due
         const isFirstReminderDue = reminderCount === 0 && totalElapsed >= FIRST_REMINDER_MS;
-        const isRecurringDue     = reminderCount > 0  && elapsed >= RECURRING_INTERVAL;
+        const isRecurringDue     = reminderCount > 0  && elapsed >= recurringInterval;
         const isExpiryWarningDue = expiry && !signer.expiryWarningSent && (expiry - now) <= EXPIRY_WARN_MS && (expiry - now) > 0;
 
         if (isExpiryWarningDue && expiry) {
