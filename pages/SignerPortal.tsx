@@ -2,8 +2,8 @@ import * as React from 'react';
 import { CheckCircle, XCircle, Clock, AlertTriangle, PenLine, Keyboard, RotateCcw, Send, ShieldCheck, RefreshCw } from 'lucide-react';
 import {
   SignDocument, SignerConfig, SignField,
-  getDocumentByToken, recordSignerViewed,
-  submitSignedFields, declineSigning,
+  getDocumentByToken, getSignDocument, recordSignerViewed,
+  submitSignedFields, declineSigning, saveSignedPdf,
   requestOtp, verifyOtp,
 } from '../utils/remoteSign';
 
@@ -299,12 +299,13 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   const sendOtp = async () => {
     setOtpLoading(true); setOtpError('');
     try {
-      const { maskedEmail: me } = await requestOtp(token);
+      const { maskedEmail: me, alreadySent } = await requestOtp(token);
       setMaskedEmail(me);
       setState('otp-sent');
-      setResendCooldown(60);
+      // If rate-limited, don't reset the cooldown (code was already sent)
+      if (!alreadySent) setResendCooldown(60);
     } catch (e: any) {
-      setOtpError('Failed to send code. Please try again.');
+      setOtpError('Failed to send code. Please check your connection and try again.');
     }
     setOtpLoading(false);
   };
@@ -314,10 +315,7 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     try {
       const ok = await verifyOtp(token, code);
       if (ok) {
-        // OTP verified — load PDF and enter signing mode
         await enterSigningMode();
-      } else {
-        setOtpError('Incorrect code. Please try again.');
       }
     } catch (e: any) {
       setOtpError(e.message || 'Verification failed.');
@@ -379,6 +377,51 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     setTextModal({ open: false, fieldId: '', value: '', isDate: false });
   };
 
+  // ── Signed PDF generation ─────────────────────────────────────────────────────
+
+  const generateAndSaveSignedPdf = async (finalDoc: SignDocument) => {
+    const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+    const response = await fetch(finalDoc.pdfUrl);
+    const originalBytes = await response.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(originalBytes);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const pages = pdfDoc.getPages();
+
+    for (const field of finalDoc.fields) {
+      if (!field.value) continue;
+      const page = pages[field.pageIndex];
+      if (!page) continue;
+      const { width: pw, height: ph } = page.getSize();
+      // Scale from 794px coordinate space to PDF points (same aspect ratio)
+      const scale = pw / PAGE_W;
+      const pdfX = field.x * scale;
+      const pdfW = field.width * scale;
+      const pdfH = field.height * scale;
+      // PDF origin is bottom-left; our coords are top-left
+      const pdfY = ph - (field.y + field.height) * scale;
+
+      if (field.type === 'signature' || field.type === 'initials') {
+        if (field.value.startsWith('data:image/png')) {
+          try {
+            const b64 = field.value.split(',')[1];
+            const imgBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+            const img = await pdfDoc.embedPng(imgBytes);
+            page.drawImage(img, { x: pdfX, y: pdfY, width: pdfW, height: pdfH });
+          } catch { /* skip malformed image */ }
+        }
+      } else if (field.type === 'checkbox' && field.value === 'true') {
+        const fs = Math.min(pdfH * 0.75, 14);
+        page.drawText('X', { x: pdfX + pdfW * 0.15, y: pdfY + (pdfH - fs) / 2, size: fs, font, color: rgb(0.05, 0.05, 0.05) });
+      } else if (field.type === 'text' || field.type === 'date') {
+        const fs = Math.max(7, Math.min(11, pdfH * 0.55));
+        page.drawText(field.value, { x: pdfX + 3, y: pdfY + (pdfH - fs) / 2, size: fs, font, color: rgb(0.05, 0.05, 0.05), maxWidth: pdfW - 6 });
+      }
+    }
+
+    const signedBytes = await pdfDoc.save();
+    await saveSignedPdf(finalDoc.id!, new Uint8Array(signedBytes));
+  };
+
   // ── Submit / Decline ─────────────────────────────────────────────────────────
 
   const myFields = signDoc?.fields.filter(f => f.signerId === signer?.id) ?? [];
@@ -391,7 +434,16 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     setState('submitting');
     try {
       const filled = myFields.map(f => ({ id: f.id, value: fieldValues[f.id] || '' }));
-      await submitSignedFields(signDoc.id!, signer.id, filled);
+      const allSigned = await submitSignedFields(signDoc.id!, signer.id, filled);
+      if (allSigned) {
+        // Fetch the complete document (all signers' values) then embed into PDF
+        try {
+          const finalDoc = await getSignDocument(signDoc.id!);
+          if (finalDoc) await generateAndSaveSignedPdf(finalDoc);
+        } catch (e) {
+          console.error('Signed PDF generation failed (non-fatal):', e);
+        }
+      }
       setState('completed');
     } catch (e) {
       console.error(e);

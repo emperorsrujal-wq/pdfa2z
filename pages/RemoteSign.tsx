@@ -10,7 +10,7 @@ import {
   SignDocument, SignerConfig, SignField, FieldType, DocStatus,
   SIGNER_COLORS, FIELD_DEFAULTS, generateToken,
   createSignDocument, getOwnerDocuments, voidDocument, sendDocument,
-  uploadPdfForSigning, saveDocumentFields,
+  uploadPdfForSigning, saveDocumentFields, updateSignDocumentPdfUrl,
   statusLabel, statusColor, signerStatusColor, formatDate,
 } from '../utils/remoteSign';
 
@@ -168,29 +168,34 @@ export const RemoteSign: React.FC = () => {
 
   const goToFields = async () => {
     if (!pdfBytes || !title || signers.length === 0) return;
-    // Create draft document in Firestore
-    const url = draftId ? '' : await uploadPdfForSigning('__temp__', pdfBytes);
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + expiryDays);
-    const docId = await createSignDocument({
-      ownerId: user.uid,
-      ownerEmail: user.email ?? '',
-      ownerName: user.displayName ?? user.email ?? 'Owner',
-      title,
-      pdfUrl: '',
-      status: 'draft',
-      signers,
-      fields: [],
-      signingOrder,
-      pageCount: pdfPageCount,
-      expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
-      reminderFrequency: reminderFreq,
-    });
-    // Upload PDF with real docId
-    const pdfUrl = await uploadPdfForSigning(docId, pdfBytes);
-    await saveDocumentFields(docId, []);
-    setDraftId(docId);
-    setView('fields');
+    // If a draft already exists, just show the field placement view
+    if (draftId) { setView('fields'); return; }
+    try {
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + expiryDays);
+      const docId = await createSignDocument({
+        ownerId: user.uid,
+        ownerEmail: user.email ?? '',
+        ownerName: user.displayName ?? user.email ?? 'Owner',
+        title,
+        pdfUrl: '',
+        status: 'draft',
+        signers,
+        fields: [],
+        signingOrder,
+        pageCount: pdfPageCount,
+        expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
+        reminderFrequency: reminderFreq,
+      });
+      // Upload PDF and save the URL back to the document
+      const pdfUrl = await uploadPdfForSigning(docId, pdfBytes);
+      await updateSignDocumentPdfUrl(docId, pdfUrl);
+      setDraftId(docId);
+      setView('fields');
+    } catch (e) {
+      console.error('Failed to create document draft', e);
+      setStep(1); // Return to signers step on failure
+    }
   };
 
   const handleSend = async () => {
@@ -533,7 +538,7 @@ export const RemoteSign: React.FC = () => {
         signers={signers}
         fields={fields}
         setFields={setFields}
-        onBack={() => setView('prepare')}
+        onBack={() => { setView('prepare'); setStep(1); }}
         onNext={() => { setView('prepare'); setStep(3); }}
       />
     );

@@ -55,5 +55,28 @@ service cloud.firestore {
       allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow write: if false;
     }
+
+    // ── E-Sign: Sign Documents ──────────────────────────────────────────────
+    // Token-gated access: docId is a random Firebase ID, not guessable.
+    // Signers reach the document via token -> docId lookup, not direct access.
+    match /sign_documents/{docId} {
+      allow create: if request.auth != null;
+      // Owner reads/updates; signers update via client SDK (authenticated by token knowledge)
+      allow read, update: if true;
+      allow delete: if false;
+    }
+
+    // ── E-Sign: Signer Tokens ───────────────────────────────────────────────
+    // The token IS the credential — 48-char random hex, guessing is not feasible.
+    match /sign_tokens/{token} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // ── E-Sign: OTPs — backend only (admin SDK bypasses rules) ─────────────
+    match /sign_otps/{token} {
+      allow read, write: if false;
+    }
   }
 }

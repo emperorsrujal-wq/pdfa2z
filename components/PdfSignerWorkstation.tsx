@@ -15,7 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { Button } from './Button';
-import { PdfEditorCanvas } from './PdfEditorCanvas';
+import { PdfEditorCanvas } from './PDFEditorCanvas';
 import { SignaturePad } from './SignaturePad';
 import { EditElement, detectSigningLines } from '../utils/pdfHelpers';
 

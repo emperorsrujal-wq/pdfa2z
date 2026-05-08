@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { CheckCircle2, Layout, X, AlertTriangle, FileWarning, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
-import { PdfEditorCanvas } from './PdfEditorCanvas';
+import { PdfEditorCanvas } from './PDFEditorCanvas';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;

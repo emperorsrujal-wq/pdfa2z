@@ -91,12 +91,17 @@ export const generateToken = (): string =>
 
 // ── OTP helpers ──────────────────────────────────────────────────────────────
 
-export const requestOtp = async (token: string): Promise<{ maskedEmail: string }> => {
+export const requestOtp = async (token: string): Promise<{ maskedEmail: string; alreadySent?: boolean }> => {
   const res = await fetch(`${FUNCTIONS_BASE_URL}/esign/request-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
   });
+  if (res.status === 429) {
+    // Rate-limited — a code was already sent recently; return maskedEmail so UX can proceed
+    const data = await res.json().catch(() => ({}));
+    return { maskedEmail: data.maskedEmail ?? '', alreadySent: true };
+  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 };
@@ -107,7 +112,10 @@ export const verifyOtp = async (token: string, otp: string): Promise<boolean> =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, otp }),
   });
-  if (!res.ok) return false;
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Verification failed. Please try again.');
+  }
   const data = await res.json();
   return data.ok === true;
 };
@@ -181,6 +189,10 @@ export const getOwnerDocuments = async (ownerId: string): Promise<SignDocument[]
 
 export const saveDocumentFields = async (docId: string, fields: SignField[]): Promise<void> => {
   await updateDoc(doc(db, 'sign_documents', docId), { fields, updatedAt: serverTimestamp() });
+};
+
+export const updateSignDocumentPdfUrl = async (docId: string, pdfUrl: string): Promise<void> => {
+  await updateDoc(doc(db, 'sign_documents', docId), { pdfUrl, updatedAt: serverTimestamp() });
 };
 
 export const sendDocument = async (docId: string, customMessage: string): Promise<void> => {
