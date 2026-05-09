@@ -63,8 +63,15 @@ export const RemoteSign: React.FC = () => {
   const [fields, setFields] = React.useState<SignField[]>([]);
   const [customMsg, setCustomMsg] = React.useState('');
   const [sending, setSending] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState('');
+
+  // Background upload state — upload starts immediately on file select
+  type UploadState = 'idle' | 'uploading' | 'done' | 'error';
+  const [uploadState, setUploadState] = React.useState<UploadState>('idle');
+  const [uploadPct, setUploadPct] = React.useState(0);
+  // Holds the pre-created docId + pdfUrl from the background upload
+  const bgDocIdRef = React.useRef<string | null>(null);
+  const bgPdfUrlRef = React.useRef<string | null>(null);
 
   // Signer form
   const [newName, setNewName] = React.useState('');
@@ -81,7 +88,7 @@ export const RemoteSign: React.FC = () => {
   React.useEffect(() => {
     if (!pdfBytes) { setPreviewImg(null); return; }
     import('pdfjs-dist').then(async ({ GlobalWorkerOptions, getDocument }) => {
-      GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
       const pdf = await getDocument({ data: pdfBytes.slice(0) }).promise;
       setPdfPageCount(pdf.numPages);
       const page = await pdf.getPage(1);
@@ -116,7 +123,48 @@ export const RemoteSign: React.FC = () => {
     const buf = await file.arrayBuffer();
     setPdfBytes(buf);
     if (!title) setTitle(file.name.replace(/\.pdf$/i, ''));
-    setDraftId(null); // reset draft so new upload creates fresh doc
+    // Reset previous draft so a new upload creates a fresh doc
+    setDraftId(null);
+    bgDocIdRef.current = null;
+    bgPdfUrlRef.current = null;
+    setUploadError('');
+
+    // ── Start background upload immediately ────────────────────────────────
+    // We create a temporary doc in Firestore to get a docId, then stream the
+    // PDF to Firebase Storage in the background while the user fills signers.
+    setUploadState('uploading');
+    setUploadPct(0);
+    try {
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + expiryDays);
+      const tmpDocId = await createSignDocument({
+        ownerId: user!.uid,
+        ownerEmail: user!.email ?? '',
+        ownerName: user!.displayName ?? user!.email ?? 'Owner',
+        title: file.name.replace(/\.pdf$/i, ''),
+        pdfUrl: '',
+        status: 'draft',
+        signers: [],
+        fields: [],
+        signingOrder,
+        pageCount: 1, // will be updated once pdfjs parses the doc
+        expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
+        reminderFrequency: reminderFreq,
+      });
+      bgDocIdRef.current = tmpDocId;
+
+      const pdfUrl = await uploadPdfForSigning(tmpDocId, buf, (pct) => {
+        setUploadPct(pct);
+      });
+
+      bgPdfUrlRef.current = pdfUrl;
+      await updateSignDocumentPdfUrl(tmpDocId, pdfUrl);
+      setUploadState('done');
+    } catch (err) {
+      console.error('Background upload failed:', err);
+      setUploadState('error');
+      setUploadError('Upload failed — please try selecting the file again.');
+    }
   };
 
   const addSigner = () => {
@@ -141,34 +189,57 @@ export const RemoteSign: React.FC = () => {
 
   const goToFields = async () => {
     if (!pdfBytes || !title.trim() || signers.length === 0) return;
+    // If already committed, go straight to the field editor
     if (draftId) { setView('fields'); return; }
-    setUploading(true); setUploadError('');
+
+    const docId = bgDocIdRef.current;
+    if (!docId) {
+      setUploadError('No document created yet. Please wait for the upload to complete.');
+      return;
+    }
+
+    // If background upload still in progress, just wait — user pressed button early
+    if (uploadState === 'uploading') {
+      setUploadError('Still uploading… please wait a moment and try again.');
+      return;
+    }
+
+    if (uploadState === 'error') {
+      setUploadError('Upload failed. Please re-select the file and try again.');
+      return;
+    }
+
+    // Upload is done — update the doc with final title, signers, and page count
     try {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + expiryDays);
-      const docId = await createSignDocument({
-        ownerId: user.uid,
-        ownerEmail: user.email ?? '',
-        ownerName: user.displayName ?? user.email ?? 'Owner',
-        title: title.trim(),
-        pdfUrl: '',
-        status: 'draft',
-        signers,
-        fields: [],
-        signingOrder,
-        pageCount: pdfPageCount,
-        expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
-        reminderFrequency: reminderFreq,
-      });
-      const pdfUrl = await uploadPdfForSigning(docId, pdfBytes);
-      await updateSignDocumentPdfUrl(docId, pdfUrl);
+      const { updateDoc, doc: firestoreDoc } = await import('firebase/firestore');
+      const { db } = await import('../config/firebase');
+      await import('firebase/firestore').then(({ serverTimestamp }) =>
+        updateDoc(firestoreDoc(db, 'sign_documents', docId), {
+          title: title.trim(),
+          signers,
+          signingOrder,
+          pageCount: pdfPageCount,
+          reminderFrequency: reminderFreq,
+          expiresAt: { seconds: Math.floor((Date.now() + expiryDays * 86400000) / 1000) },
+          updatedAt: serverTimestamp(),
+        })
+      );
+      // Store token → docId mappings for any signers that were added
+      const { setDoc, doc: fsDoc } = await import('firebase/firestore');
+      for (const signer of signers) {
+        await setDoc(fsDoc(db, 'sign_tokens', signer.token), {
+          docId,
+          signerId: signer.id,
+        });
+      }
       setDraftId(docId);
       setView('fields');
-    } catch (e: any) {
-      setUploadError('Upload failed — please check your connection and try again.');
-      console.error(e);
+    } catch (e) {
+      console.error('goToFields error:', e);
+      setUploadError('Something went wrong. Please try again.');
     }
-    setUploading(false);
   };
 
   const handleSend = async () => {
@@ -191,6 +262,8 @@ export const RemoteSign: React.FC = () => {
     setPdfPageCount(1); setReminderFreq('3days'); setUploadError('');
     setSigningOrder('sequential'); setExpiryDays(14);
     setNewName(''); setNewEmail('');
+    setUploadState('idle'); setUploadPct(0);
+    bgDocIdRef.current = null; bgPdfUrlRef.current = null;
   };
 
   const handleVoid = async (docId: string) => {
@@ -319,20 +392,41 @@ export const RemoteSign: React.FC = () => {
           <div className="space-y-3">
             <label className="block text-sm font-bold text-slate-700">1. Upload your PDF</label>
             <label className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-2xl cursor-pointer transition-all
-              ${pdfFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'}`}>
+              ${pdfFile && uploadState === 'done' ? 'border-emerald-400 bg-emerald-50' : pdfFile ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'}`}>
               <input type="file" accept=".pdf,application/pdf" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
               {pdfFile ? (
                 <>
-                  <CheckCircle size={28} className="text-emerald-500 mb-2" />
-                  <p className="font-bold text-emerald-700 text-sm text-center px-3 truncate max-w-full">{pdfFile.name}</p>
-                  <p className="text-xs text-emerald-500 mt-1">{pdfPageCount} page{pdfPageCount !== 1 ? 's' : ''} · click to change</p>
+                  {uploadState === 'done' && <CheckCircle size={28} className="text-emerald-500 mb-2" />}
+                  {uploadState === 'uploading' && <RefreshCw size={28} className="text-blue-500 mb-2 animate-spin" />}
+                  {uploadState === 'error' && <AlertCircle size={28} className="text-red-500 mb-2" />}
+                  <p className="font-bold text-sm text-center px-3 truncate max-w-full"
+                    style={{ color: uploadState === 'done' ? '#059669' : uploadState === 'error' ? '#dc2626' : '#2563eb' }}>
+                    {pdfFile.name}
+                  </p>
+                  {uploadState === 'uploading' && (
+                    <div className="w-3/4 mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wide">Uploading…</span>
+                        <span className="text-[10px] font-bold text-blue-500">{uploadPct}%</span>
+                      </div>
+                      <div className="w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full transition-all duration-300" style={{ width: `${uploadPct}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {uploadState === 'done' && (
+                    <p className="text-xs text-emerald-500 mt-1">{pdfPageCount} page{pdfPageCount !== 1 ? 's' : ''} · ready · click to change</p>
+                  )}
+                  {uploadState === 'error' && (
+                    <p className="text-xs text-red-500 mt-1">Upload failed — click to try again</p>
+                  )}
                 </>
               ) : (
                 <>
                   <Upload size={28} className="text-slate-300 mb-2" />
                   <p className="font-bold text-slate-500 text-sm">Drop PDF here or click to upload</p>
-                  <p className="text-xs text-slate-400 mt-1">PDF files only</p>
+                  <p className="text-xs text-slate-400 mt-1">PDF files only · uploads immediately in background</p>
                 </>
               )}
             </label>
@@ -457,16 +551,18 @@ export const RemoteSign: React.FC = () => {
         {/* CTA */}
         <button
           onClick={goToFields}
-          disabled={!canProceed || uploading}
+          disabled={!canProceed}
           className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl disabled:opacity-40 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-base shadow-lg shadow-blue-200 active:scale-[0.99]"
         >
-          {uploading
-            ? <><RefreshCw size={18} className="animate-spin" /> Uploading PDF…</>
-            : !pdfFile
-              ? 'Upload a PDF to continue'
-              : signers.length === 0
-                ? 'Add at least one signer to continue'
-                : <>Place Signature Fields <span className="text-blue-200">→</span></>
+          {!pdfFile
+            ? 'Upload a PDF to continue'
+            : signers.length === 0
+              ? 'Add at least one signer to continue'
+              : uploadState === 'uploading'
+                ? <><RefreshCw size={18} className="animate-spin" /> Uploading {uploadPct}% — you can add signers while this completes</>
+                : uploadState === 'error'
+                  ? <><AlertCircle size={18} /> Upload failed — re-select the file to retry</>
+                  : <>Place Signature Fields <span className="text-blue-200">→</span></>
           }
         </button>
       </div>
@@ -609,7 +705,7 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
   React.useEffect(() => {
     if (!pdfBytes) return;
     import('pdfjs-dist').then(async ({ GlobalWorkerOptions, getDocument }) => {
-      GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
       const pdf = await getDocument({ data: pdfBytes.slice(0) }).promise;
       const imgs: string[] = [];
       for (let p = 1; p <= pdf.numPages; p++) {

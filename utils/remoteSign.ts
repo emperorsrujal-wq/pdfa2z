@@ -3,7 +3,8 @@ import {
   collection, doc, getDoc, setDoc, updateDoc,
   query, where, getDocs, Timestamp, serverTimestamp, arrayUnion
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -130,10 +131,31 @@ const getIdToken = async (): Promise<string | null> => {
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
-export const uploadPdfForSigning = async (docId: string, pdfBytes: ArrayBuffer): Promise<string> => {
-  const pdfRef = ref(storage, `sign_pdfs/${docId}/original.pdf`);
-  await uploadBytes(pdfRef, new Uint8Array(pdfBytes), { contentType: 'application/pdf' });
-  return getDownloadURL(pdfRef);
+export const uploadPdfForSigning = (
+  docId: string,
+  pdfBytes: ArrayBuffer,
+  onProgress?: (pct: number) => void,
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const pdfRef = ref(storage, `sign_pdfs/${docId}/original.pdf`);
+    const task2 = uploadBytesResumable(pdfRef, new Uint8Array(pdfBytes), { contentType: 'application/pdf' });
+    task2.on(
+      'state_changed',
+      (snap) => {
+        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+        onProgress?.(pct);
+      },
+      reject,
+      async () => {
+        try {
+          const url = await getDownloadURL(task2.snapshot.ref);
+          resolve(url);
+        } catch (e) {
+          reject(e);
+        }
+      },
+    );
+  });
 };
 
 export const createSignDocument = async (

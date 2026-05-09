@@ -28,7 +28,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="flex items-center gap-0.5 bg-[#f0f7ff] border border-[#d1e6ff] p-0.5 rounded-md shadow-sm">
+      <div className="flex items-center gap-0.5 bg-[#f0f7ff] border border-[#d1e6ff] p-0.5 rounded-md shadow-sm overflow-x-auto max-w-[calc(100vw-20px)]">
         
         {/* Text Group */}
         <div className="flex items-center border-r border-[#d1e6ff] pr-1 mr-1">

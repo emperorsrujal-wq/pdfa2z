@@ -96,7 +96,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
   );
 
   return (
-    <div className="absolute -top-[55px] left-1/2 -translate-x-1/2 flex items-center bg-[#fff] border border-[#2196f3] rounded-lg shadow-[0_4px_12px_rgba(33,150,243,0.15)] z-[450] p-1 h-[42px] animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="absolute -top-[55px] left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center bg-[#fff] border border-[#2196f3] rounded-lg shadow-[0_4px_12px_rgba(33,150,243,0.15)] z-[450] p-1 min-h-[42px] max-w-[calc(100vw-20px)] animate-in fade-in slide-in-from-bottom-2 duration-200">
       
       {/* TEXT TOOLS */}
       {element.type === 'text' && (

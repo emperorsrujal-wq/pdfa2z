@@ -121,7 +121,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({
     <div ref={toolbarRef} className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a] border-b border-white/5 shadow-2xl h-14 shrink-0 relative z-[500]">
 
       {/* Left: Tool Categories */}
-      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+      <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
 
         {/* EDIT GROUP */}
         <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5 gap-0.5">
