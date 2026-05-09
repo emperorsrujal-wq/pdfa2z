@@ -31,6 +31,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   const [resultBlob, setResultBlob] = React.useState<{ blob: Blob, fileName: string } | null>(null);
   const { user, openAuthModal } = useAuth();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [signingPageIndex, setSigningPageIndex] = React.useState(0);
 
   const [signingPage, setSigningPage] = React.useState<{ index: number, image: string } | null>(null);
 
@@ -56,9 +57,19 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   React.useEffect(() => {
     if (initialMode) {
       setMode(initialMode);
-      reset(); // Ensure state is cleared when mode changes from props
+      reset();
     }
   }, [initialMode]);
+
+  React.useEffect(() => {
+    if (mode === 'SIGN' && files.length > 0 && resultImages.length === 0 && !isProcessing) {
+      setIsProcessing(true);
+      pdfToImages(files[0])
+        .then(({ images }) => setResultImages(images))
+        .catch(() => {})
+        .finally(() => setIsProcessing(false));
+    }
+  }, [mode, files]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -82,6 +93,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       setSuccessMsg(null);
       setResultImages([]);
       setResultText('');
+      setSigningPageIndex(0);
     }
     // Clear input to allow re-selecting same file if needed
     if (e.target) e.target.value = '';
@@ -102,6 +114,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     setRedactionAreas([]);
     setActiveRedactPage(null);
     setResultBlob(null);
+    setSigningPageIndex(0);
   };
 
   const removeFile = (index: number) => {
@@ -814,23 +827,30 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 </div>
               </div>
             ) : mode === 'SIGN' ? (
-              <PdfSignerWorkstation
-                file={files[0]}
-                image={resultImages[0] || ''}
-                pageIndex={0}
-                totalPages={resultImages.length}
-                onSave={async (elements) => {
-                  try {
-                    const bytes = await editPdf(files[0], elements);
-                    downloadBlob(bytes, `signed-${files[0].name}`);
-                  } catch (err) {
-                    console.error('Failed to save signed PDF:', err);
-                  }
-                }}
-                onCancel={reset}
-                onNextPage={() => {}}
-                onPrevPage={() => {}}
-              />
+              resultImages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-slate-500 font-bold">Loading PDF pages…</p>
+                </div>
+              ) : (
+                <PdfSignerWorkstation
+                  file={files[0]}
+                  image={resultImages[signingPageIndex] || ''}
+                  pageIndex={signingPageIndex}
+                  totalPages={resultImages.length}
+                  onSave={async (elements) => {
+                    try {
+                      const bytes = await editPdf(files[0], elements);
+                      downloadBlob(bytes, `signed-${files[0].name}`);
+                    } catch (err) {
+                      console.error('Failed to save signed PDF:', err);
+                    }
+                  }}
+                  onCancel={reset}
+                  onNextPage={() => setSigningPageIndex(p => Math.min(p + 1, resultImages.length - 1))}
+                  onPrevPage={() => setSigningPageIndex(p => Math.max(p - 1, 0))}
+                />
+              )
             ) : mode === 'REDACT' ? (
               <div className="space-y-6 animate-fade-in w-full">
                 {resultImages.length === 0 ? (
