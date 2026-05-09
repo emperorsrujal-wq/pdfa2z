@@ -1408,8 +1408,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   onTouchStart={ev => ev.stopPropagation()}
                   onClick={ev => ev.stopPropagation()}
                 >
-                  {/* Magic Edit Overlay (Targeting feedback) */}
-                  {mode === 'magic-edit' && (
+                  {/* Magic Edit Overlay (Targeting feedback — only on text elements) */}
+                  {mode === 'magic-edit' && el.type === 'text' && (
                     <div className="absolute inset-0 border-2 border-indigo-400 border-dashed animate-pulse pointer-events-none" />
                   )}
                   {/* Object property bar */}
@@ -1713,8 +1713,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         placeholder="Multiline text…"
                         onChange={ev => updateElement(el.id, { text: ev.target.value })}
                         onClick={ev => ev.stopPropagation()}
+                        onPointerDown={ev => ev.stopPropagation()}
                         className="w-full h-full bg-transparent border-none outline-none p-0 m-0 text-slate-800 resize-none"
-                        style={{ fontSize: `${((el.size || 12) / 1000) * 100}%` }}
+                        style={{ fontSize: `${(el.size || 12) * ptToPx}px` }}
                       />
                     </div>
                   )}
@@ -1730,33 +1731,40 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       {el.linkUrl && <span className="text-[8px] text-blue-400 opacity-0 group-hover:opacity-100 truncate max-w-[80%] transition-opacity">{el.linkUrl}</span>}
                     </div>
                   )}
-                  {el.type === 'text' && (
-                    <div className="w-full h-full flex items-start">
-                      <input
-                        type="text"
-                        value={el.text || ''}
-                        placeholder="Type your text"
-                        autoFocus={isActive && el.text === ''}
-                        onChange={ev => updateElement(el.id, { text: ev.target.value })}
-                        onClick={ev => ev.stopPropagation()}
-                        className="w-full bg-transparent border-none outline-none p-0 m-0"
-                        style={{
-                          color: el.color || '#000',
-                          fontSize: `${(el.size || 14) * ptToPx}px`,
-                          fontFamily: getFontFamily(el.fontName),
-                          fontWeight: el.isBold ? 'bold' : 'normal',
-                          fontStyle: el.isItalic ? 'italic' : 'normal',
-                          textDecoration: [el.isUnderline ? 'underline' : '', el.isStrikeout ? 'line-through' : ''].filter(Boolean).join(' ') || 'none',
-                          textAlign: el.textAlign || 'left',
-                          lineHeight: 1.2,
-                          whiteSpace: 'nowrap',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      />
-                    </div>
-                  )}
+                  {el.type === 'text' && (() => {
+                    const textStyle: React.CSSProperties = {
+                      color: el.color || '#000',
+                      fontSize: `${(el.size || 14) * ptToPx}px`,
+                      fontFamily: getFontFamily(el.fontName),
+                      fontWeight: el.isBold ? 'bold' : 'normal',
+                      fontStyle: el.isItalic ? 'italic' : 'normal',
+                      textDecoration: [el.isUnderline ? 'underline' : '', el.isStrikeout ? 'line-through' : ''].filter(Boolean).join(' ') || 'none',
+                      textAlign: (el.textAlign || 'left') as React.CSSProperties['textAlign'],
+                      lineHeight: 1.2,
+                      whiteSpace: 'nowrap',
+                    };
+                    return (
+                      <div className="w-full h-full flex items-center">
+                        {isActive ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            value={el.text || ''}
+                            placeholder="Type your text"
+                            onChange={ev => updateElement(el.id, { text: ev.target.value })}
+                            onClick={ev => ev.stopPropagation()}
+                            onPointerDown={ev => ev.stopPropagation()}
+                            className="w-full bg-transparent border-none outline-none p-0 m-0"
+                            style={{ ...textStyle, height: '100%', display: 'flex', alignItems: 'center' }}
+                          />
+                        ) : (
+                          <span className="w-full overflow-hidden" style={textStyle}>
+                            {el.text || <span className="text-slate-300/60 italic text-xs">Text...</span>}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

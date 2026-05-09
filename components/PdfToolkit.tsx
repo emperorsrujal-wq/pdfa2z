@@ -814,12 +814,19 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 </div>
               </div>
             ) : mode === 'SIGN' ? (
-              <PdfSignerWorkstation 
-                file={files[0]} 
-                image={resultImages[0] || ''} 
-                pageIndex={0} 
-                totalPages={resultImages.length} 
-                onSave={() => {}} 
+              <PdfSignerWorkstation
+                file={files[0]}
+                image={resultImages[0] || ''}
+                pageIndex={0}
+                totalPages={resultImages.length}
+                onSave={async (elements) => {
+                  try {
+                    const bytes = await editPdf(files[0], elements);
+                    downloadBlob(bytes, `signed-${files[0].name}`);
+                  } catch (err) {
+                    console.error('Failed to save signed PDF:', err);
+                  }
+                }}
                 onCancel={reset}
                 onNextPage={() => {}}
                 onPrevPage={() => {}}

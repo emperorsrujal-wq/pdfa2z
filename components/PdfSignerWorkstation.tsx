@@ -396,6 +396,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
                  <Button variant="primary" className="flex-[2]" onClick={() => {
                    setHasVoiceEvidence(true);
                    setIsRecordingIntent(false);
+                   onSave(elements);
                  }}>
                    Stop & Confirm
                  </Button>
