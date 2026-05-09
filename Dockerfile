@@ -1,30 +1,8 @@
-# Build Stage
-FROM node:20-alpine as build-stage
-WORKDIR /app
-
-# Install Chromium and dependencies for Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont
-
-# Tell Puppeteer to skip installing Chrome (we'll use the installed one)
-# PUPPETEER_SKIP_DOWNLOAD covers Puppeteer v20+; keep legacy var for older versions
-ENV PUPPETEER_SKIP_DOWNLOAD=true \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
-COPY . .
-RUN npm run build
-
-# Production Stage
-FROM nginx:alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+# Serve pre-built static files with nginx.
+# The frontend is built in the CI runner (where GitHub secrets are available),
+# so the dist/ directory is already present when this image is built.
+FROM nginx:alpine
+COPY dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
