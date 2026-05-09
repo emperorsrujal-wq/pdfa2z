@@ -268,7 +268,7 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
                    onCommit={commit}
                    onUndo={undo}
                    onRedo={redo}
-                   onSave={(els) => setElements(els)}
+                   onSave={(els: EditElement[]) => setElements(els)}
                    onCancel={() => {}} // Internal cancel handled differently
                    isEmbedded={true}
                    file={file}

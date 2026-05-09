@@ -418,9 +418,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             onCommit={commit}
             onUndo={undo}
             onRedo={redo}
-            onSave={(newElements) => {
-              // This is now handled by commit() mostly, but kept for compatibility
-              // if PdfEditorCanvas still manages some local temp state
+            onSave={(_newElements: EditElement[]) => {
+              // handled by commit()
             }}
             onFinalSave={handleApplyAll}
             onCancel={onCancel}

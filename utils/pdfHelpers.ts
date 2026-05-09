@@ -1058,8 +1058,9 @@ export const extractStyleAtPoint = async (file: File, pageIndex: number, px: num
         const toHex = (c: number) => c.toString(16).padStart(2, '0');
         const hex = `#${toHex(pixel[0])}${toHex(pixel[1])}${toHex(pixel[2])}`;
         bestMatch.backgroundColor = hex;
-        // Also use this as the foreground color if we're picking for text
-        bestMatch.color = hex;
+        // Pick a contrasting text color based on background luminance
+        const lum = (0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]) / 255;
+        bestMatch.color = lum > 0.5 ? '#000000' : '#FFFFFF';
       }
     } catch (e) {
       console.warn("Could not sample colors", e);

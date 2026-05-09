@@ -238,6 +238,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
 
+  // Scale factor: converts PDF points → screen pixels (accounts for zoom)
+  const ptToPx = React.useMemo(() => {
+    const pdfW = dimensions?.width || 595;
+    return (794 / pdfW) * zoom;
+  }, [dimensions, zoom]);
+
   const closeAllMenus = () => {
     setShowFormsMenu(false);
     setShowAnnotateMenu(false);
@@ -407,10 +413,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const handlePointerDown = async (e: React.MouseEvent | React.TouchEvent) => {
     const pos = getPos(e);
-    // Clicking empty canvas while something is selected → deselect first, don't create a new element
+    // Clicking canvas while something is selected → deselect first.
+    // For point-click creation modes (text, form fields, symbols), continue so the new element is
+    // placed in the same click rather than requiring a second click.
     if (activeElementId) {
       setActiveElementId(null);
-      return;
+      const pointClickModes: EditorMode[] = [
+        'magic-edit', 'text', 'sticky-note', 'comment',
+        'symbol-cross', 'symbol-check', 'symbol-dot',
+        'form-radio', 'form-text', 'form-check', 'form-select', 'form-text-multiline', 'form-signature',
+      ];
+      if (!pointClickModes.includes(mode)) return;
     }
     if (mode === 'select') {
       return;
@@ -479,27 +492,27 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       const clicked = textItems?.find(
         item => pos.x >= item.x && pos.x <= item.x + item.width && pos.y >= item.y && pos.y <= item.y + item.height
       );
-      
-      let bgColor = '#FFFFFF';
-      let fontColor = activeColor;
-      
-      try {
-        const style = await extractStyleAtPoint(new File([], 'p.pdf'), pageIndex, pos.x, pos.y, image);
-        bgColor = style.backgroundColor || '#FFFFFF';
-        fontColor = style.color || activeColor;
-      } catch (e) {
-        console.warn("Color sampling failed, using defaults", e);
-      }
 
       if (clicked) {
-        const mask: EditElement = { id: `mask-${Date.now()}`, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: bgColor, opacity: 1 };
-        const text: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: fontColor, text: clicked.str, size: clicked.fontSize, opacity: 1 };
+        // Create immediately with defaults; update background color asynchronously
+        const now = Date.now();
+        const maskId = `mask-${now}`;
+        const textId = `t-${now}`;
+        const mask: EditElement = { id: maskId, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: '#FFFFFF', opacity: 1 };
+        const text: EditElement = { id: textId, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: activeColor, text: clicked.str, size: clicked.fontSize, opacity: 1 };
         const next = [...elements, mask, text];
         commit(next);
-        setActiveElementId(text.id);
+        setActiveElementId(textId);
+        // Fire-and-forget: update mask color with sampled background
+        extractStyleAtPoint(file, pageIndex, pos.x, pos.y, image)
+          .then(style => {
+            const bg = style.backgroundColor || '#FFFFFF';
+            setElements(prev => prev.map(el => el.id === maskId ? { ...el, color: bg } : el));
+          })
+          .catch(() => {});
         return;
       }
-      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: fontColor, text: '', size: activeFontSize, opacity: 1 };
+      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, opacity: 1 };
       commit([...elements, newEl]);
       setActiveElementId(newEl.id);
       return;
@@ -550,6 +563,27 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       }
       if (mode === 'form-signature') {
         const newEl: EditElement = { id: `sigbox-${Date.now()}`, type: 'signature', pageIndex, x: pos.x, y: pos.y, width: 200, height: 60, color: '#475569', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'form-text') {
+        const newEl: EditElement = { id: `ft-${Date.now()}`, type: 'form-text', pageIndex, x: pos.x, y: pos.y, width: 180, height: 30, color: '#000000', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'form-check') {
+        const newEl: EditElement = { id: `fc-${Date.now()}`, type: 'form-check', pageIndex, x: pos.x, y: pos.y, width: 20, height: 20, color: '#000000', opacity: 1 };
+        commit([...elements, newEl]);
+        setActiveElementId(newEl.id);
+        setMode('select');
+        return;
+      }
+      if (mode === 'form-select') {
+        const newEl: EditElement = { id: `fs-${Date.now()}`, type: 'form-select', pageIndex, x: pos.x, y: pos.y, width: 180, height: 30, color: '#000000', opacity: 1 };
         commit([...elements, newEl]);
         setActiveElementId(newEl.id);
         setMode('select');
@@ -849,18 +883,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           }}
         />
       )}
-      {/* ─── WHITEOUT WARNING BANNER ─────────────────── */}
-      {mode === 'erase' && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[200] max-w-2xl w-full px-4 animate-in slide-in-from-top-4 duration-300">
-          <div className="bg-black text-white px-8 py-3 rounded shadow-2xl text-center border border-white/20 backdrop-blur-md">
-            <p className="text-sm font-medium leading-relaxed">
-              Whiteout hides but will not completely remove underlying text or images. 
-              <span className="block opacity-80 text-xs mt-1 italic font-normal">Not suitable for redacting sensitive data.</span>
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ─── CENTRIC TOOLBAR (Sejda style) ─────────────────── */}
       <div className="shrink-0 flex items-center bg-white border-b border-slate-200 shadow-sm z-[150] py-2 px-2 overflow-x-auto">
         <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm mx-auto flex-shrink-0">
@@ -1111,8 +1133,41 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       </div>
 
 
+      {/* ─── MODE INSTRUCTION BAR ─────────────────────── */}
+      {(() => {
+        const hints: Partial<Record<EditorMode, string>> = {
+          'magic-edit': '✏️  Click anywhere to add text — or click on existing text to edit it in place',
+          'text':       '✏️  Click anywhere to place a new text box',
+          'erase':      '⬜  Drag to draw a white box that covers content · Hides content visually but does not permanently remove it — not suitable for sensitive data redaction',
+          'smart-erase':'🎨  Drag to draw a box that auto-matches the background color',
+          'highlight':  '🖊  Drag to highlight a region',
+          'strikeout':  '–  Drag over text to strike it out',
+          'underline':  '_  Drag under text to underline it',
+          'draw':       '🖊  Drag to freehand draw',
+          'rect':       '▭  Drag to draw a rectangle',
+          'ellipse':    '○  Drag to draw a circle / ellipse',
+          'line':       '—  Drag to draw a straight line',
+          'arrow':      '→  Drag to draw an arrow',
+          'image':      '🖼  An image file picker will open — choose your file',
+          'link':       '🔗  Drag to mark a region as a clickable link',
+          'sticky-note':'📝  Click to place a sticky note',
+          'select':     '↖  Click an element to select it · drag to move · Delete key removes it',
+          'sign':       '✍️  Use the Sign menu above to create or place your signature',
+          'form-builder':'📋  Use the Forms menu above to insert form fields',
+          'watermark':  '🔏  Set your watermark text and style, then click Apply',
+          'find-replace':'🔍  Type the text to find, then enter the replacement',
+        };
+        const hint = hints[mode];
+        if (!hint) return null;
+        return (
+          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-4 py-1.5 text-xs text-blue-700 font-medium text-center select-none">
+            {hint}
+          </div>
+        );
+      })()}
+
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
-      <div 
+      <div
         className={`flex-1 overflow-auto bg-[#f3f3f3] p-12 custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
         ref={containerRef}
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 100px 20px' }}
@@ -1275,7 +1330,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             {elements.map(el => {
               const ANNOTATION_TYPES = ['highlight', 'strikeout', 'underline', 'sticky-note', 'path'];
               if (!showAnnotations && ANNOTATION_TYPES.includes(el.type)) return null;
-              if (!['text', 'rect', 'circle', 'image', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text', 'form-select', 'sticky-note', 'form-radio', 'form-textarea', 'signature', 'link'].includes(el.type)) return null;
+              if (!['text', 'rect', 'circle', 'ellipse', 'image', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text', 'form-select', 'sticky-note', 'form-radio', 'form-textarea', 'signature', 'link'].includes(el.type)) return null;
               const isActive = activeElementId === el.id;
 
               return (
@@ -1687,7 +1742,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         className="w-full bg-transparent border-none outline-none p-0 m-0"
                         style={{
                           color: el.color || '#000',
-                          fontSize: `${((el.size || 14) / 1000) * 100}%`,
+                          fontSize: `${(el.size || 14) * ptToPx}px`,
                           fontFamily: getFontFamily(el.fontName),
                           fontWeight: el.isBold ? 'bold' : 'normal',
                           fontStyle: el.isItalic ? 'italic' : 'normal',
