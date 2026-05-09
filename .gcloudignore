@@ -1,0 +1,23 @@
+# .gcloudignore overrides .gitignore for Cloud Build uploads.
+# dist/ is excluded by .gitignore but we need it here since the frontend
+# is pre-built in the CI runner before this upload happens.
+
+.gcloudignore
+.git
+.gitignore
+node_modules/
+
+# Source files — not needed since dist/ is already built
+src/
+components/
+pages/
+utils/
+services/
+config/
+scripts/
+functions/
+public/
+.env*
+.claude/
+.firebase/
+*.test.*
