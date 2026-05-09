@@ -259,9 +259,10 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
               </div>
 
               <div className="w-full shadow-2xl shadow-indigo-900/10 rounded-sm overflow-hidden border border-slate-200">
-                 <PdfEditorCanvas 
+                 <PdfEditorCanvas
                    image={image}
                    pageIndex={pageIndex}
+                   totalPages={totalPages}
                    elements={elements}
                    historyStep={historyStep}
                    canRedo={historyStep < history.length - 1}
@@ -269,8 +270,9 @@ export const PdfSignerWorkstation: React.FC<PdfSignerWorkstationProps> = ({
                    onUndo={undo}
                    onRedo={redo}
                    onSave={(els: EditElement[]) => setElements(els)}
-                   onCancel={() => {}} // Internal cancel handled differently
+                   onCancel={() => {}}
                    isEmbedded={true}
+                   initialMode="select"
                    file={file}
                    setElements={setElements}
                  />

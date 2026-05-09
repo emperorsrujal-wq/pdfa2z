@@ -851,13 +851,44 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     } else if (el.type === 'form-text') {
       page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
       if (el.text) {
-        page.drawText(el.text, { x: actualX + 5, y: actualY - 15, size: 8, color: rgb(0, 0, 0) });
+        const ftFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const ftSize = Math.min(el.size || 11, elHeight - 4);
+        page.drawText(el.text, { x: actualX + 4, y: actualY - ftSize - 2, size: Math.max(ftSize, 6), font: ftFont, color: elColor, maxWidth: elWidth - 8 });
+      }
+    } else if (el.type === 'form-textarea') {
+      page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+      if (el.text) {
+        const taFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const taSize = Math.min(el.size || 11, 14);
+        const lines = el.text.split('\n');
+        let lineY = actualY - taSize - 2;
+        for (const line of lines) {
+          if (lineY < actualY - elHeight + 2) break;
+          page.drawText(line, { x: actualX + 4, y: lineY, size: Math.max(taSize, 6), font: taFont, color: elColor, maxWidth: elWidth - 8 });
+          lineY -= taSize * 1.3;
+        }
+      }
+    } else if (el.type === 'form-radio') {
+      page.drawEllipse({ x: actualX + elWidth / 2, y: actualY - elHeight / 2, xScale: elWidth / 2, yScale: elHeight / 2, color: rgb(1, 1, 1), borderColor: rgb(0, 0, 0), borderWidth: 1.5 });
+      if (el.isChecked) {
+        const dotR = Math.min(elWidth, elHeight) * 0.25;
+        page.drawEllipse({ x: actualX + elWidth / 2, y: actualY - elHeight / 2, xScale: dotR, yScale: dotR, color: rgb(0, 0, 0) });
+      }
+    } else if (el.type === 'form-select') {
+      page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: rgb(1, 1, 1), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+      // Draw small triangle arrow indicator
+      page.drawLine({ start: { x: actualX + elWidth - 12, y: actualY - elHeight * 0.35 }, end: { x: actualX + elWidth - 7, y: actualY - elHeight * 0.65 }, color: rgb(0.4, 0.4, 0.4), thickness: 1.5 });
+      page.drawLine({ start: { x: actualX + elWidth - 7, y: actualY - elHeight * 0.65 }, end: { x: actualX + elWidth - 2, y: actualY - elHeight * 0.35 }, color: rgb(0.4, 0.4, 0.4), thickness: 1.5 });
+      if (el.text) {
+        const fsFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fsSize = Math.min(el.size || 11, elHeight - 4);
+        page.drawText(el.text, { x: actualX + 4, y: actualY - fsSize - 2, size: Math.max(fsSize, 6), font: fsFont, color: elColor, maxWidth: elWidth - 20 });
       }
     } else if (el.type === 'sticky-note') {
       const noteColor = el.bgColor ? hexToRgbPdf(el.bgColor) : rgb(1, 0.94, 0.54);
       page.drawRectangle({ x: actualX, y: actualY - elHeight, width: elWidth, height: elHeight, color: noteColor, borderColor: rgb(0.8, 0.7, 0.2), borderWidth: 1, opacity: elOpacity });
       if (el.text) {
-        const noteFont = await pdfDoc.embedFont('Helvetica');
+        const noteFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const fontSize = Math.min((el.size || 12) * (width / 794), elHeight - 8);
         page.drawText(el.text, { x: actualX + 5, y: actualY - fontSize - 4, size: Math.max(fontSize, 6), font: noteFont, color: elColor, maxWidth: elWidth - 10 });
       }

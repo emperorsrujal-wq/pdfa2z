@@ -63,6 +63,7 @@ interface PdfEditorCanvasProps {
   onFinalSave?: (elements: EditElement[]) => void;
   onCancel: () => void;
   isEmbedded?: boolean;
+  initialMode?: EditorMode;
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
@@ -183,6 +184,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onFinalSave,
   onCancel: _onCancel,
   isEmbedded: _isEmbedded,
+  initialMode,
   textItems = [],
   file,
   docId,
@@ -190,7 +192,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onDeletePage,
   setElements,
 }) => {
-  const [mode, setMode] = React.useState<EditorMode>('magic-edit');
+  const [mode, setMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [activeFontSize, setActiveFontSize] = React.useState<number>(14);
   const [activeBrushSize, setActiveBrushSize] = React.useState(3);
@@ -887,6 +889,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       <div className="shrink-0 flex items-center bg-white border-b border-slate-200 shadow-sm z-[150] py-2 px-2 overflow-x-auto">
         <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm mx-auto flex-shrink-0">
           {[
+            { mode: 'select', icon: <MousePointer2 size={18} />, label: 'Select', tooltip: 'Select, move and resize elements' },
             { mode: 'magic-edit', icon: <Type size={18} />, label: 'Text', tooltip: 'Add or edit text' },
             { mode: 'link', icon: <Link2 size={18} />, label: 'Links', tooltip: 'Add clickable links' },
             { mode: 'form-builder', icon: <CheckSquare size={18} />, label: 'Forms', tooltip: 'Create fillable forms' },
