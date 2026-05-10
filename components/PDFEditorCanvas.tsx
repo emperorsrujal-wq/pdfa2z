@@ -111,6 +111,17 @@ type EditorMode =
   | 'font-picker'
   | 'watermark';
 
+const CONTEXT_FONTS = [
+  { name: 'Helvetica', value: 'Helvetica' },
+  { name: 'Times New Roman', value: 'Times-Roman' },
+  { name: 'Courier New', value: 'Courier' },
+  { name: 'Georgia', value: 'Georgia' },
+  { name: 'Verdana', value: 'Verdana' },
+  { name: 'Arial', value: 'Arial' },
+  { name: 'Palatino', value: 'Palatino' },
+  { name: 'Garamond', value: 'Garamond' },
+];
+
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
   { mode: 'select',     label: 'Select',    icon: <MousePointer2 size={16} />, tooltip: 'Select and move elements' },
   { mode: 'magic-edit', label: 'Text',      icon: <Type size={16} />,          tooltip: 'Add or click text to edit it directly' },
@@ -195,7 +206,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [mode, setMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [activeFontSize, setActiveFontSize] = React.useState<number>(14);
+  const [activeFontName, setActiveFontName] = React.useState('Helvetica');
   const [activeBrushSize, setActiveBrushSize] = React.useState(3);
+  const [activeHighlightOpacity, setActiveHighlightOpacity] = React.useState(0.4);
+  const [activeBorderColor, setActiveBorderColor] = React.useState('#000000');
+  const [activeBorderWidth, setActiveBorderWidth] = React.useState(0);
   const [zoom, setZoom] = React.useState(1);
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
@@ -514,13 +529,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           .catch(() => {});
         return;
       }
-      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, opacity: 1 };
+      const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, fontName: activeFontName, opacity: 1 };
       commit([...elements, newEl]);
       setActiveElementId(newEl.id);
       return;
     }
       if (mode === 'text') {
-        const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, opacity: 1 };
+        const newEl: EditElement = { id: `t-${Date.now()}`, type: 'text', pageIndex, x: pos.x, y: pos.y, width: 200, height: 30, color: activeColor, text: '', size: activeFontSize, fontName: activeFontName, opacity: 1 };
         commit([...elements, newEl]);
         setActiveElementId(newEl.id);
         setMode('select');
@@ -630,17 +645,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         let bg = mode === 'erase' ? '#FFFFFF' : activeColor;
         if (mode === 'smart-erase') bg = smartEraseBg;
         const fillColor = mode === 'erase' ? '#FFFFFF' : (mode === 'smart-erase' ? smartEraseBg : activeColor);
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, borderColor: (mode === 'rect' ? activeBorderColor : undefined), borderWidth: (mode === 'rect' ? activeBorderWidth : undefined), opacity: 1 };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
-        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 0.4 };
+        newEl = { id: `hl-${Date.now()}`, type: 'highlight', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: activeHighlightOpacity };
       } else if (mode === 'strikeout') {
-        newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: '#EF4444', opacity: 1 };
+        newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'underline') {
-        newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: '#3B82F6', opacity: 1 };
+        newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'ellipse') {
-        newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
+        newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, borderColor: activeBorderColor, borderWidth: activeBorderWidth, opacity: 1 };
       } else if (mode === 'link') {
         // Show inline link input modal instead of prompt()
         setPendingLinkArea({ x, y, w, h });
@@ -1135,6 +1150,150 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         </div>
       </div>
 
+
+      {/* ─── TOOL PROPERTIES BAR ─────────────────────── */}
+      {(['magic-edit','text','draw','highlight','strikeout','underline','erase','smart-erase','rect','ellipse','line','arrow'] as EditorMode[]).includes(mode) && (
+        <div className="shrink-0 flex items-center gap-3 bg-[#fafafa] border-b border-slate-200 px-4 py-1.5 overflow-x-auto text-xs select-none" onClick={e => e.stopPropagation()}>
+
+          {/* TEXT / MAGIC-EDIT */}
+          {(mode === 'magic-edit' || mode === 'text') && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Font</span>
+            <select
+              value={activeFontName}
+              onChange={e => setActiveFontName(e.target.value)}
+              onClick={e => e.stopPropagation()}
+              className="h-7 text-xs border border-slate-200 rounded px-1.5 bg-white text-slate-700 outline-none focus:border-blue-400 cursor-pointer"
+            >
+              {CONTEXT_FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
+            </select>
+            <div className="w-px h-4 bg-slate-200 shrink-0" />
+            <span className="text-slate-400 font-semibold shrink-0">Size</span>
+            <input
+              type="number" min={6} max={200} value={activeFontSize}
+              onClick={e => e.stopPropagation()}
+              onChange={e => setActiveFontSize(Math.max(6, Math.min(200, Number(e.target.value) || 14)))}
+              className="w-14 h-7 text-xs border border-slate-200 rounded px-1.5 text-center outline-none focus:border-blue-400 font-bold"
+            />
+            <span className="text-slate-400">pt</span>
+            <div className="w-px h-4 bg-slate-200 shrink-0" />
+            <span className="text-slate-400 font-semibold shrink-0">Color</span>
+            <label className="relative cursor-pointer flex items-center gap-1.5" title="Text color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded border-2 border-slate-300 hover:border-blue-400 transition-colors shadow-sm" style={{ backgroundColor: activeColor }} />
+              <span className="text-slate-500" style={{ color: activeColor }}>{activeColor}</span>
+            </label>
+          </>)}
+
+          {/* DRAW */}
+          {mode === 'draw' && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Color</span>
+            <label className="cursor-pointer flex items-center gap-1.5" title="Pen color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded-full border-2 border-slate-300 hover:border-blue-400 shadow-sm transition-colors" style={{ backgroundColor: activeColor }} />
+              <span className="text-slate-500">{activeColor}</span>
+            </label>
+            <div className="w-px h-4 bg-slate-200 shrink-0" />
+            <span className="text-slate-400 font-semibold shrink-0">Brush Size</span>
+            <input
+              type="range" min={1} max={20} value={activeBrushSize}
+              onChange={e => setActiveBrushSize(Number(e.target.value))}
+              className="w-28 accent-blue-500 cursor-pointer"
+            />
+            <span className="font-bold text-slate-600 w-8 shrink-0">{activeBrushSize}px</span>
+          </>)}
+
+          {/* HIGHLIGHT / STRIKEOUT / UNDERLINE */}
+          {(mode === 'highlight' || mode === 'strikeout' || mode === 'underline') && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Color</span>
+            {(mode === 'highlight'
+              ? ['#FFE600','#00E676','#FF80AB','#40C4FF','#FF6D00','#E040FB']
+              : mode === 'strikeout'
+              ? ['#EF4444','#F97316','#000000','#6366F1','#14B8A6']
+              : ['#3B82F6','#EF4444','#10B981','#8B5CF6','#000000']
+            ).map(c => (
+              <button key={c} onClick={() => setActiveColor(c)}
+                className={`w-5 h-5 rounded border-2 transition-all ${activeColor === c ? 'border-blue-500 scale-110 shadow' : 'border-slate-300 hover:border-blue-400'}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <label className="cursor-pointer flex items-center" title="Custom color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-5 h-5 rounded border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-400 hover:border-blue-400 transition-colors text-[11px] font-bold">+</div>
+            </label>
+            {mode === 'highlight' && (<>
+              <div className="w-px h-4 bg-slate-200 shrink-0" />
+              <span className="text-slate-400 font-semibold shrink-0">Opacity</span>
+              <input
+                type="range" min={10} max={80} step={5} value={Math.round(activeHighlightOpacity * 100)}
+                onChange={e => setActiveHighlightOpacity(Number(e.target.value) / 100)}
+                className="w-24 accent-blue-500 cursor-pointer"
+              />
+              <span className="font-bold text-slate-600 w-8 shrink-0">{Math.round(activeHighlightOpacity * 100)}%</span>
+            </>)}
+          </>)}
+
+          {/* ERASE */}
+          {mode === 'erase' && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Fill Color</span>
+            <button onClick={() => setActiveColor('#FFFFFF')}
+              className={`px-2.5 h-6 rounded text-[11px] font-bold border transition-colors ${activeColor === '#FFFFFF' ? 'bg-blue-100 border-blue-400 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-blue-300'}`}>
+              White
+            </button>
+            <label className="cursor-pointer flex items-center gap-1.5" title="Custom whiteout color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded border-2 border-slate-300 hover:border-blue-400 transition-colors" style={{ backgroundColor: activeColor }} />
+              <span className="text-slate-400">Custom</span>
+            </label>
+          </>)}
+
+          {/* SMART-ERASE */}
+          {mode === 'smart-erase' && (
+            <span className="text-slate-500 italic">Drag to draw — background color is sampled automatically</span>
+          )}
+
+          {/* RECT / ELLIPSE */}
+          {(mode === 'rect' || mode === 'ellipse') && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Fill</span>
+            <label className="cursor-pointer flex items-center gap-1.5" title="Fill color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded border-2 border-slate-300 hover:border-blue-400 transition-colors" style={{ backgroundColor: activeColor }} />
+              <span className="text-slate-500">{activeColor}</span>
+            </label>
+            <div className="w-px h-4 bg-slate-200 shrink-0" />
+            <span className="text-slate-400 font-semibold shrink-0">Border</span>
+            <label className="cursor-pointer flex items-center gap-1.5" title="Border color">
+              <input type="color" value={activeBorderColor} onChange={e => setActiveBorderColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded border-2 border-slate-300 hover:border-blue-400 transition-colors" style={{ backgroundColor: activeBorderColor }} />
+            </label>
+            <input
+              type="number" min={0} max={20} value={activeBorderWidth}
+              onClick={e => e.stopPropagation()}
+              onChange={e => setActiveBorderWidth(Math.max(0, Math.min(20, Number(e.target.value))))}
+              className="w-12 h-7 text-xs border border-slate-200 rounded px-1.5 text-center outline-none focus:border-blue-400 font-bold"
+            />
+            <span className="text-slate-400">px</span>
+          </>)}
+
+          {/* LINE / ARROW */}
+          {(mode === 'line' || mode === 'arrow') && (<>
+            <span className="text-slate-400 font-semibold shrink-0">Color</span>
+            <label className="cursor-pointer flex items-center gap-1.5" title="Line color">
+              <input type="color" value={activeColor} onChange={e => setActiveColor(e.target.value)} className="sr-only" />
+              <div className="w-6 h-6 rounded border-2 border-slate-300 hover:border-blue-400 transition-colors" style={{ backgroundColor: activeColor }} />
+              <span className="text-slate-500">{activeColor}</span>
+            </label>
+            <div className="w-px h-4 bg-slate-200 shrink-0" />
+            <span className="text-slate-400 font-semibold shrink-0">Width</span>
+            <input
+              type="range" min={1} max={20} value={activeBrushSize}
+              onChange={e => setActiveBrushSize(Number(e.target.value))}
+              className="w-24 accent-blue-500 cursor-pointer"
+            />
+            <span className="font-bold text-slate-600 w-8 shrink-0">{activeBrushSize}px</span>
+          </>)}
+
+        </div>
+      )}
 
       {/* ─── MODE INSTRUCTION BAR ─────────────────────── */}
       {(() => {
