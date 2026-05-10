@@ -626,6 +626,39 @@ function createEsignRouter(db) {
             res.status(500).json({ error: err.message });
         }
     });
+    // ── Upload signed PDF — signers are unauthenticated so they can't write to
+    //    Storage directly; they POST the bytes here and we upload via admin SDK ──
+    router.post('/upload-signed-pdf', async (req, res) => {
+        const { docId, token, pdfBase64 } = req.body;
+        if (!docId || !token || !pdfBase64) {
+            res.status(400).json({ error: 'docId, token, and pdfBase64 required' });
+            return;
+        }
+        try {
+            const tokenSnap = await db.collection('sign_tokens').doc(token).get();
+            if (!tokenSnap.exists || tokenSnap.data().docId !== docId) {
+                res.status(403).json({ error: 'Invalid token' });
+                return;
+            }
+            const pdfBytes = Buffer.from(pdfBase64, 'base64');
+            const bucket = admin.storage().bucket();
+            const file = bucket.file(`sign_pdfs/${docId}/signed.pdf`);
+            // Generate a Firebase-style download token so the URL works with the
+            // standard firebasestorage.googleapis.com download endpoint
+            const downloadToken = require('crypto').randomUUID();
+            await file.save(pdfBytes, { contentType: 'application/pdf', resumable: false });
+            await file.setMetadata({ metadata: { firebaseStorageDownloadTokens: downloadToken } });
+            const encodedPath = encodeURIComponent(`sign_pdfs/${docId}/signed.pdf`);
+            const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+            await db.collection('sign_documents').doc(docId).update({ signedPdfUrl: url });
+            functions.logger.info('signed-pdf-uploaded', { docId });
+            res.json({ ok: true, url });
+        }
+        catch (err) {
+            functions.logger.error('upload-signed-pdf', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
     // ── PDF proxy — stream PDF bytes through functions to avoid Storage CORS ──────
     // Firebase Storage buckets on *.firebasestorage.app require explicit CORS
     // config. Rather than configuring gsutil, we proxy via this endpoint which

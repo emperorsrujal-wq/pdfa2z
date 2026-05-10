@@ -3,7 +3,7 @@ import {
   collection, doc, getDoc, setDoc, updateDoc, deleteDoc,
   query, where, getDocs, Timestamp, serverTimestamp, arrayUnion, increment,
 } from 'firebase/firestore';
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -335,11 +335,24 @@ export const declineSigning = async (docId: string, signerId: string, reason: st
   }).catch(() => {});
 };
 
-export const saveSignedPdf = async (docId: string, pdfBytes: Uint8Array): Promise<string> => {
-  const pdfRef = ref(storage, `sign_pdfs/${docId}/signed.pdf`);
-  await uploadBytes(pdfRef, pdfBytes, { contentType: 'application/pdf' });
-  const url = await getDownloadURL(pdfRef);
-  await updateDoc(doc(db, 'sign_documents', docId), { signedPdfUrl: url });
+// Signers are unauthenticated so they can't write to Storage directly.
+// We POST the bytes to a Cloud Function which uploads via admin SDK.
+export const saveSignedPdf = async (docId: string, pdfBytes: Uint8Array, token: string): Promise<string> => {
+  // Encode bytes to base64 without spread (avoids stack overflow on large PDFs)
+  let binary = '';
+  for (let i = 0; i < pdfBytes.byteLength; i++) binary += String.fromCharCode(pdfBytes[i]);
+  const pdfBase64 = btoa(binary);
+
+  const res = await fetch(`${FUNCTIONS_BASE_URL}/esign/upload-signed-pdf`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ docId, token, pdfBase64 }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Upload failed: ${res.status} ${err.error ?? ''}`);
+  }
+  const { url } = await res.json();
   return url;
 };
 

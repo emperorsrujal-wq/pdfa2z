@@ -434,7 +434,7 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     }
 
     const signedBytes = await pdfDoc.save();
-    await saveSignedPdf(finalDoc.id!, new Uint8Array(signedBytes));
+    await saveSignedPdf(finalDoc.id!, new Uint8Array(signedBytes), token);
   };
 
   // ── Submit / Decline ─────────────────────────────────────────────────────────
