@@ -1,9 +1,15 @@
 import * as React from 'react';
-import { 
-  FileText, Clock, CheckCircle2, Shield, Plus, List, Filter, Search,
-  Download, ExternalLink, Settings, MoreVertical, Trash2, Users, 
-  BarChart3, Map, LayoutDashboard, Globe, ArrowUpRight, LogOut
+import {
+  FileText, Clock, Shield, Plus, Filter, Search,
+  Download, ExternalLink, Settings, MoreVertical,
+  Users, LayoutDashboard, Globe, ArrowUpRight, LogOut,
+  Signature, Send, XCircle, Copy, CheckCircle, PenSquare,
 } from 'lucide-react';
+import {
+  getOwnerDocuments, SignDocument, SignerConfig,
+  statusLabel, statusColor, formatDate, signerStatusColor,
+} from '../utils/remoteSign';
+
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { subscribeToUserSessions, NotarizationSession } from '../services/notarizeService';
@@ -24,8 +30,11 @@ export const Dashboard: React.FC = () => {
   const [docs, setDocs] = React.useState<UserDocument[]>([]);
   const [leads, setLeads] = React.useState<JourneyLead[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'documents' | 'notarizations' | 'leads' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'esign' | 'documents' | 'notarizations' | 'leads' | 'analytics'>('overview');
   const [selectedLead, setSelectedLead] = React.useState<JourneyLead | null>(null);
+  const [signDocs, setSignDocs] = React.useState<SignDocument[]>([]);
+  const [signDocsLoading, setSignDocsLoading] = React.useState(false);
+  const [signerLinksDoc, setSignerLinksDoc] = React.useState<SignDocument | null>(null);
 
   React.useEffect(() => {
     // Load Notarizations
@@ -55,6 +64,15 @@ export const Dashboard: React.FC = () => {
     };
   }, []);
 
+  // Load sign documents whenever the authenticated user changes
+  React.useEffect(() => {
+    if (!user) return;
+    setSignDocsLoading(true);
+    getOwnerDocuments(user.uid)
+      .then(d => { setSignDocs(d); setSignDocsLoading(false); })
+      .catch(() => setSignDocsLoading(false));
+  }, [user?.uid]);
+
   const refreshLeads = async () => {
     const userLeads = await getLeadsForOwner();
     setLeads(userLeads);
@@ -65,9 +83,12 @@ export const Dashboard: React.FC = () => {
   };
 
   const stats = [
-    { label: 'Active Journeys', value: leads.length, icon: <Users size={20} />, color: 'bg-indigo-50 text-indigo-600', trend: '+12%' },
-    { label: 'Est. Time Saved', value: `${Math.round(leads.length * 0.5)}h`, icon: <Clock size={20} />, color: 'bg-blue-50 text-blue-600', trend: '+5%' },
-    { label: 'Compliance ROI', value: `${(leads.length * 25).toLocaleString()}$`, icon: <Shield size={20} />, color: 'bg-emerald-50 text-emerald-600', trend: '+2%' },
+    { label: 'Journey Leads', value: leads.length, icon: <Users size={20} />, color: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Documents Sent', value: signDocs.length, icon: <Signature size={20} />, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Signatures Completed', value: signDocs.filter(d => d.status === 'completed').length, icon: <CheckCircle size={20} />, color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Awaiting Signature', value: signDocs.filter(d => d.status === 'sent').length, icon: <Clock size={20} />, color: 'bg-amber-50 text-amber-600' },
+    { label: 'Notarizations', value: sessions.length, icon: <Shield size={20} />, color: 'bg-purple-50 text-purple-600' },
+    { label: 'Library Docs', value: docs.length, icon: <FileText size={20} />, color: 'bg-slate-100 text-slate-600' },
   ];
 
   if (!user && !DEMO_MODE) {
@@ -86,11 +107,12 @@ export const Dashboard: React.FC = () => {
   }
 
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} /> },
-    { id: 'leads', label: 'Journeys & Compliance', icon: <Users size={20} /> },
-    { id: 'documents', label: 'Documents', icon: <FileText size={20} /> },
-    { id: 'notarizations', label: 'Notarizations', icon: <Shield size={20} /> },
-    { id: 'analytics', label: 'Geo Analytics', icon: <Globe size={20} /> },
+    { id: 'overview',       label: 'Overview',              icon: <LayoutDashboard size={20} /> },
+    { id: 'esign',          label: 'E-Sign',                icon: <Signature size={20} /> },
+    { id: 'leads',          label: 'Journeys & Compliance', icon: <Users size={20} /> },
+    { id: 'documents',      label: 'Documents',             icon: <FileText size={20} /> },
+    { id: 'notarizations',  label: 'Notarizations',         icon: <Shield size={20} /> },
+    { id: 'analytics',      label: 'Geo Analytics',         icon: <Globe size={20} /> },
   ];
 
   return (
@@ -155,14 +177,13 @@ export const Dashboard: React.FC = () => {
             {activeTab === 'overview' && (
               <div className="space-y-8">
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                   {stats.map((stat) => (
                     <div key={stat.label} className="premium-card p-6 flex flex-col gap-4">
                       <div className="flex items-center justify-between">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color}`}>
                           {stat.icon}
                         </div>
-                        <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">{stat.trend}</span>
                       </div>
                       <div>
                         <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
@@ -172,34 +193,173 @@ export const Dashboard: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Recent Activity Mini-Tab */}
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Send for E-Signature', icon: <PenSquare size={20} />, color: 'bg-blue-600 hover:bg-blue-700', href: '/remote-sign' },
+                    { label: 'Start PDF Journey', icon: <Users size={20} />, color: 'bg-indigo-600 hover:bg-indigo-700', href: '/pdf-journey' },
+                    { label: 'Notarize Document', icon: <Shield size={20} />, color: 'bg-purple-600 hover:bg-purple-700', href: '/notarize' },
+                  ].map(a => (
+                    <a key={a.label} href={a.href}
+                      className={`flex items-center gap-3 px-5 py-4 ${a.color} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-md`}>
+                      {a.icon} {a.label}
+                    </a>
+                  ))}
+                </div>
+
+                {/* Unified Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent E-Sign Documents */}
+                  <div className="premium-card overflow-hidden">
+                    <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+                      <h3 className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-2"><Signature size={16} className="text-blue-500" /> Recent Signing Docs</h3>
+                      <button onClick={() => setActiveTab('esign')} className="text-blue-600 text-xs font-bold flex items-center gap-1">View all <ArrowUpRight size={13} /></button>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                      {signDocs.slice(0, 5).map(d => (
+                        <div key={d.id} className="px-5 py-3 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                            <FileText size={14} className="text-blue-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">{d.title}</p>
+                            <p className="text-xs text-slate-400">{d.signers.length} signer{d.signers.length !== 1 ? 's' : ''} · {formatDate(d.createdAt)}</p>
+                          </div>
+                          <span className={`text-[10px] font-black px-2 py-1 rounded-full shrink-0 ${statusColor[d.status]}`}>{statusLabel[d.status]}</span>
+                        </div>
+                      ))}
+                      {signDocs.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">No documents sent yet.</p>}
+                    </div>
+                  </div>
+
+                  {/* Recent Journey Leads */}
+                  <div className="premium-card overflow-hidden">
+                    <div className="p-5 border-b border-slate-50 flex items-center justify-between">
+                      <h3 className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-2"><Users size={16} className="text-indigo-500" /> Recent Leads</h3>
+                      <button onClick={() => setActiveTab('leads')} className="text-blue-600 text-xs font-bold flex items-center gap-1">View CRM <ArrowUpRight size={13} /></button>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                      {leads.slice(0, 5).map(lead => (
+                        <div key={lead.id} onClick={() => setSelectedLead(lead)}
+                          className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/50 cursor-pointer transition-colors">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 font-black text-xs shrink-0">
+                            {lead.data.name?.substring(0, 2).toUpperCase() || 'LD'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">{lead.data.name || lead.data.email || 'Lead'}</p>
+                            <p className="text-xs text-slate-400 truncate">{lead.journeyTitle}</p>
+                          </div>
+                          <p className="text-xs text-slate-400 shrink-0">{lead.geoData?.country || ''}</p>
+                        </div>
+                      ))}
+                      {leads.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">Waiting for incoming leads...</p>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'esign' && (
+              <div className="space-y-6">
+                {/* Signing stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total',     value: signDocs.length,                                        color: 'bg-slate-100 text-slate-600',    icon: <FileText size={18} /> },
+                    { label: 'Pending',   value: signDocs.filter(d => d.status === 'sent').length,       color: 'bg-blue-50 text-blue-600',       icon: <Clock size={18} /> },
+                    { label: 'Completed', value: signDocs.filter(d => d.status === 'completed').length,  color: 'bg-emerald-50 text-emerald-600', icon: <CheckCircle size={18} /> },
+                    { label: 'Voided',    value: signDocs.filter(d => d.status === 'voided').length,     color: 'bg-red-50 text-red-500',         icon: <XCircle size={18} /> },
+                  ].map(s => (
+                    <div key={s.label} className="premium-card p-5 flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.color}`}>{s.icon}</div>
+                      <div>
+                        <p className="text-2xl font-black text-slate-900">{s.value}</p>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{s.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Document table */}
                 <div className="premium-card overflow-hidden">
                   <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                    <h3 className="font-black text-slate-900 tracking-tight">Recent Leads</h3>
-                    <button onClick={() => setActiveTab('leads')} className="text-blue-600 text-xs font-bold flex items-center gap-1">View CRM <ArrowUpRight size={14} /></button>
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight">Signing Documents</h3>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">All sent & completed</p>
+                    </div>
+                    <a href="/remote-sign"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition-all">
+                      <Send size={14} /> New Document
+                    </a>
                   </div>
-                  <div className="divide-y divide-slate-50">
-                    {leads.slice(0, 5).map(lead => (
-                      <div 
-                        key={lead.id} 
-                        onClick={() => setSelectedLead(lead)}
-                        className="p-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors cursor-pointer"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs">
-                          {lead.data.name?.substring(0,2).toUpperCase() || 'LD'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-900 truncate">{lead.data.name || lead.data.email || 'Lead Submission'}</p>
-                          <p className="text-xs text-slate-400">{lead.journeyTitle}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-slate-700">{lead.geoData?.city || 'Globe'}</p>
-                          <p className="text-[10px] text-slate-400">{new Date(lead.createdAt?.toDate?.() || lead.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    ))}
-                    {leads.length === 0 && <p className="p-10 text-center text-slate-400 text-sm">Waiting for incoming leads...</p>}
-                  </div>
+
+                  {signDocsLoading ? (
+                    <div className="flex justify-center py-20">
+                      <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+                    </div>
+                  ) : signDocs.length === 0 ? (
+                    <div className="py-24 text-center text-slate-400 space-y-3">
+                      <Signature size={36} className="mx-auto text-slate-200" />
+                      <p className="font-bold">No signing documents yet</p>
+                      <p className="text-sm">Go to <a href="/remote-sign" className="text-blue-600 font-bold hover:underline">Remote Sign</a> to send your first document.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-slate-50/50 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-black border-b border-slate-100">
+                            <th className="px-6 py-4">Document</th>
+                            <th className="px-6 py-4 hidden md:table-cell">Signers</th>
+                            <th className="px-6 py-4 hidden sm:table-cell">Sent</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {signDocs.map(d => (
+                            <tr key={d.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-6 py-4">
+                                <p className="font-bold text-slate-900 text-sm">{d.title}</p>
+                                <p className="text-xs text-slate-400 mt-0.5">{d.pageCount} page{d.pageCount !== 1 ? 's' : ''} · {d.signingOrder}</p>
+                              </td>
+                              <td className="px-6 py-4 hidden md:table-cell">
+                                <div className="flex -space-x-1">
+                                  {d.signers.map((s: SignerConfig) => (
+                                    <div key={s.id} title={`${s.name} — ${s.status}`}
+                                      style={{ background: s.color, borderColor: signerStatusColor[s.status] }}
+                                      className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-white font-black text-[10px] shrink-0">
+                                      {s.name.charAt(0).toUpperCase()}
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 hidden sm:table-cell text-sm text-slate-500">{formatDate(d.createdAt)}</td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusColor[d.status]}`}>
+                                  {statusLabel[d.status]}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  {d.status === 'completed' && d.signedPdfUrl && (
+                                    <a href={d.signedPdfUrl} target="_blank" rel="noopener noreferrer"
+                                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Download signed PDF">
+                                      <Download size={15} />
+                                    </a>
+                                  )}
+                                  {d.status === 'sent' && (
+                                    <button onClick={() => setSignerLinksDoc(d)}
+                                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="View signing links">
+                                      <Copy size={15} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -419,6 +579,40 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Signer Links Modal */}
+      {signerLinksDoc && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSignerLinksDoc(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h3 className="font-black text-slate-900 mb-1">Signing Links</h3>
+            <p className="text-sm text-slate-500 mb-4">Copy and share each link with the respective signer.</p>
+            <div className="space-y-3">
+              {signerLinksDoc.signers.map((s: SignerConfig) => {
+                const link = `${window.location.origin}/sign/${s.token}`;
+                return (
+                  <div key={s.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: s.color }}>
+                      {s.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm">{s.name}</p>
+                      <p className="text-xs text-slate-400 truncate">{s.email}</p>
+                    </div>
+                    <button onClick={() => navigator.clipboard.writeText(link)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 shrink-0">
+                      <Copy size={12} /> Copy
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setSignerLinksDoc(null)}
+              className="mt-4 w-full py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Lead CRM Detail Modal */}
       {selectedLead && (
