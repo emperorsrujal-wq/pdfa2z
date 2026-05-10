@@ -3,7 +3,7 @@ import {
   FileText, Clock, Shield, Plus, Filter, Search,
   Download, ExternalLink, Settings, MoreVertical,
   Users, LayoutDashboard, Globe, ArrowUpRight, LogOut,
-  Signature, Send, XCircle, Copy, CheckCircle, PenSquare,
+  Signature, Send, XCircle, Copy, CheckCircle, PenSquare, Eye,
 } from 'lucide-react';
 import {
   getOwnerDocuments, SignDocument, SignerConfig,
@@ -340,17 +340,28 @@ export const Dashboard: React.FC = () => {
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  {d.status === 'completed' && d.signedPdfUrl && (
-                                    <a href={d.signedPdfUrl} target="_blank" rel="noopener noreferrer"
-                                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Download signed PDF">
-                                      <Download size={15} />
-                                    </a>
-                                  )}
-                                  {d.status === 'sent' && (
+                                  {/* View original PDF — works for all statuses */}
+                                  <a href={d.pdfUrl} target="_blank" rel="noopener noreferrer"
+                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View original PDF">
+                                    <Eye size={15} />
+                                  </a>
+                                  {/* Copy signer links — pending/sent docs */}
+                                  {(d.status === 'sent' || d.status === 'draft') && (
                                     <button onClick={() => setSignerLinksDoc(d)}
-                                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="View signing links">
+                                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Copy signer links">
                                       <Copy size={15} />
                                     </button>
+                                  )}
+                                  {/* Download signed PDF — completed docs */}
+                                  {d.status === 'completed' && (
+                                    d.signedPdfUrl ? (
+                                      <a href={d.signedPdfUrl} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all" title="Download signed PDF">
+                                        <Download size={13} /> Signed PDF
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-slate-400 italic px-2">Processing…</span>
+                                    )
                                   )}
                                 </div>
                               </td>

@@ -393,7 +393,10 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
 
   const generateAndSaveSignedPdf = async (finalDoc: SignDocument) => {
     const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
-    const response = await fetch(finalDoc.pdfUrl);
+    // Use the proxy endpoint to avoid Firebase Storage CORS restrictions
+    const proxyUrl = `${FUNCTIONS_BASE_URL}/esign/pdf?docId=${encodeURIComponent(finalDoc.id!)}&token=${encodeURIComponent(token)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error(`PDF fetch failed: ${response.status}`);
     const originalBytes = await response.arrayBuffer();
     const pdfDoc = await PDFDocument.load(originalBytes);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
