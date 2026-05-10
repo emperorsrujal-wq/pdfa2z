@@ -57,6 +57,7 @@ exports.buildOtpEmail = buildOtpEmail;
 exports.buildExpiryWarningEmail = buildExpiryWarningEmail;
 exports.createEsignRouter = createEsignRouter;
 const express_1 = require("express");
+const admin = __importStar(require("firebase-admin"));
 const nodemailer = __importStar(require("nodemailer"));
 const functions = __importStar(require("firebase-functions"));
 // ── Mailer ────────────────────────────────────────────────────────────────────
@@ -622,6 +623,39 @@ function createEsignRouter(db) {
         }
         catch (err) {
             functions.logger.error('on-declined', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // ── PDF proxy — stream PDF bytes through functions to avoid Storage CORS ──────
+    // Firebase Storage buckets on *.firebasestorage.app require explicit CORS
+    // config. Rather than configuring gsutil, we proxy via this endpoint which
+    // already has cors({ origin: true }) from the parent Express app.
+    router.get('/pdf', async (req, res) => {
+        const { docId, token } = req.query;
+        if (!docId || !token) {
+            res.status(400).json({ error: 'docId and token required' });
+            return;
+        }
+        try {
+            // Validate token → docId mapping so only authorised signers can fetch
+            const tokenSnap = await db.collection('sign_tokens').doc(token).get();
+            if (!tokenSnap.exists || tokenSnap.data().docId !== docId) {
+                res.status(403).json({ error: 'Invalid token' });
+                return;
+            }
+            const bucket = admin.storage().bucket();
+            const file = bucket.file(`sign_pdfs/${docId}/original.pdf`);
+            const [exists] = await file.exists();
+            if (!exists) {
+                res.status(404).json({ error: 'PDF not found' });
+                return;
+            }
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Cache-Control', 'private, max-age=3600');
+            file.createReadStream().pipe(res);
+        }
+        catch (err) {
+            functions.logger.error('pdf-proxy', err);
             res.status(500).json({ error: err.message });
         }
     });

@@ -4,7 +4,7 @@ import {
   Clock, Moon, ShieldCheck, Lock, DollarSign, Home,
   Upload, UserCheck, Video, CheckCircle2, ChevronDown,
   ChevronUp, Star, ArrowRight, FileText, Building2,
-  Scale, ClipboardList, Award, Mail, Phone, Globe
+  Scale, ClipboardList, Award, Mail, Phone, Globe, X,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useTranslation } from 'react-i18next';
@@ -121,12 +121,17 @@ export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization,
   const { i18n } = useTranslation();
   const currentLang = i18n.language.split('-')[0];
   const displayLang = SUPPORTED_LANGS.includes(currentLang) ? currentLang : 'en';
+  const [showCountryModal, setShowCountryModal] = React.useState(false);
 
-  const handleStart = () => {
-    if (onStartNotarization) {
-      onStartNotarization();
+  const handleStart = () => setShowCountryModal(true);
+
+  const handleCountrySelect = (country: 'us' | 'ca') => {
+    setShowCountryModal(false);
+    if (country === 'ca') {
+      window.open('https://www.notarypro.ca/?10420410=189', '_blank', 'noopener,noreferrer');
     } else {
-      window.alert('Notarization flow coming soon! This feature will be available at notarize.pdfa2z.com');
+      if (onStartNotarization) onStartNotarization();
+      else window.alert('Notarization flow coming soon! This feature will be available at notarize.pdfa2z.com');
     }
   };
 
@@ -620,6 +625,58 @@ export const NotarizePage: React.FC<NotarizePageProps> = ({ onStartNotarization,
           </div>
         </footer>
       </div>
+
+      {/* ── Country Selection Modal ───────────────────────────── */}
+      {showCountryModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowCountryModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+            >
+              <X size={15} />
+            </button>
+
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-[#185FA5]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Globe size={32} className="text-[#185FA5]" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Where are you located?</h2>
+              <p className="text-slate-500 text-sm">We'll connect you with the right notarization service for your region.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* United States */}
+              <button
+                onClick={() => handleCountrySelect('us')}
+                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-200 hover:border-[#185FA5] hover:bg-[#185FA5]/5 transition-all"
+              >
+                <span className="text-5xl">🇺🇸</span>
+                <div className="text-center">
+                  <p className="font-black text-slate-900 text-sm group-hover:text-[#185FA5] transition-colors">United States</p>
+                  <p className="text-slate-400 text-xs mt-0.5">RON — $45/doc</p>
+                </div>
+              </button>
+
+              {/* Canada */}
+              <button
+                onClick={() => handleCountrySelect('ca')}
+                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-200 hover:border-red-600 hover:bg-red-50 transition-all"
+              >
+                <span className="text-5xl">🇨🇦</span>
+                <div className="text-center">
+                  <p className="font-black text-slate-900 text-sm group-hover:text-red-700 transition-colors">Canada</p>
+                  <p className="text-slate-400 text-xs mt-0.5">via NotaryPro</p>
+                </div>
+              </button>
+            </div>
+
+            <p className="text-center text-slate-400 text-xs mt-6">
+              Canada service is provided by our partner NotaryPro and opens in a new tab.
+            </p>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
