@@ -6,6 +6,7 @@ import {
   submitSignedFields, declineSigning, saveSignedPdf,
   requestOtp, verifyOtp,
 } from '../utils/remoteSign';
+import { FUNCTIONS_BASE_URL } from '../config/firebase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -334,19 +335,19 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     setState('signing');
     recordSignerViewed(signDoc.id!, signer.id).catch(() => {});
     try {
-      await renderPdf(signDoc.pdfUrl);
+      await renderPdf(signDoc.id!);
     } catch (e) {
       console.error('Failed to load PDF:', e);
       setPdfLoadError(true);
     }
   };
 
-  const renderPdf = async (url: string) => {
+  const renderPdf = async (docId: string) => {
+    // Fetch via Cloud Function proxy to avoid Firebase Storage CORS restrictions.
+    const proxyUrl = `${FUNCTIONS_BASE_URL}/esign/pdf?docId=${encodeURIComponent(docId)}&token=${encodeURIComponent(token)}`;
     const { GlobalWorkerOptions, getDocument } = await import('pdfjs-dist');
     GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
-    // Fetch bytes in the main thread — passing a Storage URL directly to the
-    // pdfjs worker fails CORS because the worker runs in a separate context.
-    const res = await fetch(url);
+    const res = await fetch(proxyUrl);
     if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
     const bytes = await res.arrayBuffer();
     const pdf = await getDocument({ data: new Uint8Array(bytes) }).promise;
@@ -718,7 +719,7 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
                     <p className="text-sm text-slate-700 font-semibold">Failed to load the document</p>
                     <p className="text-xs text-slate-400 max-w-xs">The document may be temporarily unavailable. Please try again or contact the sender.</p>
                     <button
-                      onClick={() => { setPdfLoadError(false); renderPdf(signDoc!.pdfUrl).catch(() => setPdfLoadError(true)); }}
+                      onClick={() => { setPdfLoadError(false); renderPdf(signDoc!.id!).catch(() => setPdfLoadError(true)); }}
                       className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition-all">
                       Retry
                     </button>
