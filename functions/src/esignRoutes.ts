@@ -439,9 +439,9 @@ export function createEsignRouter(db: Firestore) {
       if (!snap.exists) { res.status(404).json({ error: 'Document not found' }); return; }
       const doc = snap.data()!;
 
-      const toInvite: any[] = doc.signingOrder === 'sequential'
-        ? [doc.signers.find((s: any) => s.status === 'pending')]
-        : doc.signers.filter((s: any) => s.status === 'pending');
+      // Always invite all pending signers upfront so every party knows a document awaits them.
+      // Sequential order is still enforced in the signing portal (shows "not your turn" if needed).
+      const toInvite: any[] = doc.signers.filter((s: any) => s.status === 'pending');
 
       const expiry = doc.expiresAt?.seconds ? new Date(doc.expiresAt.seconds * 1000) : undefined;
 

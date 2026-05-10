@@ -243,6 +243,7 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   // PDF rendering
   const [pageImages, setPageImages] = React.useState<string[]>([]);
   const [pageHeights, setPageHeights] = React.useState<number[]>([]);
+  const [pdfLoadError, setPdfLoadError] = React.useState(false);
 
   // Field values
   const [fieldValues, setFieldValues] = React.useState<Record<string, string>>({});
@@ -332,12 +333,17 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     setFieldValues(prefill);
     setState('signing');
     recordSignerViewed(signDoc.id!, signer.id).catch(() => {});
-    renderPdf(signDoc.pdfUrl);
+    try {
+      await renderPdf(signDoc.pdfUrl);
+    } catch (e) {
+      console.error('Failed to load PDF:', e);
+      setPdfLoadError(true);
+    }
   };
 
   const renderPdf = async (url: string) => {
     const { GlobalWorkerOptions, getDocument } = await import('pdfjs-dist');
-    GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
     const pdf = await getDocument(url).promise;
     const images: string[] = [];
     const heights: number[] = [];
@@ -700,9 +706,24 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
         <div className="space-y-4" style={{ minWidth: Math.min(PAGE_W, window.innerWidth - 32) }}>
           {pageImages.length === 0 ? (
             <div className="flex justify-center py-24">
-              <div className="text-center space-y-3">
-                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-slate-400 font-medium">Loading document…</p>
+              <div className="text-center space-y-4">
+                {pdfLoadError ? (
+                  <>
+                    <AlertTriangle size={36} className="text-amber-500 mx-auto" />
+                    <p className="text-sm text-slate-700 font-semibold">Failed to load the document</p>
+                    <p className="text-xs text-slate-400 max-w-xs">The document may be temporarily unavailable. Please try again or contact the sender.</p>
+                    <button
+                      onClick={() => { setPdfLoadError(false); renderPdf(signDoc!.pdfUrl).catch(() => setPdfLoadError(true)); }}
+                      className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition-all">
+                      Retry
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
+                    <p className="text-sm text-slate-400 font-medium">Loading document…</p>
+                  </>
+                )}
               </div>
             </div>
           ) : (

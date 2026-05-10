@@ -418,9 +418,9 @@ function createEsignRouter(db) {
                 return;
             }
             const doc = snap.data();
-            const toInvite = doc.signingOrder === 'sequential'
-                ? [doc.signers.find((s) => s.status === 'pending')]
-                : doc.signers.filter((s) => s.status === 'pending');
+            // Always invite all pending signers upfront so every party knows a document awaits them.
+            // Sequential order is still enforced in the signing portal (shows "not your turn" if needed).
+            const toInvite = doc.signers.filter((s) => s.status === 'pending');
             const expiry = ((_a = doc.expiresAt) === null || _a === void 0 ? void 0 : _a.seconds) ? new Date(doc.expiresAt.seconds * 1000) : undefined;
             // Send invites to signers
             await Promise.all(toInvite.filter(Boolean).map((signer) => {

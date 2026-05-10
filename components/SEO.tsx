@@ -31,52 +31,41 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
     ? (targetCanonical.startsWith('http') ? targetCanonical : `${siteUrl}${targetCanonical.startsWith('/') ? '' : '/'}${targetCanonical}`)
     : siteUrl;
 
-  /* Open Graph & Twitter Image */
+  /* Open Graph */
+  const isBlogPost = parentSlug === 'blog';
+  const ogType = isBlogPost ? 'article' : 'website';
   const ogImage = `${siteUrl}/pwa-512x512.png`;
-  const ogWidth = "512";
-  const ogHeight = "512";
-  const ogImageAlt = `PDFA2Z - ${title}`;
+  const ogImageAlt = `PDFA2Z — ${title}`;
 
-  // Generate Hreflang Tags
+  // Hreflang — only add language variants for non-blog pages (blog not localised)
   const hreflangs = [
     { lang: 'x-default', href: `${siteUrl}/${baseSlug}` },
     { lang: 'en', href: `${siteUrl}/${baseSlug}` },
-    ...SUPPORTED_LANGS.map(l => ({
+    ...(!isBlogPost ? SUPPORTED_LANGS.map(l => ({
       lang: l,
       href: `${siteUrl}/${l}/${baseSlug}`
-    }))
+    })) : [])
   ];
 
   const GLOBAL_KEYWORDS = [
-    'pdf converter',
-    'free pdf tools',
-    'online pdf editor',
-    'ilovepdf alternative',
-    'smallpdf alternative',
-    'pdf to word',
-    'merge pdf',
-    'compress pdf'
+    'pdf converter', 'free pdf tools', 'online pdf editor',
+    'ilovepdf alternative', 'smallpdf alternative',
+    'pdf to word', 'merge pdf', 'compress pdf',
+    'adobe acrobat alternative', 'free pdf software'
   ];
 
-  const keywords = (tool?.features ? tool.features.join(', ') : '') +
-    ', ' + title +
-    ', ' + GLOBAL_KEYWORDS.join(', ');
-
-  // Dynamic Clickbait Injection
-  const titleHook = " | 100% Free & No Signup";
-  const descHook = " - 100% Free, No Signup Required. Instant Access!";
-
-  // Only add if not already extremely long or already containing the hook
-  const finalTitle = title.includes("Free") ? title : `${title}${titleHook}`;
-  const finalDescription = description.includes("No Signup") ? description : `${description}${descHook}`;
+  const keywords = [
+    ...(tool?.features || []),
+    title,
+    ...GLOBAL_KEYWORDS
+  ].join(', ');
 
   return (
     <Helmet>
-      {/* Page Title */}
-      <title>{finalTitle}</title>
+      <title>{title}</title>
 
       {/* Standard Meta */}
-      <meta name="description" content={finalDescription} />
+      <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
       <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
@@ -89,23 +78,23 @@ export const SEO: React.FC<SEOProps> = ({ title, description, canonical, schema,
       ))}
 
       {/* OG Tags */}
-      <meta property="og:title" content={finalTitle} />
-      <meta property="og:description" content={finalDescription} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
       <meta property="og:url" content={fullCanonical} />
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content="PDFA2Z" />
       <meta property="og:locale" content="en_US" />
       <meta property="og:image" content={ogImage} />
-      <meta property="og:image:width" content={ogWidth} />
-      <meta property="og:image:height" content={ogHeight} />
+      <meta property="og:image:width" content="512" />
+      <meta property="og:image:height" content="512" />
       <meta property="og:image:alt" content={ogImageAlt} />
 
       {/* Twitter Tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@pdfa2z" />
       <meta name="twitter:creator" content="@pdfa2z" />
-      <meta name="twitter:title" content={finalTitle} />
-      <meta name="twitter:description" content={finalDescription} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
       <meta name="twitter:image:alt" content={ogImageAlt} />
 
@@ -147,42 +136,55 @@ const generateOrganizationSchema = () => ({
 });
 
 export const generateToolSchema = (tool: any) => {
-  const websiteSchema = {
+  const reviewData = getToolReviewData(tool.slug);
+  const appCategory = tool.type === 'IMAGE_TOOLKIT' ? 'MultimediaApplication' : 'BusinessApplication';
+  const websiteSchema: any = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": tool.h1,
+    "@id": `https://pdfa2z.com/${tool.slug}#software`,
+    "name": tool.h1 || tool.title,
     "description": tool.description,
     "url": `https://pdfa2z.com/${tool.slug}`,
-    "applicationCategory": "MultimediaApplication",
-    "applicationSubCategory": tool.type === 'PDF_SUITE' ? 'ProductivityApplication' : 'PhotoEditor',
-    "operatingSystem": "Web, Windows, macOS, Android, iOS",
-    "screenshot": `https://pdfa2z.com/og-image.svg`,
+    "applicationCategory": appCategory,
+    "operatingSystem": "Web Browser — Windows, macOS, Linux, Android, iOS",
+    "browserRequirements": "Requires JavaScript. Works in Chrome, Firefox, Safari, Edge.",
     "featureList": tool.features ? tool.features.join(', ') : 'Free online tool, No installation required, Secure processing',
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "USD"
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
     },
-    "aggregateRating": {
+    "provider": {
+      "@type": "Organization",
+      "@id": "https://pdfa2z.com/#organization"
+    }
+  };
+  if (reviewData && reviewData.count > 0) {
+    websiteSchema["aggregateRating"] = {
       "@type": "AggregateRating",
-      "ratingValue": getToolReviewData(tool.slug).rating.toString(),
-      "ratingCount": getToolReviewData(tool.slug).count.toString(),
+      "ratingValue": reviewData.rating.toString(),
+      "ratingCount": reviewData.count.toString(),
       "bestRating": "5",
       "worstRating": "1"
-    },
-    ...(tool.unique ? { unique: true } : {})
-  };
+    };
+  }
 
+  const stepCount = tool.steps?.length || 0;
+  const totalMinutes = Math.max(1, stepCount);
   const howToSchema = tool.steps && tool.steps.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": `How to use ${tool.title}`,
-    "totalTime": "PT1M",
+    "name": `How to ${tool.h1 || tool.title}`,
+    "description": tool.description,
+    "totalTime": `PT${totalMinutes}M`,
+    "tool": [{ "@type": "HowToTool", "name": "PDFA2Z — Free Online PDF & Image Tools" }],
     "step": tool.steps.map((step: string, index: number) => ({
       "@type": "HowToStep",
       "position": index + 1,
-      "name": `Step ${index + 1}`,
-      "text": step
+      "name": step.split('.')[0] || `Step ${index + 1}`,
+      "text": step,
+      "url": `https://pdfa2z.com/${tool.slug}#step-${index + 1}`
     }))
   } : null;
 

@@ -48,6 +48,8 @@ export const RemoteSign: React.FC = () => {
   const [documents, setDocuments] = React.useState<SignDocument[]>([]);
   const [docsLoading, setDocsLoading] = React.useState(false);
   const [sentDocId, setSentDocId] = React.useState<string | null>(null);
+  const [docsError, setDocsError] = React.useState(false);
+  const [signerLinksDoc, setSignerLinksDoc] = React.useState<SignDocument | null>(null);
 
   // Draft state
   const [draftId, setDraftId] = React.useState<string | null>(null);
@@ -81,7 +83,7 @@ export const RemoteSign: React.FC = () => {
   React.useEffect(() => {
     if (!user) return;
     setDocsLoading(true);
-    getOwnerDocuments(user.uid).then(docs => { setDocuments(docs); setDocsLoading(false); }).catch(() => setDocsLoading(false));
+    getOwnerDocuments(user.uid).then(docs => { setDocuments(docs); setDocsLoading(false); setDocsError(false); }).catch(() => { setDocsLoading(false); setDocsError(true); });
   }, [user]);
 
   // Generate preview + page count when PDF uploaded
@@ -252,7 +254,12 @@ export const RemoteSign: React.FC = () => {
       resetState();
       setView('dashboard');
       getOwnerDocuments(user.uid).then(setDocuments).catch(() => {});
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error(e);
+      setUploadError(e?.message?.includes('invitations')
+        ? 'Document saved but email delivery failed. Check your SMTP configuration and try resending.'
+        : 'Something went wrong. Please try again.');
+    }
     setSending(false);
   };
 
@@ -607,6 +614,18 @@ export const RemoteSign: React.FC = () => {
         ))}
       </div>
 
+      {docsError && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+          <AlertCircle size={18} className="text-amber-500 shrink-0" />
+          <p className="text-amber-700 text-sm flex-1">Could not load your documents. Check your connection and try again.</p>
+          <button
+            onClick={() => { setDocsLoading(true); setDocsError(false); getOwnerDocuments(user.uid).then(docs => { setDocuments(docs); setDocsLoading(false); }).catch(() => { setDocsLoading(false); setDocsError(true); }); }}
+            className="text-sm font-bold text-amber-700 hover:underline shrink-0">
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Document list */}
       {docsLoading ? (
         <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></div>
@@ -663,8 +682,8 @@ export const RemoteSign: React.FC = () => {
                       {d.status === 'sent' && (
                         <>
                           <button
-                            onClick={() => { const link = d.signers[0]?.token ? `${window.location.origin}/sign/${d.signers[0].token}` : ''; navigator.clipboard.writeText(link); }}
-                            className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg" title="Copy first signer's link">
+                            onClick={() => setSignerLinksDoc(d)}
+                            className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg" title="View signing links">
                             <Copy size={15} />
                           </button>
                           <button onClick={() => handleVoid(d.id!)}
@@ -679,6 +698,38 @@ export const RemoteSign: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {signerLinksDoc && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSignerLinksDoc(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h3 className="font-black text-slate-900 mb-1">Signing Links</h3>
+            <p className="text-sm text-slate-500 mb-4">Copy and share each link with the respective signer.</p>
+            <div className="space-y-3">
+              {signerLinksDoc.signers.map(s => {
+                const link = `${window.location.origin}/sign/${s.token}`;
+                return (
+                  <div key={s.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ background: s.color }}>
+                      {s.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm">{s.name}</p>
+                      <p className="text-xs text-slate-400 truncate">{s.email}</p>
+                    </div>
+                    <button onClick={() => navigator.clipboard.writeText(link)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 shrink-0">
+                      <Copy size={12} /> Copy
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setSignerLinksDoc(null)}
+              className="mt-4 w-full py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 text-sm">
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -721,7 +772,6 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
   }, [pdfBytes]);
 
   const handlePageClick = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-    if (selectedId) { setSelectedId(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -747,7 +797,7 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
-      <div style={{ background: 'white', borderBottom: '1.5px solid #e2e8f0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1.5px solid #e2e8f0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, overflowX: 'auto' }}>
         <button onClick={onBack}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#475569', background: 'white', cursor: 'pointer' }}>
           ← Back
@@ -878,6 +928,7 @@ const DraggableField: React.FC<DraggableFieldProps> = ({ field, signer, isSelect
     <div
       style={{ position: 'absolute', left: field.x, top: field.y, width: field.width, height: field.height, border: `2px ${isSelected ? 'solid' : 'dashed'} ${color}`, borderRadius: 6, background: color + '22', cursor: 'move', userSelect: 'none', boxSizing: 'border-box', outline: isSelected ? `2px solid ${color}66` : 'none', outlineOffset: 2 }}
       onMouseDown={handleMouseDown}
+      onClick={e => e.stopPropagation()}
     >
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, fontWeight: 700, color }}>
         {FIELD_ICONS[field.type]}

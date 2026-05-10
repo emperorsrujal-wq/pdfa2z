@@ -153,32 +153,44 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'merge-pdf': {
     slug: 'merge-pdf',
-    title: 'Merge PDF Online - Combine PDF Files for Free (No. 1 iLovePDF Alternative)',
-    description: 'Merge PDF documents online for free. Combine multiple PDFs into one unified file instantly. Secure, fast, and easy PDF merger without registration.',
-    h1: 'Merge PDF Files Online',
-    intro: 'Combine multiple PDF files into a single document in seconds. Our professional-grade PDF merger allows you to reorder pages and merge unlimited files for free. No signup, no watermarks - the perfect alternative to iLovePDF.',
+    title: 'Merge PDF Online — Combine PDF Files Free (iLovePDF Alternative)',
+    description: 'Merge PDF files online for free. Combine unlimited PDFs into one document instantly, reorder pages, and download. No signup, no watermark. Faster than iLovePDF.',
+    h1: 'Merge PDF Files Online — Free',
+    intro: 'Combine multiple PDF files into one unified document in seconds. Our professional-grade PDF merger supports unlimited files, drag-and-drop reordering, and instant download — 100% free with no signup or watermark. The best free alternative to iLovePDF and Smallpdf.',
     steps: [
-      'Click "Upload" to select your PDF files, or drag and drop them.',
-      'Drag the thumbnails to rearrange the files in your desired order.',
-      'Click "Merge PDF" to combine them into one document.',
-      'Download your single, unified PDF file.'
+      'Click "Upload Files" or drag and drop your PDF files onto the page. You can select as many PDFs as you need.',
+      'Drag the file thumbnails to rearrange them in your desired order. The first file in the list becomes the first pages of the merged PDF.',
+      'Click any thumbnail to preview the file content before merging.',
+      'Click "Merge PDF" to combine all files into a single document.',
+      'Your merged PDF is ready — click "Download" to save it to your device.'
     ],
     faqs: [
-      { q: 'Is it free?', a: 'Yes, PDFA2Z is completely free to use for merging files.' },
-      { q: 'Is it secure?', a: 'Absolutely. We process your files locally in your browser when possible, or use secure temporary servers that delete files immediately after processing.' },
-      { q: 'Can I merge PDF and JPG?', a: 'Currently this tool is for PDFs. To merge images, first use our JPG to PDF tool.' },
-      { q: 'Is there a file limit?', a: 'You can merge unlimited files, provided they fit within your browser memory.' }
+      { q: 'Is merging PDFs free on PDFA2Z?', a: 'Yes, completely free. There are no file limits, no watermarks, and no signup required.' },
+      { q: 'How many PDF files can I merge at once?', a: 'You can merge unlimited PDF files in a single session, provided the total size fits within your browser\'s available memory. For very large batches (50+ files), merging in two steps is recommended.' },
+      { q: 'Is it secure? Are my files uploaded to a server?', a: 'Your files are processed securely. Small files may be handled client-side in your browser; larger files use encrypted server transmission with immediate deletion after processing. We never store or share your documents.' },
+      { q: 'Can I merge PDF and image files (JPG, PNG) together?', a: 'This tool merges PDFs only. To include images, first convert them to PDF using our free JPG to PDF tool, then merge the resulting PDF files.' },
+      { q: 'How do I change the order of PDFs before merging?', a: 'Simply drag and drop the file thumbnails into your desired order after uploading. The merge follows the order shown on screen.' },
+      { q: 'Can I merge password-protected PDFs?', a: 'If a PDF has an "open password", you\'ll need to unlock it first using our free Unlock PDF tool. PDFs with only editing restrictions (owner password) can usually be merged without entering a password.' },
+      { q: 'Will bookmarks and hyperlinks be preserved in the merged PDF?', a: 'Internal hyperlinks and text content are preserved. Complex bookmark trees may be simplified in the output. Test your merged PDF before distributing for critical document linking.' },
+      { q: 'Does the merge tool work on mobile phones and tablets?', a: 'Yes. The merge tool works in mobile browsers on Android and iOS without any app installation required.' },
+      { q: 'What is the maximum file size I can merge?', a: 'There is no hard size limit, but browser performance is best with files under 500MB total. For larger documents, consider splitting them first and merging in batches.' },
+      { q: 'Will the merged PDF look different from the original files?', a: 'No. The PDF pages are combined as-is, preserving all formatting, fonts, images, and layout exactly as they appear in the original files.' },
+      { q: 'How long does merging take?', a: 'Most merges complete in under 10 seconds. Very large files (100MB+) may take 20-30 seconds depending on your connection and device speed.' },
+      { q: 'Is PDFA2Z a good iLovePDF alternative?', a: 'Yes. PDFA2Z offers the same core PDF merge functionality as iLovePDF with no daily file limits, no forced signup, and additional tools like AI chat, OCR, and video tools.' }
     ],
     features: [
-      'Combine unlimited PDFs',
-      'Visual Drag & Drop Reordering',
-      'Secure Processing',
-      'Retain Formatting',
-      'Mobile Friendly'
+      'Merge unlimited PDFs for free',
+      'Visual drag & drop reordering',
+      'No signup, no watermark',
+      'Secure encrypted processing',
+      'Preserve all formatting & fonts',
+      'Works on mobile & desktop',
+      'Instant download after merge',
+      'iLovePDF & Smallpdf alternative'
     ],
     tips: [
-      'Number your files (1.pdf, 2.pdf) before uploading to sort them automatically.',
-      'Use the "Organize" mode if you need to rotate individual pages before merging.'
+      'Number your files (1.pdf, 2.pdf) before uploading to sort them automatically by filename.',
+      'Use our Organize PDF tool first if you need to rotate or delete individual pages before merging.'
     ],
     relatedGuides: ['best-ilovepdf-alternative-2026', 'how-to-merge-pdfs'],
     type: ToolType.PDF_SUITE,
@@ -274,31 +286,44 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'split-pdf': {
     slug: 'split-pdf',
-    title: 'Free Split PDF Online — Extract & Separate Pages Instantly',
-    description: 'Free online PDF splitter. Split PDF files into individual pages or extract specific page ranges instantly. No signup, no watermark. Secure and fast.',
+    title: 'Free Split PDF Online — Extract & Separate PDF Pages Instantly',
+    description: 'Free online PDF splitter. Split PDF into individual pages, extract page ranges, or download each page separately as a ZIP. No signup, no watermark. Fast & secure.',
     h1: 'Free Split PDF Online',
-    intro: 'Need to extract specific pages from a large PDF? Our Split PDF tool lets you separate PDF documents by range or extract every page into a new file.',
+    intro: 'Break apart large PDF files in seconds. Our Split PDF tool lets you extract specific pages, split by custom page ranges, or separate every page into its own file. Perfect for extracting invoices, chapters, or contracts from multi-document PDFs.',
     steps: [
-      'Upload your PDF document to the splitter.',
-      'Enter page numbers (e.g., "1, 3, 5") or ranges (e.g., "10-20").',
-      'Select "Merge extracted pages" or download separately.',
-      'Click "Split PDF" to process and download.'
+      'Upload your PDF document by clicking "Upload" or dragging and dropping it onto the tool.',
+      'Enter the page numbers or ranges you want to extract. Examples: "3" for a single page, "1-5" for a range, or "1-5, 8, 11-15" for multiple non-consecutive ranges.',
+      'Choose whether to download extracted pages as a single merged PDF or as individual files (one per page).',
+      'Click "Split PDF" to process the document.',
+      'Download your extracted pages. If you selected individual pages, they are packaged into a ZIP file for easy download.'
     ],
     faqs: [
-      { q: 'Can I extract single pages?', a: 'Yes, simply enter the specific page number you need.' },
-      { q: 'Can I split by range?', a: 'Yes, use the format "Start-End" (e.g., 1-5).' },
-      { q: 'Will the original file be modified?', a: 'No, your original file remains untouched. We create new files from the extracted pages.' }
+      { q: 'Is splitting PDFs free on PDFA2Z?', a: 'Yes, completely free with no signup and no watermarks.' },
+      { q: 'Can I extract a single page from a PDF?', a: 'Yes. Simply enter the specific page number (e.g., "5") to extract just that page as a new PDF file.' },
+      { q: 'How do I specify page ranges?', a: 'Use a hyphen for ranges: "1-5" extracts pages 1 through 5. Separate multiple ranges with commas: "1-5, 8, 10-12".' },
+      { q: 'Can I split a PDF into individual pages all at once?', a: 'Yes. Use the "Extract all pages" option and each page will be saved as its own PDF, all bundled in a ZIP download.' },
+      { q: 'Will the original file be modified?', a: 'No. Your original file is never changed. We create brand new PDF files from the pages you select.' },
+      { q: 'How do I extract non-consecutive pages?', a: 'Use comma-separated values: for example, "1, 3, 7, 12" extracts those exact pages as separate files or merged into one new PDF.' },
+      { q: 'Does the split PDF preserve the original quality?', a: 'Yes. PDF pages are extracted without re-encoding, so the quality is identical to the original.' },
+      { q: 'Can I split a password-protected PDF?', a: 'Only if you know the open password. Use our Unlock PDF tool first to remove the password, then split.' },
+      { q: 'What is the maximum PDF size for splitting?', a: 'There is no strict limit, but performance is best for files under 200MB. Very large PDFs may take longer to process.' },
+      { q: 'Will bookmarks be preserved in split pages?', a: 'Bookmarks that reference pages within the extracted range are preserved. Bookmarks pointing to other pages are removed from the split output.' },
+      { q: 'Can I split a PDF that has form fields?', a: 'Yes. Form fields within extracted pages are preserved in the output PDF.' },
+      { q: 'How is "split PDF" different from "delete pages"?', a: 'Split PDF creates new files from selected pages. Delete Pages removes specific pages from the original and gives you the remainder. Both tools are available free on PDFA2Z.' }
     ],
     features: [
-      'Extract Specific Pages',
-      'Split by Page Range',
-      'Batch Extraction',
-      'Instant Preview',
-      'No Quality Loss'
+      'Extract specific pages by number',
+      'Split by custom page ranges',
+      'Extract all pages as ZIP',
+      'Preserve original quality',
+      'No signup, no watermark',
+      'Works on mobile & desktop',
+      'Instant download',
+      'Handle any PDF size'
     ],
     tips: [
-      'Use commas to separate different ranges (e.g., "1-5, 8, 11-15").',
-      'Perfect for separating invoices or receipts from a long scanned document.'
+      'Use commas to separate different ranges (e.g., "1-5, 8, 11-15") for non-consecutive extractions.',
+      'Perfect for separating invoices, receipts, or chapters from a long combined document.'
     ],
     type: ToolType.PDF_SUITE,
     icon: Scissors,
@@ -332,33 +357,46 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'compress-pdf': {
     slug: 'compress-pdf',
-    title: 'Compress PDF Online - Reduce File Size to 100kb & 200kb (Free)',
-    description: 'Compress PDF file size online for free. Reduce PDF size to 100kb, 200kb, or 500kb without losing quality. Best PDF compressor for email and web.',
-    h1: 'Compress PDF Online',
-    intro: 'Shrink your PDF files without losing quality. Our smart compression algorithm optimizes images and fonts to help you reach target sizes like 100kb or 200kb for official uploads.',
+    title: 'Compress PDF Online — Reduce File Size to 100KB, 200KB (Free)',
+    description: 'Compress PDF file size online for free. Reduce PDF to 100KB, 200KB or 1MB without losing quality. Best free PDF compressor — no signup, no watermark.',
+    h1: 'Compress PDF Online — Free',
+    intro: 'Shrink your PDF files to a fraction of their original size without losing readability. Our smart compression algorithm optimizes images, fonts, and embedded content to help you meet strict file-size requirements like 100KB for government portals or 1MB for email attachments — all free, no signup.',
     steps: [
-      'Select your PDF file to compress.',
-      'Choose a compression level: "Recommended" (Best quality) or "Extreme" (Smallest size).',
-      'Click "Compress PDF" to reduce file size.',
-      'Download your optimized, smaller PDF file.'
+      'Click "Upload PDF" or drag your file onto the tool. Multiple files are supported for batch compression.',
+      'Select your compression level: "Recommended" balances quality and size, while "Extreme" achieves the smallest possible file at the cost of some image quality.',
+      'Optionally set a specific target file size (e.g., 200KB) for government form submissions.',
+      'Click "Compress PDF" and wait a few seconds for processing.',
+      'Download your compressed PDF. The tool shows you the exact before/after size reduction so you can verify results.'
     ],
     faqs: [
-      { q: 'How much can I reduce size?', a: 'Results vary, but we often see reductions of 50-80% for image-heavy documents.' },
-      { q: 'Does it affect quality?', a: 'Our "Recommended" setting keeps quality almost identical to the original. "Extreme" may slightly reduce image quality for maximum space saving.' },
-      { q: 'Can I compress multiple files?', a: 'Yes, you can upload and compress multiple PDFs at once.' }
+      { q: 'Is PDF compression free on PDFA2Z?', a: 'Yes, 100% free. No signup, no watermarks, no daily limits.' },
+      { q: 'How much can I reduce a PDF\'s file size?', a: 'Results depend on content. Image-heavy PDFs typically see 50-85% reduction. Text-only PDFs are already compact and may only compress 10-20% further.' },
+      { q: 'What causes a PDF to be so large?', a: 'Large PDFs usually contain high-resolution images, embedded fonts, or unoptimized scanned pages. Our compressor targets all three to maximize size reduction.' },
+      { q: 'How do I compress a PDF to under 100KB?', a: 'Use "Extreme" compression mode. If the file is still over 100KB, it likely contains high-resolution scans — try converting color images to grayscale first using our Grayscale PDF tool, then compress again.' },
+      { q: 'Does compression reduce visual quality?', a: '"Recommended" mode preserves near-original quality suitable for printing. "Extreme" mode slightly downsizes images but remains fully readable on screen.' },
+      { q: 'Can I compress multiple PDFs at once?', a: 'Yes. Upload multiple PDFs together and each will be compressed and available for individual download.' },
+      { q: 'Does compression remove metadata or document properties?', a: 'Standard compression does not remove metadata. If you need to remove author info or hidden data, use our PDF Redact tool first.' },
+      { q: 'Will embedded fonts still display correctly after compression?', a: 'Yes. Fonts are optimized (unused character subsets removed) but remain embedded so text renders correctly on all devices.' },
+      { q: 'Can I compress a scanned PDF?', a: 'Yes. Scanned PDFs benefit most from compression because their raw scan images are replaced with optimized versions. Expect 60-80% size reduction for typical scanned documents.' },
+      { q: 'Is there a file size limit for uploading?', a: 'Files up to 500MB can be uploaded for compression. If your file is larger, try splitting it first and compressing each part.' },
+      { q: 'Does compressing a PDF affect its password protection?', a: 'Compression works on both unprotected and owner-restricted PDFs. Open-password-protected PDFs must be unlocked first using our Unlock PDF tool.' },
+      { q: 'How is PDFA2Z\'s compressor different from printing to PDF?', a: 'Printing to PDF re-renders content and can sometimes increase file size or lose formatting. Our compressor directly optimizes the existing PDF structure without re-rendering, preserving all content accurately.' }
     ],
     features: [
-      'Smart Compression Algorithm',
-      'Target 100kb, 200kb, 1MB',
-      'Batch Compress PDFs',
-      'Quality Preservation',
-      'Detailed Size Report'
+      'Reduce PDF size by up to 85%',
+      'Target 100KB, 200KB, 1MB',
+      'Batch compress multiple PDFs',
+      'Preserve text sharpness',
+      'Recommended & Extreme modes',
+      'No signup, no watermark',
+      'Before/after size comparison',
+      'Works on mobile & desktop'
     ],
     tips: [
-      'Use "Extreme" compression for documents that are only for screen viewing.',
-      'Use "Recommended" for documents you intend to print.'
+      'Combine compression with Grayscale PDF conversion for maximum size reduction on color-scan documents.',
+      'Use "Recommended" for documents you will print — "Extreme" for screen-only or email use.'
     ],
-    relatedGuides: ['how-to-compress-pdf-to-100kb'],
+    relatedGuides: ['how-to-compress-pdf-to-100kb', 'how-to-make-pdf-smaller-for-email'],
     type: ToolType.PDF_SUITE,
     mode: 'COMPRESS',
     translations: {
@@ -391,29 +429,42 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
 
   'pdf-to-word': {
     slug: 'pdf-to-word',
-    title: 'PDF to Word Converter - Free Online PDF to Docx (High Quality)',
-    description: 'Convert PDF to Word (Docx) online for free. Our AI-powered converter preserves editable text, tables, and original formatting perfectly.',
-    h1: 'Convert PDF to Word',
-    intro: 'Turn your PDF documents into fully editable Microsoft Word files. We use advanced OCR and layout reconstruction to ensure your Word docs look exactly like the original PDF.',
+    title: 'PDF to Word Converter — Free Online PDF to DOCX (High Quality)',
+    description: 'Convert PDF to Word (DOCX) free online. AI-powered converter preserves editable text, tables, columns, and original formatting. No signup, instant download.',
+    h1: 'Convert PDF to Word Free',
+    intro: 'Turn any PDF into a fully editable Microsoft Word document in seconds. Our advanced OCR and layout reconstruction engine preserves columns, tables, headings, and text styles so your Word doc looks exactly like the original PDF — ready to edit without reformatting.',
     steps: [
-      'Upload your PDF file to convert.',
-      'Wait for the PDF to Word conversion process.',
-      'Download your editable Word (.docx) document.',
-      'Open and edit in Microsoft Word or Google Docs.'
+      'Click "Upload PDF" or drag your PDF file onto the tool. Scanned PDFs are also supported via OCR.',
+      'The system automatically detects whether the PDF contains real text or scanned images and applies the appropriate conversion method.',
+      'Wait 10-30 seconds for the AI to analyze and reconstruct the document layout.',
+      'Download your converted Word (.docx) file directly to your device.',
+      'Open the file in Microsoft Word, Google Docs, LibreOffice, or any compatible word processor and start editing immediately.'
     ],
     faqs: [
-      { q: 'Will the formatting be messed up?', a: 'We try our best to preserve the exact layout, including columns and tables.' },
-      { q: 'Can I convert scanned PDFs?', a: 'Yes, but for images of text, the editable output depends on the clarity of the scan.' },
-      { q: 'Is it compatible with Google Docs?', a: 'Yes, you can upload the resulting .docx, file to Google Drive and edit it there.' }
+      { q: 'Is PDF to Word conversion free on PDFA2Z?', a: 'Yes, completely free. No signup, no watermarks, and no limits on conversions.' },
+      { q: 'Will the formatting be preserved after conversion?', a: 'Our converter uses advanced layout analysis to preserve columns, tables, paragraphs, headings, and font styles. Complex multi-column layouts or custom fonts may require minor manual adjustment.' },
+      { q: 'Can I convert a scanned PDF to Word?', a: 'Yes. Scanned PDFs go through OCR (Optical Character Recognition) to extract text from images. Accuracy depends on scan quality — clear, high-resolution scans produce the best results.' },
+      { q: 'Is the converted file compatible with Google Docs?', a: 'Yes. Upload the resulting .docx file to Google Drive and open it with Google Docs for full editing capability.' },
+      { q: 'What formatting elements are preserved?', a: 'Bold, italic, underline, font sizes, headings (H1-H6), bullet lists, numbered lists, tables, and images are all preserved where technically possible.' },
+      { q: 'Can I convert password-protected PDFs to Word?', a: 'Only if you know the password. Unlock the PDF first using our free Unlock PDF tool, then convert to Word.' },
+      { q: 'How accurate is OCR for scanned documents?', a: 'For clean, high-contrast scans at 300 DPI or above, accuracy is typically 95-99%. Handwritten text, faded scans, or complex scientific notation will have lower accuracy.' },
+      { q: 'What is the maximum file size for PDF to Word conversion?', a: 'Files up to 100MB are supported. For larger PDFs, consider splitting them first using our Split PDF tool and converting each part separately.' },
+      { q: 'Does it work with PDFs that have complex tables?', a: 'Yes. Table structure is detected and reconstructed as Word tables. Very complex merged-cell tables may need manual adjustment after conversion.' },
+      { q: 'What if the converted Word document has errors or garbled text?', a: 'For PDFs with unusual fonts or encoding, try flattening the PDF first using our PDF Flatten tool, then reconvert. OCR-based conversion often handles such files better.' },
+      { q: 'Can I convert to .doc (old Word format) instead of .docx?', a: 'We output .docx by default, which is the modern standard compatible with Word 2007 and later. You can save as .doc from within Microsoft Word if needed.' },
+      { q: 'Will images in the PDF be included in the Word document?', a: 'Yes, images embedded in the PDF are extracted and inserted inline in the Word document.' }
     ],
     features: [
-      'High-Fidelity Conversion',
-      'Table & Layout Reconstruction',
-      'Paragraph Recognition',
-      'Convert Scanned PDFs (OCR)',
-      'No Account Needed'
+      'High-fidelity layout reconstruction',
+      'OCR for scanned PDF documents',
+      'Preserve tables, columns & images',
+      'Editable DOCX output',
+      'Compatible with Google Docs',
+      'No signup, no watermark',
+      'Supports files up to 100MB',
+      'AI-powered text extraction'
     ],
-    relatedGuides: ['pdf-to-word-conversion'],
+    relatedGuides: ['how-to-edit-pdf-free-without-adobe'],
     type: ToolType.PDF_SUITE,
     icon: FileText,
     mode: 'TO_WORD'
@@ -480,32 +531,44 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'remove-bg': {
     slug: 'remove-bg',
-    title: 'Free Background Remover - Remove Background from Image',
-    description: 'Remove background from image online for free. Automatic AI background eraser for JPG, PNG, WebP. transparent background instantly.',
-    h1: 'Remove Background from Image',
-    intro: 'Instantly remove the background from any photo. Our AI automatically detects the subject and creates a transparent background PNG in seconds. Perfect for e-commerce and profiles.',
+    title: 'Free Background Remover — Remove Background from Image Online',
+    description: 'Remove image background online for free. AI automatically removes backgrounds from photos, products, and portraits in seconds. Download transparent PNG. No signup.',
+    h1: 'Remove Background from Image — Free',
+    intro: 'Instantly remove any background from photos, product images, and portraits with one click. Our AI-powered background remover automatically detects the subject and creates a transparent PNG — no manual selection needed. Unlimited free use, no signup.',
     steps: [
-      'Upload an image to remove the background.',
-      'Wait 5 seconds for AI to auto-detect the subject.',
-      'Preview your image with a transparent background.',
-      'Download your high-quality PNG.'
+      'Click "Upload Image" or drag and drop your JPG, PNG, or WebP photo onto the tool.',
+      'The AI instantly analyzes your image and automatically detects the foreground subject — this typically takes 3-5 seconds.',
+      'Preview your image with the background removed. Transparent areas are shown as a checkered pattern.',
+      'Use the fine-tune brush to touch up edges if needed (zoom in for precision on hair and fur).',
+      'Click "Download" to save your transparent PNG. Place it on any new background using our image tools.'
     ],
     faqs: [
-      { q: 'Is this tool really free?', a: 'Yes, PDFA2Z provides unlimited free background removals.' },
-      { q: 'What image formats are supported?', a: 'We support JPG, PNG, WebP, and BMP files.' },
-      { q: 'Does it work on complex hair?', a: 'Yes, our AI is trained to handle fine details like hair and fur with high precision.' },
-      { q: 'Can I add a new background?', a: 'Currently, we provide a transparent PNG, which you can place on any background using our other image tools.' }
+      { q: 'Is background removal free on PDFA2Z?', a: 'Yes, completely free with unlimited removals. No signup required.' },
+      { q: 'What image formats are supported?', a: 'JPG, PNG, WebP, and BMP are all supported as input. The output is always a transparent PNG.' },
+      { q: 'Does it work on complex hair and fur?', a: 'Yes. Our AI model is specifically trained to handle fine details like flyaway hair, fur, and transparent materials with high precision.' },
+      { q: 'Can I add a new background color or image after removal?', a: 'Yes. After removing the background, use the background replacement feature to add a solid color, gradient, or custom image. Or download the transparent PNG and place it in any image editor.' },
+      { q: 'How do I get the best results for product photos?', a: 'Place your product on a high-contrast background (white or solid color) and ensure good, even lighting. AI detection is most accurate when subject edges are clearly defined.' },
+      { q: 'Can I remove backgrounds from multiple images at once?', a: 'For bulk background removal, contact us about API access. The individual tool processes one image at a time.' },
+      { q: 'What resolution is the output PNG?', a: 'The output maintains the original image resolution. No downscaling occurs — your transparent PNG is the same dimensions as your uploaded image.' },
+      { q: 'Does it work on logos, graphics, and illustrations?', a: 'Yes, though results are best on photos with clear subjects. For flat graphics with solid fills, the tool works excellently. For complex illustrations with similar colors, manual refinement may be needed.' },
+      { q: 'How long does background removal take?', a: 'Most images are processed in 3-5 seconds. Larger files (over 5MB) may take 10-15 seconds.' },
+      { q: 'Can I refine the results if the edges aren\'t perfect?', a: 'Yes. Use the built-in eraser and restore brush to clean up edges after the initial AI removal. Zoom in for detailed adjustments.' },
+      { q: 'Is the processing done on my device or on a server?', a: 'Processing happens on our secure servers using AI models. Your image is transmitted over HTTPS and deleted immediately after you download the result.' },
+      { q: 'What is the maximum image size I can upload?', a: 'Images up to 25MB are supported. For best performance, images under 5MB process fastest.' }
     ],
     features: [
-      'Automatic AI Detection',
-      'Handle Hair & Fur Details',
-      'Transparent PNG Output',
-      'No Watermark',
-      'Unlimited Free Usage'
+      'AI auto-detects subjects instantly',
+      'Handle hair, fur & fine details',
+      'Transparent PNG output',
+      'No watermark, no signup',
+      'Unlimited free removals',
+      'Manual refinement brush',
+      'Preserve original resolution',
+      'Works on photos, products & portraits'
     ],
     tips: [
-      'Ensure your subject is clearly visible for the best results.',
-      'High-contrast images work best for automatic detection.'
+      'For product photos, shoot against a white or single-color background for best AI accuracy.',
+      'After removal, use our Image Resize tool to create perfectly sized images for e-commerce platforms like Amazon or Shopify.'
     ],
     relatedGuides: ['remove-image-background'],
     type: ToolType.IMAGE_TOOLKIT,
@@ -678,29 +741,43 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'protect-pdf': {
     slug: 'protect-pdf',
-    title: 'Free PDF Password Protector — Encrypt PDF with AES Online',
-    description: 'Free online PDF password protection. Encrypt your PDF with 256-bit AES to prevent unauthorized access. Secure, instant, and no signup required.',
-    h1: 'Password Protect PDF',
-    intro: 'Keep your sensitive documents safe. Add a strong password to your PDF files so only authorized people can view them.',
+    title: 'Free PDF Password Protect — Encrypt PDF with AES-256 Online',
+    description: 'Free online PDF password protection. Add 256-bit AES encryption to your PDF to prevent unauthorized access. Instant, secure, no signup required.',
+    h1: 'Password Protect PDF Free',
+    intro: 'Add military-grade 256-bit AES encryption to any PDF file in seconds. Set an open password so only authorized people can view the document, and control permissions like printing and copying. 100% free, browser-based, no files stored on our servers.',
     steps: [
-      'Upload the PDF you want to protect.',
-      'Enter a strong password.',
-      'Confirm the password.',
-      'Click "Protect PDF" and download your encrypted file.'
+      'Upload the PDF you want to protect by clicking "Upload" or dragging the file onto the tool.',
+      'Enter a strong password in the "Set Password" field. Use a mix of uppercase, lowercase, numbers, and symbols for maximum security.',
+      'Confirm the password in the second field to avoid typos.',
+      'Optionally, set document permissions to restrict printing, copying, or editing even for people who know the password.',
+      'Click "Protect PDF" and download your encrypted, password-protected PDF file.'
     ],
     faqs: [
-      { q: 'What kind of encryption is used?', a: 'We use industry-standard 128-bit or 256-bit AES encryption.' },
-      { q: 'Can you recover my password if I lose it?', a: 'No. For your security, we do not store your password. Please remember it.' }
+      { q: 'Is PDF password protection free on PDFA2Z?', a: 'Yes, completely free. No signup, no watermarks, unlimited use.' },
+      { q: 'What encryption standard is used?', a: 'We use AES-256 (Advanced Encryption Standard with 256-bit key), the same encryption standard used by governments and financial institutions worldwide. It is virtually impossible to brute-force.' },
+      { q: 'Can you recover my password if I forget it?', a: 'No. For your security, your password is never stored on our servers. If you forget it, the document cannot be recovered. Please use a password manager to store important passwords.' },
+      { q: 'Can I restrict printing but still allow viewing?', a: 'Yes. Use the permission settings to allow viewing but restrict printing, copying, or editing. Only people with the owner password can change these restrictions.' },
+      { q: 'Is the password-protected PDF compatible with Adobe Reader and other viewers?', a: 'Yes. AES-256 encrypted PDFs are fully compatible with Adobe Acrobat Reader, Preview (Mac), Foxit Reader, and all modern PDF viewers.' },
+      { q: 'Can I protect multiple PDFs at once?', a: 'Currently, the tool processes one PDF at a time. For batch protection needs, contact us about API access.' },
+      { q: 'Will the file size increase after encryption?', a: 'Yes, slightly — typically by a few kilobytes. The encryption overhead is minimal and will not noticeably affect the file size.' },
+      { q: 'What\'s the difference between an open password and an owner password?', a: 'An open password (user password) prevents anyone from opening the file without the password. An owner password (permissions password) allows viewing but restricts editing, printing, or copying — even without sharing the password.' },
+      { q: 'Can the password protection be opened on mobile devices?', a: 'Yes. Password-protected PDFs open correctly in Adobe Acrobat Reader for Android and iOS, and other mobile PDF apps.' },
+      { q: 'Is my document uploaded to PDFA2Z servers?', a: 'Your document is transmitted over encrypted HTTPS and processed temporarily. It is deleted immediately after you download the protected version.' },
+      { q: 'How do I create a strong password for my PDF?', a: 'Use at least 12 characters with uppercase, lowercase, numbers, and symbols. Avoid common words or birthdays. Use a password manager like Bitwarden or 1Password to generate and store it securely.' },
+      { q: 'Can I add password protection to a PDF that already has a password?', a: 'You would need to unlock it first using our Unlock PDF tool, then re-protect it with the new password.' }
     ],
     features: [
-      'Strong AES Encryption',
-      'Instant Processing',
-      'Client-side Options',
-      'No File Storage',
-      'Cross-Platform Compatibility'
+      'AES-256 military-grade encryption',
+      'Set open and owner passwords',
+      'Restrict print, copy & edit',
+      'Compatible with all PDF readers',
+      'No file storage on servers',
+      'Instant encryption & download',
+      'No signup required',
+      'Works on mobile & desktop'
     ],
-    tips: ['Use a password manager to generate and save a strong, unique password.'],
-    relatedGuides: ['how-to-password-protect-pdf'],
+    tips: ['Use a password manager to generate and securely store your PDF passwords.'],
+    relatedGuides: ['how-to-password-protect-pdf-free'],
     type: ToolType.PDF_SUITE,
     icon: Lock,
     mode: 'PROTECT'
@@ -708,25 +785,39 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'unlock-pdf': {
     slug: 'unlock-pdf',
     title: 'Free Unlock PDF — Remove PDF Password & Restrictions Online',
-    description: 'Free online PDF unlocker. Remove passwords and security restrictions from PDF files you own. Decrypt secured PDFs instantly, no signup needed.',
-    h1: 'Unlock PDF',
-    intro: 'Forgot the editing password? Or want to remove the password from a file you access frequently? Use our Unlock PDF tool to create an unprotected copy.',
+    description: 'Free online PDF unlocker. Remove passwords and security restrictions from PDF files you own. Decrypt secured PDFs instantly. No signup, no watermark.',
+    h1: 'Unlock PDF — Remove Password Free',
+    intro: 'Remove password protection and editing restrictions from your own PDF documents. Whether you\'ve forgotten an owner password or need to unlock a PDF for editing, our tool creates a fully accessible, unprotected copy in seconds — free and no signup required.',
     steps: [
-      'Upload the secured PDF file.',
-      'If the file has an "Open Password", enter it to verify ownership.',
-      'Click "Unlock PDF".',
-      'Download the password-free version.'
+      'Upload the password-protected or restricted PDF file.',
+      'If the PDF has an "open password" (required to view the file), enter it when prompted to verify you are the authorized owner.',
+      'For PDFs that only have owner restrictions (printing/editing disabled but no view password), restrictions can often be removed without any password.',
+      'Click "Unlock PDF" to process and remove the restrictions.',
+      'Download the unlocked, unrestricted PDF — use our Protect PDF tool if you want to re-secure it with a new password.'
     ],
     faqs: [
-      { q: 'Can you crack a password I don\'t know?', a: 'No, this tool removes known passwords or owner restrictions. You must have the right to unlock the file.' },
-      { q: 'Is it safe?', a: 'Yes, the unlocking process happens securely.' }
+      { q: 'Is PDF unlocking free on PDFA2Z?', a: 'Yes, completely free with no signup required.' },
+      { q: 'Can you remove a password I don\'t know?', a: 'No. This tool removes passwords from PDFs you have legitimate access to. You must provide the open password if one is set. We do not brute-force or crack unknown passwords.' },
+      { q: 'What\'s the difference between an open password and an owner password?', a: 'An open password prevents anyone from opening the file at all. An owner password (permissions password) allows viewing but restricts editing, printing, or copying. Owner restrictions can often be removed without the password.' },
+      { q: 'Can I remove restrictions that prevent printing and copying?', a: 'Yes. PDFs with only owner restrictions (editing/printing disabled but no view password required) can often have those restrictions removed instantly without a password.' },
+      { q: 'Does unlocking a PDF change any of its content?', a: 'No. The content, formatting, images, and structure remain completely unchanged. Only the security restrictions are removed.' },
+      { q: 'Is it legal to unlock a PDF?', a: 'It is legal to remove restrictions from PDF documents you own or have the right to access. It is not legal to use this tool to access documents you are not authorized to view or to circumvent commercially distributed copy protection.' },
+      { q: 'What happens if I enter the wrong password?', a: 'The tool will notify you that the password is incorrect. You will have multiple attempts to enter the correct password.' },
+      { q: 'Can I unlock a PDF on a mobile device?', a: 'Yes. The tool works fully in mobile browsers on Android and iOS.' },
+      { q: 'Is there a file size limit for unlocking?', a: 'Files up to 500MB can be uploaded for unlocking.' },
+      { q: 'How long does unlocking take?', a: 'Most PDFs are unlocked in 2-5 seconds. Very large files may take up to 30 seconds.' },
+      { q: 'After unlocking, will the PDF still be compatible with all PDF readers?', a: 'Yes. The unlocked PDF is a fully standard, unencrypted PDF compatible with Adobe Acrobat, Preview, and all modern PDF readers.' },
+      { q: 'Can I re-protect the PDF after unlocking with a different password?', a: 'Yes. After downloading the unlocked PDF, use our Protect PDF tool to add new AES-256 encryption with a new password.' }
     ],
     features: [
-      'Remove Open Passwords',
-      'Remove Editing Restrictions',
-      'Safe & Secure',
-      'Instant Decryption',
-      'No Watermark'
+      'Remove open passwords (with verification)',
+      'Remove owner/permissions restrictions',
+      'No content changes',
+      'Fast decryption in seconds',
+      'No signup, no watermark',
+      'Works on mobile & desktop',
+      'Files deleted immediately after',
+      'Re-protect with Protect PDF tool'
     ],
     type: ToolType.PDF_SUITE,
     icon: Unlock,
@@ -762,25 +853,39 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'jpg-to-pdf': {
     slug: 'jpg-to-pdf',
     title: 'Free JPG to PDF Converter — Convert Images to PDF Online',
-    description: 'Free JPG to PDF converter online. Convert JPG, PNG, WebP, or BMP images to PDF instantly. Merge multiple images into one PDF file. No signup, no watermark.',
-    h1: 'Convert JPG to PDF',
-    intro: 'Turn your images into a professional PDF document. Combine multiple JPGs into a single PDF file for easy sharing and archiving.',
+    description: 'Free JPG to PDF converter online. Convert JPG, PNG, WebP, or BMP images to PDF instantly. Combine multiple images into one PDF. No signup, no watermark.',
+    h1: 'Convert JPG to PDF Free',
+    intro: 'Turn your images into a professional PDF document in seconds. Upload one or multiple JPGs, PNGs, or WebPs, rearrange them in any order, and download a combined PDF — perfect for portfolios, scanned documents, and photo collections.',
     steps: [
-      'Upload your JPG or PNG images.',
-      'Drag and drop to rearrange the order.',
-      'Click "Convert to PDF".',
-      'Download your new PDF document.'
+      'Click "Upload Images" or drag and drop your JPG, PNG, WebP, or BMP files onto the tool. You can select multiple images at once.',
+      'Drag the image thumbnails to reorder them — the arrangement on screen becomes the page order in the PDF.',
+      'Select your page size (A4, Letter, or "fit to image") and orientation (portrait or landscape).',
+      'Click "Convert to PDF" to create your document.',
+      'Download the combined PDF file containing all your images as pages.'
     ],
     features: [
-      'Support JPG, PNG, BMP',
-      'Merge Multiple Images',
-      'Adjust Orientation',
-      'No File Limit',
-      'Secure Conversion'
+      'Convert JPG, PNG, WebP, BMP to PDF',
+      'Combine unlimited images',
+      'Drag & drop page reordering',
+      'Choose A4, Letter, or custom size',
+      'Full image quality preserved',
+      'No signup, no watermark',
+      'Instant download',
+      'Works on mobile & desktop'
     ],
     faqs: [
-      { q: 'Can I convert multiple images?', a: 'Yes, you can upload and merge unlimited images into one PDF.' },
-      { q: 'Does it reduce quality?', a: 'We maintain the original image quality in the PDF.' }
+      { q: 'Is JPG to PDF conversion free on PDFA2Z?', a: 'Yes, completely free. No signup, no watermarks, no file limits.' },
+      { q: 'Can I convert multiple images into one PDF?', a: 'Yes. Upload as many images as you need and they will be combined into a single PDF with one image per page.' },
+      { q: 'Will the image quality be reduced in the PDF?', a: 'No. We embed your images at full quality in the PDF. No compression or quality loss occurs during conversion.' },
+      { q: 'What image formats are supported?', a: 'JPG/JPEG, PNG, WebP, and BMP are all supported. The output is always a PDF.' },
+      { q: 'Can I set a custom page size like A4 or Letter?', a: 'Yes. You can choose standard page sizes (A4, Letter, A3) or select "fit to image" to make each PDF page exactly the size of the image.' },
+      { q: 'Will the images be centered on the page?', a: 'Images are fitted to the page with proportional margins. You can choose to fill the entire page or keep proportions with white space.' },
+      { q: 'Can I rotate images before converting them to PDF?', a: 'Yes. Use the rotate button on each thumbnail to rotate images 90° before converting.' },
+      { q: 'Is there a limit on how many images I can convert at once?', a: 'There is no hard limit. However, very large batches (100+ images) may take longer. Your browser memory is the practical limit.' },
+      { q: 'Can I add a title page or text to the PDF?', a: 'This tool focuses on image-to-PDF conversion. For adding text, use our Edit PDF tool after conversion.' },
+      { q: 'Will the resulting PDF be searchable?', a: 'No. Images converted to PDF are not text-searchable because they remain as image data. For searchable PDFs from scanned documents, use our PDF to Word converter with OCR instead.' },
+      { q: 'Can I control the DPI or resolution of the output PDF?', a: 'The PDF embeds images at their native resolution. For print-quality PDFs, ensure your source images are at least 300 DPI.' },
+      { q: 'Can I convert PNG, WebP, and BMP to PDF the same way?', a: 'Yes. The same tool handles all image formats (JPG, PNG, WebP, BMP) and converts them all to PDF in exactly the same way.' }
     ],
     type: ToolType.PDF_SUITE,
     icon: Image,
@@ -1233,17 +1338,41 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'sign-pdf': {
     slug: 'sign-pdf',
-    title: 'Free Sign PDF Online — Add Electronic Signature to PDF',
-    description: 'Free online PDF signing. Draw, type, or upload your signature and add it to any PDF document. 100% free, no signup, legally valid e-signature tool.',
-    h1: 'Free Sign PDF Online',
-    intro: 'Sign any PDF document electronically in seconds. Draw your signature with a mouse or finger, type it, or upload an image of your signature. Download your signed PDF instantly.',
-    steps: ['Upload the PDF you need to sign.', 'Draw, type, or upload your signature.', 'Drag the signature to the correct position.', 'Download your signed PDF.'],
-    faqs: [
-      { q: 'Is it free?', a: 'Yes, signing PDFs on PDFA2Z is completely free with no signup required.' },
-      { q: 'Is an e-signature legally valid?', a: 'Electronic signatures are legally recognized in most countries under e-signature laws (eIDAS, ESIGN Act, etc.).' },
-      { q: 'Can I sign multiple pages?', a: 'Yes, you can add your signature to any page in the document.' }
+    title: 'Free Sign PDF Online — Add E-Signature to PDF (No Signup)',
+    description: 'Free online PDF signer. Draw, type, or upload your signature and add it to any PDF. Legally valid e-signature, no signup needed. Download signed PDF instantly.',
+    h1: 'Sign PDF Online — Free',
+    intro: 'Electronically sign any PDF document in under a minute — for free. Draw your signature with a mouse or finger, type it in a handwriting font, or upload a photo of your actual signature. Place it anywhere on any page and download a signed PDF instantly. No account needed.',
+    steps: [
+      'Upload the PDF document you need to sign by clicking "Upload" or dragging the file.',
+      'Choose how to create your signature: Draw (use your mouse or touchscreen), Type (pick from handwriting fonts), or Upload (photo of your actual signature).',
+      'Drag the signature to the correct position on the page. Resize it by dragging the corner handles.',
+      'Navigate between pages if you need to sign multiple pages.',
+      'Click "Download Signed PDF" to save the finalized document with your signature permanently embedded.'
     ],
-    features: ['Draw Signature', 'Type Signature', 'Upload Signature Image', 'Drag & Drop Placement', 'No Signup'],
+    faqs: [
+      { q: 'Is signing PDFs free on PDFA2Z?', a: 'Yes, 100% free. No signup, no subscription, no watermarks.' },
+      { q: 'Is an e-signature legally valid?', a: 'Yes. Electronic signatures are legally recognized in most countries under the ESIGN Act (USA), eIDAS (EU), and similar legislation in the UK, Canada, India, and Australia. They are equivalent to handwritten signatures for most contracts and agreements.' },
+      { q: 'What signature methods are supported?', a: 'Three methods: (1) Draw — write with mouse or finger on a canvas, (2) Type — generate a signature from your name in handwriting fonts, (3) Upload — take a photo of your ink signature and upload it.' },
+      { q: 'Can I sign multiple pages of the same PDF?', a: 'Yes. After placing a signature on one page, navigate to other pages and add signatures or initials as needed.' },
+      { q: 'Can I add the date next to my signature?', a: 'Yes. Use the Text tool in the editor to add a date field anywhere on the document.' },
+      { q: 'Does signing permanently embed the signature in the PDF?', a: 'Yes. When you download the signed PDF, your signature is permanently embedded as part of the document — it cannot be moved or deleted without visible evidence of tampering.' },
+      { q: 'Can I sign a PDF on a mobile phone or tablet?', a: 'Yes. The tool works fully in mobile browsers. The Draw mode is especially intuitive on touchscreens — just use your finger.' },
+      { q: 'Is my signature stored on PDFA2Z servers?', a: 'Your signature is processed temporarily and the signed document is not stored after you download it. We never retain or share your signature data.' },
+      { q: 'Can I add initials instead of a full signature?', a: 'Yes. Create a short "signature" with just your initials using the Draw or Type method. Place it wherever initials are required in the document.' },
+      { q: 'What\'s the difference between an electronic signature and a digital signature?', a: 'An electronic signature (like drawing your name) indicates intent to agree. A digital signature is a cryptographic certificate that also verifies the signer\'s identity through a Certificate Authority. PDFA2Z provides electronic signatures; for certified digital signatures, you need a PKI certificate.' },
+      { q: 'Can multiple people sign the same PDF?', a: 'For self-signing (adding your own signature) this tool handles one signer at a time. For sending a document to multiple signers remotely, use our free Remote E-Sign tool which supports up to 5 signers with full audit trails.' },
+      { q: 'What file formats can I sign?', a: 'Only PDF files are supported for signing. If you have a Word or image document, convert it to PDF first using our free converter tools.' }
+    ],
+    features: [
+      'Draw signature with mouse or finger',
+      'Type signature with handwriting fonts',
+      'Upload photo of ink signature',
+      'Sign any page in any position',
+      'Legally valid e-signature',
+      'No signup, no watermark',
+      'Works on mobile & desktop',
+      'Signature permanently embedded'
+    ],
     type: ToolType.PDF_SUITE,
     icon: PenTool,
     mode: 'SIGN'
@@ -1487,25 +1616,40 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   },
   'edit-pdf': {
     slug: 'edit-pdf',
-    title: 'Free PDF Editor Online — Edit, Annotate & Draw on PDFs',
+    title: 'Free PDF Editor Online — Edit, Annotate & Draw on PDF Files',
     description: 'Free online PDF editor. Add text, draw shapes, highlight, whiteout, sign, and annotate PDF files directly in your browser. No signup, no installation needed.',
-    h1: 'Edit PDF Files Online',
-    intro: 'Add text, drawings, and annotations to your PDF documents instantly. Our interactive visual editor makes modifying your PDFs easier than ever.',
+    h1: 'Free Online PDF Editor',
+    intro: 'Edit any PDF directly in your browser — no downloads, no software, no signup. Add and drag custom text boxes, draw freehand, highlight passages, add sticky notes, whiteout existing content, and sign documents. All edits are embedded permanently when you download.',
     steps: [
-      'Upload the PDF file you want to edit.',
-      'Select a page from the gallery to open the interactive canvas.',
-      'Use the Pen to draw, or select the Text Tool to add text.',
-      'Save your changes and click "Download Edited PDF".'
+      'Upload your PDF file by clicking "Upload" or dragging it onto the editor. Large multi-page PDFs are fully supported.',
+      'Select a page from the thumbnail gallery on the left to open it in the interactive editing canvas.',
+      'Use the toolbar to choose your editing tool: Text (add typed content), Pen (freehand drawing), Highlight, Sticky Note, Whiteout, or Shapes.',
+      'Click or tap on the canvas to place your element. Text boxes, images, and signature blocks can be dragged and resized.',
+      'Review your changes using the page preview. When satisfied, click "Download Edited PDF" to save a new PDF with all edits permanently embedded.'
     ],
     faqs: [
-      { q: 'Is it free?', a: 'Yes, our PDF Editor is completely free to use.' },
-      { q: 'Does it work on mobile?', a: 'Yes, you can tap and draw on any modern mobile device.' }
+      { q: 'Is the PDF editor free on PDFA2Z?', a: 'Yes, completely free. No signup, no watermarks, unlimited use.' },
+      { q: 'Does the PDF editor work on mobile?', a: 'Yes. The editor is touch-optimized and works on iPhone, iPad, and Android devices. Freehand drawing is especially natural with a touchscreen.' },
+      { q: 'Can I delete or replace existing text in a PDF?', a: 'Directly editing existing PDF text is complex in a browser-based tool. However, you can use the Whiteout tool to cover existing text and then add new text on top of it.' },
+      { q: 'Can I add images to a PDF?', a: 'Yes. Use the Image Insert tool to upload and place images anywhere on any PDF page. Resize and reposition by dragging.' },
+      { q: 'Can I highlight text in a PDF?', a: 'Yes. The Highlight tool lets you drag-select areas to apply yellow, green, or pink highlight overlays over any part of the document.' },
+      { q: 'Can I add sticky notes or comments?', a: 'Yes. Sticky notes can be placed on any page to add reviewer comments that appear as pop-up annotations in standard PDF readers.' },
+      { q: 'Can I whiteout (cover) existing text?', a: 'Yes. The Whiteout tool draws a white rectangle over any area, effectively hiding the content underneath. Use our Redact PDF tool for permanent data removal from the PDF stream.' },
+      { q: 'What drawing tools are available?', a: 'Freehand pen, straight line, rectangle, circle, and arrow tools are all available in the toolbar.' },
+      { q: 'Are my edits saved permanently in the downloaded PDF?', a: 'Yes. When you download the edited PDF, all annotations, text, drawings, and signatures are permanently embedded. Recipients do not need special software to see the edits.' },
+      { q: 'Can I undo edits I don\'t want?', a: 'Yes. Use Ctrl+Z (or Cmd+Z on Mac) to undo your last action. You can undo multiple steps.' },
+      { q: 'Can I edit password-protected PDFs?', a: 'Only if you know the password. Unlock the PDF first using our free Unlock PDF tool, then edit it in the editor.' },
+      { q: 'Is there a page limit for the PDF I can edit?', a: 'No hard limit, though very large PDFs (100+ pages, 50MB+) may load slower. For best performance, use our Split PDF tool to work on sections of very large documents.' }
     ],
     features: [
-      'Interactive Canvas Editor',
-      'Add & Drag Custom Text',
-      'Freehand Drawing (Pen)',
-      'Secure Browser Processing'
+      'Add and drag custom text boxes',
+      'Freehand pen and shape drawing',
+      'Highlight, underline & strikethrough',
+      'Sticky notes & comments',
+      'Whiteout existing content',
+      'Insert images anywhere',
+      'No signup, no watermark',
+      'Works on mobile & desktop'
     ],
     type: ToolType.PDF_SUITE,
     icon: FileEdit,
@@ -1841,13 +1985,41 @@ export const TOOLS_REGISTRY: Record<string, ToolSEO> = {
   'pdf-to-jpg': {
     slug: 'pdf-to-jpg',
     parentSlug: 'extract-images',
-    title: 'PDF to JPG - Convert PDF Pages to Images',
-    description: 'Convert PDF pages to high-quality JPG images. Save each page of your PDF as a separate JPG file.',
-    h1: 'Convert PDF to JPG',
-    intro: 'Turn your PDF document into a set of JPG images. Perfect for sharing on social media or inserting into other documents.',
-    steps: ['Upload PDF.', 'Select "Convert to JPG".', 'Download ZIP of images.'],
-    features: ['High Quality JPGs', 'Batch Conversion', 'Secure Processing'],
-    faqs: [],
+    title: 'Free PDF to JPG Converter — Convert PDF Pages to Images Online',
+    description: 'Free PDF to JPG converter online. Convert each PDF page to a high-quality JPG image. Download all images as a ZIP file. No signup, no watermark.',
+    h1: 'Convert PDF to JPG Free',
+    intro: 'Convert every page of your PDF into a high-quality JPG image instantly. Each PDF page becomes a separate image, all packaged into a ZIP for easy download. Perfect for sharing PDF content on social media, embedding in presentations, or editing in image software.',
+    steps: [
+      'Upload your PDF file by clicking "Upload" or dragging it onto the tool.',
+      'Select the image quality: "High" for print-quality JPGs, "Medium" for smaller file sizes.',
+      'Optionally specify which pages to convert (all pages, or a specific range like 1-5).',
+      'Click "Convert to JPG" to process the document.',
+      'Download all images at once as a ZIP archive, or download individual pages separately.'
+    ],
+    features: [
+      'Convert all or specific PDF pages',
+      'High-quality 150/300 DPI output',
+      'Download all images as ZIP',
+      'No signup, no watermark',
+      'Fast batch conversion',
+      'Works on mobile & desktop',
+      'Choose JPG quality level',
+      'Compatible with all PDF types'
+    ],
+    faqs: [
+      { q: 'Is PDF to JPG conversion free on PDFA2Z?', a: 'Yes, 100% free with no signup required.' },
+      { q: 'What resolution are the JPG images?', a: 'Images are exported at 150 DPI by default (screen quality). High-quality mode produces images at 300 DPI suitable for printing.' },
+      { q: 'Can I convert specific pages instead of the entire PDF?', a: 'Yes. Enter a page range (e.g., "1-5") or individual page numbers (e.g., "2, 4, 7") to convert only those pages.' },
+      { q: 'Will each page become a separate image file?', a: 'Yes. Each page of the PDF is converted into its own JPG file. All files are zipped together for a single convenient download.' },
+      { q: 'Can I choose PNG instead of JPG?', a: 'Yes. Use our PDF to PNG tool for lossless image output, which is better for documents with text and line art where sharpness matters more than file size.' },
+      { q: 'What quality setting should I use?', a: 'Use "High" (300 DPI) if you plan to print or zoom in closely. Use "Medium" (150 DPI) for web sharing, presentations, or social media where smaller file sizes are preferred.' },
+      { q: 'Is the download a ZIP file?', a: 'Yes. When converting multiple pages, all JPG images are packaged into a ZIP archive. You can extract them with Windows built-in zip, Mac Archive Utility, or 7-Zip.' },
+      { q: 'Can I convert a very large PDF with many pages?', a: 'Yes, there is no hard page limit. However, PDFs with 50+ pages may take longer to process. The ZIP file will contain one JPG per page.' },
+      { q: 'Does the PDF to JPG converter work on mobile?', a: 'Yes. The tool works in all mobile browsers on Android and iOS. After conversion, the ZIP file downloads to your device.' },
+      { q: 'Are the resulting JPG images text-searchable or editable?', a: 'No. JPG images are raster images — the text within them is not machine-readable. If you need editable or searchable text from a PDF, use our PDF to Word converter instead.' },
+      { q: 'How is this different from taking a screenshot of a PDF?', a: 'Screenshots capture only what\'s visible on screen at your screen resolution. Our converter renders each page at a full, specified DPI regardless of screen size, producing consistently higher-quality images.' },
+      { q: 'Will the background of the converted images be white?', a: 'Yes. PDFs with transparent backgrounds are rendered with a white background in JPG format. If you need transparency preserved, use PDF to PNG instead.' }
+    ],
     type: ToolType.PDF_SUITE,
     mode: 'EXTRACT_IMAGES',
     unique: true

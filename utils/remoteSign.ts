@@ -225,13 +225,17 @@ export const sendDocument = async (docId: string, customMessage: string): Promis
     updatedAt: serverTimestamp(),
     auditTrail: arrayUnion({ timestamp: Timestamp.now(), event: 'Document sent', actor: 'owner' }),
   });
-  // Trigger email via functions
+  // Trigger email via functions — await so callers can catch SMTP failures
   if (token) {
-    fetch(`${FUNCTIONS_BASE_URL}/esign/send-invitations`, {
+    const r = await fetch(`${FUNCTIONS_BASE_URL}/esign/send-invitations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ docId }),
-    }).catch(() => {}); // fire-and-forget
+    });
+    if (!r.ok) {
+      const msg = await r.text().catch(() => r.statusText);
+      throw new Error(`Failed to send invitations: ${msg}`);
+    }
   }
 };
 
