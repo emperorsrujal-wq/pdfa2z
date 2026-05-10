@@ -641,7 +641,9 @@ function createEsignRouter(db) {
                 return;
             }
             const pdfBytes = Buffer.from(pdfBase64, 'base64');
-            const bucket = admin.storage().bucket();
+            // Explicitly name the bucket — admin SDK default may resolve to the legacy
+            // .appspot.com bucket while the client uploads to .firebasestorage.app
+            const bucket = admin.storage().bucket('gen-lang-client-0072471951.firebasestorage.app');
             const file = bucket.file(`sign_pdfs/${docId}/signed.pdf`);
             // Generate a Firebase-style download token so the URL works with the
             // standard firebasestorage.googleapis.com download endpoint
@@ -660,9 +662,9 @@ function createEsignRouter(db) {
         }
     });
     // ── PDF proxy — stream PDF bytes through functions to avoid Storage CORS ──────
-    // Firebase Storage buckets on *.firebasestorage.app require explicit CORS
-    // config. Rather than configuring gsutil, we proxy via this endpoint which
-    // already has cors({ origin: true }) from the parent Express app.
+    // Firebase Storage *.firebasestorage.app buckets block browser fetch() with
+    // CORS errors. Server-side fetch has no CORS restrictions, and the storage
+    // rule allows public read, so we just forward the bytes.
     router.get('/pdf', async (req, res) => {
         const { docId, token } = req.query;
         if (!docId || !token) {
@@ -670,22 +672,34 @@ function createEsignRouter(db) {
             return;
         }
         try {
-            // Validate token → docId mapping so only authorised signers can fetch
+            // Validate token → docId mapping
             const tokenSnap = await db.collection('sign_tokens').doc(token).get();
             if (!tokenSnap.exists || tokenSnap.data().docId !== docId) {
                 res.status(403).json({ error: 'Invalid token' });
                 return;
             }
-            const bucket = admin.storage().bucket();
-            const file = bucket.file(`sign_pdfs/${docId}/original.pdf`);
-            const [exists] = await file.exists();
-            if (!exists) {
-                res.status(404).json({ error: 'PDF not found' });
+            // Read the actual pdfUrl from Firestore — avoids hardcoding the storage
+            // path which breaks for template-based documents.
+            const docSnap = await db.collection('sign_documents').doc(docId).get();
+            if (!docSnap.exists) {
+                res.status(404).json({ error: 'Document not found' });
+                return;
+            }
+            const pdfUrl = docSnap.data().pdfUrl;
+            if (!pdfUrl) {
+                res.status(404).json({ error: 'PDF URL not set on document' });
+                return;
+            }
+            // node-fetch has no CORS restrictions — download straight from Storage URL
+            const { default: fetch } = await Promise.resolve().then(() => __importStar(require('node-fetch')));
+            const upstream = await fetch(pdfUrl);
+            if (!upstream.ok) {
+                res.status(502).json({ error: `Upstream fetch failed: ${upstream.status}` });
                 return;
             }
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Cache-Control', 'private, max-age=3600');
-            file.createReadStream().pipe(res);
+            upstream.body.pipe(res);
         }
         catch (err) {
             functions.logger.error('pdf-proxy', err);
