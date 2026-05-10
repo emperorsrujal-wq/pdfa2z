@@ -160,6 +160,10 @@ export async function signOut(): Promise<void> {
     _notifyDemoListeners();
     return;
   }
+  if (!auth) {
+    console.warn('signOut called but auth not initialized');
+    return;
+  }
   return fbSignOut(auth);
 }
 
@@ -172,6 +176,10 @@ export function onAuthStateChanged(callback: (user: User | null) => void): () =>
   if (_demoLoggedIn) callback(DEMO_USER);
 
   // Also listen to real Firebase state changes
+  if (!auth) {
+    console.warn('Auth not initialized, skipping Firebase auth state listener');
+    return () => {};
+  }
   const fbUnsubscribe = fbOnAuthStateChanged(auth, (u) => {
     // If we have a real user, it takes precedence. 
     // If not, we still might have a demo user from the fallback.

@@ -99,25 +99,102 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     if (e.target) e.target.value = '';
   };
 
-  const reset = () => {
-    setFiles([]);
-    setResultImages([]);
-    setResultText('');
-    setInputValue('');
-    setError(null);
-    setSuccessMsg(null);
-    setTargetSizeMB('1.0');
-    setCompressionMode('preset');
-    setConfirmPassword('');
-    setSigningPage(null);
-    setOrganizedPages([]);
-    setRedactionAreas([]);
-    setActiveRedactPage(null);
-    setResultBlob(null);
-    setSigningPageIndex(0);
-  };
+   const reset = () => {
+     setFiles([]);
+     setResultImages([]);
+     setResultText('');
+     setInputValue('');
+     setError(null);
+     setSuccessMsg(null);
+     setTargetSizeMB('1.0');
+     setCompressionMode('preset');
+     setConfirmPassword('');
+     setSigningPage(null);
+     setOrganizedPages([]);
+     setRedactionAreas([]);
+     setActiveRedactPage(null);
+     setResultBlob(null);
+     setSigningPageIndex(0);
+   };
 
-  const removeFile = (index: number) => {
+   // Sanitize HTML to prevent XSS when opening in new window
+   const sanitizeForPrint = (html: string): string => {
+     const div = document.createElement('div');
+     div.innerHTML = html;
+     
+     // Remove script tags
+     div.querySelectorAll('script').forEach(s => s.remove());
+     
+     // Remove event handler attributes and javascript: URLs
+     div.querySelectorAll('*').forEach(el => {
+       const attrs = Array.from(el.attributes);
+       attrs.forEach(attr => {
+         const name = attr.name.toLowerCase();
+         const value = attr.value.toLowerCase();
+         if (name.startsWith('on') || value.startsWith('javascript:')) {
+           el.removeAttribute(attr.name);
+         }
+       });
+       const href = el.getAttribute('href');
+       if (href && href.toLowerCase().startsWith('javascript:')) {
+         el.removeAttribute('href');
+       }
+       const src = el.getAttribute('src');
+       if (src && src.toLowerCase().startsWith('javascript:')) {
+         el.removeAttribute('src');
+       }
+     });
+     
+     return div.innerHTML;
+   };
+
+   const handleConvertAndDownload = () => {
+     const win = window.open('', '_blank');
+     if (!win) {
+       setError('Please allow pop-ups for this site.');
+       return;
+     }
+     const bodyContent = inputValue ? sanitizeForPrint(inputValue) : 'Real-time high-fidelity preview will appear here...';
+     const extraStyle = !inputValue ? 'body { display: flex; align-items: center; justify-content: center; height: 80vh; color: #cbd5e1; font-weight: bold; }' : '';
+     const html = `<!DOCTYPE html>
+       <html>
+         <head>
+           <title>PDFA2Z Generated Document</title>
+           <script src="https://cdn.tailwindcss.com"></script>
+           <style>
+             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+             @page { margin: 1.5cm; size: auto; }
+             body { 
+               margin: 0; 
+               padding: 0; 
+               font-family: 'Inter', sans-serif;
+               -webkit-print-color-adjust: exact !important;
+               print-color-adjust: exact !important;
+               color: #1e293b;
+             }
+             table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; page-break-inside: auto; }
+             tr { page-break-inside: avoid !important; page-break-after: auto; }
+             thead { display: table-header-group; }
+             th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+             th { background-color: #f8fafc; font-weight: 600; }
+             img, canvas, svg { max-width: 100%; height: auto; page-break-inside: avoid; }
+             h1, h2, h3 { color: #0f172a; page-break-after: avoid; }
+             ${extraStyle}
+           </style>
+         </head>
+         <body class="bg-white p-8">${bodyContent}</body>
+       </html>
+     `;
+     win.document.write(html);
+     win.document.close();
+     win.focus();
+     setTimeout(() => {
+       win.print();
+     }, 2000);
+     setSuccessMsg("High-Fidelity PDF Generation Started. Please select 'Save as PDF' as your printer destination.");
+   };
+
+   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -360,11 +437,16 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     }
   };
 
-  const handleCopyText = () => {
+  const handleCopyText = async () => {
     if (resultText) {
-      navigator.clipboard.writeText(resultText);
-      setSuccessMsg('Copied to clipboard!');
-      setTimeout(() => setSuccessMsg(null), 2000);
+      try {
+        await navigator.clipboard.writeText(resultText);
+        setSuccessMsg('Copied to clipboard!');
+        setTimeout(() => setSuccessMsg(null), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        setError('Failed to copy to clipboard');
+      }
     }
   };
 
@@ -654,48 +736,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     />
                   </div>
 
-                  <Button onClick={() => {
-                    const win = window.open('', '_blank');
-                    if (win) {
-                      win.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                          <head>
-                            <title>PDFA2Z Generated Document</title>
-                            <script src="https://cdn.tailwindcss.com"></script>
-                            <style>
-                              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-                              @page { margin: 1.5cm; size: auto; }
-                              body { 
-                                margin: 0; 
-                                padding: 0; 
-                                font-family: 'Inter', sans-serif;
-                                -webkit-print-color-adjust: exact !important;
-                                print-color-adjust: exact !important;
-                                color: #1e293b;
-                              }
-                              table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; page-break-inside: auto; }
-                              tr { page-break-inside: avoid !important; page-break-after: auto; }
-                              thead { display: table-header-group; }
-                              th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-                              th { background-color: #f8fafc; font-weight: 600; }
-                              img, canvas, svg { max-width: 100%; height: auto; page-break-inside: avoid; }
-                              h1, h2, h3 { color: #0f172a; page-break-after: avoid; }
-                            </style>
-                          </head>
-                          <body class="bg-white p-8">${inputValue}</body>
-                        </html>
-                      `);
-                      win.document.close();
-                      win.focus();
-                      
-                      // Professional delay for complex chart initialization
-                      setTimeout(() => {
-                        win.print();
-                      }, 2000);
-                    }
-                    setSuccessMsg("High-Fidelity PDF Generation Started. Please select 'Save as PDF' as your printer destination.");
-                  }} className="w-full py-4 bg-orange-600 hover:bg-orange-700 shadow-xl shadow-orange-100 uppercase tracking-widest font-black">
+                  <Button onClick={handleConvertAndDownload} className="w-full py-4 bg-orange-600 hover:bg-orange-700 shadow-xl shadow-orange-100 uppercase tracking-widest font-black">
                     Convert & Download PDF
                   </Button>
                 </div>

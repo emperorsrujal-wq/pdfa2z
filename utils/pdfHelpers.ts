@@ -45,7 +45,7 @@ const getPdfEngine = async (): Promise<PdfJsLib> => {
 
 const getDocumentParams = (data: Uint8Array, pdfjsLib: PdfJsLib) => ({
   data,
-  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+  cMapUrl: '/assets/cmaps/',
   cMapPacked: true,
 });
 

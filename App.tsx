@@ -240,16 +240,20 @@ const AppContent: React.FC = () => {
         schema={generateToolSchema(seoData)}
       />
 
-      {/* Signer portal — full-page, no nav, token-based access */}
-      {signToken ? (
-        <React.Suspense fallback={<ToolLoader />}>
-          <SignerPortal token={signToken} />
-        </React.Suspense>
-      ) : activeTool === ToolType.NOTARIZE ? (
-        <React.Suspense fallback={<ToolLoader />}>
-          <NotarizeApp subPath={notarizeSubPath} />
-        </React.Suspense>
-      ) : (
+       {/* Signer portal — full-page, no nav, token-based access */}
+       {signToken ? (
+         <React.Suspense fallback={<ToolLoader />}>
+           <ErrorBoundary>
+             <SignerPortal token={signToken} />
+           </ErrorBoundary>
+         </React.Suspense>
+       ) : activeTool === ToolType.NOTARIZE ? (
+         <React.Suspense fallback={<ToolLoader />}>
+           <ErrorBoundary>
+             <NotarizeApp subPath={notarizeSubPath} />
+           </ErrorBoundary>
+         </React.Suspense>
+       ) : (
         <Layout currentLang={lang}>
           <div className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

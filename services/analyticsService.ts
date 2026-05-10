@@ -4,8 +4,7 @@ import {
   setDoc, 
   updateDoc, 
   increment, 
-  serverTimestamp,
-  deleteDoc
+  serverTimestamp
 } from 'firebase/firestore';
 import { db, DEMO_MODE } from '../config/firebase';
 

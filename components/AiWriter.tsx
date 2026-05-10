@@ -51,10 +51,15 @@ export const AiWriter: React.FC<AiWriterProps> = ({ initialMode = 'GRAMMAR' }) =
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(outputText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(outputText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Optionally show error to user
+    }
   };
 
   const handleSaveToLibrary = async () => {

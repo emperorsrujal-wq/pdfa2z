@@ -15,7 +15,8 @@ function getDemoDocs(): UserDocument[] {
   if (!stored) return [];
   try {
     return JSON.parse(stored);
-  } catch {
+  } catch (e) {
+    console.error('Failed to parse demo documents:', e);
     return [];
   }
 }

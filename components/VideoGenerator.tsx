@@ -11,17 +11,16 @@ export const VideoGenerator: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = React.useState(false);
 
-  React.useEffect(() => {
-    // Check if key is available in env or config
-    // We can't easily import getApiKey here without changing imports, but we can check if the key is effectively "set" by the app logic
-    // actually, let's just assume true if it's integrated, or let the service fail gracefully.
-    // Ideally we should import getApiKey.
-    const hasEnv = import.meta.env.VITE_GEMINI_API_KEY || (window as any).INTEGRATED_KEY_SET;
-    // Since we added config/apiKey.ts, we can't easily check its value here without importing it.
-    // Let's rely on the service to throw an error if missing.
-    // We will set hasApiKey to true so users can TRY to use it.
-    setHasApiKey(true);
-  }, []);
+   React.useEffect(() => {
+     // Check if key is available in env or config
+     // We can't easily import getApiKey here without changing imports, but we can check if the key is effectively "set" by the app logic
+     // actually, let's just assume true if it's integrated, or let the service fail gracefully.
+     // Ideally we should import getApiKey.
+     // Since we added config/apiKey.ts, we can't easily check its value here without importing it.
+     // Let's rely on the service to throw an error if missing.
+     // We will set hasApiKey to true so users can TRY to use it.
+     setHasApiKey(true);
+   }, []);
 
   // handleSaveKey removed
 

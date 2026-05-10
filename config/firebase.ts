@@ -8,12 +8,12 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
-  apiKey:            'AIzaSyBQRLGDtpS6bEyAd8cCuxCRsNiJhc54S7o',
-  authDomain:        'gen-lang-client-0072471951.firebaseapp.com',
-  projectId:         'gen-lang-client-0072471951',
-  storageBucket:     'gen-lang-client-0072471951.firebasestorage.app',
-  messagingSenderId: '508597263694',
-  appId:             '1:508597263694:web:055a561efb6bbc7989121f',
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Prevent duplicate initialization in dev hot-reload

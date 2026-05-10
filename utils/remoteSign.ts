@@ -338,10 +338,12 @@ export const declineSigning = async (docId: string, signerId: string, reason: st
 // Signers are unauthenticated so they can't write to Storage directly.
 // We POST the bytes to a Cloud Function which uploads via admin SDK.
 export const saveSignedPdf = async (docId: string, pdfBytes: Uint8Array, token: string): Promise<string> => {
-  // Encode bytes to base64 without spread (avoids stack overflow on large PDFs)
-  let binary = '';
-  for (let i = 0; i < pdfBytes.byteLength; i++) binary += String.fromCharCode(pdfBytes[i]);
-  const pdfBase64 = btoa(binary);
+  // Efficiently encode bytes to base64 (avoid quadratic string concatenation)
+  const chars: string[] = new Array(pdfBytes.byteLength);
+  for (let i = 0; i < pdfBytes.byteLength; i++) {
+    chars[i] = String.fromCharCode(pdfBytes[i]);
+  }
+  const pdfBase64 = btoa(chars.join(''));
 
   const res = await fetch(`${FUNCTIONS_BASE_URL}/esign/upload-signed-pdf`, {
     method: 'POST',

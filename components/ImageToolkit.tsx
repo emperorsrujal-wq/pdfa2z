@@ -70,16 +70,50 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
   const [referencePreview, setReferencePreview] = React.useState<string | null>(null);
   const [magicInstructions, setMagicInstructions] = React.useState('');
   const [magicMode, setMagicMode] = React.useState<'GENERAL' | 'FACE_SWAP' | 'ID_EDIT'>('GENERAL');
-  const [splitGrid, setSplitGrid] = React.useState({ rows: 2, cols: 2 });
-  const [processedUrls, setProcessedUrls] = React.useState<string[]>([]);
+   const [splitGrid, setSplitGrid] = React.useState({ rows: 2, cols: 2 });
+   const [processedUrls, setProcessedUrls] = React.useState<string[]>([]);
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+   const fileInputRef = React.useRef<HTMLInputElement>(null);
+   const previewUrlsRef = React.useRef<string[]>([]);
+   const processedUrlsRef = React.useRef<string[]>([]);
+   const processedUrlRef = React.useRef<string | null>(null);
 
-  React.useEffect(() => {
-    if (initialMode) setMode(initialMode);
-  }, [initialMode]);
+   // Handler for image load error (YT thumbnail fallback)
+   const handleProcessedImgError = () => {
+     if (mode === 'YT_THUMBNAIL' && processedUrl?.includes('maxresdefault.jpg')) {
+       const fallbackUrl = processedUrl.replace('maxresdefault.jpg', 'hqdefault.jpg');
+       setProcessedUrl(fallbackUrl);
+     }
+   };
 
-  const reset = () => {
+   React.useEffect(() => {
+     return () => {
+       // Cleanup all created Object URLs on unmount
+       previewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+       processedUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+       if (processedUrlRef.current) URL.revokeObjectURL(processedUrlRef.current);
+     };
+     }, []);
+
+    // Revoke old processedUrl when it changes
+    React.useEffect(() => {
+      const prevUrl = processedUrlRef.current;
+      if (prevUrl && prevUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(prevUrl);
+      }
+      processedUrlRef.current = processedUrl;
+    }, [processedUrl]);
+
+    // Cleanup old processedUrls when array changes
+    React.useEffect(() => {
+      const prevUrls = processedUrlsRef.current;
+      prevUrls.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+      });
+      processedUrlsRef.current = processedUrls;
+    }, [processedUrls]);
+
+   const reset = () => {
     setFiles([]);
     setPreviews([]);
     setProcessedUrl(null);
@@ -102,9 +136,14 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      // Revoke old preview URLs
+      previewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+
       const selectedFiles = Array.from(e.target.files);
       setFiles(selectedFiles);
-      setPreviews(selectedFiles.map(file => URL.createObjectURL(file)));
+      const newPreviewUrls = selectedFiles.map(file => URL.createObjectURL(file));
+      previewUrlsRef.current = newPreviewUrls;
+      setPreviews(newPreviewUrls);
       setProcessedUrl(null);
       setOcrResult(null);
     }
@@ -114,7 +153,13 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setReferenceFile(file);
-      setReferencePreview(URL.createObjectURL(file));
+      // Revoke old reference preview if exists
+      if (referencePreview) {
+        URL.revokeObjectURL(referencePreview);
+      }
+      const newUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(newUrl);
+      setReferencePreview(newUrl);
     }
   };
 
@@ -321,9 +366,12 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
 
   const handleCopyOCR = () => {
     if (ocrResult) {
-      navigator.clipboard.writeText(ocrResult);
-      setError('Copied to clipboard!');
-      setTimeout(() => setError(null), 2000);
+      navigator.clipboard.writeText(ocrResult).catch(() => {
+        setError('Failed to copy');
+        return;
+      });
+      setSuccessMsg('Copied to clipboard!');
+      setTimeout(() => setSuccessMsg(null), 2000);
     }
   };
 
@@ -392,6 +440,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
     if (files.length === 0) return;
     setIsProcessing(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       if (['RESIZE', 'CROP', 'ROTATE', 'COMPRESS', 'CONVERT', 'MEME', 'FILTER', 'ROUND', 'FLIP', 'PIXELATE', 'INVERT', 'BLUR_IMG', 'SHARPEN', 'BLACK_WHITE', 'ADD_TEXT', 'PROFILE_MAKER'].includes(mode)) {
         const res = await processClientSide();
@@ -464,8 +513,8 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
           });
           const zipUrl = URL.createObjectURL(content);
 
-          setProcessedUrl(zipUrl);
-          setError(`Success! Resized ${resizedImages.length} images. Download the ZIP file.`);
+           setProcessedUrl(zipUrl);
+           setSuccessMsg(`Success! Resized ${resizedImages.length} images. Download the ZIP file.`);
 
           // Trigger download automatically
           const link = document.createElement('a');
@@ -547,12 +596,12 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
               ctx.drawImage(regionCanvas, bx, by);
               ctx.restore();
             });
-            setError(`Detected and blurred ${boxes.length} faces.`);
+            setSuccessMsg(`Detected and blurred ${boxes.length} faces.`);
           } else {
             // Fallback: apply general blur if AI failed to find boxes
             ctx.filter = `blur(${blurIntensity}px)`;
             ctx.drawImage(img, 0, 0);
-            setError('No specific faces detected. Applied general privacy blur.');
+            setSuccessMsg('No specific faces detected. Applied general privacy blur.');
           }
 
           setProcessedUrl(canvas.toDataURL('image/png'));
@@ -1080,10 +1129,10 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
                 Download All (ZIP)
               </Button>
             </div>
-          ) : processedUrl ? (
-            <>
-              <img src={processedUrl} className="max-h-full object-contain shadow-2xl rounded-xl" />
-              <a
+           ) : processedUrl ? (
+             <>
+               <img src={processedUrl} className="max-h-full object-contain shadow-2xl rounded-xl" onError={handleProcessedImgError} />
+               <a
                 href={processedUrl}
                 download={(function () {
                   if (mode === 'BATCH_RESIZE') return `batch-resized-${Date.now()}.zip`;
