@@ -344,7 +344,12 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   const renderPdf = async (url: string) => {
     const { GlobalWorkerOptions, getDocument } = await import('pdfjs-dist');
     GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
-    const pdf = await getDocument(url).promise;
+    // Fetch bytes in the main thread — passing a Storage URL directly to the
+    // pdfjs worker fails CORS because the worker runs in a separate context.
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
+    const bytes = await res.arrayBuffer();
+    const pdf = await getDocument({ data: new Uint8Array(bytes) }).promise;
     const images: string[] = [];
     const heights: number[] = [];
     for (let p = 1; p <= pdf.numPages; p++) {
