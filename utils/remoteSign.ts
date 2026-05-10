@@ -1,7 +1,7 @@
 import { db, storage, auth, FUNCTIONS_BASE_URL } from '../config/firebase';
 import {
-  collection, doc, getDoc, setDoc, updateDoc,
-  query, where, getDocs, Timestamp, serverTimestamp, arrayUnion
+  collection, doc, getDoc, setDoc, updateDoc, deleteDoc,
+  query, where, getDocs, Timestamp, serverTimestamp, arrayUnion, increment,
 } from 'firebase/firestore';
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
@@ -341,6 +341,49 @@ export const saveSignedPdf = async (docId: string, pdfBytes: Uint8Array): Promis
   const url = await getDownloadURL(pdfRef);
   await updateDoc(doc(db, 'sign_documents', docId), { signedPdfUrl: url });
   return url;
+};
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+
+export interface SignTemplate {
+  id?: string;
+  ownerId: string;
+  ownerEmail: string;
+  ownerName: string;
+  title: string;
+  pdfUrl: string;
+  // fields use signerId = 'slot-0', 'slot-1', … (position indices, not real people)
+  fields: SignField[];
+  pageCount: number;
+  signingOrder: SigningOrder;
+  signerSlots: Array<{ id: string; role: string; color: string }>;
+  reminderFrequency?: ReminderFrequency;
+  createdAt?: any;
+  usageCount: number;
+}
+
+export const saveTemplate = async (
+  data: Omit<SignTemplate, 'id' | 'createdAt' | 'usageCount'>,
+): Promise<string> => {
+  const ref = doc(collection(db, 'sign_templates'));
+  await setDoc(ref, { ...data, id: ref.id, usageCount: 0, createdAt: serverTimestamp() });
+  return ref.id;
+};
+
+export const getOwnerTemplates = async (ownerId: string): Promise<SignTemplate[]> => {
+  const q = query(collection(db, 'sign_templates'), where('ownerId', '==', ownerId));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as SignTemplate))
+    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+};
+
+export const deleteTemplate = async (templateId: string): Promise<void> => {
+  await deleteDoc(doc(db, 'sign_templates', templateId));
+};
+
+export const incrementTemplateUsage = async (templateId: string): Promise<void> => {
+  await updateDoc(doc(db, 'sign_templates', templateId), { usageCount: increment(1) });
 };
 
 // ── Formatting helpers ────────────────────────────────────────────────────────

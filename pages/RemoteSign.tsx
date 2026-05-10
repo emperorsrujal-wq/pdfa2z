@@ -4,13 +4,14 @@ import {
   Plus, FileText, Clock, CheckCircle, XCircle, Upload,
   Trash2, Send, Download, Copy, RefreshCw,
   ChevronLeft, Info, Signature, Calendar, Type, SquareCheck,
-  Fingerprint, Zap, AlertCircle
+  Fingerprint, Zap, AlertCircle, BookmarkPlus, LayoutTemplate, Users,
 } from 'lucide-react';
 import {
-  SignDocument, SignerConfig, SignField, FieldType, DocStatus,
+  SignDocument, SignerConfig, SignField, FieldType, DocStatus, SignTemplate,
   SIGNER_COLORS, FIELD_DEFAULTS, generateToken,
   createSignDocument, getOwnerDocuments, voidDocument, sendDocument,
   uploadPdfForSigning, saveDocumentFields, updateSignDocumentPdfUrl,
+  saveTemplate, getOwnerTemplates, deleteTemplate, incrementTemplateUsage,
   statusLabel, statusColor, signerStatusColor, formatDate,
 } from '../utils/remoteSign';
 
@@ -51,6 +52,17 @@ export const RemoteSign: React.FC = () => {
   const [docsError, setDocsError] = React.useState(false);
   const [signerLinksDoc, setSignerLinksDoc] = React.useState<SignDocument | null>(null);
 
+  // Templates
+  const [dashTab, setDashTab] = React.useState<'documents' | 'templates'>('documents');
+  const [templates, setTemplates] = React.useState<SignTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = React.useState(false);
+  const [saveTemplateMsg, setSaveTemplateMsg] = React.useState('');
+  const [useTemplateModal, setUseTemplateModal] = React.useState<SignTemplate | null>(null);
+  const [utTitle, setUtTitle] = React.useState('');
+  const [utSigners, setUtSigners] = React.useState<{ name: string; email: string }[]>([]);
+  const [utSending, setUtSending] = React.useState(false);
+  const [utError, setUtError] = React.useState('');
+
   // Draft state
   const [draftId, setDraftId] = React.useState<string | null>(null);
   const [pdfFile, setPdfFile] = React.useState<File | null>(null);
@@ -79,11 +91,17 @@ export const RemoteSign: React.FC = () => {
   const [newName, setNewName] = React.useState('');
   const [newEmail, setNewEmail] = React.useState('');
 
-  // Load documents
+  // Load documents + templates
   React.useEffect(() => {
     if (!user) return;
-    setDocsLoading(true);
-    getOwnerDocuments(user.uid).then(docs => { setDocuments(docs); setDocsLoading(false); setDocsError(false); }).catch(() => { setDocsLoading(false); setDocsError(true); });
+    setDocsLoading(true); setDocsError(false);
+    getOwnerDocuments(user.uid)
+      .then(docs => { setDocuments(docs); setDocsLoading(false); })
+      .catch(() => { setDocsLoading(false); setDocsError(true); });
+    setTemplatesLoading(true);
+    getOwnerTemplates(user.uid)
+      .then(ts => { setTemplates(ts); setTemplatesLoading(false); })
+      .catch(() => setTemplatesLoading(false));
   }, [user]);
 
   // Generate preview + page count when PDF uploaded
@@ -279,6 +297,77 @@ export const RemoteSign: React.FC = () => {
     setDocuments(prev => prev.map(d => d.id === docId ? { ...d, status: 'voided' as DocStatus } : d));
   };
 
+  // Save current fields + signers as a reusable template
+  const handleSaveTemplate = async () => {
+    const pdfUrl = bgPdfUrlRef.current;
+    if (!pdfUrl || !user || fields.length === 0) return;
+    // Map real signer IDs → slot-0, slot-1, …
+    const slotMap = new Map(signers.map((s, i) => [s.id, `slot-${i}`]));
+    const templateFields = fields.map(f => ({ ...f, signerId: slotMap.get(f.signerId) ?? f.signerId }));
+    const signerSlots = signers.map((s, i) => ({ id: `slot-${i}`, role: `Signer ${i + 1}`, color: s.color }));
+    await saveTemplate({
+      ownerId: user.uid, ownerEmail: user.email ?? '', ownerName: user.displayName ?? user.email ?? 'Owner',
+      title, pdfUrl, fields: templateFields, pageCount: pdfPageCount,
+      signingOrder, signerSlots, reminderFrequency: reminderFreq,
+    });
+    // Refresh template list
+    getOwnerTemplates(user.uid).then(setTemplates).catch(() => {});
+    setSaveTemplateMsg('Template saved! Find it in your Templates tab.');
+    setTimeout(() => setSaveTemplateMsg(''), 4000);
+  };
+
+  // Create a document from a template and send it immediately
+  const handleUseTemplate = async () => {
+    if (!useTemplateModal || !user) return;
+    const valid = utSigners.every(s => s.name.trim() && s.email.trim());
+    if (!valid) { setUtError('Please fill in name and email for every signer.'); return; }
+    setUtSending(true); setUtError('');
+    try {
+      const newSigners: SignerConfig[] = utSigners.map((inp, i) => ({
+        id: crypto.randomUUID(),
+        email: inp.email.trim().toLowerCase(),
+        name: inp.name.trim(),
+        order: i + 1,
+        color: useTemplateModal.signerSlots[i]?.color ?? SIGNER_COLORS[i % SIGNER_COLORS.length],
+        status: 'pending',
+        token: generateToken(),
+      }));
+      const slotToId = new Map(useTemplateModal.signerSlots.map((slot, i) => [slot.id, newSigners[i].id]));
+      const mappedFields: SignField[] = useTemplateModal.fields.map(f => ({
+        ...f,
+        id: crypto.randomUUID(),
+        signerId: slotToId.get(f.signerId) ?? f.signerId,
+        value: undefined,
+        filledAt: undefined,
+      }));
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 14);
+      const docId = await createSignDocument({
+        ownerId: user.uid, ownerEmail: user.email ?? '', ownerName: user.displayName ?? user.email ?? 'Owner',
+        title: utTitle || useTemplateModal.title,
+        pdfUrl: useTemplateModal.pdfUrl,
+        status: 'draft',
+        signers: newSigners,
+        fields: mappedFields,
+        signingOrder: useTemplateModal.signingOrder,
+        pageCount: useTemplateModal.pageCount,
+        expiresAt: { seconds: Math.floor(expiry.getTime() / 1000) },
+        reminderFrequency: useTemplateModal.reminderFrequency ?? '3days',
+      });
+      await sendDocument(docId, '');
+      incrementTemplateUsage(useTemplateModal.id!).catch(() => {});
+      getOwnerDocuments(user.uid).then(setDocuments).catch(() => {});
+      // refresh template usage count
+      getOwnerTemplates(user.uid).then(setTemplates).catch(() => {});
+      setUseTemplateModal(null);
+      setSentDocId(docId);
+      setDashTab('documents');
+    } catch (e: any) {
+      setUtError(e?.message || 'Something went wrong. Please try again.');
+    }
+    setUtSending(false);
+  };
+
   // ── Full-screen field placement ───────────────────────────────────────────────
 
   if (view === 'fields') {
@@ -290,6 +379,8 @@ export const RemoteSign: React.FC = () => {
         setFields={setFields}
         onBack={() => setView('setup')}
         onNext={() => setView('review')}
+        onSaveTemplate={handleSaveTemplate}
+        saveTemplateMsg={saveTemplateMsg}
       />
     );
   }
@@ -614,6 +705,21 @@ export const RemoteSign: React.FC = () => {
         ))}
       </div>
 
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b border-slate-100">
+        <button
+          onClick={() => setDashTab('documents')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px ${dashTab === 'documents' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+          <FileText size={15} /> Documents ({documents.length})
+        </button>
+        <button
+          onClick={() => setDashTab('templates')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors -mb-px ${dashTab === 'templates' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+          <LayoutTemplate size={15} /> Templates ({templates.length})
+        </button>
+      </div>
+
+      {dashTab === 'documents' && (<>
       {docsError && (
         <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
           <AlertCircle size={18} className="text-amber-500 shrink-0" />
@@ -700,6 +806,62 @@ export const RemoteSign: React.FC = () => {
           </table>
         </div>
       )}
+      </>)}
+
+      {dashTab === 'templates' && (
+        <div>
+          {templatesLoading ? (
+            <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></div>
+          ) : templates.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-3xl border border-slate-100">
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <LayoutTemplate size={28} className="text-slate-400" />
+              </div>
+              <p className="font-bold text-slate-700 mb-1">No templates yet</p>
+              <p className="text-slate-400 text-sm">Create a document, place fields, then click "Save as Template" in the field editor to reuse it here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templates.map(t => (
+                <div key={t.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                      <LayoutTemplate size={20} className="text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-slate-900 truncate">{t.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t.pageCount} page{t.pageCount !== 1 ? 's' : ''} · {t.signerSlots.length} signer{t.signerSlots.length !== 1 ? 's' : ''} · {t.fields.length} fields</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {t.signerSlots.map(slot => (
+                      <div key={slot.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold" style={{ background: slot.color + '18', color: slot.color }}>
+                        <Users size={11} /> {slot.role}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                    <span className="text-xs text-slate-400">{t.usageCount} use{t.usageCount !== 1 ? 's' : ''}</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { if (!confirm('Delete this template?')) return; deleteTemplate(t.id!).then(() => getOwnerTemplates(user.uid).then(setTemplates).catch(() => {})); }}
+                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all" title="Delete template">
+                        <Trash2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => { setUseTemplateModal(t); setUtTitle(t.title); setUtSigners(t.signerSlots.map(() => ({ name: '', email: '' }))); setUtError(''); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all">
+                        <Send size={12} /> Use Template
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {signerLinksDoc && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSignerLinksDoc(null)}>
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
@@ -732,6 +894,51 @@ export const RemoteSign: React.FC = () => {
           </div>
         </div>
       )}
+
+      {useTemplateModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setUseTemplateModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h3 className="font-black text-slate-900 mb-1">Use Template</h3>
+            <p className="text-sm text-slate-500 mb-4">Fill in the recipient details and the document will be sent immediately.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Document title</label>
+                <input type="text" value={utTitle} onChange={e => setUtTitle(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              {useTemplateModal.signerSlots.map((slot, i) => (
+                <div key={slot.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 space-y-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0" style={{ background: slot.color }}>{i + 1}</div>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">{slot.role}</span>
+                  </div>
+                  <input type="text" placeholder="Full name" value={utSigners[i]?.name ?? ''}
+                    onChange={e => setUtSigners(prev => prev.map((s, j) => j === i ? { ...s, name: e.target.value } : s))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+                  <input type="email" placeholder="Email address" value={utSigners[i]?.email ?? ''}
+                    onChange={e => setUtSigners(prev => prev.map((s, j) => j === i ? { ...s, email: e.target.value } : s))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+                </div>
+              ))}
+              {utError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-xs">
+                  <AlertCircle size={14} className="shrink-0" /> {utError}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setUseTemplateModal(null)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 text-sm">
+                Cancel
+              </button>
+              <button onClick={handleUseTemplate} disabled={utSending}
+                className="flex-[2] py-2.5 bg-blue-600 text-white font-black rounded-xl disabled:opacity-50 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-200">
+                {utSending ? <><RefreshCw size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Document</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -745,9 +952,12 @@ interface FPVProps {
   setFields: React.Dispatch<React.SetStateAction<SignField[]>>;
   onBack: () => void;
   onNext: () => void;
+  onSaveTemplate: () => Promise<void>;
+  saveTemplateMsg: string;
 }
 
-const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, setFields, onBack, onNext }) => {
+const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, setFields, onBack, onNext, onSaveTemplate, saveTemplateMsg }) => {
+  const [savingTemplate, setSavingTemplate] = React.useState(false);
   const [activeType, setActiveType] = React.useState<FieldType>('signature');
   const [activeSignerId, setActiveSignerId] = React.useState(signers[0]?.id ?? '');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
@@ -847,11 +1057,26 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
 
         <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{fields.length} field{fields.length !== 1 ? 's' : ''}</span>
 
+        <button
+          disabled={fields.length === 0 || savingTemplate}
+          onClick={async () => { setSavingTemplate(true); await onSaveTemplate(); setSavingTemplate(false); }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: savingTemplate ? '#f1f5f9' : 'white', color: '#475569', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: fields.length === 0 ? 'not-allowed' : 'pointer', opacity: fields.length === 0 ? 0.4 : 1 }}>
+          <BookmarkPlus size={14} />
+          {savingTemplate ? 'Saving…' : 'Save as Template'}
+        </button>
+
         <button onClick={onNext}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
           Review & Send →
         </button>
       </div>
+
+      {/* Save-template success banner */}
+      {saveTemplateMsg && (
+        <div style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '8px 16px', fontSize: 12, color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          ✓ {saveTemplateMsg}
+        </div>
+      )}
 
       {/* Instruction bar */}
       <div style={{ background: '#eff6ff', borderBottom: '1px solid #dbeafe', padding: '8px 16px', fontSize: 12, color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
