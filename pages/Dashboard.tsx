@@ -533,7 +533,9 @@ export const Dashboard: React.FC = () => {
                          </p>
                          <div className="mt-8 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-500">{formatFileSize(doc.fileSize || 0)}</span>
-                            <button className="p-2.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"><Download size={16} /></button>
+                            {doc.downloadUrl && (
+                              <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer" className="inline-block p-2.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"><Download size={16} /></a>
+                            )}
                          </div>
                       </div>
                     ))}
@@ -577,7 +579,11 @@ export const Dashboard: React.FC = () => {
                              {session.completed_at ? new Date(session.completed_at?.toDate?.() || session.completed_at).toLocaleDateString() : (session.created_at ? new Date(session.created_at?.toDate?.() || session.created_at).toLocaleDateString() : 'N/A')}
                            </td>
                            <td className="px-8 py-6 text-right">
-                             <button className="p-2.5 bg-slate-50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all shadow-sm"><Download size={16} /></button>
+                             {session.notarized_document_url ? (
+                               <a href={session.notarized_document_url} target="_blank" rel="noopener noreferrer" className="inline-block p-2.5 bg-slate-50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all shadow-sm"><Download size={16} /></a>
+                             ) : (
+                               <span className="text-xs text-slate-400 italic">Processing...</span>
+                             )}
                            </td>
                         </tr>
                       ))}
