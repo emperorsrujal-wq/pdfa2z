@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Clock, AlertTriangle, PenLine, Keyboard, RotateCc
 import {
   SignDocument, SignerConfig, SignField,
   getDocumentByToken, getSignDocument, recordSignerViewed,
-  submitSignedFields, declineSigning, saveSignedPdf,
+  submitSignedFields, declineSigning, saveSignedPdf, notifyCompleted,
   requestOtp, verifyOtp,
 } from '../utils/remoteSign';
 import { FUNCTIONS_BASE_URL } from '../config/firebase';
@@ -242,6 +242,9 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   const [signDoc, setSignDoc] = React.useState<SignDocument | null>(null);
   const [signer, setSigner] = React.useState<SignerConfig | null>(null);
 
+  // Signed PDF download URL (set when doc is completed or after we generate the PDF)
+  const [signedPdfUrl, setSignedPdfUrl] = React.useState<string | null>(null);
+
   // PDF rendering
   const [pageImages, setPageImages] = React.useState<string[]>([]);
   const [pageHeights, setPageHeights] = React.useState<number[]>([]);
@@ -278,8 +281,8 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
       const { document: doc, signer: s } = result;
 
       if (doc.status === 'voided') { setState('voided'); return; }
-      if (doc.status === 'completed') { setState('completed'); return; }
-      if (s.status === 'signed') { setState('already-signed'); return; }
+      if (doc.status === 'completed') { setSignedPdfUrl(doc.signedPdfUrl ?? null); setState('completed'); return; }
+      if (s.status === 'signed') { setSignedPdfUrl(doc.signedPdfUrl ?? null); setState('already-signed'); return; }
       if (s.status === 'declined') { setState('declined'); return; }
 
       if (doc.expiresAt) {
@@ -435,7 +438,8 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     }
 
     const signedBytes = await pdfDoc.save();
-    await saveSignedPdf(finalDoc.id!, new Uint8Array(signedBytes), token);
+    const uploadedUrl = await saveSignedPdf(finalDoc.id!, new Uint8Array(signedBytes), token);
+    setSignedPdfUrl(uploadedUrl);
   };
 
   // ── Submit / Decline ─────────────────────────────────────────────────────────
@@ -455,7 +459,11 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
         // Fetch the complete document (all signers' values) then embed into PDF
         try {
           const finalDoc = await getSignDocument(signDoc.id!);
-          if (finalDoc) await generateAndSaveSignedPdf(finalDoc);
+          if (finalDoc) {
+            await generateAndSaveSignedPdf(finalDoc);
+            // Fire completion email AFTER PDF is uploaded so signedPdfUrl is set in Firestore
+            notifyCompleted(signDoc.id!);
+          }
         } catch (e) {
           console.error('Signed PDF generation failed:', e);
           setState('pdf-error');
@@ -473,7 +481,10 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
     setState('submitting');
     try {
       const finalDoc = await getSignDocument(signDoc!.id!);
-      if (finalDoc) await generateAndSaveSignedPdf(finalDoc);
+      if (finalDoc) {
+        await generateAndSaveSignedPdf(finalDoc);
+        notifyCompleted(signDoc!.id!);
+      }
       setState('completed');
     } catch (e) {
       console.error('Retry failed:', e);
@@ -504,8 +515,19 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   if (state === 'completed' || state === 'already-signed') {
     return <StatusScreen icon={<CheckCircle size={36} className="text-emerald-600" />}
       title={state === 'completed' ? 'Signature Submitted!' : 'Already Signed'}
-      body={state === 'completed' ? 'Your signature has been recorded. You\'ll receive a confirmation email with the completed document once all parties sign.' : 'You have already signed this document. Check your email for the completion notice.'}
-      color="bg-emerald-50" />;
+      body={signedPdfUrl
+        ? 'The document has been fully signed by all parties. Download your copy below.'
+        : state === 'completed'
+          ? 'Your signature has been recorded. You\'ll receive an email with the completed document once all parties have signed.'
+          : 'You have already signed this document. You\'ll receive an email with the completed document once all parties have signed.'}
+      color="bg-emerald-50"
+      extra={signedPdfUrl ? (
+        <a href={signedPdfUrl} target="_blank" rel="noopener noreferrer" download
+          className="w-full inline-flex items-center justify-center gap-2 py-3.5 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all">
+          ⬇&nbsp;Download Signed Document
+        </a>
+      ) : undefined}
+    />;
   }
 
   if (state === 'declined') {

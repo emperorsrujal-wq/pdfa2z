@@ -301,15 +301,19 @@ export const submitSignedFields = async (
     body: JSON.stringify({ docId, signerId, allSigned }),
   }).catch(() => {});
 
-  if (allSigned) {
-    fetch(`${FUNCTIONS_BASE_URL}/esign/on-completed`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ docId }),
-    }).catch(() => {});
-  }
+  // on-completed is intentionally NOT called here — it must fire after the
+  // signed PDF has been uploaded so the email contains a valid download URL.
+  // Call notifyCompleted() from the signer portal after saveSignedPdf() resolves.
 
   return allSigned;
+};
+
+export const notifyCompleted = (docId: string): void => {
+  fetch(`${FUNCTIONS_BASE_URL}/esign/on-completed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ docId }),
+  }).catch(() => {});
 };
 
 export const declineSigning = async (docId: string, signerId: string, reason: string): Promise<void> => {
