@@ -234,7 +234,8 @@ type PortalState =
   | 'expired'
   | 'not-your-turn'
   | 'voided'
-  | 'error';
+  | 'error'
+  | 'pdf-error';
 
 export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
   const [state, setState] = React.useState<PortalState>('loading');
@@ -456,13 +457,27 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
           const finalDoc = await getSignDocument(signDoc.id!);
           if (finalDoc) await generateAndSaveSignedPdf(finalDoc);
         } catch (e) {
-          console.error('Signed PDF generation failed (non-fatal):', e);
+          console.error('Signed PDF generation failed:', e);
+          setState('pdf-error');
+          return;
         }
       }
       setState('completed');
     } catch (e) {
       console.error(e);
       setState('signing');
+    }
+  };
+
+  const handleRetryPdf = async () => {
+    setState('submitting');
+    try {
+      const finalDoc = await getSignDocument(signDoc!.id!);
+      if (finalDoc) await generateAndSaveSignedPdf(finalDoc);
+      setState('completed');
+    } catch (e) {
+      console.error('Retry failed:', e);
+      setState('pdf-error');
     }
   };
 
@@ -498,6 +513,18 @@ export const SignerPortal: React.FC<{ token: string }> = ({ token }) => {
       title="Signing Declined"
       body="You have declined to sign this document. The document owner has been notified."
       color="bg-red-50" />;
+  }
+
+  if (state === 'pdf-error') {
+    return <StatusScreen icon={<AlertTriangle size={36} className="text-red-500" />}
+      title="Finalizing Error"
+      body="Your signature was successfully saved, but we encountered an error generating the final signed PDF. Please try again to finalize the document."
+      color="bg-red-50"
+      extra={
+        <button onClick={handleRetryPdf} className="mt-4 w-full py-3.5 bg-red-600 text-white font-bold rounded-2xl shadow hover:bg-red-700 transition-all">
+          Retry Finalizing PDF
+        </button>
+      } />;
   }
 
   if (state === 'voided') {

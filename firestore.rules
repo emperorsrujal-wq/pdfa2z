@@ -12,13 +12,21 @@ service cloud.firestore {
 
     // ── Documents: own data only ────────────────────────────────────────────
     match /documents/{documentId} {
-      allow read:   if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow read:   if request.auth != null && (resource.data.user_id == request.auth.uid || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null
-                    && request.resource.data.user_id == request.auth.uid
-                    && request.resource.data.mime_type is string
-                    && request.resource.data.file_size < 10485760; // 10 MB
-      allow update: if request.auth != null && resource.data.user_id == request.auth.uid;
+                    && (request.resource.data.user_id == request.auth.uid || request.resource.data.userId == request.auth.uid)
+                    && (request.resource.data.mime_type is string || request.resource.data.fileType is string)
+                    && (request.resource.data.file_size < 10485760 || request.resource.data.fileSize < 10485760); // 10 MB
+      allow update: if request.auth != null && (resource.data.user_id == request.auth.uid || resource.data.userId == request.auth.uid);
       allow delete: if false; // Soft delete only
+    }
+
+    // ── Journey Leads: own data only ────────────────────────────────────────
+    match /journey_leads/{leadId} {
+      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // ── Notarization Sessions: own data only ────────────────────────────────
