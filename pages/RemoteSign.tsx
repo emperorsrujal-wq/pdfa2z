@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Plus, FileText, Clock, CheckCircle, XCircle, Upload,
@@ -1004,8 +1005,8 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
 
   const activeSigner = signers.find(s => s.id === activeSignerId);
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
       <div style={{ background: 'white', borderBottom: '1.5px solid #e2e8f0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, overflowX: 'auto' }}>
         <button onClick={onBack}
@@ -1119,7 +1120,8 @@ const FieldPlacementView: React.FC<FPVProps> = ({ pdfBytes, signers, fields, set
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
