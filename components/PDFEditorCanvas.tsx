@@ -261,6 +261,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     return (794 / pdfW) * zoom;
   }, [dimensions, zoom]);
 
+  // Always-current elements ref — used in drag/resize/rotate onUp to avoid stale closure revert
+  const elementsRef = React.useRef(elements);
+  React.useEffect(() => { elementsRef.current = elements; }, [elements]);
+
   const closeAllMenus = () => {
     setShowFormsMenu(false);
     setShowAnnotateMenu(false);
@@ -1524,44 +1528,41 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     if (mode !== 'select') return; // No drag in tool modes — just select
                     const startX = ev.clientX, startY = ev.clientY;
                     const startXPos = el.x, startYPos = el.y;
+                    const elId = el.id;
+                    const elW = el.width || 0;
+                    const elH = el.height || 0;
                     const onMove = (me: PointerEvent) => {
                       if (!pageRef.current) return;
                       const r = pageRef.current.getBoundingClientRect();
                       const dx = ((me.clientX - startX) / r.width) * 1000;
                       const dy = ((me.clientY - startY) / r.height) * 1000;
-                      
+
                       let newX = startXPos + dx;
                       let newY = startYPos + dy;
-                      const w = el.width || 0;
-                      const h = el.height || 0;
 
-                      // Smart Guides & Snapping (Page Center = 500)
                       let guideV: number | null = null;
                       let guideH: number | null = null;
                       const SNAP_THRESHOLD = 5;
 
-                      if (Math.abs((newX + w / 2) - 500) < SNAP_THRESHOLD) {
-                        newX = 500 - w / 2;
+                      if (Math.abs((newX + elW / 2) - 500) < SNAP_THRESHOLD) {
+                        newX = 500 - elW / 2;
                         guideV = 500;
                       }
-                      if (Math.abs((newY + h / 2) - 500) < SNAP_THRESHOLD) {
-                        newY = 500 - h / 2;
+                      if (Math.abs((newY + elH / 2) - 500) < SNAP_THRESHOLD) {
+                        newY = 500 - elH / 2;
                         guideH = 500;
                       }
-                      
+
                       setGuides({ v: guideV, h: guideH });
-
-                      // Movement Boundaries
-                      newX = Math.max(0, Math.min(1000 - w, newX));
-                      newY = Math.max(0, Math.min(1000 - h, newY));
-
-                      updateElement(el.id, { x: newX, y: newY });
+                      newX = Math.max(0, Math.min(1000 - elW, newX));
+                      newY = Math.max(0, Math.min(1000 - elH, newY));
+                      setElements(prev => prev.map(e => e.id === elId ? { ...e, x: newX, y: newY } : e));
                     };
                     const onUp = () => {
                       setGuides({ v: null, h: null });
                       window.removeEventListener('pointermove', onMove);
                       window.removeEventListener('pointerup', onUp);
-                      commit([...elements]);
+                      onCommit(elementsRef.current);
                     };
                     window.addEventListener('pointermove', onMove);
                     window.addEventListener('pointerup', onUp);
@@ -1596,14 +1597,15 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                           if (!rect) return;
                           const cx = rect.left + rect.width / 2;
                           const cy = rect.top + rect.height / 2;
+                          const rotElId = el.id;
                           const onMove = (me: PointerEvent) => {
-                            const angle = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90;
-                            updateElement(el.id, { rotation: Math.round(angle) });
+                            const angle = Math.round(Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90);
+                            setElements(prev => prev.map(e => e.id === rotElId ? { ...e, rotation: angle } : e));
                           };
                           const onUp = () => {
                             window.removeEventListener('pointermove', onMove);
                             window.removeEventListener('pointerup', onUp);
-                            commit([...elements]);
+                            onCommit(elementsRef.current);
                           };
                           window.addEventListener('pointermove', onMove);
                           window.addEventListener('pointerup', onUp);
@@ -1620,14 +1622,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startY = ev.clientY;
-                             const startElY = el.y, startH = el.height || 0;
+                             const startElY = el.y, startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { y: Math.min(startElY + startH - 10, startElY + dy), height: Math.max(10, startH - dy) });
+                               const ny = Math.min(startElY + startH - 10, startElY + dy);
+                               const nh = Math.max(10, startH - dy);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, y: ny, height: nh } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1637,14 +1641,15 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startY = ev.clientY;
-                             const startH = el.height || 0;
+                             const startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { height: Math.max(10, startH + dy) });
+                               const nh = Math.max(10, startH + dy);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, height: nh } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1654,14 +1659,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX;
-                             const startElX = el.x, startW = el.width || 0;
+                             const startElX = el.x, startW = el.width || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dx = ((me.clientX - startX) / r.width) * 1000;
-                               updateElement(el.id, { x: Math.min(startElX + startW - 10, startElX + dx), width: Math.max(10, startW - dx) });
+                               const nx = Math.min(startElX + startW - 10, startElX + dx);
+                               const nw = Math.max(10, startW - dx);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, x: nx, width: nw } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1671,14 +1678,15 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX;
-                             const startW = el.width || 0;
+                             const startW = el.width || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dx = ((me.clientX - startX) / r.width) * 1000;
-                               updateElement(el.id, { width: Math.max(10, startW + dx) });
+                               const nw = Math.max(10, startW + dx);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, width: nw } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1688,20 +1696,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
-                             const startElX = el.x, startElY = el.y, startW = el.width || 0, startH = el.height || 0;
+                             const startElX = el.x, startElY = el.y, startW = el.width || 0, startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dx = ((me.clientX - startX) / r.width) * 1000;
                                const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 x: Math.min(startElX + startW - 10, startElX + dx), 
-                                 y: Math.min(startElY + startH - 10, startElY + dy),
-                                 width: Math.max(10, startW - dx),
-                                 height: Math.max(10, startH - dy)
-                               });
+                               const nx = Math.min(startElX + startW - 10, startElX + dx);
+                               const ny = Math.min(startElY + startH - 10, startElY + dy);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, x: nx, y: ny, width: Math.max(10, startW - dx), height: Math.max(10, startH - dy) } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1711,19 +1716,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
-                             const startElY = el.y, startW = el.width || 0, startH = el.height || 0;
+                             const startElY = el.y, startW = el.width || 0, startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dx = ((me.clientX - startX) / r.width) * 1000;
                                const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 y: Math.min(startElY + startH - 10, startElY + dy),
-                                 width: Math.max(10, startW + dx),
-                                 height: Math.max(10, startH - dy)
-                               });
+                               const ny = Math.min(startElY + startH - 10, startElY + dy);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, y: ny, width: Math.max(10, startW + dx), height: Math.max(10, startH - dy) } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1733,37 +1735,34 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
-                             const startElX = el.x, startW = el.width || 0, startH = el.height || 0;
+                             const startElX = el.x, startW = el.width || 0, startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dx = ((me.clientX - startX) / r.width) * 1000;
                                const dy = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { 
-                                 x: Math.min(startElX + startW - 10, startElX + dx), 
-                                 width: Math.max(10, startW - dx),
-                                 height: Math.max(10, startH + dy)
-                               });
+                               const nx = Math.min(startElX + startW - 10, startElX + dx);
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, x: nx, width: Math.max(10, startW - dx), height: Math.max(10, startH + dy) } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
 
                       {/* Corner Handles - SE */}
-                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-se-resize hover:scale-125 transition-transform" 
+                      <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] rounded-sm cursor-se-resize hover:scale-125 transition-transform"
                            onPointerDown={ev => {
                              ev.stopPropagation();
                              const startX = ev.clientX, startY = ev.clientY;
-                             const startW = el.width || 0, startH = el.height || 0;
+                             const startW = el.width || 0, startH = el.height || 0, rElId = el.id;
                              const onMove = (me: PointerEvent) => {
                                if (!pageRef.current) return;
                                const r = pageRef.current.getBoundingClientRect();
                                const dw = ((me.clientX - startX) / r.width) * 1000;
                                const dh = ((me.clientY - startY) / r.height) * 1000;
-                               updateElement(el.id, { width: Math.max(10, startW + dw), height: Math.max(10, startH + dh) });
+                               setElements(prev => prev.map(e => e.id === rElId ? { ...e, width: Math.max(10, startW + dw), height: Math.max(10, startH + dh) } : e));
                              };
-                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); commit([...elements]); };
+                             const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); onCommit(elementsRef.current); };
                              window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
                            }}
                       />
@@ -1794,11 +1793,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   {el.type === 'underline' && (
                     <div className="w-full flex items-end h-full pb-0">
                       <div className="w-full h-[2px]" style={{ backgroundColor: el.color }} />
-                    </div>
-                  )}
-                  {el.type === 'link' && (
-                    <div className="w-full h-full border border-dashed border-blue-400 bg-blue-500/10 flex items-center justify-center">
-                       <LinkIcon size={12} className="text-blue-500 opacity-50" />
                     </div>
                   )}
                   {el.type === 'image' && el.imageUrl && (
