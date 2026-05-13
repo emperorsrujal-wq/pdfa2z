@@ -6,7 +6,7 @@ import {
   Signature, Send, XCircle, Copy, CheckCircle, PenSquare, Eye,
 } from 'lucide-react';
 import {
-  getOwnerDocuments, SignDocument, SignerConfig,
+  subscribeToOwnerDocuments, SignDocument, SignerConfig,
   statusLabel, statusColor, formatDate, signerStatusColor,
 } from '../utils/remoteSign';
 
@@ -64,13 +64,15 @@ export const Dashboard: React.FC = () => {
     };
   }, []);
 
-  // Load sign documents whenever the authenticated user changes
+  // Real-time listener for sign documents — auto-updates when signedPdfUrl is written
   React.useEffect(() => {
     if (!user) return;
     setSignDocsLoading(true);
-    getOwnerDocuments(user.uid)
-      .then(d => { setSignDocs(d); setSignDocsLoading(false); })
-      .catch(() => setSignDocsLoading(false));
+    const unsub = subscribeToOwnerDocuments(user.uid, docs => {
+      setSignDocs(docs);
+      setSignDocsLoading(false);
+    });
+    return () => unsub();
   }, [user?.uid]);
 
   const refreshLeads = async () => {
@@ -355,7 +357,7 @@ export const Dashboard: React.FC = () => {
                                   {/* Download signed PDF — completed docs */}
                                   {d.status === 'completed' && (
                                     d.signedPdfUrl ? (
-                                      <a href={d.signedPdfUrl} target="_blank" rel="noopener noreferrer"
+                                      <a href={d.signedPdfUrl} target="_blank" rel="noopener noreferrer" download="signed-document.pdf"
                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all" title="Download signed PDF">
                                         <Download size={13} /> Signed PDF
                                       </a>

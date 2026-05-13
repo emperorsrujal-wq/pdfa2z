@@ -1,7 +1,7 @@
 import { db, storage, auth, FUNCTIONS_BASE_URL } from '../config/firebase';
 import {
   collection, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  query, where, getDocs, Timestamp, serverTimestamp, arrayUnion, increment,
+  query, where, getDocs, onSnapshot, Timestamp, serverTimestamp, arrayUnion, increment,
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
@@ -206,6 +206,17 @@ export const getOwnerDocuments = async (ownerId: string): Promise<SignDocument[]
     const ta = a.createdAt?.seconds ?? 0;
     const tb = b.createdAt?.seconds ?? 0;
     return tb - ta;
+  });
+};
+
+export const subscribeToOwnerDocuments = (
+  ownerId: string,
+  onUpdate: (docs: SignDocument[]) => void,
+): () => void => {
+  const q = query(collection(db, 'sign_documents'), where('ownerId', '==', ownerId));
+  return onSnapshot(q, snap => {
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as SignDocument));
+    onUpdate(docs.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)));
   });
 };
 

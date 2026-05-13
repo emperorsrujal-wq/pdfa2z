@@ -524,19 +524,23 @@ export function createEsignRouter(db: Firestore) {
       const signedAt = new Date();
       const remaining = doc.signers.filter((s: any) => s.id !== signerId && s.status !== 'signed').length;
 
-      // 1. Confirm to the signer who just signed
-      await sendMail(
-        signer.email,
-        allSigned ? `✅ All done — "${doc.title}" is fully signed` : `✅ Signature confirmed — "${doc.title}"`,
-        buildSignerConfirmationEmail({
-          signerName: signer.name,
-          docTitle: doc.title,
-          ownerName: doc.ownerName,
-          signedAt,
-          allSigned,
-          downloadUrl: allSigned ? doc.signedPdfUrl : undefined,
-        }),
-      );
+      // 1. Confirm to the signer who just signed.
+      // When allSigned=true, skip this email — on-completed fires after PDF upload
+      // and sends a proper completion email with a real download link.
+      if (!allSigned) {
+        await sendMail(
+          signer.email,
+          `✅ Signature confirmed — "${doc.title}"`,
+          buildSignerConfirmationEmail({
+            signerName: signer.name,
+            docTitle: doc.title,
+            ownerName: doc.ownerName,
+            signedAt,
+            allSigned: false,
+            downloadUrl: undefined,
+          }),
+        );
+      }
 
       // 2. Notify owner
       await sendMail(
@@ -681,7 +685,10 @@ export function createEsignRouter(db: Firestore) {
       // standard firebasestorage.googleapis.com download endpoint
       const downloadToken = require('crypto').randomUUID() as string;
       await file.save(pdfBytes, { contentType: 'application/pdf', resumable: false });
-      await file.setMetadata({ metadata: { firebaseStorageDownloadTokens: downloadToken } });
+      await file.setMetadata({
+        contentDisposition: 'attachment; filename="signed-document.pdf"',
+        metadata: { firebaseStorageDownloadTokens: downloadToken },
+      });
       const encodedPath = encodeURIComponent(`sign_pdfs/${docId}/signed.pdf`);
       const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
       await db.collection('sign_documents').doc(docId).update({ signedPdfUrl: url });
