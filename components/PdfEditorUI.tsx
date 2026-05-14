@@ -9,7 +9,7 @@ import { ToolPalette } from './pdf-editor/ToolPalette';
 import { MobileToolBar } from './pdf-editor/MobileToolBar';
 import { KeyboardShortcutsModal } from './pdf-editor/KeyboardShortcutsModal';
 import type { EditorMode } from './pdf-editor/types';
-import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages } from '../utils/pdfHelpers';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages, rotatePage } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -245,6 +245,20 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
       setHasUnsavedChanges(true);
     } catch (e) {
       console.warn('Could not insert page', e);
+    }
+  };
+
+  const handleRotatePage = async () => {
+    try {
+      const bytes = await rotatePage(new Uint8Array(await currentFile.arrayBuffer()), activePage, 90);
+      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      setCurrentFile(newFile);
+      const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
+      setImages(imgs);
+      setDimensions(dims);
+      setHasUnsavedChanges(true);
+    } catch (e) {
+      console.warn('Could not rotate page', e);
     }
   };
 
@@ -554,7 +568,14 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   onClick={handleInsertPage}
                   className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
                 >
-                  + Insert Page
+                  + Insert
+                </button>
+                <button
+                  onClick={handleRotatePage}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  title="Rotate 90° clockwise"
+                >
+                  ↻ Rotate
                 </button>
                 <button
                   onClick={handleDeletePage}
