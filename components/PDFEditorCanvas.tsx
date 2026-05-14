@@ -64,6 +64,9 @@ interface PdfEditorCanvasProps {
   onCancel: () => void;
   isEmbedded?: boolean;
   initialMode?: EditorMode;
+  mode?: EditorMode;
+  onModeChange?: (mode: EditorMode) => void;
+  hideChrome?: boolean;
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
@@ -196,6 +199,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onCancel: _onCancel,
   isEmbedded: _isEmbedded,
   initialMode,
+  mode: externalMode,
+  onModeChange,
+  hideChrome,
   textItems = [],
   file,
   docId,
@@ -203,7 +209,30 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onDeletePage,
   setElements,
 }) => {
-  const [mode, setMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
+  const [internalMode, setInternalMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
+  const mode = externalMode ?? internalMode;
+  const setMode = (m: EditorMode) => {
+    setInternalMode(m);
+    onModeChange?.(m);
+  };
+
+  // Auto-trigger modals when hideChrome is active and user selects certain tools
+  React.useEffect(() => {
+    if (!hideChrome) return;
+    if (mode === 'image') {
+      document.getElementById('img-upload')?.click();
+      setMode('select');
+    }
+    if (mode === 'sign') {
+      setIsSigPadOpen(true);
+      setMode('select');
+    }
+    if (mode === 'watermark') {
+      setShowWatermarkPanel(true);
+      setMode('select');
+    }
+  }, [mode, hideChrome]);
+
   const [activeColor, setActiveColor] = React.useState('#000000');
   const [activeFontSize, setActiveFontSize] = React.useState<number>(14);
   const [activeFontName, setActiveFontName] = React.useState('Helvetica');
@@ -904,6 +933,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           }}
         />
       )}
+      {!hideChrome && (
+      <>
       {/* ─── CENTRIC TOOLBAR (Sejda style) ─────────────────── */}
       <div className="shrink-0 flex items-center bg-white border-b border-slate-200 shadow-sm z-[150] py-2 px-2 overflow-x-auto">
         <div className="flex bg-[#e7e7e7] p-1 rounded-lg border border-slate-300 shadow-sm mx-auto flex-shrink-0">
@@ -1153,8 +1184,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           
         </div>
       </div>
+      </>
+      )}
 
 
+      {!hideChrome && (
+      <>
       {/* ─── TOOL PROPERTIES BAR ─────────────────────── */}
       {(['magic-edit','text','draw','highlight','strikeout','underline','erase','smart-erase','rect','ellipse','line','arrow'] as EditorMode[]).includes(mode) && (
         <div className="shrink-0 flex items-center gap-3 bg-[#fafafa] border-b border-slate-200 px-4 py-1.5 overflow-x-auto text-xs select-none" onClick={e => e.stopPropagation()}>
@@ -1298,7 +1333,11 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
         </div>
       )}
+      </>
+      )}
 
+      {!hideChrome && (
+      <>
       {/* ─── MODE INSTRUCTION BAR ─────────────────────── */}
       {(() => {
         const hints: Partial<Record<EditorMode, string>> = {
@@ -1331,6 +1370,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         );
       })()}
+      </>
+      )}
 
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div
@@ -1946,6 +1987,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         )}
       </div>
 
+      {!hideChrome && (
+      <>
       {/* ─── PROPERTIES / TOOL SETTINGS BAR — always visible, outside scroll ─── */}
       {(mode !== 'select' || !!activeElementId) && (() => {
           const activeEl = activeElementId ? elements.find(e => e.id === activeElementId) : null;
@@ -2173,6 +2216,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* ─── HIDDEN IMAGE UPLOAD ─────────────────────────── */}
       <input id="img-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -2258,6 +2303,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         />
       )}
 
+      {!hideChrome && (
+      <>
       {/* Sejda Style Apply Bar */}
       <div className="shrink-0 bg-[#f3f3f3] border-t border-slate-200 py-6 flex justify-center sticky bottom-0 z-[200]">
         <button
@@ -2267,6 +2314,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           Apply changes <ChevronRight size={24} />
         </button>
       </div>
+      </>
+      )}
       {/* ─── NEW SIGNATURE PAD MODAL ─────────────────── */}
       {isSigPadOpen && (
         <SignaturePad 
