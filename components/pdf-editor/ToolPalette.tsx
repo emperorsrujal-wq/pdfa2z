@@ -19,6 +19,8 @@ import {
   StickyNote,
   Droplets,
   X,
+  LayoutList,
+  CheckCircle2,
 } from 'lucide-react';
 import type { EditorMode } from './types';
 
@@ -38,10 +40,15 @@ const mainTools: { mode: EditorMode; label: string; icon: React.ReactNode; short
   { mode: 'draw', label: 'Draw', icon: <PenLine size={20} />, shortcut: 'D' },
   { mode: 'highlight', label: 'Highlight', icon: <Highlighter size={20} />, shortcut: 'H' },
   { mode: 'erase', label: 'Whiteout', icon: <Eraser size={20} />, shortcut: 'E' },
-  { mode: 'rect', label: 'Shapes', icon: <Square size={20} />, shortcut: 'S' },
+  { mode: 'rect', label: 'Rectangle', icon: <Square size={20} />, shortcut: 'S' },
+  { mode: 'circle', label: 'Circle', icon: <CircleIcon size={20} /> },
+  { mode: 'line', label: 'Line', icon: <Minus size={20} /> },
+  { mode: 'arrow', label: 'Arrow', icon: <ArrowRight size={20} /> },
   { mode: 'link', label: 'Link', icon: <Link2 size={20} />, shortcut: 'L' },
   { mode: 'sign', label: 'Sign', icon: <FileSignature size={20} />, shortcut: 'N' },
-  { mode: 'form-text', label: 'Form', icon: <CheckSquare size={20} />, shortcut: 'F' },
+  { mode: 'form-text', label: 'Text Field', icon: <CheckSquare size={20} />, shortcut: 'F' },
+  { mode: 'form-check', label: 'Checkbox', icon: <CheckCircle2 size={20} /> },
+  { mode: 'form-select', label: 'Dropdown', icon: <LayoutList size={20} /> },
   { mode: 'sticky-note', label: 'Comment', icon: <MessageSquare size={20} />, shortcut: 'C' },
   { mode: 'find-replace', label: 'Find', icon: <Search size={20} />, shortcut: 'Ctrl+F' },
 ];

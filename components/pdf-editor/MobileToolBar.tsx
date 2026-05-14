@@ -2,7 +2,8 @@ import * as React from 'react';
 import {
   MousePointer2, Type, Image as ImageIcon, PenLine, Highlighter,
   Eraser, Square, Link2, FileSignature, MessageSquare, Search,
-  ChevronUp, X, Droplets
+  ChevronUp, X, Droplets, Circle as CircleIcon, Minus, ArrowRight,
+  CheckSquare, CheckCircle2, LayoutList
 } from 'lucide-react';
 import type { EditorMode } from './types';
 
@@ -18,10 +19,15 @@ const tools: { mode: EditorMode; label: string; icon: React.ReactNode }[] = [
   { mode: 'draw', label: 'Draw', icon: <PenLine size={20} /> },
   { mode: 'highlight', label: 'Highlight', icon: <Highlighter size={20} /> },
   { mode: 'erase', label: 'Whiteout', icon: <Eraser size={20} /> },
-  { mode: 'rect', label: 'Shapes', icon: <Square size={20} /> },
+  { mode: 'rect', label: 'Rectangle', icon: <Square size={20} /> },
+  { mode: 'circle', label: 'Circle', icon: <CircleIcon size={20} /> },
+  { mode: 'line', label: 'Line', icon: <Minus size={20} /> },
+  { mode: 'arrow', label: 'Arrow', icon: <ArrowRight size={20} /> },
   { mode: 'link', label: 'Link', icon: <Link2 size={20} /> },
   { mode: 'sign', label: 'Sign', icon: <FileSignature size={20} /> },
-  { mode: 'form-text', label: 'Form', icon: <MessageSquare size={20} /> },
+  { mode: 'form-text', label: 'Text Field', icon: <CheckSquare size={20} /> },
+  { mode: 'form-check', label: 'Checkbox', icon: <CheckCircle2 size={20} /> },
+  { mode: 'form-select', label: 'Dropdown', icon: <LayoutList size={20} /> },
   { mode: 'sticky-note', label: 'Comment', icon: <MessageSquare size={20} /> },
   { mode: 'find-replace', label: 'Find', icon: <Search size={20} /> },
 ];
