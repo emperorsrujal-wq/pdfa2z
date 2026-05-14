@@ -45,6 +45,10 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
   const [editorMode, setEditorMode] = React.useState<EditorMode>('select');
   const [zoom, setZoom] = React.useState(100);
+  const [activeColor, setActiveColor] = React.useState('#000000');
+  const [activeFontSize, setActiveFontSize] = React.useState(14);
+  const [activeFontName, setActiveFontName] = React.useState('Helvetica');
+  const [activeBrushSize, setActiveBrushSize] = React.useState(3);
   const [showShortcuts, setShowShortcuts] = React.useState(false);
   const [rightPanelTab, setRightPanelTab] = React.useState<'pages' | 'properties'>('pages');
   const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
@@ -488,6 +492,14 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               hideChrome={true}
               zoom={zoom / 100}
               onZoomChange={(z) => setZoom(Math.round(z * 100))}
+              activeColor={activeColor}
+              onColorChange={setActiveColor}
+              activeFontSize={activeFontSize}
+              onFontSizeChange={setActiveFontSize}
+              activeFontName={activeFontName}
+              onFontNameChange={setActiveFontName}
+              activeBrushSize={activeBrushSize}
+              onBrushSizeChange={setActiveBrushSize}
               textItems={textItems}
               file={currentFile}
               onInsertPage={handleInsertPage}
@@ -560,25 +572,84 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Active Tool</h4>
                   <p className="text-sm font-medium text-slate-800 capitalize">{editorMode.replace(/-/g, ' ')}</p>
                 </div>
+
+                {/* Color */}
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Color</h4>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={activeColor}
+                      onChange={(e) => setActiveColor(e.target.value)}
+                      className="w-8 h-8 rounded border border-slate-200 p-0 overflow-hidden cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-500 font-mono uppercase">{activeColor}</span>
+                  </div>
+                </div>
+
+                {/* Font Size */}
+                {(editorMode === 'magic-edit' || editorMode === 'text' || editorMode === 'form-text') && (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font Size</h4>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min={8}
+                        max={72}
+                        value={activeFontSize}
+                        onChange={(e) => setActiveFontSize(Number(e.target.value))}
+                        className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <span className="text-xs text-slate-500 font-mono w-6 text-right">{activeFontSize}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Font Family */}
+                {(editorMode === 'magic-edit' || editorMode === 'text' || editorMode === 'form-text') && (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font</h4>
+                    <select
+                      value={activeFontName}
+                      onChange={(e) => setActiveFontName(e.target.value)}
+                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 outline-none focus:border-blue-400"
+                    >
+                      {['Helvetica', 'Times-Roman', 'Courier', 'Symbol', 'ZapfDingbats'].map(f => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Brush Size */}
+                {(editorMode === 'draw' || editorMode === 'highlight' || ['rect','circle','ellipse','line','arrow'].includes(editorMode)) && (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Stroke Width</h4>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min={1}
+                        max={20}
+                        value={activeBrushSize}
+                        onChange={(e) => setActiveBrushSize(Number(e.target.value))}
+                        className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <span className="text-xs text-slate-500 font-mono w-6 text-right">{activeBrushSize}px</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Tip</h4>
+                  <p className="text-sm text-blue-800">{getToolTip(editorMode)}</p>
+                </div>
+
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Document</h4>
                   <div className="space-y-1 text-sm text-slate-600">
                     <p><span className="text-slate-400">Pages:</span> {images.length}</p>
                     <p><span className="text-slate-400">Size:</span> {(file.size / 1024 / 1024).toFixed(1)} MB</p>
                     <p><span className="text-slate-400">Edits:</span> {elements.length}</p>
-                  </div>
-                </div>
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Tip</h4>
-                  <p className="text-sm text-blue-800">{getToolTip(editorMode)}</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Shortcuts</h4>
-                  <div className="grid grid-cols-2 gap-1.5 text-xs text-slate-600">
-                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Ctrl+Z</kbd> Undo</span>
-                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Ctrl+Y</kbd> Redo</span>
-                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Delete</kbd> Remove</span>
-                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">?</kbd> Shortcuts</span>
                   </div>
                 </div>
               </div>

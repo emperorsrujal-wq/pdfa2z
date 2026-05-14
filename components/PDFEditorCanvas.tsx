@@ -69,6 +69,14 @@ interface PdfEditorCanvasProps {
   hideChrome?: boolean;
   zoom?: number;
   onZoomChange?: (z: number) => void;
+  activeColor?: string;
+  onColorChange?: (c: string) => void;
+  activeFontSize?: number;
+  onFontSizeChange?: (s: number) => void;
+  activeFontName?: string;
+  onFontNameChange?: (f: string) => void;
+  activeBrushSize?: number;
+  onBrushSizeChange?: (b: number) => void;
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
@@ -206,6 +214,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   hideChrome,
   zoom: externalZoom,
   onZoomChange,
+  activeColor: externalColor,
+  onColorChange,
+  activeFontSize: externalFontSize,
+  onFontSizeChange,
+  activeFontName: externalFontName,
+  onFontNameChange,
+  activeBrushSize: externalBrushSize,
+  onBrushSizeChange,
   textItems = [],
   file,
   docId,
@@ -237,10 +253,22 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     }
   }, [mode, hideChrome]);
 
-  const [activeColor, setActiveColor] = React.useState('#000000');
-  const [activeFontSize, setActiveFontSize] = React.useState<number>(14);
-  const [activeFontName, setActiveFontName] = React.useState('Helvetica');
-  const [activeBrushSize, setActiveBrushSize] = React.useState(3);
+  const [internalColor, setInternalColor] = React.useState('#000000');
+  const activeColor = externalColor ?? internalColor;
+  const setActiveColor = (c: string) => { setInternalColor(c); onColorChange?.(c); };
+
+  const [internalFontSize, setInternalFontSize] = React.useState<number>(14);
+  const activeFontSize = externalFontSize ?? internalFontSize;
+  const setActiveFontSize = (s: number) => { setInternalFontSize(s); onFontSizeChange?.(s); };
+
+  const [internalFontName, setInternalFontName] = React.useState('Helvetica');
+  const activeFontName = externalFontName ?? internalFontName;
+  const setActiveFontName = (f: string) => { setInternalFontName(f); onFontNameChange?.(f); };
+
+  const [internalBrushSize, setInternalBrushSize] = React.useState(3);
+  const activeBrushSize = externalBrushSize ?? internalBrushSize;
+  const setActiveBrushSize = (b: number) => { setInternalBrushSize(b); onBrushSizeChange?.(b); };
+
   const [activeHighlightOpacity, setActiveHighlightOpacity] = React.useState(0.4);
   const [activeBorderColor, setActiveBorderColor] = React.useState('#000000');
   const [activeBorderWidth, setActiveBorderWidth] = React.useState(0);
