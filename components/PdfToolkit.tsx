@@ -527,7 +527,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
     return (
       <div className="h-full flex flex-col animate-fade-in p-6 overflow-y-auto custom-scrollbar">
         <div className="mb-8">
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">PDF Utilities</h1>
+          <h1 className="text-2xl font-bold text-slate-900">PDF Utilities</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <ToolCard title="Merge PDF" description="Combine multiple PDF files into one single document securely." icon={<Layers />} onClick={() => setMode('MERGE')} colorClass="bg-indigo-600 text-indigo-600" />
@@ -673,7 +673,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   <div className="w-full flex justify-end mb-2">
                     <button 
                       onClick={() => htmlFileInputRef.current?.click()}
-                      className="text-[10px] font-black uppercase tracking-widest text-orange-600 hover:text-orange-700 flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-lg transition-all"
+                      className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-lg transition-all"
                     >
                       <Upload size={12} /> Upload HTML File
                     </button>
@@ -764,7 +764,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                   </div>
                   <button onClick={reset}><Trash2 size={18} className="text-slate-300" /></button>
                 </div>
-                <Button disabled className="w-full py-6 bg-slate-400 opacity-50 cursor-not-allowed uppercase font-black tracking-widest">
+                <Button disabled className="w-full py-4 bg-slate-400 opacity-50 cursor-not-allowed font-semibold">
                   Server Engine Coming Soon
                 </Button>
               </div>
@@ -895,7 +895,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
             ) : mode === 'REDACT' ? (
               <div className="space-y-6 animate-fade-in w-full">
                 {resultImages.length === 0 ? (
-                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
+                  <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4 font-semibold shadow-md shadow-indigo-100">
                     Load PDF to Redact
                   </Button>
                 ) : (
@@ -951,7 +951,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
             ) : mode === 'ORGANIZE' ? (
               <div className="space-y-6 animate-fade-in w-full">
                 {organizedPages.length === 0 ? (
-                  <Button onClick={handleOrganizeLoad} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">
+                  <Button onClick={handleOrganizeLoad} isLoading={isProcessing} className="w-full py-4 font-semibold shadow-md shadow-indigo-100">
                     Load Pages to Organize
                   </Button>
                 ) : (
@@ -1086,7 +1086,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                     </span>
                   </div>
                 )}
-                <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest shadow-xl shadow-indigo-100">Process File</Button>
+                <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4 font-semibold shadow-md shadow-indigo-100">Process File</Button>
               </>
             )}
 

@@ -4,7 +4,7 @@ import {
   Search, Star, Layers, Zap, Edit3, Wand2, FileText,
   Image as LucideImage, Video, PenTool, Scissors, Sparkles,
   BookOpen, ArrowRight, ShieldCheck, Lock, Clock, Globe2,
-  TrendingUp
+  TrendingUp, FileSearch, Palette, Shield
 } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
 import { ToolType } from '../types';
@@ -13,26 +13,29 @@ import { TOOLS_REGISTRY } from '../utils/seoData';
 import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGS } from '../App';
 
-// ── Floating stat badge ──────────────────────────────────
-const StatBadge: React.FC<{ icon: React.ReactNode; label: string; delay?: number }> = ({ icon, label, delay = 0 }) => (
-  <div
-    className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-full text-xs font-semibold text-slate-600 shadow-sm animate-float"
-    style={{ animationDelay: `${delay}s` }}
-  >
-    {icon}
-    {label}
+// ── Section header ───────────────────────────────────────
+const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; accent: string; count?: number }> = ({ icon, title, accent, count }) => (
+  <div className="flex items-center gap-4 mb-6">
+    <div className={`w-1 h-7 ${accent} rounded-full`} />
+    <div className="flex items-center gap-3">
+      <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">{icon}</div>
+      <h2 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h2>
+      {count !== undefined && (
+        <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{count}</span>
+      )}
+    </div>
   </div>
 );
 
-// ── Section header ───────────────────────────────────────
-const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; accent: string }> = ({ icon, title, accent }) => (
-  <div className="flex items-center gap-4 mb-8">
-    <div className={`w-1 h-8 ${accent} rounded-full`} />
-    <div className="flex items-center gap-3">
-      <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">{icon}</div>
-      <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
-    </div>
-  </div>
+// ── Category quick link ──────────────────────────────────
+const CategoryLink: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm"
+  >
+    {icon}
+    {label}
+  </button>
 );
 
 export const Home: React.FC = () => {
@@ -40,6 +43,7 @@ export const Home: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [searchFocused, setSearchFocused] = React.useState(false);
+  const toolsRef = React.useRef<HTMLDivElement>(null);
 
   const seoData = TOOLS_REGISTRY['home'];
   const localizedSeoData = i18n.language !== 'en' && seoData.translations?.[i18n.language]
@@ -117,8 +121,18 @@ export const Home: React.FC = () => {
     );
   });
 
+  const pdfTools = allTools.filter(t => t.type === ToolType.PDF_SUITE || t.type === ToolType.JOURNEY_BUILDER);
+  const imageTools = allTools.filter(t => t.type === ToolType.IMAGE_TOOLKIT);
+  const aiTools = allTools.filter(t =>
+    t.type === ToolType.AI_WRITER ||
+    t.type === ToolType.IMAGE_GENERATOR ||
+    t.slug === 'magic-ai-editor' ||
+    t.slug === 'video-generator'
+  );
+  const notaryTools = allTools.filter(t => t.type === ToolType.NOTARIZE);
+
   const renderToolGrid = (tools: any[], limit?: number) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {tools.slice(0, limit || tools.length).map(tool => {
         const localTool = getLocalizedTool(tool);
         const handleClick = () => {
@@ -136,12 +150,16 @@ export const Home: React.FC = () => {
             colorClass={getColorClass(tool.slug)}
             onClick={handleClick}
             to={`/${tool.slug}`}
-            popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'notarize'].includes(tool.slug)}
+            popular={['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator'].includes(tool.slug)}
           />
         );
       })}
     </div>
   );
+
+  const scrollToTools = () => {
+    toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="animate-fade-in pb-24">
@@ -166,164 +184,90 @@ export const Home: React.FC = () => {
       />
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <div className="relative pt-36 pb-28 px-4 overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="mesh-blob bg-blue-400" style={{ top: '-10%', left: '-8%' }} />
-          <div className="mesh-blob bg-indigo-400" style={{ top: '30%', right: '-5%', animationDelay: '-7s' }} />
-          <div className="mesh-blob bg-violet-300" style={{ bottom: '-10%', left: '30%', width: '30%', animationDelay: '-12s', opacity: 0.12 }} />
-        </div>
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
+      <div className="relative pt-32 pb-16 px-4">
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/80 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-[0.15em] mb-10 animate-float backdrop-blur-sm shadow-sm">
-            <Sparkles size={13} />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold mb-8">
+            <Sparkles size={12} />
             100+ Free Tools · No Signup Required
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-6 tracking-[-0.03em] leading-[0.92]">
-            <span className="hero-gradient-text">Free PDF</span>
-            <br />
-            <span className="text-gradient-blue">&amp; Image Tools.</span>
+          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-5 tracking-tight leading-[1.1]">
+            Free PDF &amp; Image Tools
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-            Merge, compress, convert, edit, and sign PDFs. Remove backgrounds, resize images and more. <span className="text-indigo-600 font-bold">100+ tools, completely free.</span> No account needed.
+          <p className="text-base md:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">
+            Merge, compress, convert, edit, and sign PDFs. Remove backgrounds, resize images, and more. 
+            <span className="text-slate-700 font-medium"> Completely free.</span>
           </p>
 
-          {/* Industry Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16 max-w-4xl mx-auto">
-            <button 
-              onClick={() => navigate('/journey-builder?template=mortgage')}
-              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 transition-all text-left"
-            >
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
-                <FileText size={24} />
-              </div>
-              <h3 className="font-black text-slate-900 text-lg mb-1">Mortgage Agents</h3>
-              <p className="text-xs text-slate-500 font-medium">Auto-fill loan apps & lawyer instructions.</p>
-            </button>
-            
-            <button 
-              onClick={() => navigate('/journey-builder?template=legal')}
-              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/10 transition-all text-left"
-            >
-              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
-                <ShieldCheck size={24} />
-              </div>
-              <h3 className="font-black text-slate-900 text-lg mb-1">Legal Teams</h3>
-              <p className="text-xs text-slate-500 font-medium">Automate intakes, NDAs, and wills.</p>
-            </button>
-
-            <button 
-              onClick={() => navigate('/journey-builder?template=real-estate')}
-              className="group p-6 bg-white border border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all text-left"
-            >
-              <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-110 transition-transform">
-                <LucideImage size={24} />
-              </div>
-              <h3 className="font-black text-slate-900 text-lg mb-1">Real Estate</h3>
-              <p className="text-xs text-slate-500 font-medium">Listing agreements & mobile e-signs.</p>
-            </button>
-          </div>
-
           {/* Search */}
-          <div className="max-w-2xl mx-auto relative group mb-10">
-            <div className={`absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur transition-all duration-700 ${searchFocused ? 'opacity-60' : 'opacity-10 group-hover:opacity-30'}`} />
-            <div className="relative flex items-center bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100">
-              <div className="pl-5 text-slate-400">
-                <Search size={20} />
+          <div className="max-w-xl mx-auto relative mb-8">
+            <div className="relative flex items-center bg-white rounded-xl border border-slate-200 shadow-lg shadow-slate-100/50 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+              <div className="pl-4 text-slate-400">
+                <Search size={18} />
               </div>
               <input
                 type="text"
-                className="block w-full pl-4 pr-4 py-4 bg-transparent text-lg outline-none placeholder:text-slate-400 font-medium"
+                className="block w-full pl-3 pr-3 py-3.5 bg-transparent text-base outline-none placeholder:text-slate-400 font-medium"
                 placeholder={t('home.searchPlaceholder') || 'Search any tool — merge, compress, sign...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
               />
-              <button className="mr-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300/50 active:scale-95 transition-all text-sm">
-                Search
-              </button>
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="mr-2 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                >
+                  <span className="sr-only">Clear</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Quick category links */}
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            <CategoryLink icon={<FileText size={14} />} label="PDF Tools" onClick={scrollToTools} />
+            <CategoryLink icon={<LucideImage size={14} />} label="Image Tools" onClick={scrollToTools} />
+            <CategoryLink icon={<Wand2 size={14} />} label="AI Tools" onClick={scrollToTools} />
+            <CategoryLink icon={<ShieldCheck size={14} />} label="Notarize" onClick={() => {
+              const currentLang = i18n.language.split('-')[0];
+              const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+              navigate(`${langPrefix}/notarize`);
+            }} />
           </div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <StatBadge icon={<Star size={12} className="text-amber-400 fill-amber-400" />} label="4.9/5 Rating" delay={0} />
-            <StatBadge icon={<Lock size={12} className="text-emerald-500" />} label="100% Secure" delay={0.5} />
-            <StatBadge icon={<Globe2 size={12} className="text-blue-500" />} label="Cloud-based" delay={1} />
-            <StatBadge icon={<TrendingUp size={12} className="text-violet-500" />} label="2M+ Users" delay={1.5} />
-            <StatBadge icon={<Clock size={12} className="text-slate-400" />} label="Instant Processing" delay={2} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Notarize Elite Banner ──────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-px shadow-2xl shadow-blue-900/20">
-          <div className="relative bg-gradient-to-br from-blue-600 to-indigo-800 rounded-[23px] p-8 md:p-10">
-            {/* Decorative glows */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl pointer-events-none" />
-
-            <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center text-white shadow-2xl shrink-0">
-                  <ShieldCheck size={30} />
-                </div>
-                <div>
-                  <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">✦ Exclusive Feature</p>
-                  <h3 className="text-2xl md:text-3xl font-black text-white leading-tight">Elite Online Notarization</h3>
-                  <p className="text-blue-200/80 text-sm mt-1.5">Legally compliant e-signatures from any device, 24/7.</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-5">
-                <div className="hidden md:flex items-center gap-3 mr-2">
-                  <div className="flex -space-x-2.5">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="w-9 h-9 rounded-full border-2 border-blue-600 bg-slate-200 overflow-hidden shadow-lg">
-                        <img src={`https://i.pravatar.cc/80?u=${i + 30}`} alt="user" />
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-blue-100/70 text-xs font-medium">5k+ Professionals</span>
-                </div>
-                <button
-                  onClick={() => {
-                    const currentLang = i18n.language.split('-')[0];
-                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-                    navigate(`${langPrefix}/notarize`);
-                  }}
-                  className="flex items-center gap-2 px-7 py-3.5 bg-white text-blue-700 font-black rounded-2xl shadow-2xl hover:shadow-white/20 hover:bg-blue-50 active:scale-95 transition-all text-sm"
-                >
-                  Get Started <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5"><Star size={12} className="text-amber-400 fill-amber-400" /> 4.9/5 Rating</span>
+            <span className="flex items-center gap-1.5"><Lock size={12} className="text-emerald-500" /> 100% Secure</span>
+            <span className="flex items-center gap-1.5"><Globe2 size={12} className="text-blue-500" /> Cloud-based</span>
+            <span className="flex items-center gap-1.5"><TrendingUp size={12} className="text-violet-500" /> 2M+ Users</span>
           </div>
         </div>
       </div>
 
       {/* ── Tools Content ─────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+      <div ref={toolsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pt-8">
 
         {searchQuery ? (
           <section>
             <SectionHeader
-              icon={<Search size={18} className="text-blue-600" />}
+              icon={<Search size={16} className="text-blue-600" />}
               title={`Results for "${searchQuery}"`}
               accent="bg-blue-600"
+              count={filteredTools.length}
             />
             {filteredTools.length > 0 ? renderToolGrid(filteredTools) : (
               <div className="text-center py-20">
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Search size={28} className="text-slate-300" />
+                <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Search size={24} className="text-slate-300" />
                 </div>
-                <p className="text-slate-500 font-medium">No tools found for <span className="font-bold text-slate-700">"{searchQuery}"</span></p>
+                <p className="text-slate-500 font-medium">No tools found for <span className="font-semibold text-slate-700">"{searchQuery}"</span></p>
                 <button onClick={() => setSearchQuery('')} className="mt-3 text-sm text-blue-600 hover:underline">Clear search</button>
               </div>
             )}
@@ -333,104 +277,128 @@ export const Home: React.FC = () => {
             {/* Popular */}
             <section>
               <SectionHeader
-                icon={<Star size={18} className="text-amber-500 fill-amber-500" />}
+                icon={<Star size={16} className="text-amber-500 fill-amber-500" />}
                 title={t('home.popular') || 'Most Popular Tools'}
                 accent="bg-amber-400"
               />
               {renderToolGrid(allTools.filter(t =>
-                ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor', 'notarize', 'journey-builder'].includes(t.slug)
+                ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor', 'journey-builder'].includes(t.slug)
               ))}
             </section>
 
             {/* PDF Tools */}
-            <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+            <section>
               <SectionHeader
-                icon={<FileText size={18} className="text-blue-600" />}
+                icon={<FileText size={16} className="text-blue-600" />}
                 title={`${t('common.pdfTools') || 'PDF'} Tools`}
                 accent="bg-blue-600"
+                count={pdfTools.length}
               />
-              {renderToolGrid(allTools.filter(t => t.type === ToolType.PDF_SUITE || t.type === ToolType.JOURNEY_BUILDER))}
+              {renderToolGrid(pdfTools)}
             </section>
 
             {/* Image Tools */}
-            <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+            <section>
               <SectionHeader
-                icon={<LucideImage size={18} className="text-violet-600" />}
+                icon={<LucideImage size={16} className="text-violet-600" />}
                 title={`${t('common.imageTools') || 'Image'} Tools`}
                 accent="bg-violet-500"
+                count={imageTools.length}
               />
-              {renderToolGrid(allTools.filter(t => t.type === ToolType.IMAGE_TOOLKIT))}
+              {renderToolGrid(imageTools)}
             </section>
 
             {/* AI Tools */}
-            <section style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+            <section>
               <SectionHeader
-                icon={<Wand2 size={18} className="text-pink-600" />}
+                icon={<Wand2 size={16} className="text-pink-600" />}
                 title={`${t('common.aiTools') || 'AI'} Tools`}
                 accent="bg-pink-500"
+                count={aiTools.length}
               />
-              {renderToolGrid(allTools.filter(t =>
-                t.type === ToolType.AI_WRITER ||
-                t.type === ToolType.IMAGE_GENERATOR ||
-                t.slug === 'magic-ai-editor' ||
-                t.slug === 'video-generator'
-              ))}
+              {renderToolGrid(aiTools)}
             </section>
 
-            {/* Notarize */}
-            <section style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>
-              <SectionHeader
-                icon={<ShieldCheck size={18} className="text-[#185FA5]" />}
-                title="Notarization Tools"
-                accent="bg-[#185FA5]"
-              />
-              {renderToolGrid(allTools.filter(t => t.type === ToolType.NOTARIZE))}
+            {/* Notarize — subtle, at bottom */}
+            <section className="pt-4">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-1 h-7 bg-[#185FA5] rounded-full" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+                      <ShieldCheck size={16} className="text-[#185FA5]" />
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">Notarization</h2>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    const currentLang = i18n.language.split('-')[0];
+                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+                    navigate(`${langPrefix}/notarize`);
+                  }}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                >
+                  Open Notary <ArrowRight size={14} />
+                </button>
+              </div>
+              <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-100 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
+                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                  <Shield size={24} />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="font-bold text-slate-900 mb-1">Elite Online Notarization</h3>
+                  <p className="text-sm text-slate-500">Legally compliant e-signatures from any device, 24/7. Built for professionals who need verified document execution.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const currentLang = i18n.language.split('-')[0];
+                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
+                    navigate(`${langPrefix}/notarize`);
+                  }}
+                  className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shrink-0"
+                >
+                  Get Started
+                </button>
+              </div>
             </section>
           </>
         )}
 
         {/* ── Knowledge Hub ─────────────────────────────── */}
-        <section className="border-t border-slate-100 pt-20">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-10 md:p-16">
-            {/* Decorative */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
-              <Sparkles size={180} className="absolute right-8 top-8 text-white opacity-[0.03]" />
-            </div>
-
-            <div className="relative flex flex-col md:flex-row items-center gap-12">
-              <div className="md:w-3/5">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-500/20 border border-indigo-400/30 rounded-full text-indigo-300 text-xs font-bold mb-6 backdrop-blur-sm">
+        <section className="border-t border-slate-100 pt-16">
+          <div className="rounded-2xl bg-slate-900 p-8 md:p-12">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="md:w-2/3 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 rounded-full text-indigo-300 text-xs font-medium mb-4">
                   <BookOpen size={12} />
-                  NEW: KNOWLEDGE HUB
+                  Knowledge Hub
                 </div>
-                <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight mb-5">
-                  Master PDFs like<br />
-                  <span className="text-indigo-400">a professional.</span>
+                <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight tracking-tight mb-3">
+                  Master PDFs like a professional
                 </h2>
-                <p className="text-indigo-100/60 text-base font-medium mb-8 max-w-xl leading-relaxed">
+                <p className="text-slate-400 text-sm mb-6 max-w-lg leading-relaxed">
                   From compressing to 100kb to AI-powered document analysis — our experts share everything they know.
                 </p>
                 <button
                   onClick={() => navigate(i18n.language === 'en' ? '/blog' : `/${i18n.language}/blog`)}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-900 font-black rounded-2xl shadow-xl hover:bg-indigo-50 transition-all active:scale-95 hover:-translate-y-0.5 text-sm uppercase tracking-widest"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-slate-100 transition-colors text-sm"
                 >
-                  Browse Guides <ArrowRight size={18} />
+                  Browse Guides <ArrowRight size={16} />
                 </button>
               </div>
 
-              <div className="md:w-2/5 flex justify-center">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="md:w-1/3 flex justify-center">
+                <div className="grid grid-cols-2 gap-3">
                   {[
-                    { icon: <FileText size={28} />, label: 'PDF Guides' },
-                    { icon: <Sparkles size={28} />, label: 'AI Tips' },
-                    { icon: <Wand2 size={28} />, label: 'Automation' },
-                    { icon: <Layers size={28} />, label: 'Workflows' },
+                    { icon: <FileText size={22} />, label: 'PDF Guides' },
+                    { icon: <Sparkles size={22} />, label: 'AI Tips' },
+                    { icon: <Wand2 size={22} />, label: 'Automation' },
+                    { icon: <Layers size={22} />, label: 'Workflows' },
                   ].map((item, i) => (
-                    <div key={i} className="p-5 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 text-white/40 hover:text-white/70 hover:bg-white/10 transition-all cursor-pointer group">
+                    <div key={i} className="p-4 bg-white/5 border border-white/10 rounded-xl flex flex-col items-center gap-2 text-white/50 hover:text-white/80 hover:bg-white/10 transition-all cursor-pointer group">
                       <div className="group-hover:scale-110 transition-transform">{item.icon}</div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider">{item.label}</span>
+                      <span className="text-[11px] font-semibold">{item.label}</span>
                     </div>
                   ))}
                 </div>

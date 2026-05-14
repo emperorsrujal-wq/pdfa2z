@@ -733,7 +733,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
       <div className="flex items-center gap-4 mb-8 justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl"><ArrowLeft size={20} /></button>
-          <h1 className="text-2xl font-black uppercase tracking-tighter">{mode.replace('_', ' ')}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{mode.replace('_', ' ')}</h1>
         </div>
         {/* API Key button removed - Integrated */}
       </div>
@@ -746,7 +746,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
               ) : (
                 <div className="flex flex-col items-center gap-2">
                   <Upload size={40} className="text-slate-300" />
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">
+                  <p className="text-sm text-slate-400 text-center px-4">
                     {mode === 'BATCH_RESIZE' || mode === 'COLLAGE' ? 'Select multiple images' :
                       mode === 'COMPARE' ? 'Select 2 images' : 'Upload your photo'}
                   </p>
@@ -1057,7 +1057,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
             </div>
           )}
 
-          <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-6 uppercase font-black tracking-widest">
+          <Button onClick={handleProcess} isLoading={isProcessing} className="w-full py-4 font-semibold">
             {['RESIZE', 'CROP', 'COMPRESS', 'CONVERT', 'ROTATE', 'MEME', 'ROUND', 'QR_CODE', 'YT_THUMBNAIL', 'FLIP', 'PIXELATE', 'INVERT', 'SPLIT_IMAGE', 'ADD_TEXT', 'PROFILE_MAKER', 'SHARPEN', 'BLACK_WHITE', 'BLUR_IMG', 'FILTER'].includes(mode) ? 'Process Image' : 'Apply AI Magic'}
           </Button>
           {successMsg && <p className="text-green-600 text-sm font-bold text-center animate-fade-in flex items-center justify-center gap-2"><CheckCircle size={16} /> {successMsg}</p>}
@@ -1174,7 +1174,7 @@ export const ImageToolkit: React.FC<ImageToolkitProps> = ({ initialMode = 'MENU'
                 </div>
               </div>
             ) :
-              <div className="text-slate-300 text-center"><ImageIcon size={40} className="mx-auto mb-2 opacity-20" /><p className="text-xs uppercase font-black tracking-widest">Result Preview</p></div>}
+              <div className="text-slate-300 text-center"><ImageIcon size={40} className="mx-auto mb-2 opacity-20" /><p className="text-sm text-slate-400">Result Preview</p></div>}
         </div>
       </div>
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept="image/*" multiple />

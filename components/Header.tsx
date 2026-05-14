@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, FileText, Image, File, Zap, ChevronDown } from 'lucide-react';
+import { Menu, X, FileText, Image, Zap, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
 import { TOOLS_REGISTRY } from '../utils/seoData';
 import { useAuth } from '../context/AuthContext';
-import { User as UserIcon, LogOut, LayoutDashboard, ShieldCheck, Home as HomeIcon } from 'lucide-react';
+import { User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
 import { MegaMenu } from './MegaMenu';
 import { ToolType } from '../types';
 
@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
 
     // Get tools by category
     const pdfTools = Object.values(TOOLS_REGISTRY)
-        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'NOTARIZE' || t.type === 'JOURNEY_BUILDER') && t.unique !== false);
+        .filter((t: any) => (t.type === 'PDF_SUITE' || t.type === 'JOURNEY_BUILDER') && t.unique !== false);
     
     const imageTools = Object.values(TOOLS_REGISTRY)
         .filter((t: any) => t.type === 'IMAGE_TOOLKIT' && t.unique !== false);
@@ -54,117 +54,81 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
     const aiTools = Object.values(TOOLS_REGISTRY)
         .filter((t: any) => ['IMAGE_GENERATOR', 'AI_WRITER', 'AI_VISION'].includes(t.type));
 
-    const navigation = [
-        { name: t('common.onlineNotary'), href: '/notarize', icon: ShieldCheck, id: 'notarize', tools: [] },
-        { name: t('common.aiTools'), href: '/ai-image-generator', icon: Zap, id: 'ai', tools: aiTools },
-        { name: t('common.pdfTools'), href: '/merge-pdf', icon: FileText, id: 'pdf', tools: pdfTools },
-        { name: t('common.imageTools'), href: '/remove-bg', icon: Image, id: 'image', tools: imageTools },
+    const navGroups = [
+        { name: t('common.pdfTools') || 'PDF Tools', href: '/merge-pdf', icon: FileText, id: 'pdf', tools: pdfTools },
+        { name: t('common.imageTools') || 'Image Tools', href: '/remove-bg', icon: Image, id: 'image', tools: imageTools },
+        { name: t('common.aiTools') || 'AI Tools', href: '/ai-image-generator', icon: Zap, id: 'ai', tools: aiTools },
+    ];
+
+    const navLinks = [
+        { name: t('common.onlineNotary') || 'Notary', href: '/notarize', icon: FileText },
     ];
 
     return (
-        <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
-            <div className="glass-panel dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-full px-6 h-14 md:h-16 flex items-center justify-between w-full max-w-7xl">
+        <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+            <div className="glass-panel dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-full px-5 h-12 md:h-14 flex items-center justify-between w-full max-w-6xl">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-2xl font-bold text-blue-600 dark:text-blue-400 group">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/30 group-hover:scale-110 transition-transform">
-                            <FileText className="h-6 w-6" />
+                    <Link to={getLocalizedPath('/')} className="flex items-center gap-2 text-xl font-bold text-blue-600 dark:text-blue-400 group">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 dark:bg-blue-500 text-white shadow-sm group-hover:scale-105 transition-transform">
+                            <FileText className="h-5 w-5" />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="leading-none text-slate-900 dark:text-slate-100 tracking-tighter">PDF <span className="text-blue-600 dark:text-blue-400">A2Z</span></span>
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-blue-400 dark:text-blue-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Return Home</span>
-                        </div>
+                        <span className="leading-none text-slate-900 dark:text-slate-100 tracking-tight">PDF <span className="text-blue-600 dark:text-blue-400">A2Z</span></span>
                     </Link>
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-2">
-                    {navigation.filter(item => item.id !== 'notarize').map((item) => (
-                        <div key={item.id} className="relative group">
-                            {item.id === 'pdf' || item.id === 'image' || item.id === 'ai' ? (
-                                <button
-                                    onClick={() => openMegaMenu(item.id as any)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                                        megaMenuInfo.isOpen && megaMenuInfo.category === item.id
-                                            ? 'text-blue-600 bg-blue-50/50 scale-105'
-                                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    <item.icon className="h-3.5 w-3.5" />
-                                    {item.name}
-                                    <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${megaMenuInfo.isOpen && megaMenuInfo.category === item.id ? 'rotate-180' : ''}`} />
-                                </button>
-                            ) : (
-                                <Link
-                                    to={getLocalizedPath(item.href)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                                        isPathActive(item.href)
-                                            ? 'text-blue-600 bg-blue-50/50'
-                                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    <item.icon className="h-3.5 w-3.5" />
-                                    {item.name}
-                                </Link>
-                            )}
-
-                            {/* Dropdown Menu */}
-                            {item.tools.length > 0 && (
-                                <div className="absolute left-0 mt-0 w-72 bg-white rounded-lg shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-2">
-                                    {item.tools.map((tool: any) => (
-                                        <Link
-                                            key={tool.slug}
-                                            to={getLocalizedPath(`/${tool.slug}`)}
-                                            className="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors truncate"
-                                        >
-                                            {tool.h1 || tool.title}
-                                        </Link>
-                                    ))}
-                                    <div className="border-t border-slate-100 py-2 px-4">
-                                        <Link
-                                            to={getLocalizedPath(item.href)}
-                                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                                        >
-                                            View all {item.name.toLowerCase()} →
-                                        </Link>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                <nav className="hidden md:flex items-center gap-1">
+                    {navGroups.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => openMegaMenu(item.id as any)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                megaMenuInfo.isOpen && megaMenuInfo.category === item.id
+                                    ? 'text-blue-600 bg-blue-50'
+                                    : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            <item.icon className="h-4 w-4" />
+                            {item.name}
+                            <ChevronDown className={`h-3 w-3 opacity-50 transition-transform ${megaMenuInfo.isOpen && megaMenuInfo.category === item.id ? 'rotate-180' : ''}`} />
+                        </button>
+                    ))}
+                    {navLinks.map((item) => (
+                        <Link
+                            key={item.href}
+                            to={getLocalizedPath(item.href)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                isPathActive(item.href)
+                                    ? 'text-blue-600 bg-blue-50'
+                                    : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            {item.name}
+                        </Link>
                     ))}
                 </nav>
 
-                {/* Desktop Auth & Notary */}
-                <div className="hidden md:flex items-center gap-3">
-                    <Link 
-                        to={getLocalizedPath('/notarize')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                            isPathActive('/notarize')
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
-                                : 'border-blue-200 text-blue-600 hover:bg-blue-50'
-                        }`}
-                    >
-                        <ShieldCheck size={12} />
-                        VERIFIED NOTARY
-                    </Link>
-                    <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+                {/* Desktop Auth */}
+                <div className="hidden md:flex items-center gap-2">
                     <LanguageSelector />
+                    <div className="h-4 w-px bg-slate-200 mx-1" />
                     
                     {user ? (
                         <div className="relative group">
-                            <button className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-semibold hover:bg-blue-100 transition-colors">
-                                <UserIcon size={18} />
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-sm font-medium hover:bg-slate-100 transition-colors">
+                                <UserIcon size={16} />
                                 <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
                                 <ChevronDown size={14} />
                             </button>
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-2 overflow-hidden">
+                            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-2 overflow-hidden">
                                 <div className="px-4 py-2 border-b border-slate-50 mb-1">
                                     <p className="text-xs text-slate-400">Signed in as</p>
                                     <p className="text-sm font-medium text-slate-700 truncate">{user.email}</p>
                                 </div>
                                 <Link 
                                     to={getLocalizedPath('/dashboard')}
-                                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                                 >
                                     <LayoutDashboard size={16} />
                                     {t('common.dashboard')}
@@ -181,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                     ) : (
                         <button 
                             onClick={() => openAuthModal('login')}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-shadow hover:shadow-lg active:scale-95 transition-all"
+                            className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
                         >
                             {t('common.signIn')}
                         </button>
@@ -194,59 +158,42 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="p-2 text-slate-600 hover:text-blue-600"
                     >
-                        {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </div>
             </div>
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-slate-200 bg-white p-4">
+                <div className="md:hidden absolute top-full left-4 right-4 mt-2 bg-white rounded-2xl border border-slate-100 shadow-lg p-4 max-h-[80vh] overflow-y-auto">
                     <div className="flex items-center justify-between mb-4 px-2">
-                        <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{t('common.language')}</span>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('common.language')}</span>
                         <LanguageSelector />
                     </div>
                     <div className="space-y-1">
-                        {navigation.map((item) => (
+                        {navGroups.map((item) => (
                             <div key={item.id}>
-                                {item.tools.length > 0 ? (
-                                    <button
-                                        onClick={() => setOpenDropdown(openDropdown === item.id ? null : item.id)}
-                                        className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-base font-semibold transition-all ${
-                                            isPathActive(item.href)
-                                                ? 'bg-blue-100 text-blue-600'
-                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <item.icon className="h-5 w-5" />
-                                            {item.name}
-                                        </div>
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${openDropdown === item.id ? 'rotate-180' : ''}`} />
-                                    </button>
-                                ) : (
-                                    <Link
-                                        to={getLocalizedPath(item.href)}
-                                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition-all ${
-                                            isPathActive(item.href)
-                                                ? 'bg-blue-100 text-blue-600'
-                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
-                                        }`}
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        <item.icon className="h-5 w-5" />
+                                <button
+                                    onClick={() => setOpenDropdown(openDropdown === item.id ? null : item.id)}
+                                    className={`w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                                        isPathActive(item.href)
+                                            ? 'bg-blue-50 text-blue-600'
+                                            : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <item.icon className="h-4 w-4" />
                                         {item.name}
-                                    </Link>
-                                )}
-
-                                {/* Mobile Dropdown */}
-                                {item.tools.length > 0 && openDropdown === item.id && (
-                                    <div className="bg-slate-50 space-y-1 py-2">
+                                    </div>
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${openDropdown === item.id ? 'rotate-180' : ''}`} />
+                                </button>
+                                {openDropdown === item.id && (
+                                    <div className="bg-slate-50 space-y-1 py-2 rounded-xl mt-1">
                                         {item.tools.map((tool: any) => (
                                             <Link
                                                 key={tool.slug}
                                                 to={getLocalizedPath(`/${tool.slug}`)}
-                                                className="block px-6 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                                className="block px-6 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                                 onClick={() => setIsMenuOpen(false)}
                                             >
                                                 {tool.h1 || tool.title}
@@ -255,6 +202,20 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                                     </div>
                                 )}
                             </div>
+                        ))}
+                        {navLinks.map((item) => (
+                            <Link
+                                key={item.href}
+                                to={getLocalizedPath(item.href)}
+                                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                                    isPathActive(item.href)
+                                        ? 'bg-blue-50 text-blue-600'
+                                        : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'
+                                }`}
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                {item.name}
+                            </Link>
                         ))}
                     </div>
                     {/* Mobile Auth */}
@@ -267,24 +228,24 @@ export const Header: React.FC<HeaderProps> = ({ currentLang = 'en' }) => {
                                 </div>
                                 <Link
                                     to={getLocalizedPath('/dashboard')}
-                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-semibold"
+                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-semibold text-sm"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
-                                    <LayoutDashboard size={20} />
+                                    <LayoutDashboard size={18} />
                                     {t('common.dashboard')}
                                 </Link>
                                 <button
                                     onClick={() => { signOut(); setIsMenuOpen(false); }}
-                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50"
+                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 font-semibold hover:bg-red-50 text-sm"
                                 >
-                                    <LogOut size={20} />
+                                    <LogOut size={18} />
                                     {t('common.signOut')}
                                 </button>
                             </div>
                         ) : (
                             <button
                                 onClick={() => { openAuthModal('login'); setIsMenuOpen(false); }}
-                                className="w-full py-4 px-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-center"
+                                className="w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors text-center"
                             >
                                 Sign In / Get Started
                             </button>
