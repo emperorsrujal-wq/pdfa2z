@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { PdfEditorCanvas } from './PDFEditorCanvas';
 import { ToolPalette } from './pdf-editor/ToolPalette';
+import { MobileToolBar } from './pdf-editor/MobileToolBar';
 import { KeyboardShortcutsModal } from './pdf-editor/KeyboardShortcutsModal';
 import type { EditorMode } from './pdf-editor/types';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages } from '../utils/pdfHelpers';
@@ -456,11 +457,13 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
       {/* ── Main Workspace ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Tool Palette */}
-        <ToolPalette
-          activeMode={editorMode}
-          onModeChange={(m) => setEditorMode(m)}
-        />
+        {/* Tool Palette (desktop) */}
+        <div className="hidden md:block">
+          <ToolPalette
+            activeMode={editorMode}
+            onModeChange={(m) => setEditorMode(m)}
+          />
+        </div>
 
         {/* Editor Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-[#f3f3f3]">
@@ -483,6 +486,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               mode={editorMode}
               onModeChange={(m) => setEditorMode(m)}
               hideChrome={true}
+              zoom={zoom / 100}
+              onZoomChange={(z) => setZoom(Math.round(z * 100))}
               textItems={textItems}
               file={currentFile}
               onInsertPage={handleInsertPage}
@@ -581,6 +586,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           )}
         </aside>
       </div>
+
+      {/* Mobile Tool Bar */}
+      <MobileToolBar activeMode={editorMode} onModeChange={(m) => setEditorMode(m)} />
 
       <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>

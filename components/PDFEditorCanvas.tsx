@@ -67,6 +67,8 @@ interface PdfEditorCanvasProps {
   mode?: EditorMode;
   onModeChange?: (mode: EditorMode) => void;
   hideChrome?: boolean;
+  zoom?: number;
+  onZoomChange?: (z: number) => void;
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
@@ -202,6 +204,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   mode: externalMode,
   onModeChange,
   hideChrome,
+  zoom: externalZoom,
+  onZoomChange,
   textItems = [],
   file,
   docId,
@@ -240,7 +244,20 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [activeHighlightOpacity, setActiveHighlightOpacity] = React.useState(0.4);
   const [activeBorderColor, setActiveBorderColor] = React.useState('#000000');
   const [activeBorderWidth, setActiveBorderWidth] = React.useState(0);
-  const [zoom, setZoom] = React.useState(1);
+  const [internalZoom, setInternalZoom] = React.useState(1);
+  const zoom = externalZoom ?? internalZoom;
+  const setZoom = (z: number | ((prev: number) => number)) => {
+    if (typeof z === 'function') {
+      setInternalZoom(prev => {
+        const next = z(prev);
+        onZoomChange?.(next);
+        return next;
+      });
+    } else {
+      setInternalZoom(z);
+      onZoomChange?.(z);
+    }
+  };
 
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
