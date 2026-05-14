@@ -2,10 +2,11 @@ import * as React from 'react';
 import {
   CheckCircle2, Layout, X, AlertTriangle, FileWarning, ChevronLeft,
   ChevronRight as ChevronRightIcon, ZoomIn, ZoomOut, Undo2, Redo2,
-  Download, FileText
+  Download, FileText, Keyboard
 } from 'lucide-react';
 import { PdfEditorCanvas } from './PDFEditorCanvas';
 import { ToolPalette } from './pdf-editor/ToolPalette';
+import { KeyboardShortcutsModal } from './pdf-editor/KeyboardShortcutsModal';
 import type { EditorMode } from './pdf-editor/types';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages } from '../utils/pdfHelpers';
 
@@ -43,6 +44,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
   const [editorMode, setEditorMode] = React.useState<EditorMode>('select');
   const [zoom, setZoom] = React.useState(100);
+  const [showShortcuts, setShowShortcuts] = React.useState(false);
+  const [rightPanelTab, setRightPanelTab] = React.useState<'pages' | 'properties'>('pages');
   const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
 
   // ── File Validation ───────────────────────────────────────────────
@@ -180,6 +183,11 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   // ── Keyboard Shortcuts ───────────────────────────────────────────
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setShowShortcuts(prev => !prev);
+        e.preventDefault();
+        return;
+      }
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'z') {
           if (e.shiftKey) {
@@ -396,6 +404,13 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-1">
               <button
+                onClick={() => setShowShortcuts(true)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Keyboard shortcuts (?)"
+              >
+                <Keyboard size={16} />
+              </button>
+              <button
                 onClick={undo}
                 disabled={historyStep === 0}
                 className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
@@ -479,47 +494,119 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
         {/* Right: Properties / Page Thumbnails */}
         <aside className="w-64 bg-white border-l border-slate-200 flex flex-col overflow-hidden shrink-0 hidden lg:flex">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-800">Pages</h3>
+          <div className="flex border-b border-slate-100">
+            <button
+              onClick={() => setRightPanelTab('pages')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'pages' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Pages
+            </button>
+            <button
+              onClick={() => setRightPanelTab('properties')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Tool Info
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar">
-            {images.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setActivePage(i)}
-                className={`group relative w-full transition-all rounded-lg overflow-hidden border ${
-                  activePage === i ? 'ring-2 ring-blue-500 border-blue-500' : 'border-slate-200 hover:border-blue-300'
-                }`}
-              >
-                <img src={img} alt={`Page ${i + 1}`} className="w-full object-cover" />
-                <div className={`absolute bottom-0 left-0 right-0 text-center text-[10px] font-semibold py-0.5 ${activePage === i ? 'bg-blue-600 text-white' : 'bg-black/50 text-white'}`}>
-                  {i + 1}
+
+          {rightPanelTab === 'pages' ? (
+            <>
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActivePage(i)}
+                    className={`group relative w-full transition-all rounded-lg overflow-hidden border ${
+                      activePage === i ? 'ring-2 ring-blue-500 border-blue-500' : 'border-slate-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <img src={img} alt={`Page ${i + 1}`} className="w-full object-cover" />
+                    <div className={`absolute bottom-0 left-0 right-0 text-center text-[10px] font-semibold py-0.5 ${activePage === i ? 'bg-blue-600 text-white' : 'bg-black/50 text-white'}`}>
+                      {i + 1}
+                    </div>
+                    {elements.filter(el => el.pageIndex === i).length > 0 && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow">
+                        {elements.filter(el => el.pageIndex === i).length}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="p-3 border-t border-slate-100 flex gap-2">
+                <button
+                  onClick={handleInsertPage}
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  + Insert Page
+                </button>
+                <button
+                  onClick={handleDeletePage}
+                  disabled={images.length <= 1}
+                  className="px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-xs font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40"
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Active Tool</h4>
+                  <p className="text-sm font-medium text-slate-800 capitalize">{editorMode.replace(/-/g, ' ')}</p>
                 </div>
-                {elements.filter(el => el.pageIndex === i).length > 0 && (
-                  <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow">
-                    {elements.filter(el => el.pageIndex === i).length}
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Document</h4>
+                  <div className="space-y-1 text-sm text-slate-600">
+                    <p><span className="text-slate-400">Pages:</span> {images.length}</p>
+                    <p><span className="text-slate-400">Size:</span> {(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                    <p><span className="text-slate-400">Edits:</span> {elements.length}</p>
                   </div>
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="p-3 border-t border-slate-100 flex gap-2">
-            <button
-              onClick={handleInsertPage}
-              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              + Insert Page
-            </button>
-            <button
-              onClick={handleDeletePage}
-              disabled={images.length <= 1}
-              className="px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-xs font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40"
-            >
-              Delete
-            </button>
-          </div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Tip</h4>
+                  <p className="text-sm text-blue-800">{getToolTip(editorMode)}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Shortcuts</h4>
+                  <div className="grid grid-cols-2 gap-1.5 text-xs text-slate-600">
+                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Ctrl+Z</kbd> Undo</span>
+                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Ctrl+Y</kbd> Redo</span>
+                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">Delete</kbd> Remove</span>
+                    <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono">?</kbd> Shortcuts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
+
+      <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 };
+
+function getToolTip(mode: EditorMode): string {
+  const tips: Record<string, string> = {
+    select: 'Click to select, drag to move. Use handles to resize or rotate.',
+    text: 'Click anywhere to add a new text box.',
+    'magic-edit': 'Click existing text to edit it directly, or click empty space to add new text.',
+    draw: 'Click and drag to draw freehand.',
+    highlight: 'Click and drag to highlight text areas.',
+    erase: 'Click and drag to cover content with white.',
+    'smart-erase': 'Automatically matches background color.',
+    rect: 'Click and drag to draw rectangles.',
+    circle: 'Click and drag to draw circles.',
+    line: 'Click and drag to draw straight lines.',
+    arrow: 'Click and drag to draw arrows.',
+    image: 'Click to place an image, then upload your file.',
+    link: 'Draw a rectangle to create a clickable link area.',
+    sign: 'Place a signature box, then draw or upload your signature.',
+    'sticky-note': 'Click to add a comment note.',
+    'form-text': 'Click to place a fillable text field.',
+    watermark: 'Add a watermark across your document.',
+    'find-replace': 'Search and replace text across the document.',
+  };
+  return tips[mode] || 'Select a tool to start editing.';
+}

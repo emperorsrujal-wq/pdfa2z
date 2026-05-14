@@ -875,7 +875,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     () => textItems.map((item, idx) => (
       <div
         key={`vtl-${idx}`}
-        className="absolute whitespace-nowrap text-transparent selection:bg-blue-500/30 selection:text-transparent cursor-text"
+        className={`absolute whitespace-nowrap text-transparent selection:bg-blue-500/30 selection:text-transparent ${mode === 'magic-edit' ? 'hover:bg-blue-500/10 hover:outline hover:outline-1 hover:outline-blue-400 cursor-text' : 'cursor-text'}`}
         style={{
           left: `${item.x / 10}%`,
           top: `${item.y / 10}%`,
@@ -886,11 +886,30 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           transform: `rotate(${(item as any).rotation || 0}deg)`,
           transformOrigin: 'top left',
         }}
+        onClick={(e) => {
+          if (mode === 'magic-edit') {
+            e.stopPropagation();
+            const now = Date.now();
+            const maskId = `mask-${now}`;
+            const textId = `t-${now}`;
+            const mask: EditElement = { id: maskId, type: 'rect', pageIndex, x: item.x, y: item.y, width: item.width, height: item.height, color: '#FFFFFF', opacity: 1 };
+            const text: EditElement = { id: textId, type: 'text', pageIndex, x: item.x, y: item.y, width: item.width, height: item.height, color: activeColor, text: item.str, size: item.fontSize, opacity: 1 };
+            const next = [...elements, mask, text];
+            commit(next);
+            setActiveElementId(textId);
+            extractStyleAtPoint(file, pageIndex, item.x, item.y, image)
+              .then(style => {
+                const bg = style.backgroundColor || '#FFFFFF';
+                setElements(prev => prev.map(el => el.id === maskId ? { ...el, color: bg } : el));
+              })
+              .catch(() => {});
+          }
+        }}
       >
         {item.str}
       </div>
     )),
-    [textItems]
+    [textItems, mode, elements, pageIndex, activeColor, file, image]
   );
 
   const selectionRect =
@@ -1473,7 +1492,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             {textLayerDivs.length > 0 && (
               <div
                 className="absolute inset-0 z-[2]"
-                style={{ pointerEvents: mode === 'select' ? 'auto' : 'none' }}
+                style={{ pointerEvents: (mode === 'select' || mode === 'magic-edit') ? 'auto' : 'none' }}
               >
                 {textLayerDivs}
               </div>
