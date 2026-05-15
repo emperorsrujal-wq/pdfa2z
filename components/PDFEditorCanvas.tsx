@@ -84,6 +84,7 @@ interface PdfEditorCanvasProps {
   onInsertPage?: () => void;
   onDeletePage?: () => void;
   setElements: React.Dispatch<React.SetStateAction<EditElement[]>>;
+  onPageChange?: (pageIndex: number) => void;
 }
 
 type EditorMode =
@@ -247,6 +248,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onDeletePage,
   setElements,
   onActiveElementChange,
+  onPageChange,
 }) => {
   const [internalMode, setInternalMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
   const mode = externalMode ?? internalMode;
@@ -1181,6 +1183,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         <FindReplace
           onFind={handleFind}
           onReplace={handleReplace}
+          onJumpToPage={(page) => onPageChange?.(page)}
           onClose={() => setMode('select')}
         />
       )}

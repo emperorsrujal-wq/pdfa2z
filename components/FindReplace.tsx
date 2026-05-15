@@ -1,18 +1,20 @@
 import * as React from 'react';
-import { X, Search, Replace, Sparkles, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Search, Replace, Sparkles, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { RedactionArea } from '../utils/pdfHelpers';
 
 interface FindReplaceProps {
-  onFind: (search: string) => Promise<any[]>;
+  onFind: (search: string) => Promise<RedactionArea[]>;
   onReplace: (search: string, replacement: string, all: boolean) => Promise<void>;
+  onJumpToPage?: (pageIndex: number) => void;
   onClose: () => void;
 }
 
-export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onClose }) => {
+export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onJumpToPage, onClose }) => {
   const [search, setSearch] = React.useState('');
   const [replacement, setReplacement] = React.useState('');
   const [isSearching, setIsSearching] = React.useState(false);
   const [isReplacing, setIsReplacing] = React.useState(false);
-  const [results, setResults] = React.useState<any[]>([]);
+  const [results, setResults] = React.useState<RedactionArea[]>([]);
   const [currentIndex, setCurrentIndex] = React.useState(0);
 
   const handleSearch = async () => {
@@ -22,6 +24,9 @@ export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onC
       const found = await onFind(search);
       setResults(found);
       setCurrentIndex(0);
+      if (found.length > 0 && onJumpToPage) {
+        onJumpToPage(found[0].pageIndex);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -35,7 +40,6 @@ export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onC
     try {
       await onReplace(search, replacement, all);
       if (!all) {
-        // Move to next result if single replace
         handleSearch();
       } else {
         onClose();
@@ -46,6 +50,23 @@ export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onC
       setIsReplacing(false);
     }
   };
+
+  const goToResult = (idx: number) => {
+    const newIdx = Math.max(0, Math.min(results.length - 1, idx));
+    setCurrentIndex(newIdx);
+    if (results[newIdx] && onJumpToPage) {
+      onJumpToPage(results[newIdx].pageIndex);
+    }
+  };
+
+  // Group results by page
+  const resultsByPage = React.useMemo(() => {
+    const map = new Map<number, number>();
+    results.forEach(r => {
+      map.set(r.pageIndex, (map.get(r.pageIndex) || 0) + 1);
+    });
+    return map;
+  }, [results]);
 
   return (
     <div className="fixed top-24 right-8 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-[600] overflow-hidden animate-in slide-in-from-right-4 duration-300">
@@ -93,16 +114,40 @@ export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onC
         </div>
 
         {results.length > 0 && (
-          <div className="flex items-center justify-between px-1 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-            <span className="text-[11px] font-bold text-indigo-600 px-2">
-              {results.length} occurrences found
-            </span>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} className="p-1 hover:bg-white rounded text-indigo-600"><ChevronLeft size={14} /></button>
-              <span className="text-[10px] font-black text-indigo-400">{currentIndex + 1} / {results.length}</span>
-              <button onClick={() => setCurrentIndex(i => Math.min(results.length - 1, i + 1))} className="p-1 hover:bg-white rounded text-indigo-600"><ChevronRight size={14} /></button>
+          <>
+            <div className="flex items-center justify-between px-1 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <span className="text-[11px] font-bold text-indigo-600 px-2">
+                {results.length} occurrences found
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => goToResult(currentIndex - 1)} className="p-1 hover:bg-white rounded text-indigo-600"><ChevronLeft size={14} /></button>
+                <span className="text-[10px] font-black text-indigo-400">{currentIndex + 1} / {results.length}</span>
+                <button onClick={() => goToResult(currentIndex + 1)} className="p-1 hover:bg-white rounded text-indigo-600"><ChevronRight size={14} /></button>
+              </div>
             </div>
-          </div>
+
+            {resultsByPage.size > 1 && (
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 flex-wrap">
+                <FileText size={10} />
+                <span className="font-semibold">Pages:</span>
+                {Array.from(resultsByPage.entries()).sort((a, b) => a[0] - b[0]).map(([page, count]) => (
+                  <button
+                    key={page}
+                    onClick={() => onJumpToPage?.(page)}
+                    className="px-1.5 py-0.5 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 rounded text-[10px] font-bold transition-colors"
+                  >
+                    {page + 1} ({count})
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {results[currentIndex] && (
+              <div className="text-[10px] text-slate-400 text-center">
+                Current: Page {results[currentIndex].pageIndex + 1}
+              </div>
+            )}
+          </>
         )}
 
         <div className="grid grid-cols-2 gap-2 pt-2">
@@ -127,7 +172,7 @@ export const FindReplace: React.FC<FindReplaceProps> = ({ onFind, onReplace, onC
       <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-center">
         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
           <Sparkles size={10} className="text-amber-400" />
-          Smart Text Layering Active
+          Searches all {resultsByPage.size > 0 ? `${resultsByPage.size} page${resultsByPage.size > 1 ? 's' : ''}` : 'pages'}
         </p>
       </div>
     </div>
