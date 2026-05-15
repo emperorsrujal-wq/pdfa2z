@@ -32,7 +32,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
                             {item.path ? (
                                 <Link
                                     to={item.path}
-                                    className="ml-1 text-slate-500 hover:text-rose-600 transition-colors md:ml-2"
+                                    className="ml-1 text-slate-500 hover:text-blue-600 transition-colors md:ml-2"
                                 >
                                     {item.label}
                                 </Link>

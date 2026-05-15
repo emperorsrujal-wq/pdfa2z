@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { Upload, Download, ArrowRight, ArrowLeft, File as FileIcon, Scissors, Layers, PenTool, Stamp, EyeOff, LayoutTemplate, Wrench, Tag, Hash, FileSpreadsheet, FileCode, RotateCw, FileX, FileText, FileImage, Lock, Unlock, Mail, Trash2, Sliders, Target, CheckCircle2, Copy, Download as DownloadIcon, FileType, Book, Link, Package, Printer, Globe, Info, ChevronLeft, ChevronRight, Zap, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import JSZip from 'jszip';
+import { useTranslation } from 'react-i18next';
 import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
 import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea, wordToPdf, pptToPdf, epubToPdf, htmlToPdf, emlToPdf } from '../utils/pdfHelpers.ts';
@@ -24,6 +25,7 @@ interface PdfToolkitProps {
 }
 
 export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = React.useState<PdfToolMode>(initialMode);
   const [files, setFiles] = React.useState<File[]>([]);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -651,30 +653,30 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
 
   return (
     <div className={`h-full flex flex-col p-6 animate-fade-in ${mode === 'EDIT' ? 'bg-white' : ''}`}>
-      <div className={`flex items-center gap-4 mb-8 ${mode === 'EDIT' ? 'flex-col text-center' : 'justify-between'}`}>
+      <div className={`flex items-center gap-4 mb-4 ${mode === 'EDIT' ? 'justify-center relative' : 'justify-between mb-8'}`}>
+        {(mode as any) !== 'MENU' && (
+          <button onClick={() => setMode('MENU')} className={`p-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors ${mode === 'EDIT' ? 'absolute left-0 top-1/2 -translate-y-1/2' : 'self-start'}`}><ArrowLeft size={20} /></button>
+        )}
         <div className={`flex items-center gap-4 ${mode === 'EDIT' ? 'flex-col' : ''}`}>
-          {(mode as any) !== 'MENU' && (
-            <button onClick={() => setMode('MENU')} className="p-2 bg-slate-50 rounded-xl self-start hover:bg-slate-100 transition-colors"><ArrowLeft size={20} /></button>
-          )}
-          <div className={`${mode === 'EDIT' ? 'mt-4' : ''}`}>
-            <h1 className={`${mode === 'EDIT' ? 'text-3xl font-bold text-slate-900 mb-2' : 'text-2xl font-bold'} flex items-center gap-3 justify-center`}>
+          <div className={`${mode === 'EDIT' ? '' : ''}`}>
+            <h1 className={`${mode === 'EDIT' ? 'text-2xl font-bold text-slate-900 mb-1' : 'text-2xl font-bold'} flex items-center gap-3 justify-center`}>
               {mode !== 'EDIT' && header.icon}
               {header.title}
             </h1>
             {mode === 'EDIT' && (
-              <p className="text-slate-500 text-base max-w-xl mx-auto">Edit, annotate, and fill PDFs for free. No installation needed.</p>
+              <p className="text-slate-500 text-sm max-w-xl mx-auto">Edit, annotate, and fill PDFs for free. No installation needed.</p>
             )}
           </div>
         </div>
       </div>
-      <div className={`flex-1 ${mode === 'EDIT' ? 'bg-transparent' : 'bg-slate-50 rounded-3xl'} p-8 flex flex-col overflow-y-auto custom-scrollbar`}>
+      <div className={`flex-1 ${mode === 'EDIT' ? 'bg-transparent px-4 pb-8' : 'bg-slate-50 rounded-3xl p-8'} flex flex-col overflow-y-auto custom-scrollbar`}>
         {files.length === 0 && !['URL_TO_PDF', 'HTML_TO_PDF'].includes(mode) ? (
           <div 
             onClick={() => fileInputRef.current?.click()} 
             className={`flex-1 ${mode === 'EDIT' ? 'bg-blue-600 hover:bg-blue-700 max-w-md mx-auto h-16 flex-none rounded-xl px-12' : 'border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center min-h-[300px] hover:border-indigo-600'} transition-all cursor-pointer flex items-center justify-center shadow-sm`}
           >
             {mode === 'EDIT' ? (
-              <span className="text-white text-base font-semibold flex items-center gap-2"><Upload size={18} /> Upload PDF file</span>
+              <span className="text-white text-base font-semibold flex items-center gap-2"><Upload size={18} /> {t('tools.uploadPdf', 'Upload PDF file')}</span>
             ) : (
               <>
                 <Upload size={40} className="mb-4 text-indigo-600" />

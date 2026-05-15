@@ -61,6 +61,7 @@
         "alsoUse": "People also use",
         "openTool": "OPEN TOOL",
         "upload": "Upload your file",
+        "uploadPdf": "Upload PDF file",
         "processing": "Processing..."
     },
     "writer": {

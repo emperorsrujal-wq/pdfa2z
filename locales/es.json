@@ -42,6 +42,7 @@
         "alsoUse": "La gente también usa",
         "openTool": "ABRIR HERRAMIENTA",
         "upload": "Sube tu archivo",
+        "uploadPdf": "Subir archivo PDF",
         "processing": "Procesando..."
     }
 }

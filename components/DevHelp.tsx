@@ -5,10 +5,8 @@ import { Terminal, X, Rocket } from 'lucide-react';
 export const DevHelp = () => {
   const [isOpen, setIsOpen] = React.useState(true);
 
-  // Safely check for development mode without using Vite-specific build tools
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
-  if (!isDev) return null;
+  // Disabled: preventing it from blocking UI content
+  return null;
 
   if (!isOpen) return (
     <button 

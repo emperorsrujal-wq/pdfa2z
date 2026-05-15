@@ -36,8 +36,8 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
     };
 
     const filteredTools = tools.filter(tool => 
-        (tool.h1 || tool.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (tool.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (tool.translations?.[currentLang]?.h1 || tool.translations?.[currentLang]?.title || tool.h1 || tool.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (tool.translations?.[currentLang]?.description || tool.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const grouped = getGroupedTools();
@@ -141,7 +141,7 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
                                                 {tool.icon ? <tool.icon size={14} /> : <FileText size={14} />}
                                             </div>
                                             <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
-                                                {tool.h1 || tool.title}
+                                                {tool.translations?.[currentLang]?.h1 || tool.translations?.[currentLang]?.title || tool.h1 || tool.title}
                                             </span>
                                             <ChevronRight size={12} className="ml-auto opacity-0 -translate-x-1 group-hover:opacity-30 group-hover:translate-x-0 transition-all text-slate-400 shrink-0" />
                                         </Link>

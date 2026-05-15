@@ -77,6 +77,7 @@ interface PdfEditorCanvasProps {
   onFontNameChange?: (f: string) => void;
   activeBrushSize?: number;
   onBrushSizeChange?: (b: number) => void;
+  onActiveElementChange?: (id: string | null, element?: EditElement) => void;
   textItems?: PdfTextItem[];
   file: File;
   docId?: string;
@@ -126,13 +127,20 @@ type EditorMode =
 
 const CONTEXT_FONTS = [
   { name: 'Helvetica', value: 'Helvetica' },
+  { name: 'Arial', value: 'Arial' },
   { name: 'Times New Roman', value: 'Times-Roman' },
   { name: 'Courier New', value: 'Courier' },
   { name: 'Georgia', value: 'Georgia' },
   { name: 'Verdana', value: 'Verdana' },
-  { name: 'Arial', value: 'Arial' },
   { name: 'Palatino', value: 'Palatino' },
   { name: 'Garamond', value: 'Garamond' },
+  { name: 'Trebuchet MS', value: 'Trebuchet MS' },
+  { name: 'Impact', value: 'Impact' },
+  { name: 'Comic Sans MS', value: 'Comic Sans MS' },
+  { name: 'Bookman Old Style', value: 'Bookman Old Style' },
+  { name: 'Candara', value: 'Candara' },
+  { name: 'Calibri', value: 'Calibri' },
+  { name: 'Cambria', value: 'Cambria' },
 ];
 
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
@@ -190,6 +198,16 @@ function getFontFamily(fontName?: string) {
   if (fontName === 'Courier') return '"JetBrains Mono", "Courier New", Courier, monospace';
   if (fontName === 'Georgia') return 'Georgia, serif';
   if (fontName === 'Verdana') return 'Verdana, Geneva, sans-serif';
+  if (fontName === 'Arial') return 'Arial, "Helvetica Neue", Helvetica, sans-serif';
+  if (fontName === 'Palatino') return '"Palatino Linotype", "Book Antiqua", Palatino, serif';
+  if (fontName === 'Garamond') return 'Garamond, "EB Garamond", serif';
+  if (fontName === 'Trebuchet MS') return '"Trebuchet MS", Helvetica, sans-serif';
+  if (fontName === 'Impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif';
+  if (fontName === 'Comic Sans MS') return '"Comic Sans MS", "Comic Sans", cursive, sans-serif';
+  if (fontName === 'Bookman Old Style') return '"Bookman Old Style", "Book Antiqua", serif';
+  if (fontName === 'Candara') return 'Candara, Calibri, Segoe, sans-serif';
+  if (fontName === 'Calibri') return 'Calibri, Candara, Segoe, sans-serif';
+  if (fontName === 'Cambria') return 'Cambria, Georgia, serif';
   return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
 }
 
@@ -228,6 +246,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   onInsertPage,
   onDeletePage,
   setElements,
+  onActiveElementChange,
 }) => {
   const [internalMode, setInternalMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
   const mode = externalMode ?? internalMode;
@@ -287,7 +306,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     }
   };
 
-  const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
+  const [activeElementId, setActiveElementIdState] = React.useState<string | null>(null);
+  const setActiveElementId = React.useCallback((id: string | null) => {
+    setActiveElementIdState(id);
+    const el = id ? elementsRef.current.find(e => e.id === id) : undefined;
+    onActiveElementChange?.(id, el);
+  }, [onActiveElementChange]);
   const [isDrawing, setIsDrawing] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState<{ x: number; y: number }[]>([]);
   const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
@@ -385,7 +409,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
   const commitUpdate = (id: string, updates: Partial<EditElement>) => {
     const next = elements.map(el => (el.id === id ? { ...el, ...updates } : el));
-    
+
     if (updates.x !== undefined || updates.y !== undefined || updates.width !== undefined || updates.height !== undefined || updates.size !== undefined) {
       const el = elements.find(e => e.id === id);
       if (el?.type === 'text' && el.id.startsWith('t-')) {
@@ -402,8 +426,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         }
       }
     }
-    
+
     commit(next);
+    onSave(next);
   };
 
   const deleteElement = (id: string) => {
@@ -411,6 +436,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     commit(next);
     setActiveElementId(null);
   };
+
+
 
   const duplicateElement = (element: EditElement) => {
     const newId = `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -496,6 +523,63 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     return rotEl?.rotation || 0;
   };
 
+  // ── Sync tool settings to active element ────────────────────────────────────
+  // When the user changes color/font/size in the right panel, apply it to the selected element
+  React.useEffect(() => {
+    if (!activeElementId) return;
+    const el = elements.find(e => e.id === activeElementId);
+    if (!el) return;
+    if (el.color === activeColor) return;
+    // Apply color to elements that support it
+    if (['text', 'rect', 'circle', 'ellipse', 'highlight', 'strikeout', 'underline', 'path', 'line', 'arrow'].includes(el.type)) {
+      updateElement(activeElementId, { color: activeColor });
+    }
+  }, [activeColor, activeElementId]);
+
+  React.useEffect(() => {
+    if (!activeElementId) return;
+    const el = elements.find(e => e.id === activeElementId);
+    if (!el) return;
+    if (el.type === 'text' && el.size !== activeFontSize) {
+      updateElement(activeElementId, { size: activeFontSize });
+    }
+  }, [activeFontSize, activeElementId]);
+
+  React.useEffect(() => {
+    if (!activeElementId) return;
+    const el = elements.find(e => e.id === activeElementId);
+    if (!el) return;
+    if (el.type === 'text' && el.fontName !== activeFontName) {
+      updateElement(activeElementId, { fontName: activeFontName });
+    }
+  }, [activeFontName, activeElementId]);
+
+  React.useEffect(() => {
+    if (!activeElementId) return;
+    const el = elements.find(e => e.id === activeElementId);
+    if (!el) return;
+    if ((el.type === 'path' || el.type === 'line' || el.type === 'arrow') && el.strokeWidth !== activeBrushSize) {
+      updateElement(activeElementId, { strokeWidth: activeBrushSize });
+    }
+  }, [activeBrushSize, activeElementId]);
+
+  // Auto-focus text input when a text element becomes active
+  const textInputRef = React.useRef<HTMLInputElement | null>(null);
+  React.useEffect(() => {
+    if (activeElementId && activeElementId.startsWith('t-')) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const input = document.querySelector(`[data-element-id="${activeElementId}"] input`) as HTMLInputElement;
+        if (input) {
+          input.focus();
+          // Select all text for easy replacement
+          input.select();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeElementId]);
+
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     if (!pageRef.current) return { x: 0, y: 0 };
     const rect = pageRef.current.getBoundingClientRect();
@@ -517,6 +601,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         'magic-edit', 'text', 'sticky-note', 'comment',
         'symbol-cross', 'symbol-check', 'symbol-dot',
         'form-radio', 'form-text', 'form-check', 'form-select', 'form-text-multiline', 'form-signature',
+        'picker', 'font-picker',
       ];
       if (!pointClickModes.includes(mode)) return;
     }
@@ -594,7 +679,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         const maskId = `mask-${now}`;
         const textId = `t-${now}`;
         const mask: EditElement = { id: maskId, type: 'rect', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: '#FFFFFF', opacity: 1 };
-        const text: EditElement = { id: textId, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: activeColor, text: clicked.str, size: clicked.fontSize, opacity: 1 };
+        const text: EditElement = { id: textId, type: 'text', pageIndex, x: clicked.x, y: clicked.y, width: clicked.width, height: clicked.height, color: activeColor, text: clicked.str, size: clicked.fontSize, fontName: activeFontName, opacity: 1 };
         const next = [...elements, mask, text];
         commit(next);
         setActiveElementId(textId);
@@ -861,7 +946,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
-          const next = elements.filter(item => item.id !== activeElementId);
+          let next = elements.filter(item => item.id !== activeElementId);
+          // Also delete associated mask for magic-edit text elements
+          if (activeElementId.startsWith('t-')) {
+            const maskId = activeElementId.replace('t-', 'mask-');
+            next = next.filter(item => item.id !== maskId);
+          }
           commit(next);
           setActiveElementId(null);
         }
@@ -931,14 +1021,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           transform: `rotate(${(item as any).rotation || 0}deg)`,
           transformOrigin: 'top left',
         }}
-        onClick={(e) => {
+        onPointerDown={(e) => {
           if (mode === 'magic-edit') {
             e.stopPropagation();
             const now = Date.now();
             const maskId = `mask-${now}`;
             const textId = `t-${now}`;
             const mask: EditElement = { id: maskId, type: 'rect', pageIndex, x: item.x, y: item.y, width: item.width, height: item.height, color: '#FFFFFF', opacity: 1 };
-            const text: EditElement = { id: textId, type: 'text', pageIndex, x: item.x, y: item.y, width: item.width, height: item.height, color: activeColor, text: item.str, size: item.fontSize, opacity: 1 };
+            const text: EditElement = { id: textId, type: 'text', pageIndex, x: item.x, y: item.y, width: item.width, height: item.height, color: activeColor, text: item.str, size: item.fontSize, fontName: activeFontName, opacity: 1 };
             const next = [...elements, mask, text];
             commit(next);
             setActiveElementId(textId);
@@ -1607,6 +1697,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               return (
                 <div
                   key={el.id}
+                  data-element-id={el.id}
                   className="absolute"
                   style={{
                     left: `${el.x / 10}%`,
@@ -2016,7 +2107,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                             onClick={ev => ev.stopPropagation()}
                             onPointerDown={ev => ev.stopPropagation()}
                             className="w-full bg-transparent border-none outline-none p-0 m-0"
-                            style={{ ...textStyle, height: '100%', display: 'flex', alignItems: 'center' }}
+                            style={{ ...textStyle, height: '100%' }}
                           />
                         ) : (
                           <span className="w-full overflow-hidden" style={textStyle}>

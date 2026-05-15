@@ -49,6 +49,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [activeFontSize, setActiveFontSize] = React.useState(14);
   const [activeFontName, setActiveFontName] = React.useState('Helvetica');
   const [activeBrushSize, setActiveBrushSize] = React.useState(3);
+  const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = React.useState(false);
   const [rightPanelTab, setRightPanelTab] = React.useState<'pages' | 'properties'>('pages');
   const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
@@ -246,6 +247,25 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     } catch (e) {
       console.warn('Could not insert page', e);
     }
+  };
+
+  const activeElement = activeElementId ? elements.find(e => e.id === activeElementId) : null;
+
+  const updateActiveElement = (updates: Partial<EditElement>) => {
+    if (!activeElementId) return;
+    const next = elements.map(el => el.id === activeElementId ? { ...el, ...updates } : el);
+    setElements(next);
+    // Also sync mask position if text element is moved/resized
+    if (activeElementId.startsWith('t-')) {
+      const maskId = activeElementId.replace('t-', 'mask-');
+      if (updates.x !== undefined || updates.y !== undefined || updates.width !== undefined || updates.height !== undefined) {
+        setElements(prev => prev.map(el => {
+          if (el.id !== maskId) return el;
+          return { ...el, x: updates.x ?? el.x, y: updates.y ?? el.y, width: updates.width ?? el.width, height: updates.height ?? el.height };
+        }));
+      }
+    }
+    setHasUnsavedChanges(true);
   };
 
   const handleRotatePage = async () => {
@@ -514,6 +534,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               onFontNameChange={setActiveFontName}
               activeBrushSize={activeBrushSize}
               onBrushSizeChange={setActiveBrushSize}
+              onActiveElementChange={(id) => setActiveElementId(id)}
               textItems={textItems}
               file={currentFile}
               onInsertPage={handleInsertPage}
@@ -589,21 +610,39 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           ) : (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <div className="space-y-4">
+                {/* Active Tool */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Active Tool</h4>
                   <p className="text-sm font-medium text-slate-800 capitalize">{editorMode.replace(/-/g, ' ')}</p>
                 </div>
 
+                {/* Selected Element Formatting */}
+                {activeElement && (
+                  <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <h4 className="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-2">Selected {activeElement.type}</h4>
+                    <div className="flex gap-2 mb-2">
+                      <button onClick={() => updateActiveElement({ isBold: !activeElement.isBold })} className={`flex-1 py-1.5 rounded text-xs font-bold transition-colors ${activeElement.isBold ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>B</button>
+                      <button onClick={() => updateActiveElement({ isItalic: !activeElement.isItalic })} className={`flex-1 py-1.5 rounded text-xs italic transition-colors ${activeElement.isItalic ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>I</button>
+                      <button onClick={() => updateActiveElement({ isUnderline: !activeElement.isUnderline })} className={`flex-1 py-1.5 rounded text-xs underline transition-colors ${activeElement.isUnderline ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>U</button>
+                    </div>
+                    <div className="flex gap-1">
+                      {(['left','center','right'] as const).map(a => (
+                        <button key={a} onClick={() => updateActiveElement({ textAlign: a })} className={`flex-1 py-1 rounded text-[10px] uppercase transition-colors ${activeElement.textAlign === a ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>{a[0]}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Color */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Color</h4>
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['#000000','#333333','#666666','#999999','#CCCCCC','#FFFFFF','#EF4444','#F97316','#F59E0B','#84CC16','#10B981','#06B6D4','#3B82F6','#6366F1'].map(c => (
+                      <button key={c} onClick={() => setActiveColor(c)} className={`w-6 h-6 rounded border ${activeColor === c ? 'ring-2 ring-blue-500 ring-offset-1 border-transparent' : 'border-slate-200'}`} style={{ backgroundColor: c }} title={c} />
+                    ))}
+                  </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={activeColor}
-                      onChange={(e) => setActiveColor(e.target.value)}
-                      className="w-8 h-8 rounded border border-slate-200 p-0 overflow-hidden cursor-pointer"
-                    />
+                    <input type="color" value={activeColor} onChange={(e) => setActiveColor(e.target.value)} className="w-8 h-8 rounded border border-slate-200 p-0 overflow-hidden cursor-pointer" />
                     <span className="text-xs text-slate-500 font-mono uppercase">{activeColor}</span>
                   </div>
                 </div>
@@ -613,15 +652,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font Size</h4>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min={8}
-                        max={72}
-                        value={activeFontSize}
-                        onChange={(e) => setActiveFontSize(Number(e.target.value))}
-                        className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                      />
-                      <span className="text-xs text-slate-500 font-mono w-6 text-right">{activeFontSize}</span>
+                      <button onClick={() => setActiveFontSize(Math.max(0.5, activeFontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">-</button>
+                      <input type="number" min={0.5} max={200} step={0.1} value={activeFontSize} onChange={(e) => setActiveFontSize(Number(e.target.value))} className="flex-1 px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none text-center" />
+                      <button onClick={() => setActiveFontSize(Math.min(200, activeFontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">+</button>
                     </div>
                   </div>
                 )}
@@ -630,12 +663,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                 {(editorMode === 'magic-edit' || editorMode === 'text' || editorMode === 'form-text') && (
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font</h4>
-                    <select
-                      value={activeFontName}
-                      onChange={(e) => setActiveFontName(e.target.value)}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 outline-none focus:border-blue-400"
-                    >
-                      {['Helvetica', 'Times-Roman', 'Courier', 'Symbol', 'ZapfDingbats'].map(f => (
+                    <select value={activeFontName} onChange={(e) => setActiveFontName(e.target.value)} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-blue-400">
+                      {['Helvetica','Arial','Times-Roman','Courier','Georgia','Verdana','Palatino','Garamond','Trebuchet MS','Impact','Comic Sans MS','Bookman Old Style','Candara','Calibri','Cambria'].map(f => (
                         <option key={f} value={f}>{f}</option>
                       ))}
                     </select>
@@ -647,15 +676,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Stroke Width</h4>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min={1}
-                        max={20}
-                        value={activeBrushSize}
-                        onChange={(e) => setActiveBrushSize(Number(e.target.value))}
-                        className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                      />
-                      <span className="text-xs text-slate-500 font-mono w-6 text-right">{activeBrushSize}px</span>
+                      <button onClick={() => setActiveBrushSize(Math.max(1, activeBrushSize - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">-</button>
+                      <input type="number" min={1} max={50} value={activeBrushSize} onChange={(e) => setActiveBrushSize(Number(e.target.value))} className="flex-1 px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none text-center" />
+                      <button onClick={() => setActiveBrushSize(Math.min(50, activeBrushSize + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">+</button>
                     </div>
                   </div>
                 )}
