@@ -35,7 +35,18 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Disabled manualChunks to fix React useState undefined error
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (/react|react-dom|react-router|react-helmet|react-i18next/.test(id)) return 'vendor-react';
+            if (/pdf-lib|pdfjs-dist/.test(id)) return 'vendor-pdf';
+            if (/firebase/.test(id)) return 'vendor-firebase';
+            if (/docx|exceljs|pptxgenjs|jszip/.test(id)) return 'vendor-office';
+            if (/@google\/genai/.test(id)) return 'vendor-ai';
+            if (/tesseract/.test(id)) return 'vendor-ocr';
+            if (/lucide-react/.test(id)) return 'vendor-icons';
+            if (/i18next/.test(id)) return 'vendor-i18n';
+          }
+        }
       }
     }
   },

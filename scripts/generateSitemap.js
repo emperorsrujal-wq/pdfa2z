@@ -84,6 +84,15 @@ const getPriority = (slug) => {
     return '0.7';
 };
 
+const getChangefreq = (slug) => {
+    if (slug === '') return 'daily';
+    if (['merge-pdf', 'compress-pdf', 'pdf-to-word', 'remove-bg',
+        'ai-image-generator', 'magic-ai-editor', 'pdf-chat', 'split-pdf'].includes(slug)) return 'weekly';
+    if (slug.startsWith('blog/') || slug === 'blog') return 'weekly';
+    if (['about', 'contact', 'privacy', 'terms'].includes(slug)) return 'yearly';
+    return 'monthly';
+};
+
 async function generateSitemap() {
     try {
         const allUrls = [];
@@ -117,7 +126,10 @@ async function generateSitemap() {
 
         const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${allUrls.map(u => `  <url>\n    <loc>${u.url}</loc>\n    <lastmod>${TODAY}</lastmod>\n    <priority>${u.priority}</priority>\n  </url>`).join('\n')}
+${allUrls.map(u => {
+  const slug = u.url.replace(BASE_URL, '').replace(/^\//, '').replace(/^(es|fr|hi)\//, '');
+  return `  <url>\n    <loc>${u.url}</loc>\n    <lastmod>${TODAY}</lastmod>\n    <changefreq>${getChangefreq(slug)}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
+}).join('\n')}
 </urlset>`;
 
         if (!fs.existsSync(PUBLIC_DIR)) {
