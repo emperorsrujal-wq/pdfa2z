@@ -714,30 +714,58 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
          else fontToEmbed = StandardFonts.Helvetica;
       }
 
-      const font = await pdfDoc.embedFont(fontToEmbed); 
-      const textWidth = font.widthOfTextAtSize(el.text, fontSize);
+      const font = await pdfDoc.embedFont(fontToEmbed);
+      const hasNewlines = el.text.includes('\n');
       
-      let drawX = actualX;
-      if (el.textAlign === 'center') drawX = actualX - (textWidth / 2);
-      else if (el.textAlign === 'right') drawX = actualX - textWidth;
+      if (hasNewlines || elWidth > 0) {
+        // Multi-line / wrapped text: use maxWidth and lineHeight for proper wrapping
+        page.drawText(el.text, {
+          x: actualX,
+          y: actualY - fontSize,
+          size: fontSize,
+          font,
+          color: elColor,
+          opacity: elOpacity,
+          rotate: elRotation,
+          maxWidth: elWidth > 0 ? elWidth : undefined,
+          lineHeight: fontSize * 1.3,
+          alignment: (el.textAlign || 'left') as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+      } else {
+        // Single-line short text: preserve original positioning behavior
+        const textWidth = font.widthOfTextAtSize(el.text, fontSize);
+        let drawX = actualX;
+        if (el.textAlign === 'center') drawX = actualX - (textWidth / 2);
+        else if (el.textAlign === 'right') drawX = actualX - textWidth;
 
-      page.drawText(el.text, {
-        x: drawX,
-        y: actualY - fontSize,
-        size: fontSize,
-        font,
-        color: elColor,
-        opacity: elOpacity,
-        rotate: elRotation,
-      });
+        page.drawText(el.text, {
+          x: drawX,
+          y: actualY - fontSize,
+          size: fontSize,
+          font,
+          color: elColor,
+          opacity: elOpacity,
+          rotate: elRotation,
+        });
+      }
 
       if (el.isUnderline) {
-        page.drawLine({
-          start: { x: drawX, y: actualY - fontSize - 2 },
-          end: { x: drawX + textWidth, y: actualY - fontSize - 2 },
-          color: elColor,
-          thickness: 1,
-          opacity: elOpacity,
+        const lines = el.text.split('\n');
+        const lineHeight = fontSize * 1.3;
+        lines.forEach((line, idx) => {
+          const lineWidth = Math.min(font.widthOfTextAtSize(line, fontSize), elWidth > 0 ? elWidth : Infinity);
+          let drawX = actualX;
+          if (el.textAlign === 'center') drawX = actualX + (elWidth > 0 ? (elWidth - lineWidth) / 2 : -lineWidth / 2);
+          else if (el.textAlign === 'right') drawX = actualX + (elWidth > 0 ? elWidth - lineWidth : -lineWidth);
+          const lineY = actualY - fontSize - 2 - (idx * lineHeight);
+          page.drawLine({
+            start: { x: drawX, y: lineY },
+            end: { x: drawX + lineWidth, y: lineY },
+            color: elColor,
+            thickness: 1,
+            opacity: elOpacity,
+          });
         });
       }
     } else if (el.type === 'highlight') {

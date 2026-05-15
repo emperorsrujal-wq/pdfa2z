@@ -307,11 +307,25 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   const [activeElementId, setActiveElementIdState] = React.useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const setActiveElementId = React.useCallback((id: string | null) => {
     setActiveElementIdState(id);
     const el = id ? elementsRef.current.find(e => e.id === id) : undefined;
     onActiveElementChange?.(id, el);
   }, [onActiveElementChange]);
+
+  // Commit pending text edit when selection changes
+  React.useEffect(() => {
+    const editing = editingTextRef.current;
+    if (editing && activeElementId !== editing.id) {
+      const currentEl = elementsRef.current.find(e => e.id === editing.id);
+      if (currentEl && currentEl.text !== editing.initialText) {
+        onCommit(elementsRef.current);
+        onSave(elementsRef.current);
+      }
+      editingTextRef.current = null;
+    }
+  }, [activeElementId, onCommit, onSave]);
   const [isDrawing, setIsDrawing] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState<{ x: number; y: number }[]>([]);
   const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
@@ -401,10 +415,17 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const undo = () => onUndo();
   const redo = () => onRedo();
 
+  // Track text being edited locally to avoid history spam on every keystroke
+  const editingTextRef = React.useRef<{ id: string; initialText: string } | null>(null);
+
   const updateElement = (id: string, updates: Partial<EditElement>) => {
     const next = elements.map(el => (el.id === id ? { ...el, ...updates } : el));
     commit(next);
     onSave(next);
+  };
+
+  const updateElementNoHistory = (id: string, updates: Partial<EditElement>) => {
+    setElements(prev => prev.map(el => (el.id === id ? { ...el, ...updates } : el)));
   };
 
   const commitUpdate = (id: string, updates: Partial<EditElement>) => {
@@ -432,9 +453,29 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   };
 
   const deleteElement = (id: string) => {
-    const next = elements.filter(el => el.id !== id);
+    let next = elements.filter(el => el.id !== id);
+    // Also delete associated mask for magic-edit text elements
+    if (id.startsWith('t-')) {
+      const maskId = id.replace('t-', 'mask-');
+      next = next.filter(el => el.id !== maskId);
+    }
     commit(next);
     setActiveElementId(null);
+    setSelectedIds([]);
+  };
+
+  const deleteSelected = () => {
+    let next = elements.filter(el => !selectedIds.includes(el.id));
+    // Also delete associated masks for selected magic-edit text elements
+    selectedIds.forEach(id => {
+      if (id.startsWith('t-')) {
+        const maskId = id.replace('t-', 'mask-');
+        next = next.filter(el => el.id !== maskId);
+      }
+    });
+    commit(next);
+    setActiveElementId(null);
+    setSelectedIds([]);
   };
 
 
@@ -606,6 +647,10 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       if (!pointClickModes.includes(mode)) return;
     }
     if (mode === 'select') {
+      // Start box selection drag
+      setIsDrawing(true);
+      setDragStart(pos);
+      setDragEnd(pos);
       return;
     }
     if (mode === 'ocr') {
@@ -795,6 +840,33 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     const w = Math.abs(dragStart.x - dragEnd.x);
     const h = Math.abs(dragStart.y - dragEnd.y);
 
+    if (mode === 'select') {
+      // Box selection: if drag was significant, select intersecting elements
+      if (w > 5 && h > 5) {
+        const intersecting = elements.filter(el => {
+          if (el.pageIndex !== pageIndex) return false;
+          const ex = el.x, ey = el.y, ew = el.width || 0, eh = el.height || 0;
+          return ex < x + w && ex + ew > x && ey < y + h && ey + eh > y;
+        });
+        const ids = intersecting.map(el => el.id);
+        if (ids.length > 0) {
+          setSelectedIds(ids);
+          setActiveElementId(ids[0]);
+        } else {
+          setSelectedIds([]);
+          setActiveElementId(null);
+        }
+      } else {
+        // Small drag = click, deselect
+        setSelectedIds([]);
+        setActiveElementId(null);
+      }
+      setIsDrawing(false);
+      setDragStart(null);
+      setDragEnd(null);
+      return;
+    }
+
     if (mode === 'draw' && currentPath.length > 1) {
       const newEl: EditElement = { id: `path-${Date.now()}`, type: 'path', pageIndex, x: 0, y: 0, color: activeColor, strokeWidth: activeBrushSize, path: currentPath, opacity: 1 };
       commit([...elements, newEl]);
@@ -886,21 +958,28 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const handleFind = async (search: string) => {
     if (!file) return [];
     const arrayBuffer = await file.arrayBuffer();
-    const results = await findTextPositions(new Uint8Array(arrayBuffer), pageIndex, [search]);
-    return results;
+    const allResults: RedactionArea[] = [];
+    for (let i = 0; i < totalPages; i++) {
+      const pageResults = await findTextPositions(new Uint8Array(arrayBuffer), i, [search]);
+      allResults.push(...pageResults);
+    }
+    return allResults;
   };
 
   const handleReplace = async (search: string, replacement: string, all: boolean) => {
     if (!file) return;
     const arrayBuffer = await file.arrayBuffer();
-    const areas = await findTextPositions(new Uint8Array(arrayBuffer), pageIndex, [search]);
+    const allAreas: RedactionArea[] = [];
+    for (let i = 0; i < totalPages; i++) {
+      const pageAreas = await findTextPositions(new Uint8Array(arrayBuffer), i, [search]);
+      allAreas.push(...pageAreas);
+    }
     
-    if (areas.length === 0) return;
+    if (allAreas.length === 0) return;
 
     const newElements = [...elements];
-    areas.forEach((area, i) => {
-      if (!all && i > 0) return;
-      
+    const targets = all ? allAreas : [allAreas[0]];
+    targets.forEach((area, i) => {
       const maskId = `mask-replace-${Date.now()}-${i}`;
       const textId = `t-replace-${Date.now()}-${i}`;
       
@@ -933,43 +1012,38 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     });
 
     commit(newElements);
-    addAuditEntry(`Replaced "${search}" with "${replacement}"`, `Modified ${all ? areas.length : 1} occurrences`);
+    addAuditEntry(`Replaced "${search}" with "${replacement}"`, `Modified ${targets.length} occurrences`);
   };
+
+  // Clipboard for copy/paste
+  const clipboardRef = React.useRef<EditElement[] | null>(null);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
 
-      if (activeElementId) {
-        const el = elements.find(item => item.id === activeElementId);
-        if (!el) return;
+      // Delete / Backspace — remove all selected elements
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length > 0) {
+        e.preventDefault();
+        deleteSelected();
+        return;
+      }
 
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          e.preventDefault();
-          let next = elements.filter(item => item.id !== activeElementId);
-          // Also delete associated mask for magic-edit text elements
-          if (activeElementId.startsWith('t-')) {
-            const maskId = activeElementId.replace('t-', 'mask-');
-            next = next.filter(item => item.id !== maskId);
-          }
-          commit(next);
-          setActiveElementId(null);
-        }
-
+      // Arrow keys — nudge all selected elements
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && selectedIds.length > 0) {
+        e.preventDefault();
         const shift = e.shiftKey ? 10 : 1;
         let dx = 0, dy = 0;
         if (e.key === 'ArrowLeft') dx = -shift;
         if (e.key === 'ArrowRight') dx = shift;
         if (e.key === 'ArrowUp') dy = -shift;
         if (e.key === 'ArrowDown') dy = shift;
-
-        if (dx !== 0 || dy !== 0) {
-          e.preventDefault();
-          updateElement(activeElementId, {
-            x: (el.x || 0) + dx,
-            y: (el.y || 0) + dy
-          });
-        }
+        const next = elements.map(el => {
+          if (!selectedIds.includes(el.id)) return el;
+          return { ...el, x: (el.x || 0) + dx, y: (el.y || 0) + dy };
+        });
+        commit(next);
+        return;
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -984,15 +1058,51 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeElementId) {
+      // Ctrl+D duplicate selected
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedIds.length > 0) {
         e.preventDefault();
-        const el = elements.find(item => item.id === activeElementId);
-        if (el) duplicateElement(el);
+        const toDuplicate = elements.filter(el => selectedIds.includes(el.id));
+        const duplicated = toDuplicate.map(el => ({
+          ...el,
+          id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          x: Math.min(el.x + 10, 990),
+          y: Math.min(el.y + 10, 990),
+        }));
+        const next = [...elements, ...duplicated];
+        commit(next);
+        const newIds = duplicated.map(d => d.id);
+        setSelectedIds(newIds);
+        setActiveElementId(newIds[0] || null);
+        return;
+      }
+
+      // Ctrl+C copy selected
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedIds.length > 0) {
+        e.preventDefault();
+        clipboardRef.current = elements.filter(el => selectedIds.includes(el.id));
+        return;
+      }
+
+      // Ctrl+V paste
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current) {
+        e.preventDefault();
+        const toPaste = clipboardRef.current.map(el => ({
+          ...el,
+          id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          x: Math.min(el.x + 20, 990),
+          y: Math.min(el.y + 20, 990),
+        }));
+        const next = [...elements, ...toPaste];
+        commit(next);
+        const newIds = toPaste.map(p => p.id);
+        setSelectedIds(newIds);
+        setActiveElementId(newIds[0] || null);
         return;
       }
 
       if (e.key === 'Escape') {
         setActiveElementId(null);
+        setSelectedIds([]);
         setMode('select');
       }
     };
@@ -1676,12 +1786,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               )}
 
               {/* Drag rectangle preview */}
-              {selectionRect && !['draw', 'line'].includes(mode) && (
+              {selectionRect && (!['draw', 'line'].includes(mode) || mode === 'select') && (
                 <rect
                   x={`${selectionRect.x / 10}%`} y={`${selectionRect.y / 10}%`}
                   width={`${selectionRect.w / 10}%`} height={`${selectionRect.h / 10}%`}
-                  fill={fillColor[mode] || 'rgba(59,130,246,0.15)'}
-                  stroke={mode === 'erase' ? '#94a3b8' : '#3b82f6'}
+                  fill={mode === 'select' ? 'rgba(59,130,246,0.1)' : (fillColor[mode] || 'rgba(59,130,246,0.15)')}
+                  stroke={mode === 'select' ? '#3b82f6' : (mode === 'erase' ? '#94a3b8' : '#3b82f6')}
                   strokeWidth="1" strokeDasharray="4 4"
                 />
               )}
@@ -1720,39 +1830,59 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       ((mode === 'magic-edit' || mode === 'text') && el.type === 'text');
                     if (!isSelectable) return;
                     ev.stopPropagation();
-                    setActiveElementId(el.id);
+
+                    // Multi-select: Ctrl/Cmd+Click toggles selection
+                    if ((ev.ctrlKey || ev.metaKey) && mode === 'select') {
+                      setSelectedIds(prev => {
+                        if (prev.includes(el.id)) return prev.filter(id => id !== el.id);
+                        return [...prev, el.id];
+                      });
+                      setActiveElementId(el.id);
+                    } else if (mode === 'select') {
+                      setSelectedIds([el.id]);
+                      setActiveElementId(el.id);
+                    } else {
+                      setActiveElementId(el.id);
+                    }
+
                     if (mode !== 'select') return; // No drag in tool modes — just select
                     const startX = ev.clientX, startY = ev.clientY;
-                    const startXPos = el.x, startYPos = el.y;
                     const elId = el.id;
-                    const elW = el.width || 0;
-                    const elH = el.height || 0;
+                    // Capture start positions for all selected elements (for group move)
+                    const currentSelected = selectedIds.includes(elId) ? selectedIds : [elId];
+                    const startPositions = currentSelected.map(id => {
+                      const e = elements.find(item => item.id === id);
+                      return { id, x: e?.x || 0, y: e?.y || 0, w: e?.width || 0, h: e?.height || 0 };
+                    });
                     const onMove = (me: PointerEvent) => {
                       if (!pageRef.current) return;
                       const r = pageRef.current.getBoundingClientRect();
                       const dx = ((me.clientX - startX) / r.width) * 1000;
                       const dy = ((me.clientY - startY) / r.height) * 1000;
 
-                      let newX = startXPos + dx;
-                      let newY = startYPos + dy;
-
                       let guideV: number | null = null;
                       let guideH: number | null = null;
                       const SNAP_THRESHOLD = 5;
 
-                      if (Math.abs((newX + elW / 2) - 500) < SNAP_THRESHOLD) {
-                        newX = 500 - elW / 2;
-                        guideV = 500;
-                      }
-                      if (Math.abs((newY + elH / 2) - 500) < SNAP_THRESHOLD) {
-                        newY = 500 - elH / 2;
-                        guideH = 500;
-                      }
-
+                      setElements(prev => prev.map(e => {
+                        const startPos = startPositions.find(p => p.id === e.id);
+                        if (!startPos) return e;
+                        let newX = startPos.x + dx;
+                        let newY = startPos.y + dy;
+                        // Snap guide for primary dragged element
+                        if (e.id === elId) {
+                          if (Math.abs((newX + startPos.w / 2) - 500) < SNAP_THRESHOLD) {
+                            newX = 500 - startPos.w / 2;
+                            guideV = 500;
+                          }
+                          if (Math.abs((newY + startPos.h / 2) - 500) < SNAP_THRESHOLD) {
+                            newY = 500 - startPos.h / 2;
+                            guideH = 500;
+                          }
+                        }
+                        return { ...e, x: Math.max(0, Math.min(1000 - startPos.w, newX)), y: Math.max(0, Math.min(1000 - startPos.h, newY)) };
+                      }));
                       setGuides({ v: guideV, h: guideH });
-                      newX = Math.max(0, Math.min(1000 - elW, newX));
-                      newY = Math.max(0, Math.min(1000 - elH, newY));
-                      setElements(prev => prev.map(e => e.id === elId ? { ...e, x: newX, y: newY } : e));
                     };
                     const onUp = () => {
                       setGuides({ v: null, h: null });
@@ -1776,9 +1906,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     <ObjectToolbar element={el} onUpdate={commitUpdate} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
                   )}
 
-                  {/* Selection border — visible whenever this element is active */}
+                  {/* Selection border — active primary selection */}
                   {isActive && (
                     <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
+                  )}
+                  {/* Multi-select indicator — other selected elements */}
+                  {!isActive && selectedIds.includes(el.id) && (
+                    <div className="absolute inset-0 border-2 border-blue-300 pointer-events-none rounded-sm" />
                   )}
 
                   {/* Resize / rotate handles — only available in select mode */}
@@ -2092,27 +2226,54 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       fontStyle: el.isItalic ? 'italic' : 'normal',
                       textDecoration: [el.isUnderline ? 'underline' : '', el.isStrikeout ? 'line-through' : ''].filter(Boolean).join(' ') || 'none',
                       textAlign: (el.textAlign || 'left') as React.CSSProperties['textAlign'],
-                      lineHeight: 1.2,
-                      whiteSpace: 'nowrap',
+                      lineHeight: 1.3,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
                     };
                     return (
-                      <div className="w-full h-full flex items-center">
+                      <div className="w-full h-full">
                         {isActive ? (
-                          <input
-                            type="text"
+                          <textarea
                             autoFocus
-                            value={el.text || ''}
+                            defaultValue={el.text || ''}
                             placeholder="Type your text"
-                            onChange={ev => updateElement(el.id, { text: ev.target.value })}
+                            onFocus={() => {
+                              editingTextRef.current = { id: el.id, initialText: el.text || '' };
+                            }}
+                            onChange={ev => {
+                              const value = ev.target.value;
+                              // Update text without history (no commit)
+                              setElements(prev => prev.map(item => item.id === el.id ? { ...item, text: value } : item));
+                              // Auto-grow height
+                              const ta = ev.target;
+                              ta.style.height = 'auto';
+                              const pixelHeight = ta.scrollHeight;
+                              if (pageRef.current) {
+                                const containerHeight = pageRef.current.getBoundingClientRect().height;
+                                const newHeight = Math.max(30, (pixelHeight / containerHeight) * 1000);
+                                setElements(prev => prev.map(item => item.id === el.id ? { ...item, height: newHeight } : item));
+                              }
+                            }}
+                            onBlur={() => {
+                              const editing = editingTextRef.current;
+                              if (editing && editing.id === el.id) {
+                                const currentEl = elementsRef.current.find(e => e.id === el.id);
+                                if (currentEl && currentEl.text !== editing.initialText) {
+                                  onCommit(elementsRef.current);
+                                  onSave(elementsRef.current);
+                                }
+                              }
+                              editingTextRef.current = null;
+                            }}
                             onClick={ev => ev.stopPropagation()}
                             onPointerDown={ev => ev.stopPropagation()}
-                            className="w-full bg-transparent border-none outline-none p-0 m-0"
-                            style={{ ...textStyle, height: '100%' }}
+                            className="w-full bg-transparent border-none outline-none p-0 m-0 resize-none overflow-hidden"
+                            style={{ ...textStyle, height: '100%', minHeight: '100%' }}
                           />
                         ) : (
-                          <span className="w-full overflow-hidden" style={textStyle}>
+                          <div className="w-full" style={textStyle}>
                             {el.text || <span className="text-slate-300/60 italic text-xs">Text...</span>}
-                          </span>
+                          </div>
                         )}
                       </div>
                     );

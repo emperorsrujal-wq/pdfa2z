@@ -9,7 +9,7 @@ import { ToolPalette } from './pdf-editor/ToolPalette';
 import { MobileToolBar } from './pdf-editor/MobileToolBar';
 import { KeyboardShortcutsModal } from './pdf-editor/KeyboardShortcutsModal';
 import type { EditorMode } from './pdf-editor/types';
-import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages, rotatePage } from '../utils/pdfHelpers';
+import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages, rotatePage, reorderPdf, PageOrder } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -250,6 +250,49 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   };
 
   const activeElement = activeElementId ? elements.find(e => e.id === activeElementId) : null;
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+
+  const handleReorderPages = async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    const newImages = [...images];
+    const newDimensions = [...dimensions];
+    const [movedImg] = newImages.splice(fromIndex, 1);
+    const [movedDim] = newDimensions.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, movedImg);
+    newDimensions.splice(toIndex, 0, movedDim);
+
+    // Build mapping: oldIndex -> newIndex
+    const reorderedOldIndices = newImages.map((_, i) => {
+      // Find which old index is now at position i
+      return images.indexOf(newImages[i]);
+    });
+    const oldToNew: Record<number, number> = {};
+    reorderedOldIndices.forEach((oldIdx, newIdx) => {
+      oldToNew[oldIdx] = newIdx;
+    });
+
+    // Update element page indices
+    const newElements = elements.map(el => ({
+      ...el,
+      pageIndex: oldToNew[el.pageIndex] ?? el.pageIndex,
+    }));
+
+    // Reorder the underlying PDF
+    try {
+      const order: PageOrder[] = reorderedOldIndices.map(oldIdx => ({ index: oldIdx, rotation: 0 }));
+      const bytes = await reorderPdf(currentFile, order);
+      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      setCurrentFile(newFile);
+    } catch (e) {
+      console.warn('Could not reorder PDF pages', e);
+    }
+
+    setImages(newImages);
+    setDimensions(newDimensions);
+    setElements(newElements);
+    setActivePage(toIndex > fromIndex ? toIndex - 1 : toIndex);
+    setHasUnsavedChanges(true);
+  };
 
   const updateActiveElement = (updates: Partial<EditElement>) => {
     if (!activeElementId) return;
@@ -565,14 +608,32 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
             <>
               <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar">
                 {images.map((img, i) => (
-                  <button
+                  <div
                     key={i}
+                    draggable
+                    onDragStart={e => {
+                      e.dataTransfer.setData('text/plain', String(i));
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={e => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverIndex(i);
+                    }}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDrop={e => {
+                      e.preventDefault();
+                      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                      handleReorderPages(fromIndex, i);
+                      setDragOverIndex(null);
+                    }}
+                    onDragEnd={() => setDragOverIndex(null)}
                     onClick={() => setActivePage(i)}
-                    className={`group relative w-full transition-all rounded-lg overflow-hidden border ${
+                    className={`group relative w-full transition-all rounded-lg overflow-hidden border cursor-move ${
                       activePage === i ? 'ring-2 ring-blue-500 border-blue-500' : 'border-slate-200 hover:border-blue-300'
-                    }`}
+                    } ${dragOverIndex === i ? 'border-blue-500 border-dashed bg-blue-50' : ''}`}
                   >
-                    <img src={img} alt={`Page ${i + 1}`} className="w-full object-cover" />
+                    <img src={img} alt={`Page ${i + 1}`} className="w-full object-cover pointer-events-none" />
                     <div className={`absolute bottom-0 left-0 right-0 text-center text-[10px] font-semibold py-0.5 ${activePage === i ? 'bg-blue-600 text-white' : 'bg-black/50 text-white'}`}>
                       {i + 1}
                     </div>
@@ -581,7 +642,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                         {elements.filter(el => el.pageIndex === i).length}
                       </div>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
               <div className="p-3 border-t border-slate-100 flex gap-2">
