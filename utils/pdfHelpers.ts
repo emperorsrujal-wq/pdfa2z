@@ -224,6 +224,32 @@ export const pdfToImages = async (file: File): Promise<PdfProcessingResult> => {
   return { images, dimensions };
 };
 
+/**
+ * Render a single PDF page to a canvas at a given scale.
+ * Returns the canvas element (not data URL) so callers can draw overlays on it.
+ */
+export const renderPageToCanvas = async (
+  pdfBytes: Uint8Array,
+  pageIndex: number,
+  scale: number = 1.5
+): Promise<HTMLCanvasElement | null> => {
+  const engine = await getPdfEngine();
+  const loadingTask = engine.getDocument(getDocumentParams(pdfBytes, engine));
+  const pdf = await loadingTask.promise;
+  if (pageIndex < 0 || pageIndex >= pdf.numPages) return null;
+  const page = await pdf.getPage(pageIndex + 1);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas;
+};
+
 export const imagesToPdf = async (files: File[]): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
   for (const file of files) {
@@ -663,18 +689,68 @@ const hexToRgbPdf = (hex: string) => {
 export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint8Array> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await PDFDocument.load(arrayBuffer);
+  const pages = pdfDoc.getPages();
 
+  // ── Step 1: Apply page rotations first ──
   for (const el of elements) {
-    const pages = pdfDoc.getPages();
-    if (el.pageIndex < 0 || el.pageIndex >= pages.length) continue;
-
-    // Handle page-level transforms before any drawing
-    if (el.type === 'page-rotation') {
-      const targetPage = pages[el.pageIndex];
+    if (el.type === 'page-rotation' && el.pageIndex >= 0 && el.pageIndex < pages.length) {
       const normalised = (((el.rotation || 0) % 360) + 360) % 360;
-      targetPage.setRotation(degrees(normalised));
-      continue;
+      pages[el.pageIndex].setRotation(degrees(normalised));
     }
+  }
+
+  // ── Step 2: Flatten pages that have mask elements (true content removal) ──
+  // When users "edit" existing text, we create a mask rect + text overlay.
+  // To prevent the original text from remaining extractable, we render the
+  // page to an image, draw the masks onto it, then embed that image as the
+  // new page background. Original content is baked into the image and gone.
+  const maskElements = elements.filter(el => el.id.startsWith('mask-'));
+  const pagesToFlatten = new Set(maskElements.map(el => el.pageIndex));
+
+  if (pagesToFlatten.size > 0) {
+    const rotatedBytes = await pdfDoc.save();
+    for (const pageIdx of pagesToFlatten) {
+      if (pageIdx < 0 || pageIdx >= pages.length) continue;
+      const page = pages[pageIdx];
+      const { width: pw, height: ph } = page.getSize();
+
+      const canvas = await renderPageToCanvas(new Uint8Array(rotatedBytes), pageIdx, 2.0);
+      if (!canvas) continue;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+
+      // Draw mask rectangles onto the canvas
+      const pageMasks = maskElements.filter(m => m.pageIndex === pageIdx);
+      for (const mask of pageMasks) {
+        const mx = (mask.x / 1000) * canvas.width;
+        const my = (mask.y / 1000) * canvas.height;
+        const mw = ((mask.width || 0) / 1000) * canvas.width;
+        const mh = ((mask.height || 0) / 1000) * canvas.height;
+        ctx.fillStyle = mask.color || '#FFFFFF';
+        ctx.fillRect(mx, my, mw, mh);
+      }
+
+      // Convert canvas to PNG and embed
+      const pngDataUrl = canvas.toDataURL('image/png');
+      const base64Data = pngDataUrl.split(',')[1];
+      const binaryString = atob(base64Data);
+      const pngBytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) pngBytes[i] = binaryString.charCodeAt(i);
+
+      const embeddedImage = await pdfDoc.embedPng(pngBytes);
+
+      // Cover the entire page with white first (hides original vector content)
+      page.drawRectangle({ x: 0, y: 0, width: pw, height: ph, color: rgb(1, 1, 1) });
+      // Draw the flattened image on top
+      page.drawImage(embeddedImage, { x: 0, y: 0, width: pw, height: ph });
+    }
+  }
+
+  // ── Step 3: Draw all non-mask edit elements ──
+  for (const el of elements) {
+    if (el.pageIndex < 0 || el.pageIndex >= pages.length) continue;
+    if (el.type === 'page-rotation') continue; // Already handled
+    if (el.id.startsWith('mask-')) continue;   // Baked into flattened image
 
     const page = pages[el.pageIndex];
     const { width, height } = page.getSize();
