@@ -647,6 +647,8 @@ export interface EditElement {
   opacity?: number; // 0 to 1
   // Optional background color for whiteout/cover elements
   bgColor?: string; // hex string
+  // True if this rect is a whiteout/erase overlay (not a shape)
+  isWhiteout?: boolean;
   
   // Text specific
   text?: string;
@@ -699,13 +701,17 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     }
   }
 
-  // ── Step 2: Flatten pages that have mask elements (true content removal) ──
-  // When users "edit" existing text, we create a mask rect + text overlay.
-  // To prevent the original text from remaining extractable, we render the
-  // page to an image, draw the masks onto it, then embed that image as the
-  // new page background. Original content is baked into the image and gone.
+  // ── Step 2: Flatten pages that have mask or whiteout elements ──
+  // When users edit existing text or erase content, we create overlay rects.
+  // To prevent original content from remaining extractable, we render the
+  // page to an image, draw the masks/whiteouts onto it, then embed that image
+  // as the new page background. Original content is baked into the image and gone.
   const maskElements = elements.filter(el => el.id.startsWith('mask-'));
-  const pagesToFlatten = new Set(maskElements.map(el => el.pageIndex));
+  const whiteoutElements = elements.filter(el => el.isWhiteout);
+  const pagesToFlatten = new Set([
+    ...maskElements.map(el => el.pageIndex),
+    ...whiteoutElements.map(el => el.pageIndex),
+  ]);
 
   if (pagesToFlatten.size > 0) {
     const rotatedBytes = await pdfDoc.save();
@@ -730,6 +736,17 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         ctx.fillRect(mx, my, mw, mh);
       }
 
+      // Draw whiteout rectangles onto the canvas
+      const pageWhiteouts = whiteoutElements.filter(w => w.pageIndex === pageIdx);
+      for (const wo of pageWhiteouts) {
+        const wx = (wo.x / 1000) * canvas.width;
+        const wy = (wo.y / 1000) * canvas.height;
+        const ww = ((wo.width || 0) / 1000) * canvas.width;
+        const wh = ((wo.height || 0) / 1000) * canvas.height;
+        ctx.fillStyle = wo.color || '#FFFFFF';
+        ctx.fillRect(wx, wy, ww, wh);
+      }
+
       // Convert canvas to PNG and embed
       const pngDataUrl = canvas.toDataURL('image/png');
       const base64Data = pngDataUrl.split(',')[1];
@@ -746,11 +763,12 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     }
   }
 
-  // ── Step 3: Draw all non-mask edit elements ──
+  // ── Step 3: Draw all non-mask, non-whiteout edit elements ──
   for (const el of elements) {
     if (el.pageIndex < 0 || el.pageIndex >= pages.length) continue;
     if (el.type === 'page-rotation') continue; // Already handled
     if (el.id.startsWith('mask-')) continue;   // Baked into flattened image
+    if (el.isWhiteout) continue;               // Baked into flattened image
 
     const page = pages[el.pageIndex];
     const { width, height } = page.getSize();
