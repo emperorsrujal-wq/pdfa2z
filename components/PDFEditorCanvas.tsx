@@ -604,17 +604,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     }
   }, [activeBrushSize, activeElementId]);
 
-  // Auto-focus text input when a text element becomes active
-  const textInputRef = React.useRef<HTMLInputElement | null>(null);
+  // Auto-focus text input/textarea when a text element becomes active
   React.useEffect(() => {
     if (activeElementId && activeElementId.startsWith('t-')) {
-      // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
-        const input = document.querySelector(`[data-element-id="${activeElementId}"] input`) as HTMLInputElement;
-        if (input) {
-          input.focus();
-          // Select all text for easy replacement
-          input.select();
+        const el = document.querySelector(`[data-element-id="${activeElementId}"] textarea, [data-element-id="${activeElementId}"] input`) as HTMLTextAreaElement | HTMLInputElement;
+        if (el) {
+          el.focus();
+          if ('select' in el) el.select();
         }
       }, 50);
       return () => clearTimeout(timer);
@@ -639,7 +636,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     if (activeElementId) {
       setActiveElementId(null);
       const pointClickModes: EditorMode[] = [
-        'magic-edit', 'text', 'sticky-note', 'comment',
+        'select', 'magic-edit', 'text', 'sticky-note', 'comment',
         'symbol-cross', 'symbol-check', 'symbol-dot',
         'form-radio', 'form-text', 'form-check', 'form-select', 'form-text-multiline', 'form-signature',
         'picker', 'font-picker',
@@ -647,7 +644,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       if (!pointClickModes.includes(mode)) return;
     }
     if (mode === 'select') {
-      // Start box selection drag
+      // Start box selection drag — clear any existing selection first
+      setSelectedIds([]);
       setIsDrawing(true);
       setDragStart(pos);
       setDragEnd(pos);
@@ -1109,7 +1107,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeElementId, elements, commit, undo, redo, updateElement, duplicateElement]);
+  }, [activeElementId, selectedIds, elements, commit, undo, redo, updateElement, duplicateElement, deleteSelected]);
 
   const arrowElements = React.useMemo(
     () => elements.filter(el => el.type === 'arrow'),
@@ -1831,30 +1829,40 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     if (!isSelectable) return;
                     ev.stopPropagation();
 
-                    // Multi-select: Ctrl/Cmd+Click toggles selection
+                    // Ctrl/Cmd+Click toggles selection immediately
                     if ((ev.ctrlKey || ev.metaKey) && mode === 'select') {
                       setSelectedIds(prev => {
                         if (prev.includes(el.id)) return prev.filter(id => id !== el.id);
                         return [...prev, el.id];
                       });
                       setActiveElementId(el.id);
-                    } else if (mode === 'select') {
-                      setSelectedIds([el.id]);
-                      setActiveElementId(el.id);
-                    } else {
-                      setActiveElementId(el.id);
+                      return; // No drag on Ctrl+Click
                     }
 
-                    if (mode !== 'select') return; // No drag in tool modes — just select
+                    if (mode !== 'select') {
+                      setActiveElementId(el.id);
+                      return; // No drag in tool modes
+                    }
+
                     const startX = ev.clientX, startY = ev.clientY;
                     const elId = el.id;
-                    // Capture start positions for all selected elements (for group move)
-                    const currentSelected = selectedIds.includes(elId) ? selectedIds : [elId];
-                    const startPositions = currentSelected.map(id => {
+                    // Capture selection state BEFORE any changes for group drag
+                    const wasSelected = selectedIds.includes(elId);
+                    const idsToMove = wasSelected ? [...selectedIds] : [elId];
+                    const startPositions = idsToMove.map(id => {
                       const e = elements.find(item => item.id === id);
                       return { id, x: e?.x || 0, y: e?.y || 0, w: e?.width || 0, h: e?.height || 0 };
                     });
+
+                    let hasMoved = false;
+                    const DRAG_THRESHOLD = 3;
+
                     const onMove = (me: PointerEvent) => {
+                      if (!hasMoved) {
+                        const dist = Math.hypot(me.clientX - startX, me.clientY - startY);
+                        if (dist < DRAG_THRESHOLD) return;
+                        hasMoved = true;
+                      }
                       if (!pageRef.current) return;
                       const r = pageRef.current.getBoundingClientRect();
                       const dx = ((me.clientX - startX) / r.width) * 1000;
@@ -1869,7 +1877,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         if (!startPos) return e;
                         let newX = startPos.x + dx;
                         let newY = startPos.y + dy;
-                        // Snap guide for primary dragged element
                         if (e.id === elId) {
                           if (Math.abs((newX + startPos.w / 2) - 500) < SNAP_THRESHOLD) {
                             newX = 500 - startPos.w / 2;
@@ -1885,10 +1892,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       setGuides({ v: guideV, h: guideH });
                     };
                     const onUp = () => {
-                      setGuides({ v: null, h: null });
                       window.removeEventListener('pointermove', onMove);
                       window.removeEventListener('pointerup', onUp);
-                      onCommit(elementsRef.current);
+                      setGuides({ v: null, h: null });
+                      if (!hasMoved) {
+                        // It was a click, not a drag — update selection
+                        setSelectedIds([elId]);
+                        setActiveElementId(elId);
+                      } else {
+                        onCommit(elementsRef.current);
+                      }
                     };
                     window.addEventListener('pointermove', onMove);
                     window.addEventListener('pointerup', onUp);
@@ -2235,24 +2248,23 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         {isActive ? (
                           <textarea
                             autoFocus
-                            defaultValue={el.text || ''}
+                            value={el.text || ''}
                             placeholder="Type your text"
                             onFocus={() => {
                               editingTextRef.current = { id: el.id, initialText: el.text || '' };
                             }}
-                            onChange={ev => {
-                              const value = ev.target.value;
-                              // Update text without history (no commit)
-                              setElements(prev => prev.map(item => item.id === el.id ? { ...item, text: value } : item));
-                              // Auto-grow height
-                              const ta = ev.target;
+                            onInput={ev => {
+                              const ta = ev.currentTarget;
+                              const value = ta.value;
+                              // Measure and auto-grow in single state update
                               ta.style.height = 'auto';
                               const pixelHeight = ta.scrollHeight;
+                              let newHeight = el.height || 30;
                               if (pageRef.current) {
                                 const containerHeight = pageRef.current.getBoundingClientRect().height;
-                                const newHeight = Math.max(30, (pixelHeight / containerHeight) * 1000);
-                                setElements(prev => prev.map(item => item.id === el.id ? { ...item, height: newHeight } : item));
+                                newHeight = Math.max(30, (pixelHeight / containerHeight) * 1000);
                               }
+                              setElements(prev => prev.map(item => item.id === el.id ? { ...item, text: value, height: newHeight } : item));
                             }}
                             onBlur={() => {
                               const editing = editingTextRef.current;
@@ -2264,6 +2276,14 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                                 }
                               }
                               editingTextRef.current = null;
+                            }}
+                            onKeyDown={ev => {
+                              if (ev.key === 'Escape') {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                setActiveElementId(null);
+                                setSelectedIds([]);
+                              }
                             }}
                             onClick={ev => ev.stopPropagation()}
                             onPointerDown={ev => ev.stopPropagation()}

@@ -254,20 +254,19 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
   const handleReorderPages = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    const newImages = [...images];
-    const newDimensions = [...dimensions];
-    const [movedImg] = newImages.splice(fromIndex, 1);
-    const [movedDim] = newDimensions.splice(fromIndex, 1);
-    newImages.splice(toIndex, 0, movedImg);
-    newDimensions.splice(toIndex, 0, movedDim);
+
+    // Build stable reorder: track original indices explicitly
+    const oldIndices = images.map((_, i) => i);
+    const [movedIdx] = oldIndices.splice(fromIndex, 1);
+    oldIndices.splice(toIndex, 0, movedIdx);
+
+    // Reorder images and dimensions using the stable index array
+    const newImages = oldIndices.map(i => images[i]);
+    const newDimensions = oldIndices.map(i => dimensions[i]);
 
     // Build mapping: oldIndex -> newIndex
-    const reorderedOldIndices = newImages.map((_, i) => {
-      // Find which old index is now at position i
-      return images.indexOf(newImages[i]);
-    });
     const oldToNew: Record<number, number> = {};
-    reorderedOldIndices.forEach((oldIdx, newIdx) => {
+    oldIndices.forEach((oldIdx, newIdx) => {
       oldToNew[oldIdx] = newIdx;
     });
 
@@ -279,7 +278,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
 
     // Reorder the underlying PDF
     try {
-      const order: PageOrder[] = reorderedOldIndices.map(oldIdx => ({ index: oldIdx, rotation: 0 }));
+      const order: PageOrder[] = oldIndices.map(idx => ({ index: idx, rotation: 0 }));
       const bytes = await reorderPdf(currentFile, order);
       const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
       setCurrentFile(newFile);
@@ -290,7 +289,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     setImages(newImages);
     setDimensions(newDimensions);
     setElements(newElements);
-    setActivePage(toIndex > fromIndex ? toIndex - 1 : toIndex);
+    // Keep the view on the same content that was active
+    setActivePage(oldToNew[activePage] ?? activePage);
     setHasUnsavedChanges(true);
   };
 

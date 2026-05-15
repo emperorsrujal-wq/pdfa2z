@@ -716,8 +716,10 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
 
       const font = await pdfDoc.embedFont(fontToEmbed);
       const hasNewlines = el.text.includes('\n');
+      const textWidth = font.widthOfTextAtSize(el.text, fontSize);
+      const needsWrapping = hasNewlines || (elWidth > 0 && textWidth > elWidth);
       
-      if (hasNewlines || elWidth > 0) {
+      if (needsWrapping) {
         // Multi-line / wrapped text: use maxWidth and lineHeight for proper wrapping
         page.drawText(el.text, {
           x: actualX,
@@ -734,7 +736,6 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         } as any);
       } else {
         // Single-line short text: preserve original positioning behavior
-        const textWidth = font.widthOfTextAtSize(el.text, fontSize);
         let drawX = actualX;
         if (el.textAlign === 'center') drawX = actualX - (textWidth / 2);
         else if (el.textAlign === 'right') drawX = actualX - textWidth;
