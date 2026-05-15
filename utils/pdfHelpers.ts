@@ -950,6 +950,478 @@ export const pdfToPpt = async (file: File): Promise<Blob> => {
   return convertPdfToPptx(text);
 };
 
+// ── Client-side conversions: Word/PPT/EPUB → PDF ─────────────────────────────
+
+/**
+ * Extract text from DOCX XML content.
+ */
+const extractDocxText = (xml: string): string[] => {
+  const paragraphs: string[] = [];
+  const pRegex = /<w:p[\s\S]*?<\/w:p>/g;
+  let pMatch;
+  while ((pMatch = pRegex.exec(xml)) !== null) {
+    const pXml = pMatch[0];
+    const texts: string[] = [];
+    const tRegex = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    let tMatch;
+    while ((tMatch = tRegex.exec(pXml)) !== null) {
+      texts.push(tMatch[1]);
+    }
+    if (texts.length > 0) paragraphs.push(texts.join(''));
+  }
+  return paragraphs;
+};
+
+/**
+ * Convert Word DOCX to PDF (basic text extraction).
+ */
+export const wordToPdf = async (file: File): Promise<Uint8Array> => {
+  const zip = await JSZip.loadAsync(file);
+  const docXml = await zip.file('word/document.xml')?.async('text');
+  if (!docXml) throw new Error('Invalid DOCX file: document.xml not found');
+
+  const paragraphs = extractDocxText(docXml);
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  const margin = 50;
+  let y = height - margin;
+  const fontSize = 11;
+  const lineHeight = fontSize * 1.4;
+
+  for (const para of paragraphs) {
+    // Check if paragraph looks like a heading (short, no period)
+    const isHeading = para.length < 60 && !para.includes('.') && para.trim().length > 0;
+    const currentFont = isHeading ? boldFont : font;
+    const currentSize = isHeading ? fontSize * 1.3 : fontSize;
+
+    const words = para.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line + (line ? ' ' : '') + word;
+      const textWidth = currentFont.widthOfTextAtSize(testLine, currentSize);
+      if (textWidth > width - margin * 2 && line) {
+        if (y < margin + currentSize) {
+          page = pdfDoc.addPage();
+          y = height - margin;
+        }
+        page.drawText(line, { x: margin, y, size: currentSize, font: currentFont });
+        y -= currentSize * 1.4;
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      if (y < margin + currentSize) {
+        page = pdfDoc.addPage();
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin, y, size: currentSize, font: currentFont });
+      y -= currentSize * 1.4;
+    }
+    y -= 4; // paragraph spacing
+  }
+
+  return pdfDoc.save();
+};
+
+/**
+ * Extract text from PPTX slide XML.
+ */
+const extractPptxSlideText = (xml: string): string[] => {
+  const shapes: string[] = [];
+  const shapeRegex = /<a:p[\s\S]*?<\/a:p>/g;
+  let sMatch;
+  while ((sMatch = shapeRegex.exec(xml)) !== null) {
+    const sXml = sMatch[0];
+    const texts: string[] = [];
+    const tRegex = /<a:t>([^<]*)<\/a:t>/g;
+    let tMatch;
+    while ((tMatch = tRegex.exec(sXml)) !== null) {
+      texts.push(tMatch[1]);
+    }
+    if (texts.length > 0) shapes.push(texts.join(''));
+  }
+  return shapes;
+};
+
+/**
+ * Convert PowerPoint PPTX to PDF (basic text extraction per slide).
+ */
+export const pptToPdf = async (file: File): Promise<Uint8Array> => {
+  const zip = await JSZip.loadAsync(file);
+  const slideFiles = Object.keys(zip.files)
+    .filter(f => f.match(/^ppt\/slides\/slide\d+\.xml$/))
+    .sort((a, b) => {
+      const na = parseInt(a.match(/slide(\d+)/)?.[1] || '0');
+      const nb = parseInt(b.match(/slide(\d+)/)?.[1] || '0');
+      return na - nb;
+    });
+
+  if (slideFiles.length === 0) throw new Error('Invalid PPTX file: no slides found');
+
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  for (const slidePath of slideFiles) {
+    const xml = await zip.file(slidePath)?.async('text');
+    if (!xml) continue;
+
+    const texts = extractPptxSlideText(xml);
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    const margin = 50;
+    let y = height - margin;
+    const fontSize = 14;
+
+    // Slide title (first text, usually short)
+    if (texts.length > 0) {
+      const title = texts[0];
+      page.drawText(title.slice(0, 100), {
+        x: margin, y, size: fontSize * 1.4, font: boldFont,
+        color: rgb(0.1, 0.1, 0.1)
+      });
+      y -= fontSize * 2;
+    }
+
+    // Body text
+    for (const text of texts.slice(1)) {
+      const words = text.split(' ');
+      let line = '';
+      for (const word of words) {
+        const testLine = line + (line ? ' ' : '') + word;
+        const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+        if (textWidth > width - margin * 2 && line) {
+          if (y < margin + fontSize) {
+            // Add new page if needed (rare for slides)
+            break;
+          }
+          page.drawText(line, { x: margin, y, size: fontSize, font });
+          y -= fontSize * 1.4;
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line && y >= margin + fontSize) {
+        page.drawText(line, { x: margin, y, size: fontSize, font });
+        y -= fontSize * 1.4;
+      }
+      y -= 6;
+    }
+  }
+
+  return pdfDoc.save();
+};
+
+/**
+ * Strip HTML tags from text.
+ */
+const stripHtml = (html: string): string => {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+/**
+ * Convert EPUB to PDF (basic text extraction).
+ */
+export const epubToPdf = async (file: File): Promise<Uint8Array> => {
+  const zip = await JSZip.loadAsync(file);
+
+  // Find container.xml to locate the OPF file
+  const containerXml = await zip.file('META-INF/container.xml')?.async('text');
+  if (!containerXml) throw new Error('Invalid EPUB file: META-INF/container.xml not found');
+
+  const opfMatch = containerXml.match(/full-path="([^"]+)"/);
+  const opfPath = opfMatch ? opfMatch[1] : 'OEBPS/content.opf';
+
+  const opfXml = await zip.file(opfPath)?.async('text');
+  if (!opfXml) throw new Error('Invalid EPUB file: OPF package not found');
+
+  // Find manifest items (HTML content files)
+  const itemRegex = /<item[^>]+href="([^"]+)"[^>]*media-type="application\/xhtml\+xml"[^>]*\/>/g;
+  const items: string[] = [];
+  let itemMatch;
+  while ((itemMatch = itemRegex.exec(opfXml)) !== null) {
+    items.push(itemMatch[1]);
+  }
+
+  // Fallback: find any HTML items
+  if (items.length === 0) {
+    const fallbackRegex = /<item[^>]+href="([^"]+)"[^>]*\/>/g;
+    while ((itemMatch = fallbackRegex.exec(opfXml)) !== null) {
+      if (itemMatch[1].endsWith('.html') || itemMatch[1].endsWith('.xhtml') || itemMatch[1].endsWith('.htm')) {
+        items.push(itemMatch[1]);
+      }
+    }
+  }
+
+  const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  for (const item of items.slice(0, 50)) { // Limit to 50 chapters
+    const htmlPath = opfDir + item;
+    const html = await zip.file(htmlPath)?.async('text');
+    if (!html) continue;
+
+    const text = stripHtml(html);
+    if (!text) continue;
+
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    const margin = 50;
+    let y = height - margin;
+    const fontSize = 10;
+
+    // Try to extract a title from the first h1/h2
+    const titleMatch = html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i);
+    if (titleMatch) {
+      const title = stripHtml(titleMatch[1]).slice(0, 80);
+      page.drawText(title, {
+        x: margin, y, size: fontSize * 1.5, font: boldFont,
+        color: rgb(0.1, 0.1, 0.3)
+      });
+      y -= fontSize * 2.5;
+    }
+
+    const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0);
+    for (const para of paragraphs.slice(0, 60)) { // Limit paragraphs per chapter
+      const cleanPara = para.trim().slice(0, 300);
+      const words = cleanPara.split(' ');
+      let line = '';
+      for (const word of words) {
+        const testLine = line + (line ? ' ' : '') + word;
+        const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+        if (textWidth > width - margin * 2 && line) {
+          if (y < margin + fontSize) break;
+          page.drawText(line, { x: margin, y, size: fontSize, font });
+          y -= fontSize * 1.4;
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line && y >= margin + fontSize) {
+        page.drawText(line, { x: margin, y, size: fontSize, font });
+        y -= fontSize * 1.4;
+      }
+      y -= 3;
+      if (y < margin + fontSize) break;
+    }
+  }
+
+  return pdfDoc.save();
+};
+
+/**
+ * Convert HTML to PDF (basic).
+ */
+export const htmlToPdf = async (file: File): Promise<Uint8Array> => {
+  const html = await file.text();
+  const text = stripHtml(html);
+
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  const margin = 50;
+  let y = height - margin;
+  const fontSize = 10;
+
+  const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0);
+  for (const para of paragraphs) {
+    const cleanPara = para.trim().slice(0, 500);
+    const words = cleanPara.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line + (line ? ' ' : '') + word;
+      const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+      if (textWidth > width - margin * 2 && line) {
+        if (y < margin + fontSize) {
+          page = pdfDoc.addPage();
+          y = height - margin;
+        }
+        page.drawText(line, { x: margin, y, size: fontSize, font });
+        y -= fontSize * 1.4;
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      if (y < margin + fontSize) {
+        page = pdfDoc.addPage();
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin, y, size: fontSize, font });
+      y -= fontSize * 1.4;
+    }
+    y -= 3;
+  }
+
+  return pdfDoc.save();
+};
+
+/**
+ * Parse a simple EML (email) file and extract key fields.
+ */
+const parseEml = (content: string): { subject: string; from: string; to: string; date: string; body: string } => {
+  const headers: Record<string, string> = {};
+  const lines = content.split(/\r?\n/);
+  let i = 0;
+  let currentKey = '';
+
+  // Parse headers
+  for (; i < lines.length; i++) {
+    const line = lines[i];
+    if (line === '') break; // Empty line separates headers from body
+
+    if (line.startsWith(' ') || line.startsWith('\t')) {
+      // Continuation of previous header
+      if (currentKey) headers[currentKey] += ' ' + line.trim();
+    } else {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        currentKey = line.substring(0, colonIndex).toLowerCase();
+        headers[currentKey] = line.substring(colonIndex + 1).trim();
+      }
+    }
+  }
+
+  // Body starts after empty line
+  const bodyLines = lines.slice(i + 1);
+  let body = bodyLines.join('\n');
+
+  // Try to find plain text body in multipart
+  if (body.includes('Content-Type: multipart/')) {
+    const textMatch = body.match(/Content-Type: text\/plain[\s\S]*?\n\n([\s\S]*?)(?:\n--|$)/);
+    if (textMatch) body = textMatch[1].trim();
+  }
+
+  // Decode quoted-printable basic
+  body = body.replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  body = body.replace(/=\r?\n/g, '');
+
+  return {
+    subject: headers['subject'] || 'No Subject',
+    from: headers['from'] || 'Unknown Sender',
+    to: headers['to'] || 'Unknown Recipient',
+    date: headers['date'] || 'Unknown Date',
+    body: stripHtml(body).trim() || body.trim(),
+  };
+};
+
+/**
+ * Convert EML email to PDF.
+ */
+export const emlToPdf = async (file: File): Promise<Uint8Array> => {
+  const content = await file.text();
+  const email = parseEml(content);
+
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  const margin = 50;
+  let y = height - margin;
+  const fontSize = 10;
+
+  // Header info
+  const headerFields = [
+    { label: 'From:', value: email.from },
+    { label: 'To:', value: email.to },
+    { label: 'Date:', value: email.date },
+    { label: 'Subject:', value: email.subject },
+  ];
+
+  for (const field of headerFields) {
+    page.drawText(field.label, { x: margin, y, size: fontSize, font: boldFont, color: rgb(0.2, 0.2, 0.2) });
+    y -= fontSize * 1.4;
+
+    const words = field.value.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line + (line ? ' ' : '') + word;
+      const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+      if (textWidth > width - margin * 2 && line) {
+        if (y < margin + fontSize) {
+          page = pdfDoc.addPage();
+          y = height - margin;
+        }
+        page.drawText(line, { x: margin + 10, y, size: fontSize, font });
+        y -= fontSize * 1.4;
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      if (y < margin + fontSize) {
+        page = pdfDoc.addPage();
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin + 10, y, size: fontSize, font });
+      y -= fontSize * 1.4;
+    }
+    y -= 6;
+  }
+
+  // Separator
+  y -= 10;
+  page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
+  y -= 16;
+
+  // Body
+  const paragraphs = email.body.split(/\n+/).filter(p => p.trim().length > 0);
+  for (const para of paragraphs) {
+    const cleanPara = para.trim().slice(0, 500);
+    const words = cleanPara.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line + (line ? ' ' : '') + word;
+      const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+      if (textWidth > width - margin * 2 && line) {
+        if (y < margin + fontSize) {
+          page = pdfDoc.addPage();
+          y = height - margin;
+        }
+        page.drawText(line, { x: margin, y, size: fontSize, font });
+        y -= fontSize * 1.4;
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      if (y < margin + fontSize) {
+        page = pdfDoc.addPage();
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin, y, size: fontSize, font });
+      y -= fontSize * 1.4;
+    }
+    y -= 4;
+  }
+
+  return pdfDoc.save();
+};
+
 export interface RedactionArea {
   pageIndex: number;
   x: number;

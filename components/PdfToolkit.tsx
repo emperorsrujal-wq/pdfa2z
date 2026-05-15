@@ -4,7 +4,7 @@ import { Upload, Download, ArrowRight, ArrowLeft, File as FileIcon, Scissors, La
 import JSZip from 'jszip';
 import { PDFDocument as LibPDFDocument } from 'pdf-lib';
 import { Button } from './Button.tsx';
-import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea } from '../utils/pdfHelpers.ts';
+import { mergePdfs, splitPdf, pdfToImages, downloadBlob, compressPdf, imagesToPdf, rotatePdf, removePages, extractTextFromPdf, addPageNumbers, protectPdf, pdfToWord, pdfToExcel, pdfToHtml, unlockPdf, watermarkPdf, grayscalePdf, flattenPdf, repairPdf, updateMetadata, CompressionOptions, reorderPdf, sanitizePdf, PageOrder, reversePdf, pdfToImagesZip, editPdf, cropPdf, pdfToPpt, redactPdf, RedactionArea, wordToPdf, pptToPdf, epubToPdf, htmlToPdf, emlToPdf } from '../utils/pdfHelpers.ts';
 import { performOcrOnImages } from '../services/ocrService.ts';
 import { ToolCard } from './ToolCard.tsx';
 import { PdfToolMode } from '../types.ts';
@@ -16,6 +16,8 @@ import { uploadToLibrary } from '../services/documentService';
 import { serverConvertToWord, serverConvertToExcel } from '../services/conversionService';
 import { useAuth } from '../context/AuthContext';
 import { ToolCategory } from '../types';
+
+const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 interface PdfToolkitProps {
   initialMode?: PdfToolMode;
@@ -199,7 +201,7 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
   };
 
   const handleProcess = async () => {
-    if (files.length === 0) return;
+    if (files.length === 0 && !['HTML_TO_PDF', 'URL_TO_PDF'].includes(mode)) return;
     setIsProcessing(true);
     setError(null);
     setSuccessMsg(null);
@@ -404,17 +406,63 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
         downloadBlob(res, `cropped-${files[0].name}`);
         setSuccessMsg("PDF Cropped!");
       } else if (mode === 'PDF_TO_CSV') {
-        const blob = await pdfToExcel(files[0]); // CSV logic
-        downloadBlob(blob, `converted.csv`);
+        const text = await extractTextFromPdf(files[0]);
+        // Format as CSV: each paragraph becomes a row
+        const csv = text.split('\n').map(line => {
+          const clean = line.replace(/"/g, '""').trim();
+          return clean ? `"${clean}"` : '';
+        }).filter(Boolean).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        downloadBlob(blob, files[0].name.replace(/\.pdf$/i, '.csv'));
+        setSuccessMsg('Text extracted to CSV!');
       } else if (mode === 'PDF_TO_PPT') {
         const blob = await pdfToPpt(files[0]);
         downloadBlob(blob, `converted.pptx`);
+      } else if (mode === 'HTML_TO_PDF') {
+        if (!inputValue.trim()) throw new Error('Please enter HTML content');
+        const htmlFile = new File([inputValue], 'content.html', { type: 'text/html' });
+        const pdfBytes = await htmlToPdf(htmlFile);
+        downloadBlob(pdfBytes, `html-export-${Date.now()}.pdf`);
+        setSuccessMsg('HTML converted to PDF!');
       } else if (mode === 'URL_TO_PDF') {
-        // This is handled in UI (print instructions), no process needed really
-        setSuccessMsg("Use Print > Save as PDF in your browser.");
-      } else if (mode === 'PPT_TO_PDF' || mode === 'WORD_TO_PDF' || mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF' || mode === 'OUTLOOK_TO_PDF') {
-        // Placeholder for client-side limitations
-        setError("This conversion requires a backend server. We are working on it!");
+        if (!inputValue.trim()) throw new Error('Please enter a URL');
+        try {
+          // Use a CORS-friendly text extraction service, then convert to PDF
+          const proxyUrl = `https://r.jina.ai/http://${inputValue.replace(/^https?:\/\//, '')}`;
+          const response = await fetch(proxyUrl, { headers: { 'Accept': 'text/plain' } });
+          if (!response.ok) throw new Error('Could not fetch URL content');
+          const text = await response.text();
+          // Create a simple HTML file and convert to PDF
+          const htmlContent = `<html><body><h1>${escapeHtml(inputValue)}</h1><pre>${escapeHtml(text)}</pre></body></html>`;
+          const htmlFile = new File([htmlContent], 'page.html', { type: 'text/html' });
+          const pdfBytes = await htmlToPdf(htmlFile);
+          downloadBlob(pdfBytes, `webpage-${Date.now()}.pdf`);
+          setSuccessMsg('Webpage converted to PDF!');
+        } catch (e: any) {
+          setError('Could not convert URL. Make sure it is publicly accessible. Alternative: use Print > Save as PDF in your browser.');
+        }
+      } else if (mode === 'WORD_TO_PDF') {
+        const res = await wordToPdf(files[0]);
+        downloadBlob(res, files[0].name.replace(/\.docx?$/i, '.pdf'));
+        setSuccessMsg('Word document converted to PDF!');
+      } else if (mode === 'PPT_TO_PDF') {
+        const res = await pptToPdf(files[0]);
+        downloadBlob(res, files[0].name.replace(/\.pptx?$/i, '.pdf'));
+        setSuccessMsg('PowerPoint converted to PDF!');
+      } else if (mode === 'EPUB_TO_PDF') {
+        const res = await epubToPdf(files[0]);
+        downloadBlob(res, files[0].name.replace(/\.epub$/i, '.pdf'));
+        setSuccessMsg('EPUB converted to PDF!');
+      } else if (mode === 'OUTLOOK_TO_PDF') {
+        if (files[0].name.endsWith('.eml')) {
+          const res = await emlToPdf(files[0]);
+          downloadBlob(res, files[0].name.replace(/\.eml$/i, '.pdf'));
+          setSuccessMsg('Email converted to PDF!');
+        } else {
+          setError('.msg files require a backend server. Please use an EML file or convert .msg to .eml first.');
+        }
+      } else if (mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF') {
+        setError('This format requires a backend server. We are working on it! In the meantime, you can use Calibre (free desktop software) to convert these formats.');
       }
     } catch (err: any) {
       setError(err.message || "An error occurred.");
@@ -632,9 +680,12 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
                 <Upload size={40} className="mb-4 text-indigo-600" />
                 <p className="font-black uppercase tracking-tighter text-slate-800">
                   {mode === 'IMG_TO_PDF' ? 'Upload Images' :
-                    mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
-                      mode === 'EPUB_TO_PDF' || mode === 'MOBI_TO_PDF' ? 'Upload Ebook' :
-                        'Upload your PDF'}
+                    mode === 'WORD_TO_PDF' ? 'Upload Word Document' :
+                      mode === 'PPT_TO_PDF' ? 'Upload PPT Presentation' :
+                        mode === 'EPUB_TO_PDF' ? 'Upload EPUB Ebook' :
+                          mode === 'MOBI_TO_PDF' || mode === 'AZW3_TO_PDF' ? 'Upload Ebook' :
+                            mode === 'OUTLOOK_TO_PDF' ? 'Upload Email (.eml)' :
+                              'Upload your PDF'}
                 </p>
               </>
             )}
@@ -1178,12 +1229,13 @@ export const PdfToolkit: React.FC<PdfToolkitProps> = ({ initialMode = 'MENU' }) 
       </div>
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} accept={
         mode === 'IMG_TO_PDF' ? "image/*" :
-          mode === 'PPT_TO_PDF' ? ".ppt,.pptx" :
-            mode === 'EPUB_TO_PDF' ? ".epub" :
-              mode === 'MOBI_TO_PDF' ? ".mobi" :
-                mode === 'AZW3_TO_PDF' ? ".azw3" :
-                  mode === 'OUTLOOK_TO_PDF' ? ".msg,.eml" :
-                    "application/pdf"
+          mode === 'WORD_TO_PDF' ? ".doc,.docx" :
+            mode === 'PPT_TO_PDF' ? ".ppt,.pptx" :
+              mode === 'EPUB_TO_PDF' ? ".epub" :
+                mode === 'MOBI_TO_PDF' ? ".mobi" :
+                  mode === 'AZW3_TO_PDF' ? ".azw3" :
+                    mode === 'OUTLOOK_TO_PDF' ? ".eml,.msg" :
+                      "application/pdf"
       } multiple={mode === 'MERGE' || mode === 'IMG_TO_PDF' || mode === 'COMPRESS'} />
     </div>
   );
