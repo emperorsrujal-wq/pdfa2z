@@ -43,18 +43,47 @@ const FONTS = [
   { name: 'Georgia', value: 'Georgia' },
   { name: 'Garamond', value: 'Garamond' },
   { name: 'Palatino', value: 'Palatino' },
+  { name: 'Book Antiqua', value: 'Palatino' },
   { name: 'Courier New', value: 'Courier' },
   { name: 'Verdana', value: 'Verdana' },
-  { name: 'Trebuchet MS', value: 'Trebuchet' },
+  { name: 'Trebuchet MS', value: 'Trebuchet MS' },
+  { name: 'Impact', value: 'Impact' },
+  { name: 'Comic Sans MS', value: 'Comic Sans MS' },
+  { name: 'Bookman Old Style', value: 'Bookman Old Style' },
+  { name: 'Candara', value: 'Candara' },
+  { name: 'Calibri', value: 'Calibri' },
+  { name: 'Cambria', value: 'Cambria' },
+  { name: 'Segoe UI', value: 'Segoe UI' },
+  { name: 'Roboto', value: 'Roboto' },
+  { name: 'Open Sans', value: 'Open Sans' },
+  { name: 'Lato', value: 'Lato' },
+  { name: 'Montserrat', value: 'Montserrat' },
+  { name: 'Merriweather', value: 'Merriweather' },
+  { name: 'Source Sans Pro', value: 'Source Sans Pro' },
+  { name: 'Playfair Display', value: 'Playfair Display' },
+  { name: 'Fira Sans', value: 'Fira Sans' },
+  { name: 'Noto Sans', value: 'Noto Sans' },
+  { name: 'PT Serif', value: 'PT Serif' },
+  { name: 'Ubuntu', value: 'Ubuntu' },
+  { name: 'Oswald', value: 'Oswald' },
+  { name: 'Nunito', value: 'Nunito' },
+  { name: 'Poppins', value: 'Poppins' },
+  { name: 'Inter', value: 'Inter' },
+  { name: 'Libre Baskerville', value: 'Libre Baskerville' },
+  { name: 'Cormorant Garamond', value: 'Cormorant Garamond' },
+  { name: 'DM Sans', value: 'DM Sans' },
+  { name: 'Work Sans', value: 'Work Sans' },
 ];
 
-const SIZES = [6, 8, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 96];
+const SIZES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 48, 52, 56, 60, 64, 68, 72, 80, 88, 96];
 
 const STROKE_WIDTHS = [1, 2, 3, 4, 6, 8, 10, 14];
 
 function getFontPreviewFamily(value: string) {
-  if (value.includes('Times') || value === 'Georgia' || value === 'Garamond' || value === 'Palatino') return 'serif';
-  if (value === 'Courier') return 'monospace';
+  const serifFonts = ['Times-Roman', 'Georgia', 'Garamond', 'Palatino', 'Bookman', 'Merriweather', 'Playfair Display', 'PT Serif', 'Libre Baskerville', 'Cormorant Garamond'];
+  const monoFonts = ['Courier', 'Courier New'];
+  if (serifFonts.some(f => value.toLowerCase().includes(f.toLowerCase()))) return 'serif';
+  if (monoFonts.some(f => value.toLowerCase().includes(f.toLowerCase()))) return 'monospace';
   return 'sans-serif';
 }
 
@@ -80,8 +109,17 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
     setShowLinkInput(false);
   };
 
+  // Smart positioning: if element is near top of page, show toolbar below instead of above
+  const isNearTop = (element.y ?? 0) < 80;
+  const toolbarPosition = isNearTop
+    ? 'top-full mt-2'
+    : '-top-[58px]';
+  const dropdownPosition = isNearTop
+    ? 'top-full mt-2'
+    : 'bottom-full mb-3';
+
   const ColorDropdown = ({ selected, onSelect }: { selected?: string; onSelect: (c: string) => void }) => (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in slide-in-from-bottom-2">
+    <div className={`absolute ${dropdownPosition} left-1/2 -translate-x-1/2 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
       <div className="grid grid-cols-10 gap-0.5 mb-2">
         {SEJDA_COLORS.map(color => (
           <button
@@ -111,7 +149,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
   return (
     <div
-      className="absolute -top-[58px] left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center bg-white border border-[#2196f3] rounded-lg shadow-[0_4px_16px_rgba(33,150,243,0.18)] z-[450] p-1 min-h-[44px] max-w-[calc(100vw-20px)] animate-in fade-in slide-in-from-bottom-2 duration-200"
+      className={`absolute ${toolbarPosition} left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center bg-white border border-[#2196f3] rounded-lg shadow-[0_4px_16px_rgba(33,150,243,0.18)] z-[450] p-1 min-h-[44px] max-w-[calc(100vw-20px)] animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} duration-200`}
       onClick={e => e.stopPropagation()}
     >
 
@@ -180,7 +218,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showSizePicker && (
-              <div className="absolute bottom-full left-0 mb-3 bg-white border border-[#ccc] shadow-2xl z-[400] w-40 rounded-lg overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-40 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
                 <div className="p-1.5 border-b border-[#eee]">
                   <input type="number" step="0.5" min="1" max="200"
                     defaultValue={element.size ?? 14} placeholder="Custom…"
@@ -212,7 +250,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showFontPicker && (
-              <div className="absolute bottom-full left-0 mb-3 bg-white border border-[#ccc] shadow-2xl z-[400] w-52 rounded-lg overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-52 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
                 {FONTS.map(f => (
                   <button key={f.value} onClick={() => { onUpdate(element.id, { fontName: f.value }); setShowFontPicker(false); }}
                     className={`w-full text-left px-3 py-2 text-sm ${element.fontName === f.value ? 'bg-blue-50 text-blue-600 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -263,7 +301,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showLinkInput && (
-              <div className="absolute bottom-full left-0 mb-2 bg-white border border-[#ccc] rounded-lg shadow-2xl p-3 z-[500] w-64" onClick={e => e.stopPropagation()}>
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] rounded-lg shadow-2xl p-3 z-[500] w-64`} onClick={e => e.stopPropagation()}>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Hyperlink URL</p>
                 <input type="url" value={linkInputVal} onChange={e => setLinkInputVal(e.target.value)}
                   placeholder="https://example.com" autoFocus
@@ -363,7 +401,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showStrokePicker && (
-              <div className="absolute bottom-full left-0 mb-3 bg-white border border-[#ccc] shadow-2xl z-[400] rounded-lg overflow-hidden animate-in fade-in slide-in-from-bottom-2 w-32">
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} w-32`.trim()}>
                 <div className="p-1.5 border-b border-[#eee]">
                   <input type="number" min={0} max={40} defaultValue={element.borderWidth ?? 0}
                     className="w-full px-2 py-1 text-xs font-bold text-blue-600 border border-slate-200 rounded outline-none"

@@ -787,21 +787,24 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
     if (el.type === 'text' && el.text) {
       const fontSize = el.size || 24; 
       
-      // Determine font family
-      let fontName = el.fontName || 'Helvetica';
+      // Determine font family — map all user fonts to closest pdf-lib StandardFont
+      const rawFont = (el.fontName || 'Helvetica').toLowerCase();
       let fontToEmbed;
       
-      if (fontName.includes('Times')) {
+      const isTimes = ['times', 'georgia', 'garamond', 'palatino', 'book antiqua', 'bookman', 'merriweather', 'playfair', 'pt serif', 'libre baskerville', 'cormorant'].some(f => rawFont.includes(f));
+      const isCourier = rawFont.includes('courier');
+      
+      if (isTimes) {
          if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.TimesRomanBoldItalic;
          else if (el.isBold) fontToEmbed = StandardFonts.TimesRomanBold;
          else if (el.isItalic) fontToEmbed = StandardFonts.TimesRomanItalic;
          else fontToEmbed = StandardFonts.TimesRoman;
-      } else if (fontName.includes('Courier')) {
+      } else if (isCourier) {
          if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.CourierBoldOblique;
          else if (el.isBold) fontToEmbed = StandardFonts.CourierBold;
          else if (el.isItalic) fontToEmbed = StandardFonts.CourierOblique;
          else fontToEmbed = StandardFonts.Courier;
-      } else { // Default to Helvetica (Arial style)
+      } else { // Default to Helvetica (sans-serif family)
          if (el.isBold && el.isItalic) fontToEmbed = StandardFonts.HelveticaBoldOblique;
          else if (el.isBold) fontToEmbed = StandardFonts.HelveticaBold;
          else if (el.isItalic) fontToEmbed = StandardFonts.HelveticaOblique;

@@ -792,9 +792,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font Size</h4>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setActiveFontSize(Math.max(0.5, activeFontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">-</button>
-                      <input type="number" min={0.5} max={200} step={0.1} value={activeFontSize} onChange={(e) => setActiveFontSize(Number(e.target.value))} className="flex-1 px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none text-center" />
-                      <button onClick={() => setActiveFontSize(Math.min(200, activeFontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">+</button>
+                      <button onClick={() => setActiveFontSize(Math.max(0.5, parseFloat((activeFontSize - 0.5).toFixed(1))))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">-</button>
+                      <input type="number" min={0.5} max={200} step={0.5} value={activeFontSize} onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setActiveFontSize(Math.min(200, v)); }} className="flex-1 px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none text-center" />
+                      <button onClick={() => setActiveFontSize(Math.min(200, parseFloat((activeFontSize + 0.5).toFixed(1))))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 text-xs font-bold">+</button>
                     </div>
                   </div>
                 )}
@@ -804,7 +804,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Font</h4>
                     <select value={activeFontName} onChange={(e) => setActiveFontName(e.target.value)} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-blue-400">
-                      {['Helvetica','Arial','Times-Roman','Courier','Georgia','Verdana','Palatino','Garamond','Trebuchet MS','Impact','Comic Sans MS','Bookman Old Style','Candara','Calibri','Cambria'].map(f => (
+                      {['Helvetica','Arial','Times-Roman','Courier','Courier New','Georgia','Verdana','Palatino','Book Antiqua','Garamond','Trebuchet MS','Impact','Comic Sans MS','Bookman Old Style','Candara','Calibri','Cambria','Segoe UI','Roboto','Open Sans','Lato','Montserrat','Merriweather','Source Sans Pro','Playfair Display','Fira Sans','Noto Sans','PT Serif','Ubuntu','Oswald','Nunito','Poppins','Inter','Libre Baskerville','Cormorant Garamond','DM Sans','Work Sans'].map(f => (
                         <option key={f} value={f}>{f}</option>
                       ))}
                     </select>

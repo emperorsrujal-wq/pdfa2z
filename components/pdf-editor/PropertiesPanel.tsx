@@ -54,8 +54,16 @@ const COLORS = [
 ];
 
 const WIDTHS = [1, 2, 3, 5, 8, 12];
-const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
-const FONTS = ['Helvetica', 'Times-Roman', 'Courier', 'Symbol', 'ZapfDingbats'];
+const FONT_SIZES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 48, 52, 56, 60, 64, 68, 72, 80, 88, 96];
+const FONTS = [
+  'Helvetica', 'Arial', 'Times-Roman', 'Georgia', 'Garamond', 'Palatino', 'Book Antiqua',
+  'Courier', 'Courier New', 'Verdana', 'Trebuchet MS', 'Impact', 'Comic Sans MS',
+  'Bookman Old Style', 'Candara', 'Calibri', 'Cambria', 'Segoe UI', 'Roboto',
+  'Open Sans', 'Lato', 'Montserrat', 'Merriweather', 'Source Sans Pro',
+  'Playfair Display', 'Fira Sans', 'Noto Sans', 'PT Serif', 'Ubuntu',
+  'Oswald', 'Nunito', 'Poppins', 'Inter', 'Libre Baskerville',
+  'Cormorant Garamond', 'DM Sans', 'Work Sans',
+];
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="mb-5">
@@ -181,26 +189,42 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             <Section title="Size">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onFontSizeChange(Math.max(8, fontSize - 1))}
+                  onClick={() => onFontSizeChange(Math.max(1, parseFloat((fontSize - 0.5).toFixed(1))))}
                   className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100"
                 >
                   <Minus size={14} />
                 </button>
-                <select
+                <input
+                  type="number"
+                  step="0.5"
+                  min={1}
+                  max={200}
                   value={fontSize}
-                  onChange={(e) => onFontSizeChange(Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v) && v > 0) onFontSizeChange(Math.min(200, v));
+                  }}
                   className="flex-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none text-center"
-                >
-                  {FONT_SIZES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                />
                 <button
-                  onClick={() => onFontSizeChange(Math.min(72, fontSize + 1))}
+                  onClick={() => onFontSizeChange(Math.min(200, parseFloat((fontSize + 0.5).toFixed(1))))}
                   className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100"
                 >
                   <Plus size={14} />
                 </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {FONT_SIZES.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => onFontSizeChange(s)}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      fontSize === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </Section>
 

@@ -140,6 +140,7 @@ const CONTEXT_FONTS = [
   { name: 'Georgia', value: 'Georgia' },
   { name: 'Verdana', value: 'Verdana' },
   { name: 'Palatino', value: 'Palatino' },
+  { name: 'Book Antiqua', value: 'Palatino' },
   { name: 'Garamond', value: 'Garamond' },
   { name: 'Trebuchet MS', value: 'Trebuchet MS' },
   { name: 'Impact', value: 'Impact' },
@@ -148,6 +149,26 @@ const CONTEXT_FONTS = [
   { name: 'Candara', value: 'Candara' },
   { name: 'Calibri', value: 'Calibri' },
   { name: 'Cambria', value: 'Cambria' },
+  { name: 'Segoe UI', value: 'Segoe UI' },
+  { name: 'Roboto', value: 'Roboto' },
+  { name: 'Open Sans', value: 'Open Sans' },
+  { name: 'Lato', value: 'Lato' },
+  { name: 'Montserrat', value: 'Montserrat' },
+  { name: 'Merriweather', value: 'Merriweather' },
+  { name: 'Source Sans Pro', value: 'Source Sans Pro' },
+  { name: 'Playfair Display', value: 'Playfair Display' },
+  { name: 'Fira Sans', value: 'Fira Sans' },
+  { name: 'Noto Sans', value: 'Noto Sans' },
+  { name: 'PT Serif', value: 'PT Serif' },
+  { name: 'Ubuntu', value: 'Ubuntu' },
+  { name: 'Oswald', value: 'Oswald' },
+  { name: 'Nunito', value: 'Nunito' },
+  { name: 'Poppins', value: 'Poppins' },
+  { name: 'Inter', value: 'Inter' },
+  { name: 'Libre Baskerville', value: 'Libre Baskerville' },
+  { name: 'Cormorant Garamond', value: 'Cormorant Garamond' },
+  { name: 'DM Sans', value: 'DM Sans' },
+  { name: 'Work Sans', value: 'Work Sans' },
 ];
 
 const TOOLS: { mode: EditorMode; label: string; icon: React.ReactNode; tooltip: string }[] = [
@@ -200,22 +221,47 @@ const LINE_SHAPES = [
 ] as const;
 
 function getFontFamily(fontName?: string) {
-  if (fontName === 'Times-Roman') return '"Times New Roman", Times, serif';
-  if (fontName === 'Helvetica') return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
-  if (fontName === 'Courier') return '"JetBrains Mono", "Courier New", Courier, monospace';
-  if (fontName === 'Georgia') return 'Georgia, serif';
-  if (fontName === 'Verdana') return 'Verdana, Geneva, sans-serif';
-  if (fontName === 'Arial') return 'Arial, "Helvetica Neue", Helvetica, sans-serif';
-  if (fontName === 'Palatino') return '"Palatino Linotype", "Book Antiqua", Palatino, serif';
-  if (fontName === 'Garamond') return 'Garamond, "EB Garamond", serif';
-  if (fontName === 'Trebuchet MS') return '"Trebuchet MS", Helvetica, sans-serif';
-  if (fontName === 'Impact') return 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif';
-  if (fontName === 'Comic Sans MS') return '"Comic Sans MS", "Comic Sans", cursive, sans-serif';
-  if (fontName === 'Bookman Old Style') return '"Bookman Old Style", "Book Antiqua", serif';
-  if (fontName === 'Candara') return 'Candara, Calibri, Segoe, sans-serif';
-  if (fontName === 'Calibri') return 'Calibri, Candara, Segoe, sans-serif';
-  if (fontName === 'Cambria') return 'Cambria, Georgia, serif';
-  return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
+  if (!fontName) return 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
+  const map: Record<string, string> = {
+    'Times-Roman': '"Times New Roman", Times, serif',
+    'Helvetica': 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif',
+    'Courier': '"JetBrains Mono", "Courier New", Courier, monospace',
+    'Courier New': '"JetBrains Mono", "Courier New", Courier, monospace',
+    'Georgia': 'Georgia, serif',
+    'Verdana': 'Verdana, Geneva, sans-serif',
+    'Arial': 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    'Palatino': '"Palatino Linotype", "Book Antiqua", Palatino, serif',
+    'Book Antiqua': '"Palatino Linotype", "Book Antiqua", Palatino, serif',
+    'Garamond': 'Garamond, "EB Garamond", serif',
+    'Trebuchet MS': '"Trebuchet MS", Helvetica, sans-serif',
+    'Impact': 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif',
+    'Comic Sans MS': '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
+    'Bookman Old Style': '"Bookman Old Style", "Book Antiqua", serif',
+    'Candara': 'Candara, Calibri, Segoe, sans-serif',
+    'Calibri': 'Calibri, Candara, Segoe, sans-serif',
+    'Cambria': 'Cambria, Georgia, serif',
+    'Segoe UI': '"Segoe UI", Tahoma, Geneva, sans-serif',
+    'Roboto': 'Roboto, "Helvetica Neue", sans-serif',
+    'Open Sans': '"Open Sans", sans-serif',
+    'Lato': 'Lato, sans-serif',
+    'Montserrat': 'Montserrat, sans-serif',
+    'Merriweather': 'Merriweather, Georgia, serif',
+    'Source Sans Pro': '"Source Sans Pro", sans-serif',
+    'Playfair Display': '"Playfair Display", Georgia, serif',
+    'Fira Sans': '"Fira Sans", sans-serif',
+    'Noto Sans': '"Noto Sans", sans-serif',
+    'PT Serif': '"PT Serif", Georgia, serif',
+    'Ubuntu': 'Ubuntu, sans-serif',
+    'Oswald': 'Oswald, sans-serif',
+    'Nunito': 'Nunito, sans-serif',
+    'Poppins': 'Poppins, sans-serif',
+    'Inter': 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif',
+    'Libre Baskerville': '"Libre Baskerville", Georgia, serif',
+    'Cormorant Garamond': '"Cormorant Garamond", Garamond, serif',
+    'DM Sans': '"DM Sans", sans-serif',
+    'Work Sans': '"Work Sans", sans-serif',
+  };
+  return map[fontName] || 'Inter, "Segoe UI", Roboto, Helvetica, sans-serif';
 }
 
 export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
@@ -1509,9 +1555,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <div className="w-px h-4 bg-slate-200 shrink-0" />
             <span className="text-slate-400 font-semibold shrink-0">Size</span>
             <input
-              type="number" min={6} max={200} value={activeFontSize}
+              type="number" step="0.5" min={1} max={200} value={activeFontSize}
               onClick={e => e.stopPropagation()}
-              onChange={e => setActiveFontSize(Math.max(6, Math.min(200, Number(e.target.value) || 14)))}
+              onChange={e => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v) && v > 0) setActiveFontSize(Math.min(200, v));
+              }}
               className="w-14 h-7 text-xs border border-slate-200 rounded px-1.5 text-center outline-none focus:border-blue-400 font-bold"
             />
             <span className="text-slate-400">pt</span>
@@ -1923,7 +1972,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     transform: `rotate(${el.rotation || 0}deg)`,
                     transformOrigin: 'top left',
                     opacity: el.opacity,
-                    zIndex: isActive ? 50 : 1,
+                    zIndex: isActive ? 50 : 10,
                     cursor: mode === 'select' ? 'move' : 'default',
                     minWidth: 20,
                     minHeight: 10,
@@ -2583,7 +2632,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                         min="1"
                         max="200"
                         value={activeFontSize}
-                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setActiveFontSize(v); }}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setActiveFontSize(Math.min(200, v)); }}
                         onClick={ev => ev.stopPropagation()}
                         onKeyDown={ev => ev.stopPropagation()}
                         className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 w-20"
