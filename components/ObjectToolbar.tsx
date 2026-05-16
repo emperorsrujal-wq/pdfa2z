@@ -119,7 +119,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
     : 'bottom-full mb-3';
 
   const ColorDropdown = ({ selected, onSelect }: { selected?: string; onSelect: (c: string) => void }) => (
-    <div className={`absolute ${dropdownPosition} left-1/2 -translate-x-1/2 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
+    <div className={`absolute ${dropdownPosition} left-1/2 -translate-x-1/2 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`}>
       <div className="grid grid-cols-10 gap-0.5 mb-2">
         {SEJDA_COLORS.map(color => (
           <button
@@ -218,7 +218,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showSizePicker && (
-              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-40 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-40 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`}>
                 <div className="p-1.5 border-b border-[#eee]">
                   <input type="number" step="0.5" min="1" max="200"
                     defaultValue={element.size ?? 14} placeholder="Custom…"
@@ -250,7 +250,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showFontPicker && (
-              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-52 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`.trim()}>
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] w-52 rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`}>
                 {FONTS.map(f => (
                   <button key={f.value} onClick={() => { onUpdate(element.id, { fontName: f.value }); setShowFontPicker(false); }}
                     className={`w-full text-left px-3 py-2 text-sm ${element.fontName === f.value ? 'bg-blue-50 text-blue-600 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -301,7 +301,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showLinkInput && (
-              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] rounded-lg shadow-2xl p-3 z-[500] w-64`} onClick={e => e.stopPropagation()}>
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] rounded-lg shadow-2xl p-3 z-[500] w-64 animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`} onClick={e => e.stopPropagation()}>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Hyperlink URL</p>
                 <input type="url" value={linkInputVal} onChange={e => setLinkInputVal(e.target.value)}
                   placeholder="https://example.com" autoFocus
@@ -401,7 +401,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
               </button>
             </Tooltip>
             {showStrokePicker && (
-              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} w-32`.trim()}>
+              <div className={`absolute ${dropdownPosition} left-0 bg-white border border-[#ccc] shadow-2xl z-[400] rounded-lg overflow-hidden animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} w-32`}>
                 <div className="p-1.5 border-b border-[#eee]">
                   <input type="number" min={0} max={40} defaultValue={element.borderWidth ?? 0}
                     className="w-full px-2 py-1 text-xs font-bold text-blue-600 border border-slate-200 rounded outline-none"
