@@ -36,7 +36,13 @@ export type EditorMode =
   | 'symbol-dot'
   | 'comment'
   | 'font-picker'
-  | 'watermark';
+  | 'watermark'
+  | 'stamp'
+  | 'measure'
+  | 'squiggly';
+
+export type ViewMode = 'single' | 'continuous' | 'facing';
+export type ZoomPreset = 'actual' | 'fit-page' | 'fit-width' | 'fit-height';
 
 export interface ToolGroup {
   id: string;
@@ -45,4 +51,19 @@ export interface ToolGroup {
   mode: EditorMode;
   shortcut?: string;
   tooltip: string;
+}
+
+export interface BookmarkItem {
+  title: string;
+  page: number;
+  children?: BookmarkItem[];
+}
+
+export interface SearchResult {
+  pageIndex: number;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }

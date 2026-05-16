@@ -8,7 +8,12 @@ import { PdfEditorCanvas } from './PDFEditorCanvas';
 import { ToolPalette } from './pdf-editor/ToolPalette';
 import { MobileToolBar } from './pdf-editor/MobileToolBar';
 import { KeyboardShortcutsModal } from './pdf-editor/KeyboardShortcutsModal';
-import type { EditorMode } from './pdf-editor/types';
+import { SearchPanel } from './pdf-editor/SearchPanel';
+import { BookmarksPanel } from './pdf-editor/BookmarksPanel';
+import { LayerPanel } from './pdf-editor/LayerPanel';
+import { ViewControls } from './pdf-editor/ViewControls';
+import { StampPanel } from './pdf-editor/StampPanel';
+import type { EditorMode, ViewMode, BookmarkItem } from './pdf-editor/types';
 import { pdfToImages, editPdf, EditElement, downloadBlob, getTextItems, PdfTextItem, PageDimensions, insertBlankPage, removePages, rotatePage, reorderPdf, PageOrder } from '../utils/pdfHelpers';
 
 const MAX_FILE_SIZE_MB = 50;
@@ -51,7 +56,16 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const [activeBrushSize, setActiveBrushSize] = React.useState(3);
   const [activeElementId, setActiveElementId] = React.useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = React.useState(false);
-  const [rightPanelTab, setRightPanelTab] = React.useState<'pages' | 'properties'>('pages');
+  const [rightPanelTab, setRightPanelTab] = React.useState<'pages' | 'properties' | 'bookmarks' | 'layers'>('pages');
+  const [viewMode, setViewMode] = React.useState<ViewMode>('single');
+  const [showGrid, setShowGrid] = React.useState(false);
+  const [showRulers, setShowRulers] = React.useState(false);
+  const [showSearch, setShowSearch] = React.useState(false);
+  const [showBookmarks, setShowBookmarks] = React.useState(false);
+  const [showLayers, setShowLayers] = React.useState(false);
+  const [bookmarks, setBookmarks] = React.useState<BookmarkItem[]>([]);
+  const [visibleTypes, setVisibleTypes] = React.useState<Record<string, boolean>>({});
+  const [showStampPanel, setShowStampPanel] = React.useState(false);
   const sessionKey = `pdfa2z_session_${file.name}_${file.size}`;
 
   // ── File Validation ───────────────────────────────────────────────
@@ -75,6 +89,34 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  // ── Extract Bookmarks ────────────────────────────────────────────
+  React.useEffect(() => {
+    if (fileSizeError) return;
+    const extractBookmarks = async () => {
+      try {
+        const pdfjsLib = await import('pdfjs-dist');
+        const engine = (pdfjsLib as any).default?.getDocument ? (pdfjsLib as any).default : pdfjsLib;
+        engine.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.min.js';
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = engine.getDocument({ data: new Uint8Array(arrayBuffer) });
+        const pdf = await loadingTask.promise;
+        const outline = await pdf.getOutline();
+        const mapOutline = (items: any[]): BookmarkItem[] => {
+          if (!items) return [];
+          return items.map(item => ({
+            title: item.title,
+            page: typeof item.dest === 'string' ? 0 : (item.dest?.[0]?.num || 0) - 1,
+            children: item.items ? mapOutline(item.items) : undefined,
+          }));
+        };
+        setBookmarks(mapOutline(outline || []));
+      } catch (e) {
+        console.warn('Could not extract bookmarks:', e);
+      }
+    };
+    extractBookmarks();
+  }, [file, fileSizeError]);
 
   // ── localStorage Session Restore ─────────────────────────────────
   React.useEffect(() => {
@@ -105,6 +147,14 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const clearSession = () => {
     try { localStorage.removeItem(sessionKey); } catch (e) { /* ignore */ }
   };
+
+  // ── Tool mode side effects ──────────────────────────────────────
+  React.useEffect(() => {
+    if (editorMode === 'stamp') {
+      setShowStampPanel(true);
+      setEditorMode('select');
+    }
+  }, [editorMode]);
 
   // ── PDF Processing with progress stages ──────────────────────────
   React.useEffect(() => {
@@ -234,7 +284,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const handleInsertPage = async () => {
     try {
       const bytes = await insertBlankPage(currentFile, activePage);
-      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      const newFile = new File([bytes.slice()], file.name, { type: 'application/pdf' });
       setCurrentFile(newFile);
       const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
       setImages(imgs);
@@ -280,7 +330,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     try {
       const order: PageOrder[] = oldIndices.map(idx => ({ index: idx, rotation: 0 }));
       const bytes = await reorderPdf(currentFile, order);
-      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      const newFile = new File([bytes.slice()], file.name, { type: 'application/pdf' });
       setCurrentFile(newFile);
     } catch (e) {
       console.warn('Could not reorder PDF pages', e);
@@ -314,7 +364,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
   const handleRotatePage = async () => {
     try {
       const bytes = await rotatePage(new Uint8Array(await currentFile.arrayBuffer()), activePage, 90);
-      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      const newFile = new File([bytes.slice()], file.name, { type: 'application/pdf' });
       setCurrentFile(newFile);
       const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
       setImages(imgs);
@@ -329,7 +379,7 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
     if (images.length <= 1) return;
     try {
       const bytes = await removePages(currentFile, [activePage + 1]);
-      const newFile = new File([bytes.buffer as ArrayBuffer], file.name, { type: 'application/pdf' });
+      const newFile = new File([bytes.slice()], file.name, { type: 'application/pdf' });
       setCurrentFile(newFile);
       const { images: imgs, dimensions: dims } = await pdfToImages(newFile);
       setImages(imgs);
@@ -475,16 +525,28 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                 </button>
               </div>
             )}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-50 rounded-lg border border-slate-200 px-1">
-              <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 text-slate-500 hover:text-slate-900 transition-colors"><ZoomOut size={16} /></button>
-              <span className="text-xs font-medium text-slate-600 w-12 text-center">{zoom}%</span>
-              <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="p-1.5 text-slate-500 hover:text-slate-900 transition-colors"><ZoomIn size={16} /></button>
-            </div>
+            <ViewControls
+              zoom={zoom / 100}
+              onZoomChange={(z) => setZoom(Math.round(z * 100))}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              showGrid={showGrid}
+              onShowGridChange={setShowGrid}
+              showRulers={showRulers}
+              onShowRulersChange={setShowRulers}
+            />
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-1">
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className={`p-2 rounded-lg transition-colors ${showSearch ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                title="Search (Ctrl+F)"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </button>
               <button
                 onClick={() => setShowShortcuts(true)}
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -584,6 +646,9 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               onDeletePage={handleDeletePage}
               setElements={setElements}
               onPageChange={(p) => setActivePage(p)}
+              visibleTypes={visibleTypes}
+              showGrid={showGrid}
+              showRulers={showRulers}
             />
           </div>
         </main>
@@ -593,19 +658,31 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
           <div className="flex border-b border-slate-100">
             <button
               onClick={() => setRightPanelTab('pages')}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'pages' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 px-3 py-3 text-xs font-medium transition-colors ${rightPanelTab === 'pages' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Pages
             </button>
             <button
               onClick={() => setRightPanelTab('properties')}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${rightPanelTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 px-3 py-3 text-xs font-medium transition-colors ${rightPanelTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Tool Info
+              Properties
+            </button>
+            <button
+              onClick={() => setRightPanelTab('bookmarks')}
+              className={`flex-1 px-3 py-3 text-xs font-medium transition-colors ${rightPanelTab === 'bookmarks' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Bookmarks
+            </button>
+            <button
+              onClick={() => setRightPanelTab('layers')}
+              className={`flex-1 px-3 py-3 text-xs font-medium transition-colors ${rightPanelTab === 'layers' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Layers
             </button>
           </div>
 
-          {rightPanelTab === 'pages' ? (
+          {rightPanelTab === 'pages' && (
             <>
               <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar">
                 {images.map((img, i) => (
@@ -669,7 +746,8 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
                 </button>
               </div>
             </>
-          ) : (
+          )}
+          {rightPanelTab === 'properties' && (
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <div className="space-y-4">
                 {/* Active Tool */}
@@ -761,6 +839,16 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
               </div>
             </div>
           )}
+          {rightPanelTab === 'bookmarks' && (
+            <BookmarksPanel bookmarks={bookmarks} onJumpToPage={setActivePage} />
+          )}
+          {rightPanelTab === 'layers' && (
+            <LayerPanel
+              elements={elements}
+              visibleTypes={visibleTypes}
+              onToggleType={(type) => setVisibleTypes(prev => ({ ...prev, [type]: prev[type] === false ? true : false }))}
+            />
+          )}
         </aside>
       </div>
 
@@ -768,6 +856,47 @@ export const PdfEditorUI: React.FC<PdfEditorUIProps> = ({ file, onCancel }) => {
       <MobileToolBar activeMode={editorMode} onModeChange={(m) => setEditorMode(m)} />
 
       <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+
+      {/* Search Panel */}
+      {showSearch && (
+        <SearchPanel
+          file={currentFile}
+          totalPages={images.length}
+          onJumpToResult={(pageIndex) => setActivePage(pageIndex)}
+          onClose={() => setShowSearch(false)}
+        />
+      )}
+
+      {/* Stamp Panel */}
+      {showStampPanel && (
+        <StampPanel
+          onSelect={(text, color) => {
+            const newEl: EditElement = {
+              id: `stamp-${Date.now()}`,
+              type: 'text',
+              pageIndex: activePage,
+              x: 350,
+              y: 450,
+              width: 300,
+              height: 60,
+              color,
+              text,
+              size: 36,
+              fontName: 'Helvetica',
+              opacity: 0.6,
+              rotation: -15,
+            };
+            const next = [...elements, newEl];
+            setHistory([...history.slice(0, historyStep + 1), next]);
+            setHistoryStep(historyStep + 1);
+            setElements(next);
+            setActiveElementId(newEl.id);
+            setEditorMode('select');
+            setShowStampPanel(false);
+          }}
+          onClose={() => setShowStampPanel(false)}
+        />
+      )}
     </div>
   );
 };
@@ -792,6 +921,9 @@ function getToolTip(mode: EditorMode): string {
     'form-text': 'Click to place a fillable text field.',
     watermark: 'Add a watermark across your document.',
     'find-replace': 'Search and replace text across the document.',
+    stamp: 'Add a predefined or custom stamp annotation.',
+    measure: 'Click and drag to measure distance on the page.',
+    squiggly: 'Drag under text to add a squiggly underline.',
   };
   return tips[mode] || 'Select a tool to start editing.';
 }

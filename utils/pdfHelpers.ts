@@ -616,11 +616,11 @@ export const sampleBackgroundColor = async (
 
 export type EditElementType =
   'text' | 'path' | 'image' | 'rect' | 'circle' | 'ellipse' | 'line' | 'arrow' | 'audio' |
-  'highlight' | 'strikeout' | 'underline' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature' | 'page-rotation';
+  'highlight' | 'strikeout' | 'underline' | 'squiggly' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'link' | 'sticky-note' | 'signature' | 'page-rotation';
 
 export type EditorMode =
   | 'select' | 'text' | 'draw' | 'erase' | 'smart-erase' | 'rect' | 'circle' | 'line' | 'arrow' | 'image' | 'picker' | 'magic-edit' | 'font-picker'
-  | 'highlight' | 'strikeout' | 'underline' | 'link' | 'ellipse' | 'forms' | 'sign' | 'signature' | 'sticky-note' | 'find-replace'
+  | 'highlight' | 'strikeout' | 'underline' | 'squiggly' | 'link' | 'ellipse' | 'forms' | 'sign' | 'signature' | 'sticky-note' | 'find-replace'
   | 'ocr' | 'convert' | 'page-tools' | 'form-builder' | 'form-check' | 'form-radio' | 'form-text' | 'form-textarea' | 'form-select' | 'comment';
 
 
@@ -888,6 +888,23 @@ export const editPdf = async (file: File, elements: EditElement[]): Promise<Uint
         thickness: 2,
         opacity: elOpacity,
       });
+    } else if (el.type === 'squiggly') {
+      // Draw squiggly underline as a series of small line segments
+      const segments = Math.ceil(elWidth / 6);
+      const amp = 2;
+      for (let i = 0; i < segments; i++) {
+        const sx = actualX + i * 6;
+        const sy = actualY - elHeight + (i % 2 === 0 ? -amp : amp);
+        const ex = actualX + (i + 1) * 6;
+        const ey = actualY - elHeight + (i % 2 === 0 ? amp : -amp);
+        page.drawLine({
+          start: { x: sx, y: sy },
+          end: { x: ex, y: ey },
+          color: elColor,
+          thickness: 1.5,
+          opacity: elOpacity,
+        });
+      }
     } else if (el.type === 'rect') {
       page.drawRectangle({
         x: actualX,

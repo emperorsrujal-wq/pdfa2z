@@ -3,7 +3,7 @@ import {
   MousePointer2, Type, Image as ImageIcon, PenLine, Highlighter,
   Eraser, Square, Link2, FileSignature, MessageSquare, Search,
   ChevronUp, X, Droplets, Circle as CircleIcon, Minus, ArrowRight,
-  CheckSquare, CheckCircle2, LayoutList
+  CheckSquare, CheckCircle2, LayoutList, Stamp as StampIcon, Ruler
 } from 'lucide-react';
 import type { EditorMode } from './types';
 
@@ -29,6 +29,8 @@ const tools: { mode: EditorMode; label: string; icon: React.ReactNode }[] = [
   { mode: 'form-check', label: 'Checkbox', icon: <CheckCircle2 size={20} /> },
   { mode: 'form-select', label: 'Dropdown', icon: <LayoutList size={20} /> },
   { mode: 'sticky-note', label: 'Comment', icon: <MessageSquare size={20} /> },
+  { mode: 'stamp', label: 'Stamp', icon: <StampIcon size={20} /> },
+  { mode: 'measure', label: 'Measure', icon: <Ruler size={20} /> },
   { mode: 'find-replace', label: 'Find', icon: <Search size={20} /> },
 ];
 

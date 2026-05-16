@@ -85,6 +85,9 @@ interface PdfEditorCanvasProps {
   onDeletePage?: () => void;
   setElements: React.Dispatch<React.SetStateAction<EditElement[]>>;
   onPageChange?: (pageIndex: number) => void;
+  visibleTypes?: Record<string, boolean>;
+  showGrid?: boolean;
+  showRulers?: boolean;
 }
 
 type EditorMode =
@@ -124,7 +127,10 @@ type EditorMode =
   | 'symbol-dot'
   | 'comment'
   | 'font-picker'
-  | 'watermark';
+  | 'watermark'
+  | 'stamp'
+  | 'measure'
+  | 'squiggly';
 
 const CONTEXT_FONTS = [
   { name: 'Helvetica', value: 'Helvetica' },
@@ -249,6 +255,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   setElements,
   onActiveElementChange,
   onPageChange,
+  visibleTypes = {},
+  showGrid = false,
+  showRulers = false,
 }) => {
   const [internalMode, setInternalMode] = React.useState<EditorMode>(initialMode || 'magic-edit');
   const mode = externalMode ?? internalMode;
@@ -333,6 +342,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
   const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
   const [dragEnd, setDragEnd] = React.useState<{ x: number; y: number } | null>(null);
   const [guides, setGuides] = React.useState<{ v: number | null, h: number | null }>({ v: null, h: null });
+  const [measureStart, setMeasureStart] = React.useState<{ x: number; y: number } | null>(null);
+  const [measureEnd, setMeasureEnd] = React.useState<{ x: number; y: number } | null>(null);
+  const [measureResult, setMeasureResult] = React.useState<string | null>(null);
 
   // Tier 2 Modal States
   const [showOcr, setShowOcr] = React.useState(false);
@@ -815,6 +827,13 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         return;
       }
       if (mode === 'sign') return;
+      if (mode === 'measure') {
+        setMeasureStart(pos);
+        setMeasureEnd(pos);
+        setMeasureResult(null);
+        setIsDrawing(true);
+        return;
+      }
     setIsDrawing(true);
     setDragStart(pos);
     setDragEnd(pos);
@@ -826,11 +845,25 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     e.preventDefault();
     const pos = getPos(e);
     setDragEnd(pos);
+    if (mode === 'measure') {
+      setMeasureEnd(pos);
+      if (measureStart) {
+        const dx = ((pos.x - measureStart.x) / 1000) * (dimensions?.width || 595);
+        const dy = ((pos.y - measureStart.y) / 1000) * (dimensions?.height || 842);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        setMeasureResult(`${dist.toFixed(1)} pt`);
+      }
+      return;
+    }
     if (mode === 'draw') setCurrentPath(prev => [...prev, pos]);
     else if (mode === 'line' || mode === 'arrow') setCurrentPath([dragStart!, pos]);
   };
 
   const handlePointerUp = () => {
+    if (mode === 'measure') {
+      setIsDrawing(false);
+      return;
+    }
     if (!isDrawing || !dragStart || !dragEnd) {
       setIsDrawing(false);
       return;
@@ -880,7 +913,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         let bg = mode === 'erase' ? '#FFFFFF' : activeColor;
         if (mode === 'smart-erase') bg = smartEraseBg;
         const fillColor = mode === 'erase' ? '#FFFFFF' : (mode === 'smart-erase' ? smartEraseBg : activeColor);
-        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, borderColor: (mode === 'rect' ? activeBorderColor : undefined), borderWidth: (mode === 'rect' ? activeBorderWidth : undefined), opacity: 1 };
+        newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, borderColor: (mode === 'rect' ? activeBorderColor : undefined), borderWidth: (mode === 'rect' ? activeBorderWidth : undefined), opacity: 1, isWhiteout: mode === 'erase' || mode === 'smart-erase' };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'highlight') {
@@ -889,6 +922,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         newEl = { id: `st-${Date.now()}`, type: 'strikeout', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'underline') {
         newEl = { id: `ul-${Date.now()}`, type: 'underline', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
+      } else if (mode === 'squiggly') {
+        newEl = { id: `sq-${Date.now()}`, type: 'squiggly', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
       } else if (mode === 'ellipse') {
         newEl = { id: `ellipse-${Date.now()}`, type: 'ellipse', pageIndex, x, y, width: w, height: h, color: activeColor, borderColor: activeBorderColor, borderWidth: activeBorderWidth, opacity: 1 };
       } else if (mode === 'link') {
@@ -1311,6 +1346,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                          { id: 'strikeout', label: 'Strike out', icon: <Minus size={16} />, colors: ['#f44336', '#2196f3', '#ffeb3b'] },
                          { id: 'highlight', label: 'Highlight', icon: <Highlighter size={16} />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
                          { id: 'underline', label: 'Underline', icon: <Minus size={16} className="mt-2" />, colors: ['#ffeb3b', '#f44336', '#2196f3', '#4caf50', '#000000'] },
+                         { id: 'squiggly', label: 'Squiggly', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12c2-2 4 2 6 0s4 2 6 0 4 2 6 0"/></svg>, colors: ['#f44336', '#2196f3', '#ffeb3b', '#4caf50', '#000000'] },
                        ].map(tool => (
                          <div key={tool.id} className="flex items-center justify-between group">
                             <button 
@@ -1506,8 +1542,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
             <span className="font-bold text-slate-600 w-8 shrink-0">{activeBrushSize}px</span>
           </>)}
 
-          {/* HIGHLIGHT / STRIKEOUT / UNDERLINE */}
-          {(mode === 'highlight' || mode === 'strikeout' || mode === 'underline') && (<>
+          {/* HIGHLIGHT / STRIKEOUT / UNDERLINE / SQUIGGLY */}
+          {(mode === 'highlight' || mode === 'strikeout' || mode === 'underline' || mode === 'squiggly') && (<>
             <span className="text-slate-400 font-semibold shrink-0">Color</span>
             {(mode === 'highlight'
               ? ['#FFE600','#00E676','#FF80AB','#40C4FF','#FF6D00','#E040FB']
@@ -1626,6 +1662,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
           'form-builder':'📋  Use the Forms menu above to insert form fields',
           'watermark':  '🔏  Set your watermark text and style, then click Apply',
           'find-replace':'🔍  Type the text to find, then enter the replacement',
+          'squiggly':   '〰️  Drag under text to add a squiggly underline',
+          'measure':    '📏  Click and drag to measure distance between two points',
         };
         const hint = hints[mode];
         if (!hint) return null;
@@ -1684,7 +1722,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
         >
           <div
             className={`relative bg-white animate-fade-in touch-none ${
-              ['draw', 'line', 'erase', 'smart-erase', 'rect', 'circle', 'ellipse', 'highlight', 'strikeout', 'underline', 'arrow', 'link'].includes(mode) ? 'select-none cursor-crosshair' :
+              ['draw', 'line', 'erase', 'smart-erase', 'rect', 'circle', 'ellipse', 'highlight', 'strikeout', 'underline', 'arrow', 'link', 'measure'].includes(mode) ? 'select-none cursor-crosshair' :
               mode === 'text' || mode === 'magic-edit' ? 'cursor-text' :
               mode === 'sticky-note' || mode === 'comment' ? 'cursor-copy' :
               mode === 'picker' || mode === 'font-picker' ? 'select-none cursor-crosshair' :
@@ -1713,6 +1751,48 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                 <div className="bg-slate-900 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl">
                   🎨 Click to sample a color from the document
                 </div>
+              </div>
+            )}
+
+            {/* Grid overlay */}
+            {showGrid && (
+              <div
+                className="absolute inset-0 pointer-events-none z-[1]"
+                style={{
+                  backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                  backgroundSize: `${(50 / zoom)}px ${(50 / zoom)}px`,
+                  opacity: 0.4,
+                }}
+              />
+            )}
+
+            {/* Rulers */}
+            {showRulers && (
+              <>
+                <div className="absolute -top-5 left-0 right-0 h-5 bg-slate-100 border-b border-slate-300 z-[5] pointer-events-none flex items-end overflow-hidden">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div key={i} className="absolute bottom-0 border-l border-slate-400" style={{ left: `${i * 5}%`, height: i % 2 === 0 ? '12px' : '6px' }}>
+                      {i % 2 === 0 && <span className="absolute -top-3 left-0.5 text-[8px] text-slate-500">{i * 50}</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute top-0 -left-5 bottom-0 w-5 bg-slate-100 border-r border-slate-300 z-[5] pointer-events-none flex flex-col items-end overflow-hidden">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div key={i} className="absolute right-0 border-t border-slate-400" style={{ top: `${i * 5}%`, width: i % 2 === 0 ? '12px' : '6px' }}>
+                      {i % 2 === 0 && <span className="absolute top-0.5 right-3 text-[8px] text-slate-500">{i * 50}</span>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Measure result tooltip */}
+            {mode === 'measure' && measureResult && measureEnd && (
+              <div
+                className="absolute z-[60] bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg pointer-events-none"
+                style={{ left: `${measureEnd.x / 10}%`, top: `${measureEnd.y / 10}%`, transform: 'translate(-50%, -120%)' }}
+              >
+                {measureResult}
               </div>
             )}
 
@@ -1796,6 +1876,19 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                   strokeWidth="1" strokeDasharray="4 4"
                 />
               )}
+
+              {/* Measure preview */}
+              {mode === 'measure' && measureStart && measureEnd && (
+                <>
+                  <line
+                    x1={`${measureStart.x / 10}%`} y1={`${measureStart.y / 10}%`}
+                    x2={`${measureEnd.x / 10}%`} y2={`${measureEnd.y / 10}%`}
+                    stroke="#EF4444" strokeWidth="0.2%" strokeDasharray="4 2"
+                  />
+                  <circle cx={`${measureStart.x / 10}%`} cy={`${measureStart.y / 10}%`} r="3" fill="#EF4444" />
+                  <circle cx={`${measureEnd.x / 10}%`} cy={`${measureEnd.y / 10}%`} r="3" fill="#EF4444" />
+                </>
+              )}
             </svg>
 
             {/* DOM elements (text, rect, image, etc.) */}
@@ -1803,6 +1896,18 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               const ANNOTATION_TYPES = ['highlight', 'strikeout', 'underline', 'sticky-note', 'path'];
               if (!showAnnotations && ANNOTATION_TYPES.includes(el.type)) return null;
               if (!['text', 'rect', 'circle', 'ellipse', 'image', 'highlight', 'strikeout', 'underline', 'form-check', 'form-text', 'form-select', 'sticky-note', 'form-radio', 'form-textarea', 'signature', 'link'].includes(el.type)) return null;
+              // Layer visibility filtering
+              const layerMap: Record<string, string[]> = {
+                text: ['text'],
+                image: ['image'],
+                shape: ['rect', 'circle', 'ellipse', 'line', 'arrow', 'path'],
+                annotate: ['highlight', 'strikeout', 'underline', 'squiggly'],
+                form: ['form-text', 'form-check', 'form-radio', 'form-select', 'form-textarea', 'form-signature'],
+                link: ['link'],
+                note: ['sticky-note', 'comment'],
+              };
+              const layerKey = Object.keys(layerMap).find(k => layerMap[k].includes(el.type));
+              if (layerKey && visibleTypes[layerKey] === false) return null;
               const isActive = activeElementId === el.id;
 
               return (
@@ -2140,6 +2245,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     <div className="w-full flex items-end h-full pb-0">
                       <div className="w-full h-[2px]" style={{ backgroundColor: el.color }} />
                     </div>
+                  )}
+                  {el.type === 'squiggly' && (
+                    <svg className="w-full h-full absolute inset-0" preserveAspectRatio="none">
+                      <path
+                        d={Array.from({ length: Math.ceil((el.width || 100) / 10) }).map((_, i) => `M ${i * 10} ${(el.height || 10) / 2} Q ${i * 10 + 5} ${(el.height || 10) / 2 + 4} ${i * 10 + 10} ${(el.height || 10) / 2}`).join(' ')}
+                        fill="none"
+                        stroke={el.color || '#EF4444'}
+                        strokeWidth="2"
+                      />
+                    </svg>
                   )}
                   {el.type === 'image' && el.imageUrl && (
                     <img src={el.imageUrl} className="w-full h-full object-cover" draggable={false} alt="inserted" />
