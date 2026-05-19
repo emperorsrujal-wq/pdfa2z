@@ -1936,8 +1936,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     opacity: el.opacity,
                     zIndex: isActive ? 50 : 10,
                     cursor: mode === 'select' ? 'move' : 'default',
-                    minWidth: 20,
-                    minHeight: 10,
+                    minWidth: 40,
+                    minHeight: 20,
                   }}
                   onPointerDown={ev => {
                     // Allow selection from the matching tool mode, not just 'select'
@@ -2031,17 +2031,22 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                       setActiveElementId(el.id);
                     }
                   }}
-                  onClick={ev => ev.stopPropagation()}
+                  onClick={ev => {
+                    ev.stopPropagation();
+                    const isSelectable =
+                      mode === 'select' ||
+                      (mode === 'erase' && el.type === 'rect') ||
+                      ((mode === 'magic-edit' || mode === 'text') && el.type === 'text');
+                    if (isSelectable) {
+                      setSelectedIds([el.id]);
+                      setActiveElementId(el.id);
+                    }
+                  }}
                 >
                   {/* Magic Edit Overlay (Targeting feedback — only on text elements) */}
                   {mode === 'magic-edit' && el.type === 'text' && (
                     <div className="absolute inset-0 border-2 border-indigo-400 border-dashed animate-pulse pointer-events-none" />
                   )}
-                  {/* Object property bar */}
-                  {isActive && (
-                    <ObjectToolbar element={el} onUpdate={commitUpdate} onDelete={deleteElement} onDuplicate={duplicateElement} onBringToFront={bringToFront} onSendToBack={sendToBack} setMode={setMode} />
-                  )}
-
                   {/* Selection border — active primary selection */}
                   {isActive && (
                     <div className="absolute inset-0 border-2 border-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.2)] pointer-events-none rounded-sm" />
@@ -2424,8 +2429,16 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                             style={{ ...textStyle, height: '100%', minHeight: '100%' }}
                           />
                         ) : (
-                          <div className="w-full h-full" style={{ ...textStyle, pointerEvents: 'auto' }}>
-                            {el.text || <span className="text-slate-300/60 italic text-xs">Text...</span>}
+                          <div
+                            className="w-full h-full cursor-pointer"
+                            style={{ ...textStyle, pointerEvents: 'auto' }}
+                            onClick={ev => {
+                              ev.stopPropagation();
+                              setSelectedIds([el.id]);
+                              setActiveElementId(el.id);
+                            }}
+                          >
+                            {el.text || <span className="text-slate-300/60 italic text-xs select-none">Text...</span>}
                           </div>
                         )}
                       </div>
@@ -2435,6 +2448,35 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
               );
             })}
           </div>
+
+          {/* ── Page-level floating toolbar (outside element wrappers) ── */}
+          {(() => {
+            const activeEl = activeElementId ? elements.find(e => e.id === activeElementId) : null;
+            if (!activeEl) return null;
+            const isNearTop = activeEl.y < 80;
+            const toolbarY = isNearTop ? activeEl.y + (activeEl.height || 30) + 15 : activeEl.y - 55;
+            return (
+              <div
+                className="absolute z-[500] pointer-events-none"
+                style={{
+                  left: `${(activeEl.x / 1000) * 100}%`,
+                  top: `${(toolbarY / 1000) * 100}%`,
+                }}
+              >
+                <div className="pointer-events-auto" style={{ transform: 'translateX(-50%)' }}>
+                  <ObjectToolbar
+                    element={activeEl}
+                    onUpdate={commitUpdate}
+                    onDelete={deleteElement}
+                    onDuplicate={duplicateElement}
+                    onBringToFront={bringToFront}
+                    onSendToBack={sendToBack}
+                    setMode={setMode}
+                  />
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Smart Alignment Guides Overlay */}
