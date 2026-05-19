@@ -119,7 +119,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
     : 'bottom-full mb-3';
 
   const ColorDropdown = ({ selected, onSelect }: { selected?: string; onSelect: (c: string) => void }) => (
-    <div className={`absolute ${dropdownPosition} left-1/2 -translate-x-1/2 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'}`}>
+    <div className={`absolute ${dropdownPosition} left-1/2 -translate-x-1/2 bg-white border border-[#ccc] p-2.5 shadow-2xl z-[400] w-[280px] rounded-lg animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} pointer-events-auto`}>
       <div className="grid grid-cols-10 gap-0.5 mb-2">
         {SEJDA_COLORS.map(color => (
           <button
@@ -149,13 +149,13 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
   return (
     <div
-      className={`absolute ${toolbarPosition} left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center bg-white border border-[#2196f3] rounded-lg shadow-[0_4px_16px_rgba(33,150,243,0.18)] z-[450] p-1 min-h-[44px] max-w-[calc(100vw-20px)] animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} duration-200`}
+      className={`absolute ${toolbarPosition} left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center bg-white border border-[#2196f3] rounded-lg shadow-[0_4px_16px_rgba(33,150,243,0.18)] z-[450] p-1 min-h-[44px] max-w-[calc(100vw-20px)] animate-in fade-in ${isNearTop ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2'} duration-200 pointer-events-none`}
       onClick={e => e.stopPropagation()}
     >
 
       {/* ── TEXT ─────────────────────────────── */}
       {element.type === 'text' && (
-        <div className="flex items-center flex-wrap gap-px">
+        <div className="flex items-center flex-wrap gap-px pointer-events-auto">
 
           {/* Bold */}
           <Tooltip content="Bold">
@@ -355,7 +355,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
       {/* ── SHAPE (rect / ellipse / circle) ────────── */}
       {(element.type === 'rect' || element.type === 'ellipse' || element.type === 'circle') && (
-        <div className="flex items-center gap-px">
+        <div className="flex items-center gap-px pointer-events-auto">
 
           {/* Shape indicator */}
           <Tooltip content={element.type}>
@@ -451,7 +451,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
       {/* ── PATH / LINE / ARROW ─────────────────── */}
       {(element.type === 'path' || element.type === 'line' || element.type === 'arrow') && (
-        <div className="flex items-center gap-px">
+        <div className="flex items-center gap-px pointer-events-auto">
 
           {/* Color */}
           <div className="relative">
@@ -518,7 +518,7 @@ export const ObjectToolbar: React.FC<ObjectToolbarProps> = ({
 
       {/* ── OTHER (image, highlight, sticky-note, form fields, etc.) ── */}
       {!['text', 'rect', 'ellipse', 'circle', 'path', 'line', 'arrow'].includes(element.type) && (
-        <div className="flex items-center px-1 gap-px">
+        <div className="flex items-center px-1 gap-px pointer-events-auto">
 
           {/* Opacity (where applicable) */}
           {['highlight', 'sticky-note', 'image'].includes(element.type) && (

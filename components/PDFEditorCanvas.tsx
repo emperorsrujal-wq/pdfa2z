@@ -632,7 +632,9 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     if (!el) return;
     if (el.color === activeColor) return;
     // Apply color to elements that support it
-    if (['text', 'rect', 'circle', 'ellipse', 'highlight', 'strikeout', 'underline', 'path', 'line', 'arrow'].includes(el.type)) {
+    if (['rect', 'circle', 'ellipse'].includes(el.type)) {
+      updateElement(activeElementId, { color: activeColor, bgColor: activeColor });
+    } else if (['text', 'highlight', 'strikeout', 'underline', 'path', 'line', 'arrow'].includes(el.type)) {
       updateElement(activeElementId, { color: activeColor });
     }
   }, [activeColor, activeElementId]);
@@ -956,9 +958,8 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
     } else if (w > 3 && h > 3) {
       let newEl: EditElement | null = null;
       if (mode === 'erase' || mode === 'rect' || mode === 'smart-erase') {
-        let bg = mode === 'erase' ? '#FFFFFF' : activeColor;
-        if (mode === 'smart-erase') bg = smartEraseBg;
-        const fillColor = mode === 'erase' ? '#FFFFFF' : (mode === 'smart-erase' ? smartEraseBg : activeColor);
+        let bg = mode === 'smart-erase' ? smartEraseBg : activeColor;
+        const fillColor = mode === 'smart-erase' ? smartEraseBg : activeColor;
         newEl = { id: `rect-${Date.now()}`, type: 'rect', pageIndex, x, y, width: w, height: h, color: fillColor, bgColor: bg, borderColor: (mode === 'rect' ? activeBorderColor : undefined), borderWidth: (mode === 'rect' ? activeBorderWidth : undefined), opacity: 1, isWhiteout: mode === 'erase' || mode === 'smart-erase' };
       } else if (mode === 'circle') {
         newEl = { id: `circle-${Date.now()}`, type: 'circle', pageIndex, x, y, width: w, height: h, color: activeColor, opacity: 1 };
@@ -1316,7 +1317,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     else if (t.mode === 'sign') { closeAllMenus(); setShowSignMenu(!showSignMenu); }
                     else if (t.mode === 'rect') { closeAllMenus(); setShowShapesMenu(!showShapesMenu); }
                     else {
-                      if (t.mode === 'erase') setActiveColor('#FFFFFF');
+                      if (t.mode === 'erase') { /* keep activeColor */ }
                       setMode(t.mode as EditorMode);
                     }
                   }}
@@ -2063,8 +2064,12 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                     window.addEventListener('pointermove', onMove);
                     window.addEventListener('pointerup', onUp);
                   }}
-                  onMouseDown={ev => ev.stopPropagation()}
-                  onTouchStart={ev => ev.stopPropagation()}
+                  onDoubleClick={ev => {
+                    if (el.type === 'text') {
+                      ev.stopPropagation();
+                      setActiveElementId(el.id);
+                    }
+                  }}
                   onClick={ev => ev.stopPropagation()}
                 >
                   {/* Magic Edit Overlay (Targeting feedback — only on text elements) */}
@@ -2458,7 +2463,7 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
                             style={{ ...textStyle, height: '100%', minHeight: '100%' }}
                           />
                         ) : (
-                          <div className="w-full" style={textStyle}>
+                          <div className="w-full h-full" style={{ ...textStyle, pointerEvents: 'auto' }}>
                             {el.text || <span className="text-slate-300/60 italic text-xs">Text...</span>}
                           </div>
                         )}
