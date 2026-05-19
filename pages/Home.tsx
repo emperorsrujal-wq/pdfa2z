@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Star, Layers, Zap, Edit3, Wand2, FileText,
-  Image as LucideImage, Video, PenTool, Scissors, Sparkles,
-  BookOpen, ArrowRight, ShieldCheck, Lock, Clock, Globe2,
-  TrendingUp, FileSearch, Palette, Shield
+  Search, Star, FileText, Sparkles, Layers,
+  Image as LucideImage, Wand2,
+  BookOpen, ArrowRight, ShieldCheck, Lock, Globe2,
+  TrendingUp, Shield
 } from 'lucide-react';
 import { ToolCard } from '../components/ToolCard';
+import { getToolIcon } from '../components/ToolIcons';
 import { ToolType } from '../types';
 import { SEO } from '../components/SEO';
 import { TOOLS_REGISTRY } from '../utils/seoData';
@@ -55,43 +56,7 @@ export const Home: React.FC = () => {
       ? { ...tool, ...tool.translations[i18n.language] }
       : tool;
 
-  const getIcon = (slug: string) => {
-    const map: Record<string, React.ReactNode> = {
-      'merge-pdf': <Layers size={20} />,
-      'split-pdf': <Scissors size={20} />,
-      'compress-pdf': <Zap size={20} />,
-      'pdf-to-word': <FileText size={20} />,
-      'pdf-to-excel': <FileText size={20} />,
-      'pdf-to-ppt': <FileText size={20} />,
-      'pdf-to-text': <FileText size={20} />,
-      'pdf-chat': <Sparkles size={20} />,
-      'protect-pdf': <Lock size={20} />,
-      'unlock-pdf': <Lock size={20} />,
-      'sign-pdf': <PenTool size={20} />,
-      'rotate-pdf': <Layers size={20} />,
-      'delete-pages': <FileText size={20} />,
-      'page-numbers': <FileText size={20} />,
-      'watermark-pdf': <FileText size={20} />,
-      'remove-bg': <Edit3 size={20} />,
-      'resize-image': <LucideImage size={20} />,
-      'compress-image': <Zap size={20} />,
-      'convert-image': <Zap size={20} />,
-      'crop-image': <LucideImage size={20} />,
-      'upscale-image': <Wand2 size={20} />,
-      'face-blur': <LucideImage size={20} />,
-      'round-image': <Scissors size={20} />,
-      'passport-photo': <LucideImage size={20} />,
-      'collage-maker': <LucideImage size={20} />,
-      'meme-maker': <Edit3 size={20} />,
-      'ai-writer': <PenTool size={20} />,
-      'ai-image-generator': <Wand2 size={20} />,
-      'magic-ai-editor': <Sparkles size={20} />,
-      'notarize': <ShieldCheck size={20} />,
-      'journey-builder': <Sparkles size={20} />,
-      'video-downloader': <Video size={20} />,
-    };
-    return map[slug] || <Zap size={20} />;
-  };
+  const getIcon = (slug: string) => getToolIcon(slug, 24) || <FileText size={24} />;
 
   const getColorClass = (slug: string) => {
     if (slug === 'merge-pdf') return 'bg-blue-600 text-white';
@@ -131,8 +96,18 @@ export const Home: React.FC = () => {
   );
   const notaryTools = allTools.filter(t => t.type === ToolType.NOTARIZE);
 
+  const [activeCategory, setActiveCategory] = React.useState<'all' | 'pdf' | 'image' | 'ai' | 'notary'>('all');
+
+  const getToolsForCategory = (cat: typeof activeCategory) => {
+    if (cat === 'pdf') return pdfTools;
+    if (cat === 'image') return imageTools;
+    if (cat === 'ai') return aiTools;
+    if (cat === 'notary') return notaryTools;
+    return allTools;
+  };
+
   const renderToolGrid = (tools: any[], limit?: number) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {tools.slice(0, limit || tools.length).map(tool => {
         const localTool = getLocalizedTool(tool);
         const handleClick = () => {
@@ -251,6 +226,38 @@ export const Home: React.FC = () => {
         </div>
       </div>
 
+      {/* ── Sticky Category Tabs ─────────────────────────── */}
+      {!searchQuery && (
+        <div className="sticky top-20 z-40 bg-[#fcfcfd]/95 backdrop-blur-sm border-b border-slate-200 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              {([
+                { id: 'all', label: 'All Tools', count: allTools.length },
+                { id: 'pdf', label: 'PDF Tools', count: pdfTools.length },
+                { id: 'image', label: 'Image Tools', count: imageTools.length },
+                { id: 'ai', label: 'AI Tools', count: aiTools.length },
+                { id: 'notary', label: 'Notary', count: notaryTools.length },
+              ] as const).map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); toolsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    activeCategory === cat.id
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+                  }`}
+                >
+                  {cat.label}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeCategory === cat.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    {cat.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Tools Content ─────────────────────────────────── */}
       <div ref={toolsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pt-8">
 
@@ -274,93 +281,35 @@ export const Home: React.FC = () => {
           </section>
         ) : (
           <>
-            {/* Popular */}
+            {activeCategory === 'all' && (
+              <section>
+                <SectionHeader
+                  icon={<Star size={16} className="text-amber-500 fill-amber-500" />}
+                  title={t('home.popular') || 'Most Popular Tools'}
+                  accent="bg-amber-400"
+                />
+                {renderToolGrid(allTools.filter(t =>
+                  ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor', 'journey-builder'].includes(t.slug)
+                ))}
+              </section>
+            )}
+
             <section>
               <SectionHeader
-                icon={<Star size={16} className="text-amber-500 fill-amber-500" />}
-                title={t('home.popular') || 'Most Popular Tools'}
-                accent="bg-amber-400"
+                icon={activeCategory === 'image' ? <LucideImage size={16} className="text-violet-600" /> :
+                      activeCategory === 'ai' ? <Wand2 size={16} className="text-pink-600" /> :
+                      activeCategory === 'notary' ? <ShieldCheck size={16} className="text-[#185FA5]" /> :
+                      <FileText size={16} className="text-blue-600" />}
+                title={activeCategory === 'all' ? 'All Tools' :
+                       activeCategory === 'pdf' ? 'PDF Tools' :
+                       activeCategory === 'image' ? 'Image Tools' :
+                       activeCategory === 'ai' ? 'AI Tools' : 'Notarization'}
+                accent={activeCategory === 'image' ? 'bg-violet-500' :
+                        activeCategory === 'ai' ? 'bg-pink-500' :
+                        activeCategory === 'notary' ? 'bg-[#185FA5]' : 'bg-blue-600'}
+                count={getToolsForCategory(activeCategory).length}
               />
-              {renderToolGrid(allTools.filter(t =>
-                ['merge-pdf', 'compress-pdf', 'remove-bg', 'ai-image-generator', 'magic-ai-editor', 'journey-builder'].includes(t.slug)
-              ))}
-            </section>
-
-            {/* PDF Tools */}
-            <section>
-              <SectionHeader
-                icon={<FileText size={16} className="text-blue-600" />}
-                title={`${t('common.pdfTools') || 'PDF'} Tools`}
-                accent="bg-blue-600"
-                count={pdfTools.length}
-              />
-              {renderToolGrid(pdfTools)}
-            </section>
-
-            {/* Image Tools */}
-            <section>
-              <SectionHeader
-                icon={<LucideImage size={16} className="text-violet-600" />}
-                title={`${t('common.imageTools') || 'Image'} Tools`}
-                accent="bg-violet-500"
-                count={imageTools.length}
-              />
-              {renderToolGrid(imageTools)}
-            </section>
-
-            {/* AI Tools */}
-            <section>
-              <SectionHeader
-                icon={<Wand2 size={16} className="text-pink-600" />}
-                title={`${t('common.aiTools') || 'AI'} Tools`}
-                accent="bg-pink-500"
-                count={aiTools.length}
-              />
-              {renderToolGrid(aiTools)}
-            </section>
-
-            {/* Notarize — subtle, at bottom */}
-            <section className="pt-4">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-1 h-7 bg-[#185FA5] rounded-full" />
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-                      <ShieldCheck size={16} className="text-[#185FA5]" />
-                    </div>
-                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">Notarization</h2>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    const currentLang = i18n.language.split('-')[0];
-                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-                    navigate(`${langPrefix}/notarize`);
-                  }}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                >
-                  Open Notary <ArrowRight size={14} />
-                </button>
-              </div>
-              <div className="bg-gradient-to-r from-slate-50 to-white border border-slate-100 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
-                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
-                  <Shield size={24} />
-                </div>
-                <div className="flex-1 text-center md:text-left">
-                  <h3 className="font-bold text-slate-900 mb-1">Elite Online Notarization</h3>
-                  <p className="text-sm text-slate-500">Legally compliant e-signatures from any device, 24/7. Built for professionals who need verified document execution.</p>
-                </div>
-                <button
-                  onClick={() => {
-                    const currentLang = i18n.language.split('-')[0];
-                    const langPrefix = SUPPORTED_LANGS.includes(currentLang) ? `/${currentLang}` : '';
-                    navigate(`${langPrefix}/notarize`);
-                  }}
-                  className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors shrink-0"
-                >
-                  Get Started
-                </button>
-              </div>
+              {renderToolGrid(getToolsForCategory(activeCategory))}
             </section>
           </>
         )}

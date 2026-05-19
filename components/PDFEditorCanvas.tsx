@@ -1687,45 +1687,6 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
       </>
       )}
 
-      {!hideChrome && (
-      <>
-      {/* ─── MODE INSTRUCTION BAR ─────────────────────── */}
-      {(() => {
-        const hints: Partial<Record<EditorMode, string>> = {
-          'magic-edit': '✏️  Click anywhere to add text — or click on existing text to edit it in place',
-          'text':       '✏️  Click anywhere to place a new text box',
-          'erase':      '⬜  Drag to draw a white box that covers content · Hides content visually but does not permanently remove it — not suitable for sensitive data redaction',
-          'smart-erase':'🎨  Drag to draw a box that auto-matches the background color',
-          'highlight':  '🖊  Drag to highlight a region',
-          'strikeout':  '–  Drag over text to strike it out',
-          'underline':  '_  Drag under text to underline it',
-          'draw':       '🖊  Drag to freehand draw',
-          'rect':       '▭  Drag to draw a rectangle',
-          'ellipse':    '○  Drag to draw a circle / ellipse',
-          'line':       '—  Drag to draw a straight line',
-          'arrow':      '→  Drag to draw an arrow',
-          'image':      '🖼  An image file picker will open — choose your file',
-          'link':       '🔗  Drag to mark a region as a clickable link',
-          'sticky-note':'📝  Click to place a sticky note',
-          'select':     '↖  Click an element to select it · drag to move · Delete key removes it',
-          'sign':       '✍️  Use the Sign menu above to create or place your signature',
-          'form-builder':'📋  Use the Forms menu above to insert form fields',
-          'watermark':  '🔏  Set your watermark text and style, then click Apply',
-          'find-replace':'🔍  Type the text to find, then enter the replacement',
-          'squiggly':   '〰️  Drag under text to add a squiggly underline',
-          'measure':    '📏  Click and drag to measure distance between two points',
-        };
-        const hint = hints[mode];
-        if (!hint) return null;
-        return (
-          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-4 py-1.5 text-xs text-blue-700 font-medium text-center select-none">
-            {hint}
-          </div>
-        );
-      })()}
-      </>
-      )}
-
       {/* ─── SCROLLABLE CANVAS AREA ─────────────────────── */}
       <div
         className={`flex-1 overflow-auto bg-[#f3f3f3] p-12 custom-scrollbar ${(mode === 'picker' || mode === 'font-picker') ? 'cursor-crosshair' : ''}`}
@@ -2497,165 +2458,28 @@ export const PdfEditorCanvas: React.FC<PdfEditorCanvasProps> = ({
 
       {!hideChrome && (
       <>
-      {/* ─── PROPERTIES / TOOL SETTINGS BAR — always visible, outside scroll ─── */}
-      {(mode !== 'select' || !!activeElementId) && (() => {
-          const activeEl = activeElementId ? elements.find(e => e.id === activeElementId) : null;
-          return (
-            <div className="flex items-center gap-3 px-6 py-2 bg-white border-t border-slate-200 z-50 overflow-x-auto custom-scrollbar min-h-[48px] shrink-0">
-              {/* Label */}
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-1 bg-indigo-50 rounded text-indigo-600"><Layout size={13} /></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                  {activeEl ? 'Properties' : 'Tool Settings'}
-                </span>
-                <div className="h-4 w-px bg-slate-200 mx-1" />
-              </div>
-
-              {/* ── ACTIVE ELEMENT PROPERTIES ── */}
-              {activeEl ? (
-                <>
-                  {/* Eyedropper */}
-                  <button
-                    onClick={e => { e.stopPropagation(); setMode('picker'); }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
-                  >
-                    <Pipette size={13} />
-                    {activeEl.type === 'text' ? 'Sample text color' : 'Sample fill color'}
-                  </button>
-
-                  {/* TEXT element properties */}
-                  {activeEl.type === 'text' && (
-                    <>
-                      <div className="h-5 w-px bg-slate-200 shrink-0" />
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-bold text-slate-400">Color</span>
-                        <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                          {SEJDA_COLORS.slice(0, 14).map(c => (
-                            <button key={c}
-                              onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { color: c }); }}
-                              className={`w-4 h-4 rounded-sm border transition-all ${activeEl.color === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="h-5 w-px bg-slate-200 shrink-0" />
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-bold text-slate-400">Size</span>
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="1"
-                          max="200"
-                          value={activeEl.size ?? 14}
-                          onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) commitUpdate(activeEl.id, { size: v }); }}
-                          onClick={ev => ev.stopPropagation()}
-                          onKeyDown={ev => ev.stopPropagation()}
-                          className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 w-20"
-                        />
-                      </div>
-                      <div className="h-5 w-px bg-slate-200 shrink-0" />
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isBold: !activeEl.isBold }); }}
-                          className={`w-7 h-7 font-bold text-sm rounded transition-colors ${activeEl.isBold ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>B</button>
-                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isItalic: !activeEl.isItalic }); }}
-                          className={`w-7 h-7 italic text-sm rounded transition-colors ${activeEl.isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>I</button>
-                        <button onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { isUnderline: !activeEl.isUnderline }); }}
-                          className={`w-7 h-7 underline text-sm rounded transition-colors ${activeEl.isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}>U</button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* RECT / SHAPE / WHITEOUT element properties */}
-                  {(activeEl.type === 'rect' || activeEl.type === 'ellipse' || activeEl.type === 'circle') && (
-                    <>
-                      <div className="h-5 w-px bg-slate-200 shrink-0" />
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] font-bold text-slate-400">Fill</span>
-                        <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                          {SEJDA_COLORS.slice(0, 14).map(c => (
-                            <button key={c}
-                              onClick={ev => { ev.stopPropagation(); commitUpdate(activeEl.id, { color: c, bgColor: c }); }}
-                              className={`w-4 h-4 rounded-sm border transition-all ${(activeEl.bgColor || activeEl.color) === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Delete — pushed to the right */}
-                  <div className="ml-auto shrink-0">
-                    <button onClick={ev => { ev.stopPropagation(); deleteElement(activeEl.id); }}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold transition-all">
-                      <Trash2 size={13} />Delete
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* ── TOOL SETTINGS (no element selected) ── */}
-                  <button
-                    onClick={e => { e.stopPropagation(); setMode('picker'); }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all shrink-0 ${mode === 'picker' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'}`}
-                  >
-                    <Pipette size={13} />Pick from Document
-                  </button>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-bold text-slate-400">{mode === 'erase' ? 'Whiteout Fill' : 'Color'}</span>
-                    <div className="grid grid-cols-7 gap-0.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                      {(mode === 'highlight' ? HIGHLIGHT_COLORS : PRO_COLORS).map(c => (
-                        <button key={c}
-                          onClick={e => { e.stopPropagation(); setActiveColor(c); }}
-                          className={`w-4 h-4 rounded-sm border transition-all ${activeColor === c ? 'border-indigo-600 scale-125 z-10' : 'border-slate-300/50 hover:scale-110'}`}
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {['draw', 'line', 'arrow'].includes(mode) && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="h-5 w-px bg-slate-200" />
-                      <span className="text-[10px] font-bold text-slate-400">Brush</span>
-                      <input type="range" min="1" max="20" value={activeBrushSize}
-                        onChange={e => setActiveBrushSize(parseInt(e.target.value))}
-                        className="w-20 accent-indigo-600" />
-                      <span className="text-[11px] font-black text-indigo-600">{activeBrushSize}px</span>
-                    </div>
-                  )}
-
-                  {(['text', 'magic-edit'] as EditorMode[]).includes(mode) && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="h-5 w-px bg-slate-200" />
-                      <span className="text-[10px] font-bold text-slate-400">Size</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        min="1"
-                        max="200"
-                        value={activeFontSize}
-                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setActiveFontSize(Math.min(200, v)); }}
-                        onClick={ev => ev.stopPropagation()}
-                        onKeyDown={ev => ev.stopPropagation()}
-                        className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[11px] font-black text-indigo-600 outline-none hover:border-indigo-400 w-20"
-                      />
-                    </div>
-                  )}
-
-                  {mode === 'erase' && (
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 shrink-0">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-tight">Eraser Active</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-      })()}
+      {/* ─── MINIMAL TOOL SETTINGS BAR ────────────────────── */}
+      {mode !== 'select' && !activeElementId && (
+        <div className="flex items-center gap-3 px-4 py-1.5 bg-white border-t border-slate-100 z-50 overflow-x-auto custom-scrollbar shrink-0">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">{mode.replace(/-/g, ' ')}</span>
+          <div className="h-3 w-px bg-slate-200" />
+          <div className="flex items-center gap-1.5">
+            {(mode === 'highlight' ? HIGHLIGHT_COLORS : PRO_COLORS).slice(0, 7).map(c => (
+              <button key={c}
+                onClick={e => { e.stopPropagation(); setActiveColor(c); }}
+                className={`w-5 h-5 rounded-full border-2 transition-all ${activeColor === c ? 'border-slate-800 scale-110' : 'border-transparent hover:scale-110'}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+          {['draw', 'line', 'arrow'].includes(mode) && (
+            <>
+              <div className="h-3 w-px bg-slate-200" />
+              <span className="text-[10px] font-bold text-slate-500">{activeBrushSize}px</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ─── LINK INPUT MODAL ──────────────────────────────── */}
       {pendingLinkArea && (

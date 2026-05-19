@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { X, Search, Zap, FileText, Image, Star, ChevronRight } from 'lucide-react';
+import { X, Search, Zap, FileText, Image, Star, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getToolIcon } from './ToolIcons';
 
 interface MegaMenuProps {
     isOpen: boolean;
@@ -123,29 +124,34 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({ isOpen, onClose, category, t
                     </div>
                 </div>
 
-                {/* List Body */}
+                {/* Card Grid Body */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8">
+                    <div className="space-y-8">
                         {Object.entries(grouped).map(([groupName, groupTools]) => (
-                            <div key={groupName} className="flex flex-col">
-                                <h3 className="text-xs font-semibold text-blue-600 border-b border-slate-100 pb-2 mb-3 uppercase tracking-wide">{groupName}</h3>
-                                <div className="flex flex-col gap-0.5">
-                                    {groupTools.map((tool) => (
-                                        <Link 
-                                            key={tool.slug}
-                                            to={getLocalizedPath(tool.slug)}
-                                            onClick={onClose}
-                                            className="group flex items-center gap-2.5 px-2 py-1.5 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
-                                        >
-                                            <div className="w-7 h-7 flex items-center justify-center rounded-md bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
-                                                {tool.icon ? <tool.icon size={14} /> : <FileText size={14} />}
-                                            </div>
-                                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
-                                                {tool.translations?.[currentLang]?.h1 || tool.translations?.[currentLang]?.title || tool.h1 || tool.title}
-                                            </span>
-                                            <ChevronRight size={12} className="ml-auto opacity-0 -translate-x-1 group-hover:opacity-30 group-hover:translate-x-0 transition-all text-slate-400 shrink-0" />
-                                        </Link>
-                                    ))}
+                            <div key={groupName}>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">{groupName}</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {groupTools.map((tool) => {
+                                        const title = tool.translations?.[currentLang]?.h1 || tool.translations?.[currentLang]?.title || tool.h1 || tool.title;
+                                        const desc = tool.translations?.[currentLang]?.description || tool.description;
+                                        return (
+                                            <Link
+                                                key={tool.slug}
+                                                to={getLocalizedPath(tool.slug)}
+                                                onClick={onClose}
+                                                className="group flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all"
+                                            >
+                                                <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                    {getToolIcon(tool.slug, 22) || <FileText size={18} />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition-colors truncate">{title}</p>
+                                                    <p className="text-[11px] text-slate-400 line-clamp-1">{desc}</p>
+                                                </div>
+                                                <ArrowRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-all shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0" />
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}
